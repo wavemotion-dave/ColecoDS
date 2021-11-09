@@ -1,5 +1,3 @@
-VERSION=4.0
-
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
@@ -9,8 +7,9 @@ endif
 
 include $(DEVKITARM)/ds_rules
 
-export TARGET		:=	$(shell basename $(CURDIR))
+export TARGET		:=	ColecoDS
 export TOPDIR		:=	$(CURDIR)
+export VERSION		:=  0.1
 
 ICON 		:= -b $(CURDIR)/logo.bmp "ColecoDS $(VERSION);AlekMaul;http://www.portabledev.com" -d baseroot
 
