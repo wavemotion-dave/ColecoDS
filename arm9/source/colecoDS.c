@@ -187,7 +187,7 @@ void colecoDS_main (void) {
         }
 
         // Time 1 frame... 546 ticks of Timer0
-        while(TIMER0_DATA < (546*timingFrames))
+        while(TIMER0_DATA < (546*(timingFrames+1)))
             ;
 
       // gere touches

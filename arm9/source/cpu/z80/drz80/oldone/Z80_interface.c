@@ -81,7 +81,7 @@ void DrZ80_InitFonct() {
   drz80.z80_out=cpu_writeport16;
   drz80.z80_read8=drz80_read8;
   drz80.z80_read16=drz80MemReadW;
-  drz80.z80_rebasePC=z80_rebasePC;
+  drz80.z80_rebasePC=(unsigned int (*)(short unsigned int))z80_rebasePC;
   drz80.z80_rebaseSP=z80_rebaseSP;
   drz80.z80_irq_callback=z80_irq_callback;
 #ifdef DEBUG
