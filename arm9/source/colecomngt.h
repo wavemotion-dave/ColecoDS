@@ -12,14 +12,13 @@
 #include "cpu/z80/drz80/Z80_interface.h"
 #endif
 
-
 #define IMAGE_VERIFY_FAIL 0X01
 #define IMAGE_VERIFY_PASS 0x02
 
-#define SN76FREQ  15768
+#define SN76FREQ  15840
 
 extern u8  UCount;
-extern u8 VR;                                 // Sound and VDP register storage
+extern u8 VR;                           // Sound and VDP register storage
 
 extern u32 JoyMode;                     // Joystick / Paddle management
 extern u32 JoyStat[2];                  // Joystick / Paddle management

@@ -234,10 +234,10 @@ void affListGames(u16 NoDebGame, u8 ucSel) {
       strcpy(szName,gpFic[ucGame].szName);
       if (maxLen>28) szName[28]='\0';
       if (gpFic[ucGame].uType == DIRECT) {
-        sprintf(szName," %s]",gpFic[ucGame].szName);
-        szName[0]='[';
-        sprintf(szName2,"%-28s",szName);
-        AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName2);
+        sprintf(szName2, " %s]",szName);
+        szName2[0]='[';
+        sprintf(szName,"%-28s",szName2);
+        AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
       }
       else {
         sprintf(szName,"%-28s",strupr(szName));
@@ -255,7 +255,15 @@ int colecoFilescmp (const void *c1, const void *c2) {
   FICcoleco *p1 = (FICcoleco *) c1;
   FICcoleco *p2 = (FICcoleco *) c1;
 
-  return strcmp (p1->szName, p2->szName);
+  if (p1->szName[0] == '.' && p2->szName[0] != '.')
+      return -1;
+  if (p2->szName[0] == '.' && p1->szName[0] != '.')
+      return 1;
+  if ((p1->uType == DIRECT) && !(p2->uType == DIRECT))
+      return -1;
+  if ((p2->uType == DIRECT) && !(p1->uType == DIRECT))
+      return 1;
+  return strcasecmp (p1->szName, p2->szName);        
 }
 
 void colecoDSFindFiles(void) {
@@ -312,9 +320,6 @@ void colecoDSFindFiles(void) {
 u8 colecoDSLoadFile(void) {
   u8 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00,ucSelect= 0, ucGGSel=0,bOK=0,uNbRPage, uNbRSPage, uLenFic=0,ucFlip=0, ucFlop=0;
   char szName[64];
-
-  // Stop sound
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (0) | SOUND_SET_VOLUME);
 
   // Met les fichiers
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
