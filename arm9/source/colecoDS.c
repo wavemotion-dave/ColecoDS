@@ -37,7 +37,7 @@ u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
 
 /*******************************************************************************/
 volatile u16 vusCptVBL;                   // Video Management
-
+extern u8 bFullSpeed;
 typedef enum {
   EMUARM7_INIT_SND = 0x123C,
   EMUARM7_STOP_SND = 0x123D,
@@ -143,7 +143,7 @@ u16 timingFrames=0;
 //*****************************************************************************
 // Boucle principale d'execution
 //*****************************************************************************
-void colecoDS_main (void) {
+ITCM_CODE void colecoDS_main (void) {
   u32 keys_pressed;
   u16 iTx, iTy,iBcl;
   u32 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, SoundNow = 0;
@@ -186,9 +186,12 @@ void colecoDS_main (void) {
             timingFrames = 0;
         }
 
+        
         // Time 1 frame... 546 ticks of Timer0
         while(TIMER0_DATA < (546*(timingFrames+1)))
-            ;
+        {
+            if (bFullSpeed) break;
+        }
 
       // gere touches
       ucUN = 0;
@@ -279,21 +282,21 @@ void colecoDS_main (void) {
           SaveNow = 0;
   
         // Test KEYPAD
-        ucUN = ( ((iTx>=162) && (iTy>=83) && (iTx<=193) && (iTy<=99)) ? 0x0E: 0x00);
-        ucUN = ( ((iTx>=186) && (iTy>=83) && (iTx<=206) && (iTy<=99)) ? 0x0D: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=83) && (iTx<=230) && (iTy<=99)) ? 0x0C: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=80) && (iTx<=183) && (iTy<=100)) ? 0x0E: 0x00);
+        ucUN = ( ((iTx>=183) && (iTy>=80) && (iTx<=210) && (iTy<=100)) ? 0x0D: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=80) && (iTx<=234) && (iTy<=100)) ? 0x0C: ucUN);
         
-        ucUN = ( ((iTx>=162) && (iTy>=102) && (iTx<=182) && (iTy<=119)) ? 0x0B: ucUN);
-        ucUN = ( ((iTx>=186) && (iTy>=102) && (iTx<=206) && (iTy<=119)) ? 0x0A: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=102) && (iTx<=230) && (iTy<=119)) ? 0x09: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=101) && (iTx<=183) && (iTy<=122)) ? 0x0B: ucUN);
+        ucUN = ( ((iTx>=183) && (iTy>=101) && (iTx<=210) && (iTy<=122)) ? 0x0A: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=101) && (iTx<=234) && (iTy<=122)) ? 0x09: ucUN);
         
-        ucUN = ( ((iTx>=162) && (iTy>=121) && (iTx<=182) && (iTy<=138)) ? 0x08: ucUN);
-        ucUN = ( ((iTx>=186) && (iTy>=121) && (iTx<=206) && (iTy<=138)) ? 0x07: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=121) && (iTx<=230) && (iTy<=138)) ? 0x06: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=123) && (iTx<=183) && (iTy<=143)) ? 0x08: ucUN);
+        ucUN = ( ((iTx>=183) && (iTy>=123) && (iTx<=210) && (iTy<=143)) ? 0x07: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=123) && (iTx<=234) && (iTy<=143)) ? 0x06: ucUN);
         
-        ucUN = ( ((iTx>=162) && (iTy>=140) && (iTx<=182) && (iTy<=156)) ? 0x04: ucUN);
-        ucUN = ( ((iTx>=186) && (iTy>=140) && (iTx<=206) && (iTy<=156)) ? 0x0F: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=140) && (iTx<=230) && (iTy<=156)) ? 0x05: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=144) && (iTx<=183) && (iTy<=164)) ? 0x04: ucUN);
+        ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x0F: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x05: ucUN);
       } // SCR_TOUCH
       else {
         ResetNow=SaveNow=SoundNow = 0;

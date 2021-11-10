@@ -505,13 +505,12 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 /** Z80 emulation calls this function periodically to check **/
 /** if the system hardware requires any interrupts.         **/
 /*************************************************************/
-u32 DrCYCLE=TMS9928_LINE;
 ITCM_CODE u32 LoopZ80() 
 {
   char szChai[10];
   
   cpuirequest=0;
-  DrZ80_execute(DrCYCLE);
+  DrZ80_execute(TMS9918_LINE);
 
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
@@ -529,7 +528,11 @@ ITCM_CODE u32 LoopZ80()
   static u16 dampen=0;
   if (++dampen > 60)
   {
-    siprintf(szChai,"%02d ",emuFps); AffChaine(29,0,6,szChai);
+    szChai[0] = '0' + emuFps/100;
+    szChai[1] = '0' + (emuFps%100) / 10;
+    szChai[2] = '0' + (emuFps%100) % 10;
+    szChai[3] = 0;
+    AffChaine(29,0,6,szChai);
     dampen=0;
   }
 
