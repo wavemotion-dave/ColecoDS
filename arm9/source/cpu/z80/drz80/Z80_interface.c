@@ -19,47 +19,80 @@ struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
 u16 previouspc,cpuirequest;
 
-u32 z80_rebaseSP(u16 address) {
+ITCM_CODE u32 z80_rebaseSP(u16 address) {
   drz80.Z80SP_BASE = (unsigned int) pColecoMem;
   drz80.Z80SP      = drz80.Z80SP_BASE + address;
   return (drz80.Z80SP);
 }
 
-u32 z80_rebasePC(u16 address) {
+ITCM_CODE u32 z80_rebasePC(u16 address) {
   drz80.Z80PC_BASE = (unsigned int) pColecoMem;
   drz80.Z80PC      = drz80.Z80PC_BASE + address;
   return (drz80.Z80PC);
 }
 
-void z80_irq_callback(void) {
+ITCM_CODE void z80_irq_callback(void) {
 	//drz80.pending_irq &= ~drz80.Z80_IRQ;
 	drz80.Z80_IRQ = 0x00;
 	previouspc=0;
 }
 
-u8 cpu_readmem16 (u16 address) {
+ITCM_CODE u8 cpu_readmem16 (u16 address) {
   return (pColecoMem[address]);
 }
 
-void cpu_writemem16 (u8 value,u16 address) {
-  if((address>0x5FFF)&&(address<0x8000)) {
-    address&=0x03FF;
-    pColecoMem[0x6000+address]=pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x6C00+address]=
-    pColecoMem[0x7000+address]=pColecoMem[0x7400+address]=pColecoMem[0x7800+address]=pColecoMem[0x7C00+address]=value;
-  }
+extern u8 romBankMask;
+extern u8 romBuffer[];
+ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
+{
+  if (address >= 0xFFC0)
+  {
+      address &= romBankMask;
+      memcpy(pColecoMem+0xC000, romBuffer + (address * 0x4000), 0x4000);
+      return 0x00;
+  }    
+  return (pColecoMem[address]);
 }
 
-u16 drz80MemReadW(u16 addr) 
+ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
+{
+    extern u8 sgm_enable;
+    extern u16 sgm_low_addr;
+    if (sgm_enable)
+    {
+      if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
+    }
+    else if((address>0x5FFF)&&(address<0x8000)) 
+    {
+        address&=0x03FF;
+        pColecoMem[0x6000+address]=pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x6C00+address]=
+        pColecoMem[0x7000+address]=pColecoMem[0x7400+address]=pColecoMem[0x7800+address]=pColecoMem[0x7C00+address]=value;
+    }
+}
+
+ITCM_CODE u16 drz80MemReadW(u16 addr) 
 {
     return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
 }
 
-void drz80MemWriteW(u16 data,u16 addr) {
+ITCM_CODE u16 drz80MemReadW_banked(u16 addr) 
+{
+  if (addr >= 0xFFC0)
+  {
+      addr &= romBankMask;
+      memcpy(pColecoMem+0xC000, romBuffer + (addr * 0x4000), 0x4000);
+      return 0x0000;
+  }    
+  return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
+}
+
+
+ITCM_CODE void drz80MemWriteW(u16 data,u16 addr) {
   cpu_writemem16(data & 0xff , addr);
   cpu_writemem16(data>>8,addr+1);
 }
 
-void Z80_Cause_Interrupt(int type) {
+ITCM_CODE void Z80_Cause_Interrupt(int type) {
   if (type == Z80_NMI_INT) {
     drz80.pending_irq |= NMI_IRQ;
 	} else if (type != Z80_IGNORE_INT) {
@@ -68,12 +101,12 @@ void Z80_Cause_Interrupt(int type) {
   }
 }
 
-void Z80_Clear_Pending_Interrupts(void) {
+ITCM_CODE void Z80_Clear_Pending_Interrupts(void) {
   drz80.pending_irq = 0;
   drz80.Z80_IRQ = 0;
 }
 
-void Interrupt(void) {
+ITCM_CODE void Interrupt(void) {
 	previouspc = -1;
 	if (drz80.pending_irq & NMI_IRQ) { /* NMI IRQ */
 		drz80.Z80_IRQ = NMI_IRQ;
@@ -154,15 +187,13 @@ void Interrupt(void) {
 }
 
 void DrZ80_InitFonct() {
-#ifdef DEBUG
-  iprintf("DrZ80_Init\n");
-#endif
+  extern u8 romBankMask;
   drz80.z80_write8=cpu_writemem16;
   drz80.z80_write16=drz80MemWriteW;
   drz80.z80_in=cpu_readport16;
   drz80.z80_out=cpu_writeport16;
-  drz80.z80_read8=cpu_readmem16;
-  drz80.z80_read16=drz80MemReadW;
+  drz80.z80_read8= (romBankMask ? cpu_readmem16_banked : cpu_readmem16 );
+  drz80.z80_read16= (romBankMask ? drz80MemReadW_banked : drz80MemReadW);
   drz80.z80_rebasePC=(unsigned int (*)(short unsigned int))z80_rebasePC;
   drz80.z80_rebaseSP=(unsigned int (*)(short unsigned int))z80_rebaseSP;
   drz80.z80_irq_callback=z80_irq_callback;
@@ -206,7 +237,7 @@ u16 DrZ80_GetPC (void) {
 
 u32 dwElapsedTicks = 0;
 
-int DrZ80_execute(u32 cycles) {
+ITCM_CODE int DrZ80_execute(u32 cycles) {
   drz80.cycles = cycles;
 //	if (drz80.pending_irq)
 //		Interrupt();
@@ -216,7 +247,7 @@ int DrZ80_execute(u32 cycles) {
   return (cycles-drz80.cycles);
 }
 
-u32 DrZ80_GetElapsedTicks(u32 dwClear) {
+ITCM_CODE u32 DrZ80_GetElapsedTicks(u32 dwClear) {
   u32 dwTemp = dwElapsedTicks;
   
   if (dwClear) {

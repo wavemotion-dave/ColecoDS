@@ -36,6 +36,8 @@ extern void DrZ80_InitFonct(void);
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 
+u8 sgm_enable = false;
+
 /********************************************************************************/
 
 u32 JoyMode;                     // Joystick / Paddle management
@@ -59,11 +61,15 @@ u8 colecoInit(char *szGame) {
   u16 uVide;
 
   // Wipe RAM
-  memset(pColecoMem+0x6000, 0x00, 0x2000);
+  memset(pColecoMem+0x2000, 0x00, 0x6000);
+  
+  // Set ROM area to 0xFF before load
+  memset(pColecoMem+0x8000, 0xFF, 0x8000);
 
   // Load coleco cartridge
   RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
-  if (RetFct) {
+  if (RetFct) 
+  {
     RetFct = colecoCartVerify(pColecoMem+0x8000);
     
     // If no error, change graphic mode to initiate emulation
@@ -85,6 +91,7 @@ u8 colecoInit(char *szGame) {
       dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
     }
   
+    DrZ80_Reset();
     Reset9918();
 
     JoyMode=0;                           // Joystick mode key
@@ -95,9 +102,12 @@ u8 colecoInit(char *szGame) {
     SN76496_init(&sncol,(u16 *) &freqtablcol);
     SN76496_reset(&sncol,0);
 
+    sgm_enable = false;
+      
     UCount=0;
     ExitNow = 0;
     
+    DrZ80_Reset();
     soundEmuPause=0;
   }
   
@@ -293,7 +303,7 @@ void colecoSaveState() {
 /*********************************************************************************
  * Update the screen for the current cycle
  ********************************************************************************/
-void colecoUpdateScreen(void) 
+ITCM_CODE void colecoUpdateScreen(void) 
 {
   // Change background
   dmaCopyWordsAsynch(2, (u32*)XBuf, (u32*)pVidFlipBuf, 256*192);
@@ -394,44 +404,50 @@ u8 colecoCartVerify(const u8 *cartData) {
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
-u8 loadrom(const char *path,u8 * ptr, int nmemb) {
+u8 romBuffer[256 * 1024];   // We support MegaCarts up to 256 KB
+u8 romBankMask = 0x00;
+u8 loadrom(const char *path,u8 * ptr, int nmemb) 
+{
   u8 bOK = 0;
-  char* _oFile = NULL;
 
-  //chdir(szFATDir);
   FILE* handle = fopen(path, "r");  
-  if (handle != NULL) {
+  if (handle != NULL) 
+  {
     fseek(handle, 0, SEEK_END);
     int iSSize = ftell(handle);
     fseek(handle, 0, SEEK_SET);
-    _oFile = (char*) malloc (iSSize+1); 
-    fread((void*) _oFile, iSSize, 1, handle); 
+    if(iSSize <= (256 * 1024))  // Max size cart is 256KB - that's pretty huge...
+    {
+        fread((void*) romBuffer, iSSize, 1, handle); 
+        if (iSSize <= (32*1024))
+        {
+            memcpy(ptr, romBuffer, nmemb);
+            romBankMask = 0x00;
+        }
+        else    // Bankswitched Cart!!
+        {
+            memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000);
+            memcpy(ptr+0x4000, romBuffer, 0x4000);
+            if (iSSize == (64 * 1024)) romBankMask = 0x03;
+            if (iSSize == (128 * 1024)) romBankMask = 0x07;
+            if (iSSize == (256 * 1024)) romBankMask = 0x0F;
+        }
+        bOK = 1;
+    }
     fclose(handle);
   }
-#ifdef nocash
-  else
-    nocashMessage("handle is null ...\n");
-#endif
-  
-  if (_oFile !=  NULL) {
-    memcpy(ptr,_oFile,nmemb);
-    bOK = 1;
-    if (isFATSystem) {
-      free(_oFile);
-    }
-  }
-#ifdef DEBUG
-  iprintf("handle %d ...\n",_oFile);
-#endif
-
   return bOK;
 }
+
+u8 sgm_idx=0;
+u8 sgm_reg[256] = {0};
+u16 sgm_low_addr = 0x2000;
 
 /** InZ80() **************************************************/
 /** Z80 emulation calls this function to read a byte from   **/
 /** a given I/O port.                                       **/
 /*************************************************************/
-unsigned char cpu_readport16(register unsigned short Port) {
+ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
 #ifdef DEBUG
   //iprintf("cpu_readport16 %d \n",Port);
 #endif
@@ -439,6 +455,11 @@ unsigned char cpu_readport16(register unsigned short Port) {
 
   //JGD 18/04/2007  
   Port &= 0x00FF; 
+    
+  if (Port == 0x52)
+  {
+      return sgm_reg[sgm_idx];
+  }
 
   switch(Port&0xE0) {
     case 0x40: // Printer Status
@@ -467,7 +488,7 @@ unsigned char cpu_readport16(register unsigned short Port) {
 /** Z80 emulation calls this function to write a byte to a  **/
 /** given I/O port.                                         **/
 /*************************************************************/
-void cpu_writeport16(register unsigned short Port,register unsigned char Value) {
+ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) {
 #ifdef DEBUG
   //iprintf("cpu_writeport16 %d %d\n",Port,Value);
 #endif
@@ -475,18 +496,40 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
   //JGD 18/04/2007 
   Port &= 0x00FF;
 
+  if ((Port == 0x53) && (Value & 0x01))
+  {
+      sgm_enable = true;
+      return;
+  }
+  if (Port == 0x50)
+  {
+      sgm_idx=Value;
+      return;
+  }
+  else if (Port == 0x51)
+  {
+      sgm_reg[sgm_idx]=Value;
+      return;
+  }
+  else if (Port == 0x7F)
+  {
+      if (Value & 0x02)
+      {
+          extern u8 ColecoBios[];
+          sgm_low_addr = 0x2000;
+          memcpy(pColecoMem,ColecoBios,0x2000);
+      }
+      else 
+      {
+          sgm_low_addr = 0x0000; 
+          memset(pColecoMem, 0x00, 0x2000);
+      }
+      return;   
+  }
   switch(Port&0xE0) {
     case 0x80: JoyMode=0;return;
     case 0xC0: JoyMode=1;return;
-    case 0xE0: /*SN76496write(Value); */ SN76496_w(&sncol, Value); //PSGwrite(Value); return; //Write76489(&PSG,Value);return; //SN76496Write(Value); return;
-/*      {
-        FIFO_Message *message = FIFO_GetMessageContainer();
-        if (message) {
-          message->command = MESSAGE_WRITE_PSG;
-          message->len=Value;
-          FIFO_SendMessage(message);
-        }
-      }*/
+    case 0xE0: SN76496_w(&sncol, Value);
       return;
     case 0xA0:
       if(!(Port&0x01)) WrData9918(Value);

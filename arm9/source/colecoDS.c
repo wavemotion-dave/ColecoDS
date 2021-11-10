@@ -79,7 +79,7 @@ u16 keyboard_JoyNDS[12] = {
 u32 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
 
 u16 *pVidFlipBuf= (u16*) (0x06000000);    // Video flipping buffer
-u8 XBuf[256*192] ALIGN(32);
+u8 XBuf[256*256] ALIGN(32) = {0}; // Really it's only 256x192
 
 
 //*****************************************************************************
