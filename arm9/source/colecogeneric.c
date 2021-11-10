@@ -313,6 +313,7 @@ void colecoDSFindFiles(void) {
   qsort (gpFic, uNbRoms, sizeof (FICcoleco), colecoFilescmp);
 }
 
+u8 bFullSpeed = false;
 
 //*****************************************************************************
 // charge une rom
@@ -466,10 +467,14 @@ u8 colecoDSLoadFile(void) {
       while (keysCurrent() & KEY_B);
     }
 
-    if (keysCurrent() & KEY_A) {
-      if (gpFic[ucGameAct].uType != DIRECT) 
+    if (keysCurrent() & (KEY_X | KEY_A)) {
+      if (gpFic[ucGameAct].uType != DIRECT)
+      {
+        if (keysCurrent() & KEY_X) bFullSpeed = true; else bFullSpeed = false;
         bOK = 1;
-      else {
+      }
+      else 
+      {
         chdir(gpFic[ucGameAct].szName);
         dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
         colecoDSFindFiles();
@@ -480,12 +485,13 @@ u8 colecoDSLoadFile(void) {
           ucGGSel=uNbRoms-uNbRPage;
           ucSelect=ucGameAct-uNbRoms+uNbRPage;
         }
-        else {
+        else 
+        {
           ucGGSel=ucGameAct;
           ucSelect=0;
         }
         affListGames(ucGGSel,ucSelect);
-        while (keysCurrent() & KEY_A);
+        while (keysCurrent() & (KEY_A | KEY_X));
       }
     }
     // Scroll la selection courante
@@ -910,14 +916,20 @@ void AffChaine(int iX,int iY,int iScr,char *szMessage) {
   strupr(szTexte);
   pusEcran=(u16*) (iScr != 1 ? bgGetMapPtr(bg1b) : bgGetMapPtr(bg1))+iX+(iY<<5);
   pusMap=(u16*) (iScr != 1 ? (iScr == 6 ? bgGetMapPtr(bg0b)+24*32 : (iScr == 0 ? bgGetMapPtr(bg0b)+24*32 : bgGetMapPtr(bg0b)+26*32 )) : bgGetMapPtr(bg0)+51*32 );
-  while(*pTrTxt != '\0' ) {
+    
+  while((*pTrTxt)!='\0' )
+  {
+    char ch = *pTrTxt;
+    if (ch >= 'a' && ch <= 'z') ch -= 32; // Faster than strcpy/strtoupper
     usCharac=0x0000;
-    if ((*pTrTxt) == '|')
-      usCharac=*(bgGetMapPtr(bg0b)+28*32);
-    else  if(*pTrTxt<'@')
-      usCharac=*(pusMap+(*pTrTxt)-' ');
+    if ((ch) == '|')
+      usCharac=*(pusMap);
+    else if (((ch)<' ') || ((ch)>'_'))
+      usCharac=*(pusMap);
+    else if((ch)<'@')
+      usCharac=*(pusMap+(ch)-' ');
     else
-      usCharac=*(pusMap+32+(*pTrTxt)-'@');
+      usCharac=*(pusMap+32+(ch)-'@');
     *pusEcran++=usCharac;
     pTrTxt++;
   }
