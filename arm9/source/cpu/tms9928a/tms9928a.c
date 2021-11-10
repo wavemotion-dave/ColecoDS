@@ -780,18 +780,17 @@ ITCM_CODE byte Loop9918(void)
 void Reset9918(void) {
     extern u8 VDPInit[8];
     memcpy(VDP,VDPInit,sizeof(VDP));   // Initialize VDP registers
+    memset(pVDPVidMem, 0x00, 0x4000);
     VKey=1;                              // VDP address latch key
     WKey=1;
-    VDPStatus=0x9F;                      // VDP status register
+    VDPStatus=0x00;                      // VDP status register
+    VAddr = 0x0000;                      // VDP address register
     FGColor=BGColor=0;                   // Fore/Background color
     ScrMode=0;                           // Current screenmode
     CurLine=0;                           // Current scanline
     ChrTab=ColTab=ChrGen=pVDPVidMem;     // VDP tables (screen)
     SprTab=SprGen=pVDPVidMem;            // VDP tables (sprites)
-
     UCount = 0;
-    VDPStatus = 0x00;
-    VAddr = 0x0000;
 
   int colfg,colbg;
   for (colfg=0;colfg<16;colfg++) {
