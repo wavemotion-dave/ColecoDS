@@ -57,10 +57,10 @@ u16 freqtablcol[1024*2] __attribute__((section(".dtcm")));
 u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
-  
-#ifdef NOCASH
-  char sz[64]; sprintf(sz,"colecoInit(%s) \n",szGame); nocashMessage(sz);
-#endif
+
+  // Wipe RAM
+  memset(pColecoMem+0x6000, 0x00, 0x2000);
+
   // Load coleco cartridge
   RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
   if (RetFct) {
