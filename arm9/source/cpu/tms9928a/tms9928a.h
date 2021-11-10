@@ -43,7 +43,7 @@ typedef struct {
   byte R2,R3,R4,R5,R6;
 } tScrMode;
 
-extern u8 XBuf[256*192];
+extern u8 XBuf[256*256];
 
 extern u8 TMS9928A_palette[16*3];
 extern tScrMode SCR[MAXSCREEN+1];

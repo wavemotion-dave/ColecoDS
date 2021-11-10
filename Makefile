@@ -9,7 +9,7 @@ include $(DEVKITARM)/ds_rules
 
 export TARGET		:=	ColecoDS
 export TOPDIR		:=	$(CURDIR)
-export VERSION		:=  0.1
+export VERSION		:=  0.2
 
 ICON 		:= -b $(CURDIR)/logo.bmp "ColecoDS $(VERSION);AlekMaul;http://www.portabledev.com" -d baseroot
 

@@ -45,7 +45,7 @@ extern u16 emuFps;
 extern u16 emuActFrames;
 
 extern volatile u16 vusCptVBL;                   // Video Management
-extern u8 XBuf[256*192] ALIGN(32);
+extern u8 XBuf[256*256] ALIGN(32);
 
 extern bool isFATSystem;
 extern char szFATDir[256];

@@ -60,10 +60,10 @@
 
 #include "tms9928a.h"
 
-extern u8 XBuf[256*192];
+extern u8 XBuf[256*256];
 
 //u32 lutTablehh[16][16][16];
-u32 (*lutTablehh)[16][16] = (u32*)0x068A0000;
+u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
 
 // Screen handlers and masks for VDP table address registers
 tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
@@ -83,7 +83,7 @@ u8 TMS9928A_palette[16*3] = {
   0x20,0x80,0x20,0xC0,0x40,0xA0,0xA0,0xA0,0xA0,0xE0,0xE0,0xE0,
 };
 
-u8 pVDPVidMem[0x4000];                      // VDP video memory
+u8 pVDPVidMem[0x4000]={0};                      // VDP video memory
 u16 CurLine __attribute__((section(".dtcm")));                                 // Current scanline
 u8 VDP[8] __attribute__((section(".dtcm")));
 u8 VDPStatus __attribute__((section(".dtcm")));
@@ -95,6 +95,10 @@ u8 *SprGen,*SprTab;                         // VDP tables (sprites)
 u8 ScrMode __attribute__((section(".dtcm"))); // Current screen mode
 u8 FGColor __attribute__((section(".dtcm")));
 u8 BGColor __attribute__((section(".dtcm")));                         // Colors
+
+u32 ColTabM = ~0;
+u32 ChrGenM = ~0;
+
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -545,8 +549,8 @@ void ITCM_CODE _TMS9928A_mode2(u8 uY) {
     T = ChrTab + ((uY & 0xF8) << 2);
     for(X=0;X<32;X++) {
       I=((int)*T<<3);
-      K=PGT[I];
-      BC=CLT[I];
+      K=PGT[I & ChrGenM];
+      BC=CLT[I & ColTabM];
       ptLut = (u32*)(lutTablehh[BC>>4][BC&0x0F]);
       *P++ = *(ptLut + ((K>>4)));
       *P++ = *(ptLut + ((K & 0xF)));
@@ -582,6 +586,9 @@ void ITCM_CODE RefreshLine3(u8 uY) {
     RefreshSprites(uY);
   }
 }
+
+u32 M3=0x7F;
+u32 M4=0x03;
 
 /*********************************************************************************
  * Emulator calls this function to write byte V into a VDP register R
@@ -621,6 +628,9 @@ ITCM_CODE byte Write9918(int iReg,u8 value) {
         ChrGen=pVDPVidMem+(((int)(VDP[4]&SCR[J].R4)<<11)&VRAMMask);
         SprTab=pVDPVidMem+(((int)(VDP[5]&SCR[J].R5)<<7)&VRAMMask);
         SprGen=pVDPVidMem+(((int)(VDP[6]&SCR[J].R6)<<11)&VRAMMask);
+          
+        ColTabM = ((int)(VDP[3]|~M3)<<6)|0x1C03F;
+        ChrGenM = ((int)(VDP[4]|~M4)<<11)|0x007FF;          
         ScrMode=J;
       }
       break;
@@ -629,9 +639,11 @@ ITCM_CODE byte Write9918(int iReg,u8 value) {
       break;
     case  3: 
       ColTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R3)<<6)&VRAMMask);
+      ColTabM = ((int)(value|~M3)<<6)|0x1C03F;
       break;
     case  4: 
       ChrGen=pVDPVidMem+(((int)(value&SCR[ScrMode].R4)<<11)&VRAMMask);
+      ChrGenM = ((int)(value|~M4)<<11)|0x007FF;          
       break;
     case  5: 
       SprTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R5)<<7)&VRAMMask);
