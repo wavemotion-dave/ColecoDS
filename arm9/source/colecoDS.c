@@ -35,6 +35,8 @@ u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern sn76496 sncol;
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
 
+u8 ColecoBios[8192] = {0};
+
 /*******************************************************************************/
 volatile u16 vusCptVBL;                   // Video Management
 extern u8 bFullSpeed;
@@ -422,9 +424,7 @@ u16 colecoDSInitCPU(void) {
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 
   // Load coleco Bios ROM
-  RetFct = loadrom("coleco.rom",pColecoMem, 0x2000);
-  if (RetFct == 0) loadrom("/roms/bios/coleco.rom",pColecoMem, 0x2000);
-  if (RetFct == 0) loadrom("/data/bios/coleco.rom",pColecoMem, 0x2000);
+  memcpy(pColecoMem,ColecoBios,0x2000);
   
   // Return with result
   return (RetFct);
@@ -441,11 +441,14 @@ bool ColecoBIOSFound(void)
     FILE *fp;
     
     fp = fopen("coleco.rom", "rb");
-    if (fp != NULL) {fclose(fp); return true;}        
-    fp = fopen("/roms/bios/coleco.rom", "rb");
-    if (fp != NULL) {fclose(fp); return true;}        
-    fp = fopen("/data/bios/coleco.rom", "rb");
-    if (fp != NULL) {fclose(fp); return true;}        
+    if (fp == NULL) fp = fopen("/roms/bios/coleco.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/coleco.rom", "rb");
+    if (fp != NULL)
+    {
+        fread(ColecoBios, 8192, 1, fp);
+        fclose(fp);
+        return true;   
+    }
     return false;
 }
 
@@ -486,8 +489,8 @@ int main(int argc, char **argv) {
     if (ColecoBIOSFound())
     {
         AffChaine(2,9,0,szLang[lgeEmul][13]);
-        AffChaine(2,10,0,"coleco.rom BIOS FOUND");
-        AffChaine(2,12,0,szLang[lgeEmul][14]);
+        AffChaine(2,11,0,"coleco.rom BIOS FOUND");
+        AffChaine(2,13,0,szLang[lgeEmul][14]);
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
@@ -495,7 +498,9 @@ int main(int argc, char **argv) {
     else
     {
         AffChaine(2,10,0,"ERROR: coleco.rom NOT FOUND");
-        AffChaine(2,11,0,"ERROR: CANT RUN WITHOUT BIOS");
+        AffChaine(2,12,0,"ERROR: CANT RUN WITHOUT BIOS");
+        AffChaine(2,14,0,"Put coleco.rom in same dir");
+        AffChaine(2,15,0,"as EMULATOR or /ROMS/BIOS");
         while(1) ;
     }
   
