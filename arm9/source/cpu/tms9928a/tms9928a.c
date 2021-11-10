@@ -521,6 +521,17 @@ void ITCM_CODE _TMS9928A_mode2(u8 uY) {
   unsigned int I;
   u32 *ptLut;
 
+  if (BGColor)
+  {
+     u8 r = (u8) ((float) TMS9928A_palette[BGColor*3+0]*0.121568f);
+     u8 g = (u8) ((float) TMS9928A_palette[BGColor*3+1]*0.121568f);
+     u8 b = (u8) ((float) TMS9928A_palette[BGColor*3+2]*0.121568f);
+     BG_PALETTE[0] = RGB15(r,g,b);
+  }
+  else
+  {
+      BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
+  }
   P=(u32*)(XBuf+(uY<<8));
 
   if (!ScreenON) 
@@ -564,6 +575,18 @@ void ITCM_CODE RefreshLine3(u8 uY) {
   register byte X,K,Offset;
   register byte *P,*T;
 
+  if (BGColor)
+  {
+     u8 r = (u8) ((float) TMS9928A_palette[BGColor*3+0]*0.121568f);
+     u8 g = (u8) ((float) TMS9928A_palette[BGColor*3+1]*0.121568f);
+     u8 b = (u8) ((float) TMS9928A_palette[BGColor*3+2]*0.121568f);
+     BG_PALETTE[0] = RGB15(r,g,b);
+  }
+  else
+  {
+      BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
+  }
+    
   P=XBuf+(uY<<8);
 
   if(!TMS9918_ScreenON) {
