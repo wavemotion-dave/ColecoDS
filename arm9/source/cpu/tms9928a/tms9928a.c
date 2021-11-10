@@ -62,7 +62,8 @@
 
 extern u8 XBuf[256*192];
 
-unsigned int lutTablehh[16][16][16];
+//u32 lutTablehh[16][16][16];
+u32 (*lutTablehh)[16][16] = (u32*)0x068A0000;
 
 // Screen handlers and masks for VDP table address registers
 tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
