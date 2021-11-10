@@ -222,7 +222,6 @@ ITCM_CODE void colecoDS_main (void) {
             // Ask for verification
             if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][38]) == ID_SHM_YES) { 
               memcpy(VDP,VDPInit,sizeof(VDP));   // Initialize VDP registers
-              CurLine=0;
               VKey=1;                              // VDP address latch key
               VDPStatus=0x9F;                      // VDP status register
               FGColor=BGColor=0;                   // Fore/Background color
@@ -373,11 +372,8 @@ void colecoDSInit(void) {
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 
   // Init sprites
-#ifdef NOCASH
-  nocashMessage("initEmulEngine\n");
-#endif
-  AffChaine(2,6,0,szLang[lgeEmul][7]);
 
+  AffChaine(2,6,0,szLang[lgeEmul][7]);
   AffChaine(2,7,0,szLang[lgeEmul][8]);
 
   strcpy(szFATDir,"/");
@@ -426,7 +422,6 @@ u16 colecoDSInitCPU(void) {
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 
   // Load coleco Bios ROM
-  //memcpy(pColecoMem,COLECO_ROM,0x2000);
   RetFct = loadrom("coleco.rom",pColecoMem, 0x2000);
   if (RetFct == 0) loadrom("/roms/bios/coleco.rom",pColecoMem, 0x2000);
   if (RetFct == 0) loadrom("/data/bios/coleco.rom",pColecoMem, 0x2000);
@@ -441,6 +436,18 @@ void irqVBlank(void)
   vusCptVBL++;
 }
 
+bool ColecoBIOSFound(void)
+{
+    FILE *fp;
+    
+    fp = fopen("coleco.rom", "rb");
+    if (fp != NULL) {fclose(fp); return true;}        
+    fp = fopen("/roms/bios/coleco.rom", "rb");
+    if (fp != NULL) {fclose(fp); return true;}        
+    fp = fopen("/data/bios/coleco.rom", "rb");
+    if (fp != NULL) {fclose(fp); return true;}        
+    return false;
+}
 
 /*********************************************************************************
  * Program entry point
@@ -476,11 +483,21 @@ int main(int argc, char **argv) {
     // init de l'emul et chargement des roms
     colecoDSInit();
 
-    AffChaine(2,9,0,szLang[lgeEmul][13]);
-    AffChaine(2,10,0,szLang[lgeEmul][14]);
-    while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
-    while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
-    while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
+    if (ColecoBIOSFound())
+    {
+        AffChaine(2,9,0,szLang[lgeEmul][13]);
+        AffChaine(2,10,0,"coleco.rom BIOS FOUND");
+        AffChaine(2,12,0,szLang[lgeEmul][14]);
+        while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
+        while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
+        while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
+    }
+    else
+    {
+        AffChaine(2,10,0,"ERROR: coleco.rom NOT FOUND");
+        AffChaine(2,11,0,"ERROR: CANT RUN WITHOUT BIOS");
+        while(1) ;
+    }
   
     while(1) {
       // Choose option
