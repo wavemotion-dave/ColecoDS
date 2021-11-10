@@ -480,6 +480,9 @@ int main(int argc, char **argv) {
   SetYtrigger(190); //trigger 2 lines before vsync
   irqSet(IRQ_VBLANK, irqVBlank);
   irqEnable(IRQ_VBLANK);
+    
+  vramSetBankI(VRAM_I_LCD );                // Not using this for video but 16K of faster RAM always useful!  Mapped at 0x068A0000 - Used for Custom Tile Map Buffer
+
 
   // BOUCLE INFINIE !!!!
   while(1) {
