@@ -251,9 +251,10 @@ void affListGames(u16 NoDebGame, u8 ucSel) {
 /*********************************************************************************
  * Find files (COL / ROM) available
  ********************************************************************************/
-int colecoFilescmp (const void *c1, const void *c2) {
+int colecoFilescmp (const void *c1, const void *c2) 
+{
   FICcoleco *p1 = (FICcoleco *) c1;
-  FICcoleco *p2 = (FICcoleco *) c1;
+  FICcoleco *p2 = (FICcoleco *) c2;
 
   if (p1->szName[0] == '.' && p2->szName[0] != '.')
       return -1;
@@ -266,10 +267,8 @@ int colecoFilescmp (const void *c1, const void *c2) {
   return strcasecmp (p1->szName, p2->szName);        
 }
 
-void colecoDSFindFiles(void) {
-#ifdef DEBUG
-      iprintf("colecoDSFindFiles\n");
-#endif      
+void colecoDSFindFiles(void) 
+{
   u32 uNbFile;
   char szFile[256];
   DIR *dir;
@@ -310,7 +309,15 @@ void colecoDSFindFiles(void) {
     }
   }
   closedir(dir);
-  qsort (gpFic, uNbRoms, sizeof (FICcoleco), colecoFilescmp);
+    
+  // ----------------------------------------------
+  // If we found any files, go sort the list...
+  // ----------------------------------------------
+  if (uNbRoms)
+  {
+    qsort (gpFic, uNbRoms, sizeof(FICcoleco), colecoFilescmp);
+  }
+    
 }
 
 u8 bFullSpeed = false;
