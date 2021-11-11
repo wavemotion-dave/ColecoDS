@@ -19,6 +19,11 @@ struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
 u16 previouspc,cpuirequest;
 
+extern u8 romBankMask;
+extern u8 romBuffer[];
+u8 lastBank = 199;
+
+
 ITCM_CODE u32 z80_rebaseSP(u16 address) {
   drz80.Z80SP_BASE = (unsigned int) pColecoMem;
   drz80.Z80SP      = drz80.Z80SP_BASE + address;
@@ -41,9 +46,6 @@ ITCM_CODE u8 cpu_readmem16 (u16 address) {
   return (pColecoMem[address]);
 }
 
-extern u8 romBankMask;
-extern u8 romBuffer[];
-u8 lastBank = 199;
 ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
 {
   if (address >= 0xFFC0)

@@ -44,6 +44,8 @@
 extern u16 emuFps;
 extern u16 emuActFrames;
 
+#define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
+
 extern volatile u16 vusCptVBL;                   // Video Management
 extern u8 XBuf[256*256] ALIGN(32);
 

@@ -150,7 +150,7 @@ u16 timingFrames=0;
 ITCM_CODE void colecoDS_main (void) {
   u32 keys_pressed;
   u16 iTx, iTy,iBcl;
-  u32 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, SoundNow = 0;
+  u32 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, SoundNow = 0, LoadNow=0;
   
   // Affiche le nouveau menu
   showMainMenu();
@@ -266,33 +266,43 @@ ITCM_CODE void colecoDS_main (void) {
           soundEmuPause=1;
     
           // Ask for verification
-          if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][39]) == ID_SHM_YES) { 
-            if (isFATSystem) {
-              if (showMessage(szLang[lgeEmul][40],szLang[lgeEmul][41]) == ID_SHM_YES) {
-                colecoSaveState();
-              }
-            }
-            return;
+          if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][39]) == ID_SHM_YES) 
+          { 
+              return;
           }
           showMainMenu();
           soundEmuPause=0;
         }
     
         // Test if "Save State" selected
-        if ((iTx>=1*8) && (iTy>=16*8) && (iTx<=(1+14)*8) && (iTy<19*8) ) {
-          if (isFATSystem && (!SaveNow)) {
+        if ((iTx>=1*8) && (iTy>=16*8) && (iTx<=(1+14)*8) && (iTy<19*8) ) 
+        {
+          if (!SaveNow) 
+          {
             // Stop sound
             soundEmuPause=1;
-            unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32);//ecranBas_map[24][0];
-            dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
             SaveNow = 1;
             colecoSaveState();
-            showMainMenu();
             soundEmuPause=0;
           }
         }
         else
           SaveNow = 0;
+          
+        // Test if "Load State" selected
+        if ((iTx>=1*8) && (iTy>=20*8) && (iTx<=(1+14)*8) && (iTy<23*8) ) 
+        {
+          if (!LoadNow) 
+          {
+            // Stop sound
+            soundEmuPause=1;
+            LoadNow = 1;
+            colecoLoadState();
+            soundEmuPause=0;
+          }
+        }
+        else
+          LoadNow = 0;
   
         // Test KEYPAD
         ucUN = ( ((iTx>=160) && (iTy>=80) && (iTx<=183) && (iTy<=100)) ? 0x0E: 0x00);
@@ -312,7 +322,7 @@ ITCM_CODE void colecoDS_main (void) {
         ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x05: ucUN);
       } // SCR_TOUCH
       else {
-        ResetNow=SaveNow=SoundNow = 0;
+        ResetNow=SaveNow=SoundNow=LoadNow = 0;
       }
     
       // Test touches
