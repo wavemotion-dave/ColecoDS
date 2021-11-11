@@ -461,12 +461,20 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         }
         else    // Bankswitched Cart!!
         {
-            memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000);
-            memcpy(ptr+0x4000, romBuffer, 0x4000);
-            if (iSSize == (64 * 1024)) romBankMask = 0x03;
-            if (iSSize == (128 * 1024)) romBankMask = 0x07;
-            if (iSSize == (256 * 1024)) romBankMask = 0x0F;
-            if (iSSize == (512 * 1024)) romBankMask = 0x1F;
+            if (iSSize == (64 * 1024))  // Activision PCB is different... bank0 is placed in fixed ROM
+            {
+                memcpy(ptr, romBuffer, 0x4000);                     // bank 0
+                memcpy(ptr+0x4000, romBuffer+0x4000, 0x4000);       // bank 1
+                romBankMask = 0x03;
+            }
+            else
+            {
+                memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest bank into fixed ROM
+                memcpy(ptr+0x4000, romBuffer, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 1 in there
+                if (iSSize == (128 * 1024)) romBankMask = 0x07;
+                if (iSSize == (256 * 1024)) romBankMask = 0x0F;
+                if (iSSize == (512 * 1024)) romBankMask = 0x1F;
+            }
         }
         bOK = 1;
     }

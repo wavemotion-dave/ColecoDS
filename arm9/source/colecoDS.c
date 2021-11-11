@@ -414,7 +414,6 @@ void colecoDSInit(void) {
     szFATDrv[3] = (i & 0xFF000000) >> 24;
     szFATDrv[4] = '\0';
   }
-  sprintf(szDrv,szLang[lgeEmul][12],(isFATSystem ? szFATDrv : "GBFS"));
 
   // Find the files
   colecoDSFindFiles();

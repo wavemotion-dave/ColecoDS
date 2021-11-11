@@ -56,7 +56,6 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
         memcpy(pColecoMem+0xC000, romBuffer + (address * 0x4000), 0x4000);
         lastBank = address;
       }
-      return 0x00;
   }    
   return (pColecoMem[address]);
 }
@@ -68,6 +67,15 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     if (sgm_enable)
     {
       if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
+      if (address == 0xFFFF)    // SGM can write to this address to set bank #
+      {
+          value &= romBankMask;
+          if (lastBank != value)
+          {
+            memcpy(pColecoMem+0xC000, romBuffer + (value * 0x4000), 0x4000);
+            lastBank = value;
+          }
+      }
     }
     else if((address>0x5FFF)&&(address<0x8000)) 
     {
@@ -92,7 +100,6 @@ ITCM_CODE u16 drz80MemReadW_banked(u16 addr)
           memcpy(pColecoMem+0xC000, romBuffer + (addr * 0x4000), 0x4000);
           lastBank = addr;
       }
-      return 0x0000;
   }    
   return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
 }
