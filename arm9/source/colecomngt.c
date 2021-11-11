@@ -33,10 +33,15 @@ extern void DrZ80_InitFonct(void);
 
 #define NORAM 0xFF
 
+#define COLECODS_SAVE_VER 0x0002
+
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 
 u8 sgm_enable = false;
+u8 romBuffer[512 * 1024];   // We support MegaCarts up to 512KB
+u8 romBankMask = 0x00;
+
 
 /********************************************************************************/
 
@@ -126,8 +131,6 @@ void colecoRun(void) {
 #endif
   DrZ80_Reset();
 
-  // Try to load save state file
-  colecoLoadState();
   showMainMenu();
 }
 
@@ -154,109 +157,143 @@ void colecoSetPal(void) {
 /*********************************************************************************
  * Load the current state
  ********************************************************************************/
-void colecoLoadState() {
-#ifdef NOCASH
-  nocashMessage("colecoLoadState");
-#endif
+extern u32*lutTablehh;
+void colecoLoadState() 
+{
   u32 uNbO;
   long pSvg;
   char szFile[256];
   char szCh1[128],szCh2[128];
 
-  if (isFATSystem) {
     // Init filename = romname and STA in place of ROM
     strcpy(szFile,gpFic[ucGameAct].szName);
-    szFile[strlen(szFile)-3] = 'S';
-    szFile[strlen(szFile)-2] = 'T';
-    szFile[strlen(szFile)-1] = 'A';
+    szFile[strlen(szFile)-3] = 's';
+    szFile[strlen(szFile)-2] = 'a';
+    szFile[strlen(szFile)-1] = 'v';
     FILE* handle = fopen(szFile, "r"); 
-    if (handle != NULL) {    
-      if (showMessage("Do you want to load ", "the save state file ?") == ID_SHM_YES) { 
-        sprintf(szCh1,"Loading %s ...",szFile);
-        AffChaine(16-strlen(szCh1)/2,11,6,szCh1);
-        // Load Z80 CPU
-        uNbO = fread(&drz80, sizeof(struct DrZ80), 1, handle);
-        DrZ80_InitFonct(); //DRZ80 saves a lot of binary code dependent stuff, regenerate it
+    if (handle != NULL) 
+    {    
+         strcpy(szCh1,"LOADING...");
+         AffChaine(19,5,0,szCh1);
+       
+        // Read Version
+        u16 save_ver = 0xBEEF;
+        uNbO = fread(&save_ver, sizeof(u16), 1, handle);
+        
+        if (save_ver == COLECODS_SAVE_VER)
+        {
+            // Load Z80 CPU
+            uNbO = fread(&drz80, sizeof(struct DrZ80), 1, handle);
+            DrZ80_InitFonct(); //DRZ80 saves a lot of binary code dependent stuff, regenerate it
 
-        if (uNbO) uNbO = fread(pColecoMem+0x06000, 0x2000,1, handle); 
-        //if (uNbO) uNbO = FAT_fread(pColecoMem, 0x10000,1, handle); 
-        // Load VDP
-        if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 
-        if (uNbO) uNbO = fread(&VKey, sizeof(VKey),1, handle); 
-        if (uNbO) uNbO = fread(&VDPStatus, sizeof(VDPStatus),1, handle); 
-        if (uNbO) uNbO = fread(&FGColor, sizeof(FGColor),1, handle); 
-        if (uNbO) uNbO = fread(&BGColor, sizeof(BGColor),1, handle); 
-        if (uNbO) uNbO = fread(&ScrMode, sizeof(ScrMode),1, handle); 
-        if (uNbO) uNbO = fread(&VDPClatch, sizeof(VDPClatch),1, handle); 
-        if (uNbO) uNbO = fread(&VAddr, sizeof(VAddr),1, handle); 
-        if (uNbO) uNbO = fread(&WKey, sizeof(WKey),1, handle); 
-        if (uNbO) uNbO = fread(pVDPVidMem, 0x4000,1, handle); 
-        if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
-        ChrGen = pSvg + pVDPVidMem;
-        if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
-        ChrTab = pSvg + pVDPVidMem;
-        if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
-        ColTab = pSvg + pVDPVidMem;
-        if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
-        SprGen = pSvg + pVDPVidMem;
-        if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
-        SprTab = pSvg + pVDPVidMem;
-        // Load PSG
-//        if (uNbO) uNbO = fread(&PSG, sizeof(SN76489),1, handle); 
-//        if (uNbO) uNbO = fread(CH, sizeof(CH),1, handle); 
+            // Load Coleco Memory (yes, all of it!)
+            if (uNbO) uNbO = fread(pColecoMem, 0x10000,1, handle); 
+
+            // Load XBuf video buffer (yes, all of it!)
+            if (uNbO) uNbO = fread(XBuf, sizeof(XBuf),1, handle); 
+
+            // Load look-up-table
+            if (uNbO) uNbO = fread(lutTablehh, 16*1024,1, handle);         
+
+            // Load VDP
+            if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 
+            if (uNbO) uNbO = fread(&VKey, sizeof(VKey),1, handle); 
+            if (uNbO) uNbO = fread(&VDPStatus, sizeof(VDPStatus),1, handle); 
+            if (uNbO) uNbO = fread(&FGColor, sizeof(FGColor),1, handle); 
+            if (uNbO) uNbO = fread(&BGColor, sizeof(BGColor),1, handle); 
+            if (uNbO) uNbO = fread(&ScrMode, sizeof(ScrMode),1, handle); 
+            if (uNbO) uNbO = fread(&VDPClatch, sizeof(VDPClatch),1, handle); 
+            if (uNbO) uNbO = fread(&VAddr, sizeof(VAddr),1, handle); 
+            if (uNbO) uNbO = fread(&WKey, sizeof(WKey),1, handle); 
+            if (uNbO) uNbO = fread(&CurLine, sizeof(CurLine),1, handle); 
+            if (uNbO) uNbO = fread(&ColTabM, sizeof(ColTabM),1, handle); 
+            if (uNbO) uNbO = fread(&ChrGenM, sizeof(ChrGenM),1, handle); 
+            
+            if (uNbO) uNbO = fread(pVDPVidMem, 0x4000,1, handle); 
+            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            ChrGen = pSvg + pVDPVidMem;
+            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            ChrTab = pSvg + pVDPVidMem;
+            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            ColTab = pSvg + pVDPVidMem;
+            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            SprGen = pSvg + pVDPVidMem;
+            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            SprTab = pSvg + pVDPVidMem;
+            
+            // Load PSG
+            if (uNbO) uNbO = fread(&sncol, sizeof(sncol),1, handle); 
+            if (uNbO) uNbO = fread(freqtablcol, sizeof(freqtablcol),1, handle); 
+            
+              if (BGColor)
+              {
+                 u8 r = (u8) ((float) TMS9928A_palette[BGColor*3+0]*0.121568f);
+                 u8 g = (u8) ((float) TMS9928A_palette[BGColor*3+1]*0.121568f);
+                 u8 b = (u8) ((float) TMS9928A_palette[BGColor*3+2]*0.121568f);
+                 BG_PALETTE[0] = RGB15(r,g,b);
+              }
+              else
+              {
+                  BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
+              }
+            
+            // Restore the screen as it was...
+            dmaCopyWords(2, (u32*)XBuf, (u32*)pVidFlipBuf, 256*192);
+            
+            extern u8 lastBank;
+            lastBank = 199;  // Force load of bank if needed
+        }
+        else uNbO = 0;
+        
         if (uNbO) 
-          strcpy(szCh2,"Load OK !");
+          strcpy(szCh2,"OK ");
         else
-          strcpy(szCh2,"Error loading data ...");
+          strcpy(szCh2,"ERR");
+         AffChaine(28,5,0,szCh2);
+        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+        AffChaine(18,5,0,"              ");  
       }
-      else {
-        strcpy(szCh2,"Error opening STA file ...");
-      }
-      AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
-      strcpy(szCh1,(lgeEmul == 0 ? "TOUCHER L'ECRAN": "TOUCH SCREEN"));
-      AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
-       AffChaine(16-strlen("                        ")/2,14,6,"                        ");
-      AffChaine(16-strlen(szCh1)/2,14,6,szCh1);
-      while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
-      while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
-      while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
-    } // if (showMessage("Do you want to load ", 
+
     fclose(handle);
-  } // if (isFATSystem)
 }
 
 /*********************************************************************************
  * Save the current state
  ********************************************************************************/
-void colecoSaveState() {
+void colecoSaveState() 
+{
   u32 uNbO;
   long pSvg;
   char szFile[256];
   char szCh1[128],szCh2[128];
 
-#ifdef DEBUG
-    iprintf("colecoSaveState\n");
-#endif
   // Init filename = romname and STA in place of ROM
   strcpy(szFile,gpFic[ucGameAct].szName);
-  szFile[strlen(szFile)-3] = 'S';
-  szFile[strlen(szFile)-2] = 'T';
-  szFile[strlen(szFile)-1] = 'A';
-  sprintf(szCh1,"Saving %s ...",szFile);
-#ifdef DEBUG
-  iprintf("%s\n",szCh1);
-#endif
-  AffChaine(16-strlen(szCh1)/2,11,6,szCh1);
+  szFile[strlen(szFile)-3] = 's';
+  szFile[strlen(szFile)-2] = 'a';
+  szFile[strlen(szFile)-1] = 'v';
+  sprintf(szCh1,"SAVING...");
+  AffChaine(19,5,0,szCh1);
   
-  
-  chdir(szFATDir);
   FILE *handle = fopen(szFile, "w+");  
-  if (handle != NULL) {
+  if (handle != NULL) 
+  {
+    // Write Version
+    u16 save_ver = COLECODS_SAVE_VER;
+    uNbO = fwrite(&save_ver, sizeof(u16), 1, handle);
+      
     // Write Z80 CPU
     uNbO = fwrite(&drz80, sizeof(struct DrZ80), 1, handle);
 
-    //if (uNbO) uNbO = FAT_fwrite(pColecoMem, 0x10000,1, handle); 
-    if (uNbO) uNbO = fwrite(pColecoMem+0x06000, 0x2000,1, handle); 
+    // Save Coleco Memory (yes, all of it!)
+    if (uNbO) uNbO = fwrite(pColecoMem, 0x10000,1, handle); 
+      
+    // Write XBuf Video Buffer (yes all of it!)
+    if (uNbO) uNbO = fwrite(XBuf, sizeof(XBuf),1, handle); 
+      
+    // Write look-up-table
+    if (uNbO) uNbO = fwrite(lutTablehh, 16*1024,1, handle);      
+
     // Write VDP
     if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
     if (uNbO) uNbO = fwrite(&VKey, sizeof(VKey),1, handle); 
@@ -267,6 +304,9 @@ void colecoSaveState() {
     if (uNbO) uNbO = fwrite(&VDPClatch, sizeof(VDPClatch),1, handle); 
     if (uNbO) uNbO = fwrite(&VAddr, sizeof(VAddr),1, handle); 
     if (uNbO) uNbO = fwrite(&WKey, sizeof(WKey),1, handle); 
+    if (uNbO) uNbO = fwrite(&CurLine, sizeof(CurLine),1, handle); 
+    if (uNbO) uNbO = fwrite(&ColTabM, sizeof(ColTabM),1, handle); 
+    if (uNbO) uNbO = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle); 
     if (uNbO) uNbO = fwrite(pVDPVidMem, 0x4000,1, handle); 
     pSvg = ChrGen-pVDPVidMem;
     if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
@@ -278,26 +318,23 @@ void colecoSaveState() {
     if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
     pSvg = SprTab-pVDPVidMem;
     if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+
     // Write PSG
-//    if (uNbO) uNbO = fwrite(&PSG, sizeof(SN76489),1, handle); 
-//    if (uNbO) uNbO = fwrite(CH, sizeof(CH),1, handle); 
+    if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
+    if (uNbO) uNbO = fwrite(freqtablcol, sizeof(freqtablcol),1, handle); 
+      
     if (uNbO) 
-      strcpy(szCh2,"Save OK !");
+      strcpy(szCh2,"OK ");
     else
-      strcpy(szCh2,"Error saving data ...");
+      strcpy(szCh2,"ERR");
+     AffChaine(28,5,0,szCh2);
+    WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+    AffChaine(18,5,0,"              ");  
   }
   else {
     strcpy(szCh2,"Error opening STA file ...");
   }
   fclose(handle);
-
-  AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
-  strcpy(szCh1,(lgeEmul == 0 ? "TOUCHER L'ECRAN": "TOUCH SCREEN"));
-  AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
-  AffChaine(16-strlen(szCh1)/2,14,6,szCh1);
-  while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
-  while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
-  while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
 }
 
 /*********************************************************************************
@@ -404,8 +441,6 @@ u8 colecoCartVerify(const u8 *cartData) {
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
-u8 romBuffer[512 * 1024];   // We support MegaCarts up to 512KB
-u8 romBankMask = 0x00;
 u8 loadrom(const char *path,u8 * ptr, int nmemb) 
 {
   u8 bOK = 0;

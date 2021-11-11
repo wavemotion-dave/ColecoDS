@@ -69,6 +69,7 @@ extern u8 *ChrGen,*ChrTab,*ColTab;             // VDP tables (screens)
 extern u8 *SprGen,*SprTab;                     // VDP tables (sprites)
 extern u8 ScrMode;                             // Current screen mode
 extern u8 FGColor,BGColor;                     // Colors
+extern u32 ColTabM, ChrGenM;
 
 extern u32 text_counter;
 
