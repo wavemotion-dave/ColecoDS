@@ -404,7 +404,7 @@ u8 colecoCartVerify(const u8 *cartData) {
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
-u8 romBuffer[256 * 1024];   // We support MegaCarts up to 256 KB
+u8 romBuffer[512 * 1024];   // We support MegaCarts up to 512KB
 u8 romBankMask = 0x00;
 u8 loadrom(const char *path,u8 * ptr, int nmemb) 
 {
@@ -416,7 +416,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     fseek(handle, 0, SEEK_END);
     int iSSize = ftell(handle);
     fseek(handle, 0, SEEK_SET);
-    if(iSSize <= (256 * 1024))  // Max size cart is 256KB - that's pretty huge...
+    if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
     {
         fread((void*) romBuffer, iSSize, 1, handle); 
         if (iSSize <= (32*1024))
@@ -431,6 +431,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             if (iSSize == (64 * 1024)) romBankMask = 0x03;
             if (iSSize == (128 * 1024)) romBankMask = 0x07;
             if (iSSize == (256 * 1024)) romBankMask = 0x0F;
+            if (iSSize == (512 * 1024)) romBankMask = 0x1F;
         }
         bOK = 1;
     }
