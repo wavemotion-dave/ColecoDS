@@ -43,12 +43,17 @@ ITCM_CODE u8 cpu_readmem16 (u16 address) {
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
+u8 lastBank = 199;
 ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
 {
   if (address >= 0xFFC0)
   {
       address &= romBankMask;
-      memcpy(pColecoMem+0xC000, romBuffer + (address * 0x4000), 0x4000);
+      if (lastBank != address)
+      {
+        memcpy(pColecoMem+0xC000, romBuffer + (address * 0x4000), 0x4000);
+        lastBank = address;
+      }
       return 0x00;
   }    
   return (pColecoMem[address]);
@@ -80,7 +85,11 @@ ITCM_CODE u16 drz80MemReadW_banked(u16 addr)
   if (addr >= 0xFFC0)
   {
       addr &= romBankMask;
-      memcpy(pColecoMem+0xC000, romBuffer + (addr * 0x4000), 0x4000);
+      if (lastBank != addr)
+      {
+          memcpy(pColecoMem+0xC000, romBuffer + (addr * 0x4000), 0x4000);
+          lastBank = addr;
+      }
       return 0x0000;
   }    
   return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
