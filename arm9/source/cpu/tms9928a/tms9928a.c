@@ -750,7 +750,7 @@ ITCM_CODE byte RdCtrl9918(void) {
 
   J = VDPStatus;
   VDPStatus&= TMS9918_STAT_5THNUM;
-  VKey   = 1;
+  //VKey   = 1;
   return(J);
 }
 
