@@ -233,16 +233,19 @@ void CheckSprites(void) {
 void ITCM_CODE RefreshSprites(register byte Y) {
   static const byte SprHeights[4] = { 8,16,16,32 };
   byte OH,IH,*PT,*AT;
-  byte *P,*T,C;
+  byte *P,*T,C,FifthSprite;
   signed int L,K;
   unsigned int M;
   unsigned short *POPT, COPT;
   
+  VDPStatus &= ~(TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);    
+    
   T  = XBuf+256*Y;
   OH = SprHeights[VDP[1]&0x03];
   IH = SprHeights[VDP[1]&0x02];
   AT = SprTab-4;
   C  = 8;   // Was 4... allow 8 sprites on a line
+  FifthSprite = 4;
   M  = 0;
   L  = 0;
 
@@ -253,7 +256,12 @@ void ITCM_CODE RefreshSprites(register byte Y) {
     if(K>256-IH) K-=256; /* Y coordinate may be negative */
 
     /* Mark all valid sprites with 1s, break at MaxSprites */
-    if((Y>K)&&(Y<=K+OH)) { M|=1;if(!--C) break; }
+    if((Y>K)&&(Y<=K+OH)) 
+    { 
+        M|=1;
+        if (!--FifthSprite) VDPStatus |= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
+        if(!--C) break; 
+    }
   }
   while(L<32);
 
@@ -749,8 +757,7 @@ ITCM_CODE byte RdCtrl9918(void) {
   register byte J;
 
   J = VDPStatus;
-  VDPStatus&= TMS9918_STAT_5THNUM;
-  //VKey   = 1;
+  VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
   return(J);
 }
 

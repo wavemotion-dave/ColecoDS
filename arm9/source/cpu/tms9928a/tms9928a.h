@@ -20,8 +20,9 @@
 #define TMS9918_REG1_BIGSPR 0x01 /* 1: Magnify sprites x2    */
 
 #define TMS9918_STAT_VBLANK 0x80 /* 1: VBlank has occured    */
-#define TMS9918_STAT_5THNUM 0x1F /* Number of the 5th sprite */
+#define TMS9918_STAT_5THSPR 0x40 /* 1: 5th Sprite Detected   */
 #define TMS9918_STAT_OVRLAP 0x20 /* 1: Sprites overlap       */
+#define TMS9918_STAT_5THNUM 0x1F /* Number of the 5th sprite */
 
 #define TMS9918_LINES       262
 #define TMS9918_START_LINE  (3+13+27)
