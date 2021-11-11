@@ -8,9 +8,9 @@
 	.global SN76496_w
 	.global SN76496_GG_w
 								;@ These values are for the SMS/GG/MD vdp sound.
-.equ NSEED_SMS,	0x8000			;@ Noise Seed
-.equ WFEED_SMS,	0x9000			;@ White Noise Feedback
-.equ PFEED_SMS,	0x8000			;@ Periodic Noise Feedback
+.equ NSEED_SMS,	0x2000			;@ Noise Seed
+.equ WFEED_SMS,	0x3000			;@ White Noise Feedback
+.equ PFEED_SMS,	0x2000			;@ Periodic Noise Feedback
 
 								;@ These values are for the SN76496 sound chip.
 .equ NSEED_SN,	0x4000			;@ Noise Seed
