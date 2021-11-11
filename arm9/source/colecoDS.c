@@ -101,10 +101,12 @@ void showMainMenu(void) {
 
 ITCM_CODE void VsoundHandler(void)
 {
+    u16 zzz[8];
     if (soundEmuPause) {*aptr=0; return;}
     sncol.mixlength=2;
-    sncol.pcmptr=(u8*)aptr;
+    sncol.pcmptr=(u8*)zzz;
     SN76496_mixer(&sncol);
+    *aptr = (zzz[0] << 16) | zzz[1];
 }
 
 //---------------------------------------------------------------------------------
@@ -133,7 +135,7 @@ void dsInstallSoundEmuFIFO(void)
   }
     
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(SN76FREQ);
+  TIMER2_DATA = TIMER_FREQ(23000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);

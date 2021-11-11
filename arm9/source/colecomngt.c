@@ -98,9 +98,9 @@ u8 colecoInit(char *szGame) {
     JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
 
     SN76496_set_mixrate(&sncol,1);
-    SN76496_set_frequency(&sncol,7159090/2);
+    SN76496_set_frequency(&sncol,TMS9918_BASE);
     SN76496_init(&sncol,(u16 *) &freqtablcol);
-    SN76496_reset(&sncol,1);
+    SN76496_reset(&sncol,0);
 
     sgm_enable = false;
       
