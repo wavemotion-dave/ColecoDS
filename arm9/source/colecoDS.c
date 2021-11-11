@@ -171,11 +171,21 @@ ITCM_CODE void colecoDS_main (void) {
         // -------------------------------------------------------------
         if (TIMER1_DATA >= 32728)   // 1000MS (1 sec)
         {
+            char szChai[4];
+            
             TIMER1_CR = 0;
             TIMER1_DATA = 0;
             TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
             emuFps = emuActFrames;
             if (emuFps == 61) emuFps=60;
+            
+            if (emuFps/100) szChai[0] = '0' + emuFps/100;
+            else szChai[0] = ' ';
+            szChai[1] = '0' + (emuFps%100) / 10;
+            szChai[2] = '0' + (emuFps%100) % 10;
+            szChai[3] = 0;
+            AffChaine(29,0,6,szChai);
+           
             emuActFrames = 0;
         }
         emuActFrames++;
