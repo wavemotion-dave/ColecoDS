@@ -100,7 +100,7 @@ u8 colecoInit(char *szGame) {
     SN76496_set_mixrate(&sncol,1);
     SN76496_set_frequency(&sncol,7159090/2);
     SN76496_init(&sncol,(u16 *) &freqtablcol);
-    SN76496_reset(&sncol,0);
+    SN76496_reset(&sncol,1);
 
     sgm_enable = false;
       
@@ -490,10 +490,6 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
 /** given I/O port.                                         **/
 /*************************************************************/
 ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) {
-#ifdef DEBUG
-  //iprintf("cpu_writeport16 %d %d\n",Port,Value);
-#endif
-
   //JGD 18/04/2007 
   Port &= 0x00FF;
 
@@ -510,6 +506,60 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   else if (Port == 0x51)
   {
       sgm_reg[sgm_idx]=Value;
+#if 0
+//+--+--+--+--+--+--+--+--+
+//|1 |R2|R1|R0|D3|D2|D1|D0|
+//+--+--+--+--+--+--+--+--+
+//
+//1: This denotes that this is a control word
+//R2-R0 the register number:
+//000 Tone 1 Frequency
+//001 Tone 1 Volume
+//010 Tone 2 Frequency
+//011 Tone 2 Volume
+//100 Tone 3 Frequency
+//101 Tone 3 Volume
+//110 Noise Control
+//111 Noise Volume      
+      switch (sgm_idx)
+      {
+          case 0x00:
+              SN76496_w(&sncol, 0x80 | ((sgm_reg[0x01]>>2)&0xF));
+              SN76496_w(&sncol, sgm_reg[0x00]);
+              break;
+          case 0x01:
+              SN76496_w(&sncol, 0x80 | ((sgm_reg[0x01]>>2)&0xF));
+              SN76496_w(&sncol, sgm_reg[0x00]);
+              break;
+          case 0x02:
+              SN76496_w(&sncol, 0xA0 | ((sgm_reg[0x03]>>2)&0xF));
+              SN76496_w(&sncol, sgm_reg[0x02]);
+              break;
+          case 0x03:
+              SN76496_w(&sncol, 0xA0 | ((sgm_reg[0x03]>>2)&0xF));
+              SN76496_w(&sncol, sgm_reg[0x02]);
+              break;
+          case 0x04:
+              SN76496_w(&sncol, 0xC0 | ((sgm_reg[0x05]>>2)&0xF));
+              SN76496_w(&sncol, sgm_reg[0x04]);
+              break;
+          case 0x05:
+              SN76496_w(&sncol, 0xC0 | ((sgm_reg[0x05]>>2)&0xF));
+              SN76496_w(&sncol, sgm_reg[0x04]);
+              break;
+          case 0x06:
+              break;
+          case 0x08:
+              SN76496_w(&sncol, 0x90 | ((Value>>1) & 0xF));
+              break;
+          case 0x09:
+              SN76496_w(&sncol, 0xB0 | ((Value>>1) & 0xF));
+              break;
+          case 0x0A:
+              SN76496_w(&sncol, 0xD0 | ((Value>>1) & 0xF));
+              break;
+      }
+#endif      
       return;
   }
   else if (Port == 0x7F)
@@ -551,41 +601,20 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 /*************************************************************/
 ITCM_CODE u32 LoopZ80() 
 {
-  char szChai[10];
-  
   cpuirequest=0;
+  
+  // Execute 1 scanline worth of CPU
   DrZ80_execute(TMS9918_LINE);
 
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
   
-  // Drop out unless end of screen is reached 
-  if(CurLine!=TMS9918_END_LINE) { 
-    if (cpuirequest==Z80_NMI_INT ) {
-      Z80_Cause_Interrupt(Z80_NMI_INT);
-    }
-    else
-      Z80_Clear_Pending_Interrupts();
-    return 1;
-  }
-
-  static u16 dampen=0;
-  if (++dampen > 60)
-  {
-    szChai[0] = '0' + emuFps/100;
-    szChai[1] = '0' + (emuFps%100) / 10;
-    szChai[2] = '0' + (emuFps%100) % 10;
-    szChai[3] = 0;
-    AffChaine(29,0,6,szChai);
-    dampen=0;
-  }
-
   // Generate VDP interrupt
-  if (cpuirequest==Z80_NMI_INT ) {
+  if (cpuirequest==Z80_NMI_INT ) 
     Z80_Cause_Interrupt(Z80_NMI_INT);
-  }
   else
     Z80_Clear_Pending_Interrupts();
-  
-  return 0;
+    
+  // Drop out unless end of screen is reached 
+  return (CurLine == TMS9918_END_LINE) ? 0:1;
 }
