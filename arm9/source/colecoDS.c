@@ -53,8 +53,6 @@ bool isFATSystem=false;
 char szFATDir[256];
 char szDrv[15];
 
-u32 uSndAct;                      // Actual sound divider
-
 unsigned int soundEmuPause=1;
 
 int bg0, bg1, bg0b,bg1b;
@@ -85,18 +83,9 @@ u8 XBuf[256*256] ALIGN(32) = {0}; // Really it's only 256x192
 //*****************************************************************************
 // Boucle principale d'execution
 //*****************************************************************************
-void showMainMenu(void) {
-  u32 bBcl;
-  
-  u16 *pusEcran=(u16*) bgGetMapPtr(bg1b);
+void showMainMenu(void) 
+{
   dmaCopy((void*) bgGetMapPtr(bg0b),(void*) bgGetMapPtr(bg1b),32*24*2);
-
-  for (bBcl=0;bBcl<8;bBcl++) {
-    if ((8-(uSndAct-1)*2)>bBcl) {
-      *(pusEcran + 7 + bBcl + (6<<5)) =*((bgGetMapPtr(bg0b)+28*32+bBcl)); //*((u16*) &ecranBasMap[28][bBcl] );
-      *(pusEcran + 7 + bBcl + (7<<5)) =*((bgGetMapPtr(bg0b)+29*32+bBcl)); // *((u16*) &ecranBasMap[29][bBcl] );
-    }
-  }
 }
 
 ITCM_CODE void VsoundHandler(void)
@@ -150,7 +139,7 @@ u16 timingFrames=0;
 ITCM_CODE void colecoDS_main (void) {
   u32 keys_pressed;
   u16 iTx, iTy,iBcl;
-  u32 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, SoundNow = 0, LoadNow=0;
+  u32 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, LoadNow = 0;
   
   // Affiche le nouveau menu
   showMainMenu();
@@ -214,20 +203,9 @@ ITCM_CODE void colecoDS_main (void) {
         touchRead(&touch);
         iTx = touch.px;
         iTy = touch.py;
-        // Test if "Adjust sound" selected
-        if ((iTx>=6*8) && (iTy>=6*8) && (iTx<=15*8) && (iTy<=8*8) ) {
-          if (!SoundNow) {
-            SoundNow=1;
-            uSndAct = (uSndAct == 4 ? 1 : uSndAct + 1);
-            showMainMenu();
-            fifoSendValue32(FIFO_USER_01,(1<<16) | (127-(uSndAct-1)*24) | SOUND_SET_VOLUME);
-          }
-        }
-        else
-          SoundNow = 0;
     
         // Test if "Reset Game" selected
-        if ((iTx>=1*8) && (iTy>=9*8) && (iTx<=(1+14)*8) && (iTy<11*8) ) {
+        if ((iTx>=1*8) && (iTy>=6*8) && (iTx<=(1+14)*8) && (iTy<9*8) ) {
           if (!ResetNow) {
             ResetNow = 1;
             // Stop sound
@@ -261,7 +239,7 @@ ITCM_CODE void colecoDS_main (void) {
         }
         
         // Test if "End Game" selected
-        if ((iTx>=1*8) && (iTy>=12*8) && (iTx<=(1+14)*8) && (iTy<15*8) ) {
+        if ((iTx>=1*8) && (iTy>=9*8) && (iTx<=(1+14)*8) && (iTy<12*8) ) {
           // Stop sound
           soundEmuPause=1;
     
@@ -273,7 +251,15 @@ ITCM_CODE void colecoDS_main (void) {
           showMainMenu();
           soundEmuPause=0;
         }
-    
+
+        // Test if "High Score" selected
+        if ((iTx>=1*8) && (iTy>=12*8) && (iTx<=(1+14)*8) && (iTy<15*8) ) {
+          // Stop sound
+          soundEmuPause=1;
+          //TODO: Add High Score Support here...    
+          soundEmuPause=0;
+        }
+          
         // Test if "Save State" selected
         if ((iTx>=1*8) && (iTy>=16*8) && (iTx<=(1+14)*8) && (iTy<19*8) ) 
         {
@@ -322,7 +308,7 @@ ITCM_CODE void colecoDS_main (void) {
         ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x05: ucUN);
       } // SCR_TOUCH
       else {
-        ResetNow=SaveNow=SoundNow=LoadNow = 0;
+        ResetNow=SaveNow=LoadNow = 0;
       }
     
       // Test touches
@@ -355,7 +341,6 @@ ITCM_CODE void colecoDS_main (void) {
  * Init EMul
  ********************************************************************************/
 void colecoDSInit(void) {
-  char szFATDrv[5];
 
   // Get the personnals infos (language, name)
   lgeEmul = (PersonalData->language == 2 ? 0 : 1);
@@ -403,18 +388,6 @@ void colecoDSInit(void) {
   strcpy(szFATDir,"/");
   if (isFATSystem) chdir(szFATDir);
     
-  // Init drives
-  if (isFATSystem) {
-    struct stat st;
-    stat("/",&st);
-    int i = st.st_dev;//disc_HostType();
-    szFATDrv[0] = (i & 0x000000FF) >> 0;
-    szFATDrv[1] = (i & 0x0000FF00) >> 8;
-    szFATDrv[2] = (i & 0x00FF0000) >> 16;
-    szFATDrv[3] = (i & 0xFF000000) >> 24;
-    szFATDrv[4] = '\0';
-  }
-
   // Find the files
   colecoDSFindFiles();
 }
@@ -476,7 +449,9 @@ bool ColecoBIOSFound(void)
 /*********************************************************************************
  * Program entry point
  ********************************************************************************/
-int main(int argc, char **argv) {
+char initial_file[256];
+int main(int argc, char **argv) 
+{
   // Init sound
   consoleDemoInit();
   soundEnable();
@@ -505,6 +480,27 @@ int main(int argc, char **argv) {
   vramSetBankI(VRAM_I_LCD );                // Not using this for video but 16K of faster RAM always useful!  Mapped at 0x068A0000 - Used for Custom Tile Map Buffer
 
 
+  // Handle command line argument... mostly for TWL++
+  if (argc > 1) 
+  {
+      // We want to start in the directory where the file is being launched...
+      if (strchr(argv[1], '/') != NULL)
+      {
+          char path[128];
+          strcpy(path, argv[1]);
+          char *ptr = &path[strlen(path)-1];
+          while (*ptr != '/') ptr--;
+          ptr++; 
+          strcpy(initial_file, ptr);
+          *ptr=0;
+          chdir(path);
+      }
+      else
+      {
+          strcpy(initial_file, argv[1]);
+      }
+  } else initial_file[0]=0; // No file passed on command line...
+    
   // BOUCLE INFINIE !!!!
   while(1) {
     // init de l'emul et chargement des roms
@@ -528,9 +524,19 @@ int main(int argc, char **argv) {
         while(1) ;
     }
   
-    while(1) {
+    while(1) 
+    {
       // Choose option
-      colecoDSChangeOptions();
+      if (initial_file[0] != 0)
+      {
+          ucGameAct=0;
+          strcpy(gpFic[ucGameAct].szName, initial_file);
+          initial_file[0] = 0; // No more initial file...
+      }
+      else 
+      {
+          colecoDSChangeOptions();
+      }
 
       // Run Machine
       colecoDSInitCPU();
