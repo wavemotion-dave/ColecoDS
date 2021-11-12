@@ -11,7 +11,7 @@ export TARGET		:=	ColecoDS
 export TOPDIR		:=	$(CURDIR)
 export VERSION		:=  0.3
 
-ICON 		:= -b $(CURDIR)/logo.bmp "ColecoDS $(VERSION);AlekMaul;http://www.portabledev.com" -d baseroot
+ICON 		:= -b $(CURDIR)/logo.bmp "ColecoDS $(VERSION);wavemotion-dave;https://github.com/wavemotion-dave/ColecoDS" -d baseroot
 
 #---------------------------------------------------------------------------------
 # path to tools - this can be deleted if you set the path in windows

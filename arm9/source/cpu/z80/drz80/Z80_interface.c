@@ -50,11 +50,15 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 {
   if (address >= 0xFFC0)
   {
-      address &= romBankMask;
-      if (lastBank != address)
+      u16 bank = 0;
+      if (romBankMask == 0x03) // Activision PCB different
+         bank = (address>>4)&romBankMask;
+      else bank = address & romBankMask;
+      
+      if (lastBank != bank)
       {
-        memcpy(pColecoMem+0xC000, romBuffer + (address * 0x4000), 0x4000);
-        lastBank = address;
+        memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+        lastBank = bank;
       }
   }    
   return (pColecoMem[address]);
@@ -69,11 +73,11 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
       if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
       if (address == 0xFFFF)    // SGM can write to this address to set bank #
       {
-          value &= romBankMask;
-          if (lastBank != value)
+          u16 bank = value & romBankMask;
+          if (lastBank != bank)
           {
-            memcpy(pColecoMem+0xC000, romBuffer + (value * 0x4000), 0x4000);
-            lastBank = value;
+            memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+            lastBank = bank;
           }
       }
     }
@@ -94,11 +98,14 @@ ITCM_CODE u16 drz80MemReadW_banked(u16 addr)
 {
   if (addr >= 0xFFC0)
   {
-      addr &= romBankMask;
-      if (lastBank != addr)
+      u16 bank = 0;
+      if (romBankMask == 0x03) // Activision PCB different
+         bank = (addr>>4)&romBankMask;
+      else bank = addr & romBankMask;
+      if (lastBank != bank)
       {
-          memcpy(pColecoMem+0xC000, romBuffer + (addr * 0x4000), 0x4000);
-          lastBank = addr;
+          memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+          lastBank = bank;
       }
   }    
   return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
