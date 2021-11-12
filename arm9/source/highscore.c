@@ -244,7 +244,7 @@ void show_scores(short foundIdx, bool bShowLegend)
     
     if (bShowLegend)
     {
-        dsPrintValue(2,15,0, (char*)"                             ");
+        dsPrintValue(2,16,0, (char*)"                             ");
         dsPrintValue(2,18,0, (char*)"PRESS X FOR NEW HI SCORE     ");
         dsPrintValue(2,19,0, (char*)"PRESS Y FOR NOTES/OPTIONS    ");
         dsPrintValue(2,20,0, (char*)"PRESS B TO EXIT              ");
@@ -451,7 +451,7 @@ void highscore_entry(short foundIdx, u32 crc)
             else
                 hs_line[16+entry_idx] = '_';
         }
-        dsPrintValue(3,15, 0, (char*)hs_line);
+        dsPrintValue(3,16, 0, (char*)hs_line);
     }
     
     show_scores(foundIdx, true);
