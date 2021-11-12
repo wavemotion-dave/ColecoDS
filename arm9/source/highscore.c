@@ -451,7 +451,7 @@ void highscore_entry(short foundIdx, u32 crc)
             else
                 hs_line[16+entry_idx] = '_';
         }
-        dsPrintValue(3,16, 0, (char*)hs_line);
+        dsPrintValue(3,15, 0, (char*)hs_line);
     }
     
     show_scores(foundIdx, true);
