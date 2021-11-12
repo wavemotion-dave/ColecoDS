@@ -672,40 +672,6 @@ void colecoDSChangeTouches(void) {
   //forceDMA(&ecranUp_map[24][0],(void*) SCREEN_BASE_BLOCK(31),32*24*2);
 }
 
-//*****************************************************************************
-// Affiche l'ecran du rapport de compatibilite du jeu
-//*****************************************************************************
-void showMenuReport(u32 uY, u8 JeuJouable, u8 JeuVitesse,u8 JeuGfx,u8 JeuSon) {
-  char szName[64];
-   char szSize[12][24] = { 
-   " PLAYABLE : OUI        ",                // 46
-   " PLAYABLE : NON        ",                // 47
-   "    SPEED : SLOW       ",        // 48
-   "    SPEED : TOO FAST   ",        // 49
-   "    SPEED : OK         ",        // 50
-   " GRAPHICS : OK         ",         // 51
-   " GRAPHICS : SPRITES PB ",         // 52
-   " GRAPHICS : PALETTE PB ",         // 53
-   "    SOUND : NONE       ",        // 54
-   "    SOUND : TOO FAST   ",        // 55
-   "    SOUND : TOO SLOW   ",        // 56
-   "    SOUND : OK         ",        // 57
-  };
-
-  AffChaine(16-strlen("=* REPORT *=")/2,5,0,"=* REPORT *=");
-  AffChaine(16-strlen("SEND COMPATIBILITY REPORT")/2,6,0,"SEND COMPATIBILITY REPORT");
-  AffChaine(16-strlen("ABOUT THIS GAME WITH WIFI")/2,7,0,"ABOUT THIS GAME WITH WIFI");
-  AffChaine(2, 8,0 ,"GAME:");
-  strcpy(szName,gpFic[ucGameAct].szName);
-  if (strlen(szName)>28) szName[28]='\0';
-  AffChaine(2, 9,0,szName);
-  AffChaine(2,11,(uY==11 ? 2 : 0),szSize[0+JeuJouable]);
-  AffChaine(2,13,(uY==13 ? 2 : 0),szSize[2+JeuVitesse]);
-  AffChaine(2,15,(uY==15 ? 2 : 0),szSize[5+JeuGfx]);
-  AffChaine(2,17,(uY==17 ? 2 : 0),szSize[8+JeuSon]);
-  AffChaine(2,20,0,"START : RETURN TO OPTIONS");
-  AffChaine(2,21,0,"    A : SEND TO PORTABLEDEV");
-}
 
 u32 affInfoReport(void) 
 {
@@ -720,7 +686,6 @@ void affInfoOptions(u32 uY) {
   AffChaine(2,11,(uY==11 ? 2 : 0),(lgeEmul == 0 ? "  LANCEMENT DU JEU ACTUEL   " : "    EXECUTE ACTUAL GAME     "));
   AffChaine(2,13,(uY==13 ? 2 : 0),(lgeEmul == 0 ? "     REDEFINIR TOUCHES      " : "      REDEFINE   KEYS       "));
   AffChaine(2,15,(uY==15 ? 2 : 0),(lgeEmul == 0 ? "     LANGUE : FRANCAIS      " : "     LANGUAGE : ENGLISH     "));
-  AffChaine(2,17,(uY==17 ? 2 : 0),(lgeEmul == 0 ? "      ENVOI RAPPORT |       " : "        SEND REPORT |       "));
   AffChaine(5,20,0,(lgeEmul == 0 ? "START : LANCER LE JEU " : "START : PLAY GAME     "));
   AffChaine(5,21,0,(lgeEmul == 0 ? "    A : CHOISIR OPTION" : "    A : CHOOSE OPTION "));
 }
@@ -913,6 +878,12 @@ void colecoDSChangeOptions(void) {
 //*****************************************************************************
 // Affiche un message sur l'ecran
 //*****************************************************************************
+
+void dsPrintValue(int iX,int iY,int iScr,char *szMessage)
+{
+    AffChaine(iX,iY,iScr,szMessage);
+}
+
 void AffChaine(int iX,int iY,int iScr,char *szMessage) {
   u16 *pusEcran,*pusMap;
   u16 usCharac;

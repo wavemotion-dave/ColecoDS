@@ -17,6 +17,7 @@
 #include <fat.h>
 
 #include "colecoDS.h"
+#include "highscore.h"
 
 #include "colecogeneric.h"
 #include "colecomngt.h"
@@ -256,7 +257,7 @@ ITCM_CODE void colecoDS_main (void) {
         if ((iTx>=1*8) && (iTy>=12*8) && (iTx<=(1+14)*8) && (iTy<15*8) ) {
           // Stop sound
           soundEmuPause=1;
-          //TODO: Add High Score Support here...    
+          highscore_display(crc32(0xFFFFFFFF, pColecoMem+0x8000, 0x8000));
           soundEmuPause=0;
         }
           
@@ -392,6 +393,17 @@ void colecoDSInit(void) {
   colecoDSFindFiles();
 }
 
+void InitBottomScreen(void)
+{
+  // Init bottom screen
+  decompress(ecranBasTiles, bgGetGfxPtr(bg0b), LZ77Vram);
+  decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
+  dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+  dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
+  unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);//ecranBas_map[24][0];
+  dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
+
+}
 /*********************************************************************************
  * Init CPU for the current game
  ********************************************************************************/
@@ -411,7 +423,6 @@ u16 colecoDSInitCPU(void) {
   // Init bottom screen
   decompress(ecranBasTiles, bgGetGfxPtr(bg0b), LZ77Vram);
   decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
-  //dmaCopy((void*) ecranBas_tiles,(void*) CHAR_BASE_BLOCK_SUB(0),sizeof(ecranBas_tiles));
   dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
   dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
   unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);//ecranBas_map[24][0];
@@ -455,12 +466,13 @@ int main(int argc, char **argv)
   // Init sound
   consoleDemoInit();
   soundEnable();
-  lcdMainOnTop();
 
   if (!fatInitDefault()) {
 	  iprintf("Unable to initialize libfat!\n");
 	  return -1;
   }
+    
+  highscore_init();
 
   // Met les ecran comme il faut
   lcdMainOnTop();
