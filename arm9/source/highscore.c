@@ -23,7 +23,7 @@
 // With only 125 released games plus 25-50 prototypes and 50-ish homebrews,
 // this 300 game limit should be more than enough to handle the entire library.
 // ------------------------------------------------------------------------------
-#define MAX_HS_GAMES    300
+#define MAX_HS_GAMES    400
 #define HS_VERSION      0x0002      // Changing this will wipe high scores on the next install
 
 // --------------------------------------------------------------------------
