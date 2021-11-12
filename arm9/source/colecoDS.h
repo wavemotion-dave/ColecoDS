@@ -75,5 +75,6 @@ typedef union {
 extern char szLang[3][62][35];
 
 extern void showMainMenu(void);
+extern void InitBottomScreen(void);
 
 #endif
