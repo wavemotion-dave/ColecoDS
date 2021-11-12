@@ -529,7 +529,6 @@ u8 colecoDSLoadFile(void) {
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B | KEY_R | KEY_L | KEY_UP | KEY_DOWN))!=0);
   
   ucGameChoice = ucGameAct;
-  //wifiSendLast = 0;
   
   return 0x01;
 }
