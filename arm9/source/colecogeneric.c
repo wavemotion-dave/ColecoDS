@@ -19,7 +19,7 @@ typedef enum {FT_NONE,FT_FILE,FT_DIR} FILE_TYPE;
 
 SpriteEntry OAMCopy[128];
 
-int uNbRoms=0;
+int countCV=0;
 int ucGameAct=0;
 int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
@@ -211,25 +211,26 @@ void affMario(void) {
 }
 
 /*********************************************************************************
- * Show The 12 games on the list
+ * Show The 14 games on the list
  ********************************************************************************/
-void affListGames(u16 NoDebGame, u8 ucSel) {
+void dsDisplayFiles(u16 NoDebGame, u8 ucSel) {
 //  u16 *pusEcran;
   u16 ucBcl,ucGame;
   u8 maxLen;
   char szName[80];
   char szName2[80];
   
-  // Affichage des 12 jeux possibles
+  // Affichage des 14 jeux possibles
 //  pusEcran=(u16*) SCREEN_BASE_BLOCK_SUB(31);
   AffChaine(30,8,0,(NoDebGame>0 ? "<" : " "));
-  AffChaine(30,21,0,(NoDebGame+14<uNbRoms ? ">" : " "));
-  (lgeEmul == 0 ? sprintf(szName,"%03d/%03d FICHIERS DISPONIBLES",ucSel+1+NoDebGame,uNbRoms) :  
-                   sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,uNbRoms));
+  AffChaine(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
+  (lgeEmul == 0 ? sprintf(szName,"%03d/%03d FICHIERS DISPONIBLES",ucSel+1+NoDebGame,countCV) :  
+                   sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV));
   AffChaine(2,6,0, szName);
   for (ucBcl=0;ucBcl<14; ucBcl++) {
     ucGame= ucBcl+NoDebGame;
-    if (ucGame < uNbRoms) {
+    if (ucGame < countCV) 
+    {
       maxLen=strlen(gpFic[ucGame].szName);
       strcpy(szName,gpFic[ucGame].szName);
       if (maxLen>28) szName[28]='\0';
@@ -243,6 +244,10 @@ void affListGames(u16 NoDebGame, u8 ucSel) {
         sprintf(szName,"%-28s",strupr(szName));
         AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
       }
+    }
+    else
+    {
+        AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),"                            ");
     }
   }
 }
@@ -272,23 +277,24 @@ void colecoDSFindFiles(void)
   u32 uNbFile;
   char szFile[256];
   DIR *dir;
-  struct stat statbuf;
   struct dirent *pent;
 
   uNbFile=0;
-  uNbRoms=0;
+  countCV=0;
 
   dir = opendir(".");
-  while (((pent=readdir(dir))!=NULL) && (uNbFile<MAX_ROMS)) {
-    stat(pent->d_name,&statbuf);
+  while (((pent=readdir(dir))!=NULL) && (uNbFile<MAX_ROMS)) 
+  {
     strcpy(szFile,pent->d_name);
       
-    if(S_ISDIR(statbuf.st_mode)) {
-      if (!( (szFile[0] == '.') && (strlen(szFile) == 1))) {
+    if(pent->d_type == DT_DIR) 
+    {
+      if (!( (szFile[0] == '.') && (strlen(szFile) == 1))) 
+      {
         strcpy(gpFic[uNbFile].szName,szFile);
         gpFic[uNbFile].uType = DIRECT;
         uNbFile++;
-        uNbRoms++;
+        countCV++;
       }
     }
     else {
@@ -297,13 +303,13 @@ void colecoDSFindFiles(void)
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
           uNbFile++;
-          uNbRoms++;
+          countCV++;
         }
         if ( (strcasecmp(strrchr(szFile, '.'), ".col") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
           uNbFile++;
-          uNbRoms++;
+          countCV++;
         }
       }
     }
@@ -313,9 +319,9 @@ void colecoDSFindFiles(void)
   // ----------------------------------------------
   // If we found any files, go sort the list...
   // ----------------------------------------------
-  if (uNbRoms)
+  if (countCV)
   {
-    qsort (gpFic, uNbRoms, sizeof(FICcoleco), colecoFilescmp);
+    qsort (gpFic, countCV, sizeof(FICcoleco), colecoFilescmp);
   }
     
 }
@@ -325,191 +331,211 @@ u8 bFullSpeed = false;
 //*****************************************************************************
 // charge une rom
 //*****************************************************************************
-u8 colecoDSLoadFile(void) {
-  u8 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00,ucSelect= 0, ucGGSel=0,bOK=0,uNbRPage, uNbRSPage, uLenFic=0,ucFlip=0, ucFlop=0;
-  char szName[64];
+char szName[256];
 
-  // Met les fichiers
+
+u8 colecoDSLoadFile(void) 
+{
+  bool bDone=false;
+  u32 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00,romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
+  u32 uLenFic=0, ucFlip=0, ucFlop=0;
+
+  // Show the menu...
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);// ecranBas_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(15-strlen(szLang[lgeEmul][20])/2,5,0,szLang[lgeEmul][20]);
 
-  uNbRPage = (uNbRoms>=14 ? 14 : uNbRoms);
-  uNbRSPage = (uNbRoms>=5 ? 5 : uNbRoms);
-  if (ucGameAct>uNbRoms-uNbRPage) {
-    ucGGSel=uNbRoms-uNbRPage;
-    ucSelect=ucGameAct-uNbRoms+uNbRPage;
+  colecoDSFindFiles();
+    
+  ucGameChoice = -1;
+
+  nbRomPerPage = (countCV>=14 ? 14 : countCV);
+  uNbRSPage = (countCV>=5 ? 5 : countCV);
+  
+  if (ucGameAct>countCV-nbRomPerPage)
+  {
+    firstRomDisplay=countCV-nbRomPerPage;
+    romSelected=ucGameAct-countCV+nbRomPerPage;
   }
-  else {
-    ucGGSel=ucGameAct;
-    ucSelect=0;
+  else
+  {
+    firstRomDisplay=ucGameAct;
+    romSelected=0;
   }
-  affListGames(ucGGSel,ucSelect);
-  while (bOK != 1) {
-    if (keysCurrent() & KEY_UP) {
-      if (!ucHaut) {
-        ucGameAct = (ucGameAct>0 ? ucGameAct-1 : uNbRoms-1);
-        if (ucSelect>uNbRSPage) {
-          ucSelect -= 1;
-        }
+  dsDisplayFiles(firstRomDisplay,romSelected);
+    
+  // -----------------------------------------------------
+  // Until the user selects a file or exits the menu...
+  // -----------------------------------------------------
+  while (!bDone)
+  {
+    if (keysCurrent() & KEY_UP)
+    {
+      if (!ucHaut)
+      {
+        ucGameAct = (ucGameAct>0 ? ucGameAct-1 : countCV-1);
+        if (romSelected>uNbRSPage) { romSelected -= 1; }
         else {
-          if (ucGGSel>0) {
-            ucGGSel -= 1;
-          }
+          if (firstRomDisplay>0) { firstRomDisplay -= 1; }
           else {
-            if (ucSelect>0) {
-              ucSelect -= 1;
-            }
+            if (romSelected>0) { romSelected -= 1; }
             else {
-              ucGGSel=uNbRoms-uNbRPage;
-              ucSelect=uNbRPage-1;
+              firstRomDisplay=countCV-nbRomPerPage;
+              romSelected=nbRomPerPage-1;
             }
           }
         }
         ucHaut=0x01;
-        affListGames(ucGGSel,ucSelect);
+        dsDisplayFiles(firstRomDisplay,romSelected);
       }
       else {
+
         ucHaut++;
         if (ucHaut>10) ucHaut=0;
-      } 
+      }
+      uLenFic=0; ucFlip=0; ucFlop=0;     
     }
-    else {
+    else
+    {
       ucHaut = 0;
-    }  
-    if (keysCurrent() & KEY_DOWN) {
+    }
+    if (keysCurrent() & KEY_DOWN)
+    {
       if (!ucBas) {
-        ucGameAct = (ucGameAct< uNbRoms-1 ? ucGameAct+1 : 0);
-        if (ucSelect<uNbRSPage-1) {
-          ucSelect += 1;
-        }
+        ucGameAct = (ucGameAct< countCV-1 ? ucGameAct+1 : 0);
+        if (romSelected<uNbRSPage-1) { romSelected += 1; }
         else {
-          if (ucGGSel<uNbRoms-uNbRPage) {
-            ucGGSel += 1;
-          }
+          if (firstRomDisplay<countCV-nbRomPerPage) { firstRomDisplay += 1; }
           else {
-            if (ucSelect<uNbRPage-1) {
-              ucSelect += 1;
-            }
+            if (romSelected<nbRomPerPage-1) { romSelected += 1; }
             else {
-              ucGGSel = 0;
-              ucSelect = 0;
-              ucGameAct = 0;
+              firstRomDisplay=0;
+              romSelected=0;
             }
           }
         }
         ucBas=0x01;
-        affListGames(ucGGSel,ucSelect);
+        dsDisplayFiles(firstRomDisplay,romSelected);
       }
-      else {
+      else
+      {
         ucBas++;
         if (ucBas>10) ucBas=0;
-      } 
+      }
+      uLenFic=0; ucFlip=0; ucFlop=0;     
     }
     else {
       ucBas = 0;
-    }  
-    if (keysCurrent() & KEY_RIGHT) {
-      if (!ucSBas) {
-        ucGameAct -= ucSelect;
-        ucGameAct = (ucGameAct< uNbRoms-uNbRPage ? ucGameAct+uNbRPage : uNbRoms-uNbRPage);
-        if (ucGGSel<uNbRoms-uNbRPage-uNbRPage) {
-          ucGGSel += uNbRPage;
-        }
-        else {
-          ucGGSel = uNbRoms-uNbRPage;
-        }
-        ucSelect = 0;
+    }
+      
+    // -------------------------------------------------------------
+    // Left and Right on the D-Pad will scroll 1 page at a time...
+    // -------------------------------------------------------------
+    if (keysCurrent() & KEY_RIGHT)
+    {
+      if (!ucSBas)
+      {
+        ucGameAct = (ucGameAct< countCV-nbRomPerPage ? ucGameAct+nbRomPerPage : countCV-nbRomPerPage);
+        if (firstRomDisplay<countCV-nbRomPerPage) { firstRomDisplay += nbRomPerPage; }
+        else { firstRomDisplay = countCV-nbRomPerPage; }
+        if (ucGameAct == countCV-nbRomPerPage) romSelected = 0;
         ucSBas=0x01;
-        affListGames(ucGGSel,ucSelect);
+        dsDisplayFiles(firstRomDisplay,romSelected);
       }
-      else {
+      else
+      {
         ucSBas++;
         if (ucSBas>10) ucSBas=0;
-      } 
+      }
+      uLenFic=0; ucFlip=0; ucFlop=0;     
     }
     else {
       ucSBas = 0;
-    }  
-    if (keysCurrent() & KEY_LEFT) {
-      if (!ucSHaut) {
-        ucGameAct -= ucSelect;
-        ucGameAct = (ucGameAct> uNbRPage ? ucGameAct-uNbRPage : 0);
-        if (ucGGSel>uNbRPage) {
-          ucGGSel -= uNbRPage;
-        }
-        else {
-          ucGGSel = 0;
-        }
-        ucSelect = 0;
+    }
+      
+    // -------------------------------------------------------------
+    // Left and Right on the D-Pad will scroll 1 page at a time...
+    // -------------------------------------------------------------
+    if (keysCurrent() & KEY_LEFT)
+    {
+      if (!ucSHaut)
+      {
+        ucGameAct = (ucGameAct> nbRomPerPage ? ucGameAct-nbRomPerPage : 0);
+        if (firstRomDisplay>nbRomPerPage) { firstRomDisplay -= nbRomPerPage; }
+        else { firstRomDisplay = 0; }
+        if (ucGameAct == 0) romSelected = 0;
+        if (romSelected > ucGameAct) romSelected = ucGameAct;          
         ucSHaut=0x01;
-        affListGames(ucGGSel,ucSelect);
+        dsDisplayFiles(firstRomDisplay,romSelected);
       }
-      else {
+      else
+      {
         ucSHaut++;
         if (ucSHaut>10) ucSHaut=0;
-      } 
+      }
+      uLenFic=0; ucFlip=0; ucFlop=0;     
     }
     else {
       ucSHaut = 0;
-    }  
-	
-    if ( keysCurrent() & KEY_B ) {
-	  chdir("..");
-      dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-      colecoDSFindFiles();
-      ucGameAct = 0;
-      uNbRPage = (uNbRoms>=14 ? 14 : uNbRoms);
-      uNbRSPage = (uNbRoms>=5 ? 5 : uNbRoms);
-      if (ucGameAct>uNbRoms-uNbRPage) {
-        ucGGSel=uNbRoms-uNbRPage;
-        ucSelect=ucGameAct-uNbRoms+uNbRPage;
-      }
-      else {
-        ucGGSel=ucGameAct;
-        ucSelect=0;
-      }
-      affListGames(ucGGSel,ucSelect);
+    }
+    
+    // -------------------------------------------------------------------------
+    // They B key will exit out of the ROM selection without picking a new game
+    // -------------------------------------------------------------------------
+    if ( keysCurrent() & KEY_B )
+    {
+      bDone=true;
       while (keysCurrent() & KEY_B);
     }
-
-    if (keysCurrent() & (KEY_X | KEY_A)) {
+      
+    // -------------------------------------------------------------------
+    // Any of these keys will pick the current ROM and try to load it...
+    // -------------------------------------------------------------------
+    if (keysCurrent() & KEY_A || keysCurrent() & KEY_Y || keysCurrent() & KEY_X)
+    {
       if (gpFic[ucGameAct].uType != DIRECT)
       {
         if (keysCurrent() & KEY_X) bFullSpeed = true; else bFullSpeed = false;
-        bOK = 1;
+        bDone=true;
+        ucGameChoice = ucGameAct;
+        WAITVBL;
       }
-      else 
+      else
       {
         chdir(gpFic[ucGameAct].szName);
-        dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
         colecoDSFindFiles();
         ucGameAct = 0;
-        uNbRPage = (uNbRoms>=14 ? 14 : uNbRoms);
-        uNbRSPage = (uNbRoms>=5 ? 5 : uNbRoms);
-        if (ucGameAct>uNbRoms-uNbRPage) {
-          ucGGSel=uNbRoms-uNbRPage;
-          ucSelect=ucGameAct-uNbRoms+uNbRPage;
+        nbRomPerPage = (countCV>=14 ? 14 : countCV);
+        uNbRSPage = (countCV>=5 ? 5 : countCV);
+        if (ucGameAct>countCV-nbRomPerPage) {
+          firstRomDisplay=countCV-nbRomPerPage;
+          romSelected=ucGameAct-countCV+nbRomPerPage;
         }
-        else 
-        {
-          ucGGSel=ucGameAct;
-          ucSelect=0;
+        else {
+          firstRomDisplay=ucGameAct;
+          romSelected=0;
         }
-        affListGames(ucGGSel,ucSelect);
-        while (keysCurrent() & (KEY_A | KEY_X));
+        dsDisplayFiles(firstRomDisplay,romSelected);
+        while (keysCurrent() & KEY_A);
       }
     }
-    // Scroll la selection courante
-    if (strlen(gpFic[ucGameAct].szName) > 28) {
+    
+    // --------------------------------------------
+    // If the filename is too long... scroll it.
+    // --------------------------------------------
+    if (strlen(gpFic[ucGameAct].szName) > 29) 
+    {
       ucFlip++;
-      if (ucFlip >= 8) {
+      if (ucFlip >= 25) 
+      {
         ucFlip = 0;
         uLenFic++;
-        if ((uLenFic+28)>strlen(gpFic[ucGameAct].szName)) {
+        if ((uLenFic+28)>strlen(gpFic[ucGameAct].szName)) 
+        {
           ucFlop++;
-          if (ucFlop >= 8) {
+          if (ucFlop >= 15) 
+          {
             uLenFic=0;
             ucFlop = 0;
           }
@@ -518,17 +544,15 @@ u8 colecoDSLoadFile(void) {
         }
         strncpy(szName,gpFic[ucGameAct].szName+uLenFic,28);
         szName[28] = '\0';
-        AffChaine(1,8+ucSelect,2,szName);
+        AffChaine(1,8+romSelected,2,szName);
       }
     }
     affMario();
     swiWaitForVBlank();
   }
-
+    
   // Remet l'ecran du haut en mode bitmap
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B | KEY_R | KEY_L | KEY_UP | KEY_DOWN))!=0);
-  
-  ucGameChoice = ucGameAct;
   
   return 0x01;
 }

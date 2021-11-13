@@ -224,6 +224,8 @@ ITCM_CODE void colecoDS_main (void) {
               SprTab=SprGen=pVDPVidMem;            // VDP tables (sprites)
               JoyMode=0;                           // Joystick mode key
               JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
+                
+              sgm_reset();
               
               DrZ80_Reset();
               for (iBcl=0x06000;iBcl<0x07FFF;iBcl++)

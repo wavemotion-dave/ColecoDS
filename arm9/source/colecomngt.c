@@ -42,6 +42,28 @@ u8 sgm_enable = false;
 u8 romBuffer[512 * 1024];   // We support MegaCarts up to 512KB
 u8 romBankMask = 0x00;
 
+u8 sgm_idx=0;
+u8 sgm_reg[256] = {0};
+u16 sgm_low_addr = 0x2000;
+
+
+u8 channel_a_enable = 0;
+u8 channel_b_enable = 0;
+u8 channel_c_enable = 0;
+u8 noise_enable = 0;
+
+
+void sgm_reset(void)
+{
+    //make sure Super Game Module registers for AY chip are clear...
+    memset(sgm_reg, 0x00, 256);
+    sgm_reg[0x07] = 0xFF; // Everything turned off to start...
+    channel_a_enable = 0;
+    channel_b_enable = 0;
+    channel_c_enable = 0;
+    noise_enable = 0;      
+    sgm_enable = false;
+}
 
 /********************************************************************************/
 
@@ -96,8 +118,8 @@ u8 colecoInit(char *szGame) {
       dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
     }
   
-    DrZ80_Reset();
-    Reset9918();
+    // Make sure the super game module is disabled to start
+    sgm_reset();
 
     JoyMode=0;                           // Joystick mode key
     JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
@@ -107,12 +129,13 @@ u8 colecoInit(char *szGame) {
     SN76496_init(&sncol,(u16 *) &freqtablcol);
     SN76496_reset(&sncol,0);
 
-    sgm_enable = false;
       
     UCount=0;
     ExitNow = 0;
-    
+
     DrZ80_Reset();
+    Reset9918();
+      
     soundEmuPause=0;
   }
   
@@ -126,9 +149,6 @@ u8 colecoInit(char *szGame) {
  * Run the emul
  ********************************************************************************/
 void colecoRun(void) {
-#ifdef NOCASH
-  nocashMessage("colecoRun");
-#endif
   DrZ80_Reset();
 
   showMainMenu();
@@ -138,10 +158,6 @@ void colecoRun(void) {
  * Set coleco Palette
  ********************************************************************************/
 void colecoSetPal(void) {
-#ifdef NOCASH
-  nocashMessage("colecoSetPal");
-#endif
-
   u8 uBcl,r,g,b;
   
   for (uBcl=0;uBcl<16;uBcl++) {
@@ -483,9 +499,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   return bOK;
 }
 
-u8 sgm_idx=0;
-u8 sgm_reg[256] = {0};
-u16 sgm_low_addr = 0x2000;
 
 /** InZ80() **************************************************/
 /** Z80 emulation calls this function to read a byte from   **/
@@ -528,11 +541,84 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
   return(NORAM);
 }
 
+
+static const unsigned char Envelopes[16][32] =
+{
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 },
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 },
+  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 },
+  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+};
+
+//static const u8 Volumes[16] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
+static const u8 Volumes[16] = { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
+u8 a_idx=0;
+u8 b_idx=0;
+u8 c_idx=0;
+ITCM_CODE void LoopAY(void)
+{
+    static u16 delay=0;
+    
+    u16 envelope_period = ((sgm_reg[0x0C] << 8) | sgm_reg[0x0B]) & 0xFFFF;
+    if (envelope_period == 0) return;
+    if (++delay > (envelope_period+1))
+    {
+        delay = 0;
+        u8 shape=0;
+        shape = sgm_reg[0x0D] & 0x0F;
+        if ((sgm_reg[0x08] & 0x20) && (!(sgm_reg[0x07] & 0x01)))
+        {
+            u8 vol = Envelopes[shape][a_idx]; 
+            vol = Volumes[vol];
+            if (++a_idx > 31)
+            {
+                if ((shape & 0x09) == 0x08) a_idx = 0; else a_idx=31;
+            }
+            SN76496_w(&sncol, 0x90 | vol);
+        }
+        
+        if ((sgm_reg[0x09] & 0x20) && (!(sgm_reg[0x07] & 0x02)))
+        {
+            u8 vol = Envelopes[shape][b_idx];
+            vol = Volumes[vol];
+            if (++b_idx > 31)
+            {
+                if ((shape & 0x09) == 0x08) b_idx = 0; else b_idx=31;
+            }
+            SN76496_w(&sncol, 0xB0 | vol);
+        }
+
+        if ((sgm_reg[0x0A] & 0x20) && (!(sgm_reg[0x07] & 0x04)))
+        {
+            u8 vol = Envelopes[shape][c_idx];
+            vol = Volumes[vol];
+            if (++c_idx > 31)
+            {
+                if ((shape & 0x09) == 0x08) c_idx = 0; else c_idx=31;
+            }
+            SN76496_w(&sncol, 0xD0 | vol);
+        }
+    }
+}
+
 /** OutZ80() *************************************************/
 /** Z80 emulation calls this function to write a byte to a  **/
 /** given I/O port.                                         **/
 /*************************************************************/
-ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) {
+ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
+{
   //JGD 18/04/2007 
   Port &= 0x00FF;
 
@@ -549,9 +635,12 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   else if (Port == 0x51)
   {
       sgm_reg[sgm_idx]=Value;
-#if 0
+#if 1
 //+--+--+--+--+--+--+--+--+
 //|1 |R2|R1|R0|D3|D2|D1|D0|
+//+--+--+--+--+--+--+--+--+
+//+--+--+--+--+--+--+--+--+
+//|0 |xx|D9|D8|D7|D6|D5|D4|
 //+--+--+--+--+--+--+--+--+
 //
 //1: This denotes that this is a control word
@@ -564,43 +653,164 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 //101 Tone 3 Volume
 //110 Noise Control
 //111 Noise Volume      
+      u16 freq=0;
       switch (sgm_idx)
       {
+          // Channel A frequency (period) - low and high
           case 0x00:
-              SN76496_w(&sncol, 0x80 | ((sgm_reg[0x01]>>2)&0xF));
-              SN76496_w(&sncol, sgm_reg[0x00]);
-              break;
           case 0x01:
-              SN76496_w(&sncol, 0x80 | ((sgm_reg[0x01]>>2)&0xF));
-              SN76496_w(&sncol, sgm_reg[0x00]);
+              if (!(sgm_reg[0x07] & 0x01))
+              {
+                  freq = (sgm_reg[0x01] << 8) | sgm_reg[0x00];
+                  freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+                  SN76496_w(&sncol, 0x80 | (freq & 0xF));
+                  SN76496_w(&sncol, (freq >> 4) & 0x3F);
+              }
               break;
+              
+             
+          // Channel B frequency (period)
           case 0x02:
-              SN76496_w(&sncol, 0xA0 | ((sgm_reg[0x03]>>2)&0xF));
-              SN76496_w(&sncol, sgm_reg[0x02]);
-              break;
           case 0x03:
-              SN76496_w(&sncol, 0xA0 | ((sgm_reg[0x03]>>2)&0xF));
-              SN76496_w(&sncol, sgm_reg[0x02]);
+              if (!(sgm_reg[0x07] & 0x02))
+              {
+                  freq = (sgm_reg[0x03] << 8) | sgm_reg[0x02];
+                  freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+                  SN76496_w(&sncol, 0xA0 | (freq & 0xF));
+                  SN76496_w(&sncol, (freq >> 4) & 0x3F);
+              }
               break;
+          
+           // Channel C frequency (period)
           case 0x04:
-              SN76496_w(&sncol, 0xC0 | ((sgm_reg[0x05]>>2)&0xF));
-              SN76496_w(&sncol, sgm_reg[0x04]);
-              break;
           case 0x05:
-              SN76496_w(&sncol, 0xC0 | ((sgm_reg[0x05]>>2)&0xF));
-              SN76496_w(&sncol, sgm_reg[0x04]);
+              if (!(sgm_reg[0x07] & 0x04))
+              {
+                  freq = (sgm_reg[0x05] << 8) | sgm_reg[0x04];
+                  freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+                  SN76496_w(&sncol, 0xC0 | (freq & 0xF));
+                  SN76496_w(&sncol, (freq >> 4) & 0x3F);
+              }
               break;
+              
+              
           case 0x06:
+               //noise_period= Value & 0x1F;
+               if (noise_enable)
+               {
+                  SN76496_w(&sncol, 0xE1);
+                  SN76496_w(&sncol, 0xF6);
+               }
               break;
+              
+          case 0x07:
+              // Channel A Enable/Disable
+              if (!(sgm_reg[0x07] & 0x01))
+              {
+                  if (!channel_a_enable)
+                  {
+                      channel_a_enable=1;
+                      a_idx=0;
+                      freq = (sgm_reg[0x01] << 8) | sgm_reg[0x00];
+                      freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+                      SN76496_w(&sncol, 0x80 | (freq & 0xF));
+                      SN76496_w(&sncol, (freq >> 4) & 0x3F);
+                      SN76496_w(&sncol, 0x90 | Volumes[((sgm_reg[0x08]>>1) & 0xF)]);
+                  }
+              }
+              else
+              {
+                  if (channel_a_enable)
+                  {
+                      channel_a_enable = 0;
+                      SN76496_w(&sncol, 0x90 | 0x0F);
+                  }
+              }
+              
+              // Channel B Enable/Disable
+              if (!(sgm_reg[0x07] & 0x02))
+              {
+                  if (!channel_b_enable)
+                  {
+                      channel_b_enable=1;
+                      b_idx=0;
+                      freq = (sgm_reg[0x03] << 8) | sgm_reg[0x02];
+                      freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+                      SN76496_w(&sncol, 0xA0 | (freq & 0xF));
+                      SN76496_w(&sncol, (freq >> 4) & 0x3F);
+                      SN76496_w(&sncol, 0xB0 | Volumes[((sgm_reg[0x09]>>1) & 0xF)]);
+                  }
+              }
+              else
+              {
+                  if (channel_b_enable)
+                  {
+                      channel_b_enable = 0;
+                      SN76496_w(&sncol, 0xB0 | 0x0F);
+                  }
+              }
+              
+              
+              // Channel C Enable/Disable
+              if (!(sgm_reg[0x07] & 0x04))
+              {
+                  if (!channel_c_enable)
+                  {
+                      channel_c_enable=1;
+                      c_idx=0;
+                      freq = (sgm_reg[0x05] << 8) | sgm_reg[0x04];
+                      freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+                      SN76496_w(&sncol, 0xC0 | (freq & 0xF));
+                      SN76496_w(&sncol, (freq >> 4) & 0x3F);
+                      SN76496_w(&sncol, 0xD0 | Volumes[((sgm_reg[0x0A]>>1) & 0xF)]);
+                  }
+              }
+              else
+              {
+                  if (channel_c_enable)
+                  {
+                      channel_c_enable = 0;
+                      SN76496_w(&sncol, 0xD0 | 0x0F);
+                  }
+              }
+              
+              // Noise Channel
+              if ((sgm_reg[0x07] & 0x38) != 0x38)
+              {
+                  if (!noise_enable)
+                  {
+                      noise_enable=1;
+                      SN76496_w(&sncol, 0xE1);
+                      SN76496_w(&sncol, 0xF6);
+                  }
+              }
+              else
+              {
+                  SN76496_w(&sncol, 0xFF);
+              }
+              
+              break;
+              
+              
           case 0x08:
-              SN76496_w(&sncol, 0x90 | ((Value>>1) & 0xF));
+              if (Value & 0x20) Value = 0x0;                    // If Envelope Mode... start with volume OFF
+              if (sgm_reg[0x07] & 0x01) Value = 0x0;            // If Channel A is disabled, volume OFF
+              SN76496_w(&sncol, 0x90 | Volumes[((Value>>1) & 0xF)]);     // Write new Volume for Channel A
+              a_idx=0;
               break;
           case 0x09:
-              SN76496_w(&sncol, 0xB0 | ((Value>>1) & 0xF));
+              if (Value & 0x20) Value = 0x0;                    // If Envelope Mode... start with volume OFF
+              if (sgm_reg[0x07] & 0x02) Value = 0x0;            // If Channel B is disabled, volume OFF
+              SN76496_w(&sncol, 0xB0 | Volumes[((Value>>1) & 0xF)]);     // Write new Volume for Channel B
+              b_idx=0;
               break;
           case 0x0A:
-              SN76496_w(&sncol, 0xD0 | ((Value>>1) & 0xF));
+              if (Value & 0x20) Value = 0x0;                    // If Envelope Mode... start with volume OFF
+              if (sgm_reg[0x07] & 0x04) Value = 0x0;            // If Channel C is disabled, volume OFF
+              SN76496_w(&sncol, 0xD0 | Volumes[((Value>>1) & 0xF)]);     // Write new Volume for Channel C
+              c_idx=0;
               break;
+
       }
 #endif      
       return;
@@ -649,9 +859,12 @@ ITCM_CODE u32 LoopZ80()
   // Execute 1 scanline worth of CPU
   DrZ80_execute(TMS9918_LINE);
 
+  // Just in case there is AY audio envelopes...
+  if (sgm_enable) LoopAY();
+
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
-  
+    
   // Generate VDP interrupt
   if (cpuirequest==Z80_NMI_INT ) 
     Z80_Cause_Interrupt(Z80_NMI_INT);
