@@ -734,7 +734,6 @@ void colecoDSChangeOptions(void) {
   dmaCopy((void*) ecranHautPal,(void*) BG_PALETTE,256*2);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0) + 51*32);// ecranBas_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
-  AffChaine(0,23,1,szDrv);
   AffChaine(28,23,1,"V");AffChaine(29,23,1,VERSIONCLDS);
 
     // Init sprites

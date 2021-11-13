@@ -43,15 +43,13 @@
 
 extern u16 emuFps;
 extern u16 emuActFrames;
+extern u16 timingFrames;
+
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
 extern volatile u16 vusCptVBL;                   // Video Management
 extern u8 XBuf[256*256] ALIGN(32);
-
-extern bool isFATSystem;
-extern char szFATDir[256];
-extern char szDrv[15];
 
 extern char szKeyName[18][15];
 extern u16 keyCoresp[18];

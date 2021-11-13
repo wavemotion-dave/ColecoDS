@@ -217,6 +217,10 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&noise_enable, sizeof(noise_enable), 1, handle); 
       
+    // A few frame counters
+    if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
+    if (uNbO) uNbO = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
+      
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
       
@@ -313,6 +317,10 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
             if (uNbO) uNbO = fread(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
             if (uNbO) uNbO = fread(&noise_enable, sizeof(noise_enable), 1, handle); 
+            
+            // A few frame counters
+            if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
+            if (uNbO) uNbO = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
             
             // Load spare memory for future use
             if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 

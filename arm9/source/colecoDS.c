@@ -38,6 +38,11 @@ u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
 
 u8 ColecoBios[8192] = {0};
 
+u16 emuFps=0;
+u16 emuActFrames=0;
+u16 timingFrames=0;
+
+
 /*******************************************************************************/
 volatile u16 vusCptVBL;                   // Video Management
 extern u8 bFullSpeed;
@@ -48,11 +53,6 @@ typedef enum {
 } FifoMesType;
 
 #define ds_GetTicks() (TIMER0_DATA)
-
-// Card Management
-bool isFATSystem=false;
-char szFATDir[256];
-char szDrv[15];
 
 unsigned int soundEmuPause=1;
 
@@ -131,9 +131,6 @@ void dsInstallSoundEmuFIFO(void)
   irqEnable(IRQ_TIMER2);
 }
 
-u16 emuFps=0;
-u16 emuActFrames=0;
-u16 timingFrames=0;
 //*****************************************************************************
 // Boucle principale d'execution
 //*****************************************************************************
@@ -394,9 +391,6 @@ void colecoDSInit(void) {
   AffChaine(2,6,0,szLang[lgeEmul][7]);
   AffChaine(2,7,0,szLang[lgeEmul][8]);
 
-  strcpy(szFATDir,"/");
-  if (isFATSystem) chdir(szFATDir);
-    
   // Find the files
   colecoDSFindFiles();
 }
