@@ -37,10 +37,10 @@ extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 extern u32*lutTablehh;
 
-u8 sgm_enable = false;
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
 u8 romBankMask = 0x00;
 
+u8 sgm_enable = false;
 u8 sgm_idx=0;
 u8 sgm_reg[256] = {0};
 u16 sgm_low_addr = 0x2000;
@@ -206,6 +206,16 @@ void colecoSaveState()
       
     // Write look-up-table
     if (uNbO) uNbO = fwrite(lutTablehh, 16*1024,1, handle);      
+
+    // Write the Super Game Module stuff
+    if (uNbO) uNbO = fwrite(sgm_reg, 256, 1, handle);      
+    if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
+    if (uNbO) uNbO = fwrite(&sgm_idx, sizeof(sgm_idx), 1, handle); 
+    if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
+    if (uNbO) uNbO = fwrite(&channel_a_enable, sizeof(channel_a_enable), 1, handle); 
+    if (uNbO) uNbO = fwrite(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
+    if (uNbO) uNbO = fwrite(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
+    if (uNbO) uNbO = fwrite(&noise_enable, sizeof(noise_enable), 1, handle); 
       
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
@@ -293,8 +303,18 @@ void colecoLoadState()
 
             // Load look-up-table
             if (uNbO) uNbO = fread(lutTablehh, 16*1024,1, handle);         
-
-            // Read spare memory for future use
+            
+            // Load the Super Game Module stuff
+            if (uNbO) uNbO = fread(sgm_reg, 256, 1, handle);      
+            if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
+            if (uNbO) uNbO = fread(&sgm_idx, sizeof(sgm_idx), 1, handle); 
+            if (uNbO) uNbO = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
+            if (uNbO) uNbO = fread(&channel_a_enable, sizeof(channel_a_enable), 1, handle); 
+            if (uNbO) uNbO = fread(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
+            if (uNbO) uNbO = fread(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
+            if (uNbO) uNbO = fread(&noise_enable, sizeof(noise_enable), 1, handle); 
+            
+            // Load spare memory for future use
             if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 
 
             // Load VDP
