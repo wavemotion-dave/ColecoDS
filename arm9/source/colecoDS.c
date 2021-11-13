@@ -355,6 +355,12 @@ void colecoDSInit(void) {
   vramSetBankB(VRAM_B_MAIN_SPRITE);
   vramSetBankC(VRAM_C_SUB_BG);
   vramSetBankD(VRAM_D_SUB_SPRITE);
+    
+  vramSetBankE(VRAM_E_LCD );                // Not using this for video but 64K of faster RAM always useful!  Mapped at 0x06880000 - Unused at this time - 128K available
+  vramSetBankF(VRAM_F_LCD );                // Not using this for video but 16K of faster RAM always useful!  Mapped at 0x06890000 -   ..
+  vramSetBankG(VRAM_G_LCD );                // Not using this for video but 16K of faster RAM always useful!  Mapped at 0x06894000 -   ..
+  vramSetBankH(VRAM_H_LCD );                // Not using this for video but 32K of faster RAM always useful!  Mapped at 0x06898000 -   ..
+  vramSetBankI(VRAM_I_LCD );                // Not using this for video but 16K of faster RAM always useful!  Mapped at 0x068A0000 - Used for Custom Tile Map Buffer
 
   // Stop blending effect of intro
   REG_BLDCNT=0; REG_BLDCNT_SUB=0; REG_BLDY=0; REG_BLDY_SUB=0;
@@ -404,8 +410,8 @@ void InitBottomScreen(void)
   dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
   unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);//ecranBas_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
-
 }
+
 /*********************************************************************************
  * Init CPU for the current game
  ********************************************************************************/
@@ -491,9 +497,6 @@ int main(int argc, char **argv)
   irqSet(IRQ_VBLANK, irqVBlank);
   irqEnable(IRQ_VBLANK);
     
-  vramSetBankI(VRAM_I_LCD );                // Not using this for video but 16K of faster RAM always useful!  Mapped at 0x068A0000 - Used for Custom Tile Map Buffer
-
-
   // Handle command line argument... mostly for TWL++
   if (argc > 1) 
   {
