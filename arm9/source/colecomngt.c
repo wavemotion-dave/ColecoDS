@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#include "fatlib/gba_nds_fat.h"
 #include <unistd.h>
 #include <fat.h>
 
@@ -26,33 +25,32 @@
 extern byte Loop9918(void);
 extern void DrZ80_InitFonct(void);
 
-//#include "cpu/sn76489/sn76489.h"
 #include "cpu/tms9928a/tms9928a.h"
 
 #include "cpu/sn76496/sn76496_c.h"
 
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0002
+#define COLECODS_SAVE_VER 0x0003
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
+extern u32*lutTablehh;
 
 u8 sgm_enable = false;
-u8 romBuffer[512 * 1024];   // We support MegaCarts up to 512KB
+u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
 u8 romBankMask = 0x00;
 
 u8 sgm_idx=0;
 u8 sgm_reg[256] = {0};
 u16 sgm_low_addr = 0x2000;
 
-
 u8 channel_a_enable = 0;
 u8 channel_b_enable = 0;
 u8 channel_c_enable = 0;
 u8 noise_enable = 0;
 
-
+// Reset the Super Game Module vars...
 void sgm_reset(void)
 {
     //make sure Super Game Module registers for AY chip are clear...
@@ -170,10 +168,95 @@ void colecoSetPal(void) {
   }
 }
 
+
+/*********************************************************************************
+ * Save the current state
+ ********************************************************************************/
+u8  spare[512] = {0x00};
+void colecoSaveState() 
+{
+  u32 uNbO;
+  long pSvg;
+  char szFile[256];
+  char szCh1[128],szCh2[128];
+
+  // Init filename = romname and STA in place of ROM
+  strcpy(szFile,gpFic[ucGameAct].szName);
+  szFile[strlen(szFile)-3] = 's';
+  szFile[strlen(szFile)-2] = 'a';
+  szFile[strlen(szFile)-1] = 'v';
+  sprintf(szCh1,"SAVING...");
+  AffChaine(19,5,0,szCh1);
+  
+  FILE *handle = fopen(szFile, "w+");  
+  if (handle != NULL) 
+  {
+    // Write Version
+    u16 save_ver = COLECODS_SAVE_VER;
+    uNbO = fwrite(&save_ver, sizeof(u16), 1, handle);
+      
+    // Write Z80 CPU
+    uNbO = fwrite(&drz80, sizeof(struct DrZ80), 1, handle);
+
+    // Save Coleco Memory (yes, all of it!)
+    if (uNbO) uNbO = fwrite(pColecoMem, 0x10000,1, handle); 
+      
+    // Write XBuf Video Buffer (yes all of it!)
+    if (uNbO) uNbO = fwrite(XBuf, sizeof(XBuf),1, handle); 
+      
+    // Write look-up-table
+    if (uNbO) uNbO = fwrite(lutTablehh, 16*1024,1, handle);      
+      
+    // Some spare memory we can eat into...
+    if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
+      
+    // Write VDP
+    if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
+    if (uNbO) uNbO = fwrite(&VKey, sizeof(VKey),1, handle); 
+    if (uNbO) uNbO = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle); 
+    if (uNbO) uNbO = fwrite(&FGColor, sizeof(FGColor),1, handle); 
+    if (uNbO) uNbO = fwrite(&BGColor, sizeof(BGColor),1, handle); 
+    if (uNbO) uNbO = fwrite(&ScrMode, sizeof(ScrMode),1, handle); 
+    if (uNbO) uNbO = fwrite(&VDPClatch, sizeof(VDPClatch),1, handle); 
+    if (uNbO) uNbO = fwrite(&VAddr, sizeof(VAddr),1, handle); 
+    if (uNbO) uNbO = fwrite(&WKey, sizeof(WKey),1, handle); 
+    if (uNbO) uNbO = fwrite(&CurLine, sizeof(CurLine),1, handle); 
+    if (uNbO) uNbO = fwrite(&ColTabM, sizeof(ColTabM),1, handle); 
+    if (uNbO) uNbO = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle); 
+    if (uNbO) uNbO = fwrite(pVDPVidMem, 0x4000,1, handle); 
+    pSvg = ChrGen-pVDPVidMem;
+    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    pSvg = ChrTab-pVDPVidMem;
+    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    pSvg = ColTab-pVDPVidMem;
+    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    pSvg = SprGen-pVDPVidMem;
+    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    pSvg = SprTab-pVDPVidMem;
+    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+
+    // Write PSG
+    if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
+    if (uNbO) uNbO = fwrite(freqtablcol, sizeof(freqtablcol),1, handle); 
+      
+    if (uNbO) 
+      strcpy(szCh2,"OK ");
+    else
+      strcpy(szCh2,"ERR");
+     AffChaine(28,5,0,szCh2);
+    WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+    AffChaine(18,5,0,"              ");  
+  }
+  else {
+    strcpy(szCh2,"Error opening STA file ...");
+  }
+  fclose(handle);
+}
+
+
 /*********************************************************************************
  * Load the current state
  ********************************************************************************/
-extern u32*lutTablehh;
 void colecoLoadState() 
 {
   u32 uNbO;
@@ -210,6 +293,9 @@ void colecoLoadState()
 
             // Load look-up-table
             if (uNbO) uNbO = fread(lutTablehh, 16*1024,1, handle);         
+
+            // Read spare memory for future use
+            if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 
 
             // Load VDP
             if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 
@@ -273,85 +359,6 @@ void colecoLoadState()
     fclose(handle);
 }
 
-/*********************************************************************************
- * Save the current state
- ********************************************************************************/
-void colecoSaveState() 
-{
-  u32 uNbO;
-  long pSvg;
-  char szFile[256];
-  char szCh1[128],szCh2[128];
-
-  // Init filename = romname and STA in place of ROM
-  strcpy(szFile,gpFic[ucGameAct].szName);
-  szFile[strlen(szFile)-3] = 's';
-  szFile[strlen(szFile)-2] = 'a';
-  szFile[strlen(szFile)-1] = 'v';
-  sprintf(szCh1,"SAVING...");
-  AffChaine(19,5,0,szCh1);
-  
-  FILE *handle = fopen(szFile, "w+");  
-  if (handle != NULL) 
-  {
-    // Write Version
-    u16 save_ver = COLECODS_SAVE_VER;
-    uNbO = fwrite(&save_ver, sizeof(u16), 1, handle);
-      
-    // Write Z80 CPU
-    uNbO = fwrite(&drz80, sizeof(struct DrZ80), 1, handle);
-
-    // Save Coleco Memory (yes, all of it!)
-    if (uNbO) uNbO = fwrite(pColecoMem, 0x10000,1, handle); 
-      
-    // Write XBuf Video Buffer (yes all of it!)
-    if (uNbO) uNbO = fwrite(XBuf, sizeof(XBuf),1, handle); 
-      
-    // Write look-up-table
-    if (uNbO) uNbO = fwrite(lutTablehh, 16*1024,1, handle);      
-
-    // Write VDP
-    if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
-    if (uNbO) uNbO = fwrite(&VKey, sizeof(VKey),1, handle); 
-    if (uNbO) uNbO = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle); 
-    if (uNbO) uNbO = fwrite(&FGColor, sizeof(FGColor),1, handle); 
-    if (uNbO) uNbO = fwrite(&BGColor, sizeof(BGColor),1, handle); 
-    if (uNbO) uNbO = fwrite(&ScrMode, sizeof(ScrMode),1, handle); 
-    if (uNbO) uNbO = fwrite(&VDPClatch, sizeof(VDPClatch),1, handle); 
-    if (uNbO) uNbO = fwrite(&VAddr, sizeof(VAddr),1, handle); 
-    if (uNbO) uNbO = fwrite(&WKey, sizeof(WKey),1, handle); 
-    if (uNbO) uNbO = fwrite(&CurLine, sizeof(CurLine),1, handle); 
-    if (uNbO) uNbO = fwrite(&ColTabM, sizeof(ColTabM),1, handle); 
-    if (uNbO) uNbO = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle); 
-    if (uNbO) uNbO = fwrite(pVDPVidMem, 0x4000,1, handle); 
-    pSvg = ChrGen-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
-    pSvg = ChrTab-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
-    pSvg = ColTab-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
-    pSvg = SprGen-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
-    pSvg = SprTab-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
-
-    // Write PSG
-    if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
-    if (uNbO) uNbO = fwrite(freqtablcol, sizeof(freqtablcol),1, handle); 
-      
-    if (uNbO) 
-      strcpy(szCh2,"OK ");
-    else
-      strcpy(szCh2,"ERR");
-     AffChaine(28,5,0,szCh2);
-    WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-    AffChaine(18,5,0,"              ");  
-  }
-  else {
-    strcpy(szCh2,"Error opening STA file ...");
-  }
-  fclose(handle);
-}
 
 /*********************************************************************************
  * Update the screen for the current cycle
@@ -571,7 +578,9 @@ ITCM_CODE void LoopAY(void)
 {
     static u16 delay=0;
     
-    u16 envelope_period = ((sgm_reg[0x0C] << 8) | sgm_reg[0x0B]) & 0xFFFF;
+    if (sgm_reg[0x07] == 0xFF) return;  // Nothing enabled - nobody using the AY chip.
+    
+    u16 envelope_period = (((sgm_reg[0x0C] << 8) | sgm_reg[0x0B])>>4) & 0xFFFF;
     if (envelope_period == 0) return;
     if (++delay > (envelope_period+1))
     {
@@ -698,7 +707,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
                //noise_period= Value & 0x1F;
                if (noise_enable)
                {
-                  SN76496_w(&sncol, 0xE1);
+                  SN76496_w(&sncol, 0xE2);
                   SN76496_w(&sncol, 0xF6);
                }
               break;
@@ -780,7 +789,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
                   if (!noise_enable)
                   {
                       noise_enable=1;
-                      SN76496_w(&sncol, 0xE1);
+                      SN76496_w(&sncol, 0xE2);
                       SN76496_w(&sncol, 0xF6);
                   }
               }
