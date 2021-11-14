@@ -25,7 +25,7 @@
 extern byte Loop9918(void);
 extern void DrZ80_InitFonct(void);
 
-#include "cpu/tms9928a/tms9918a.h"
+#include "cpu/tms9918a/tms9918a.h"
 
 #include "cpu/sn76496/sn76496_c.h"
 
