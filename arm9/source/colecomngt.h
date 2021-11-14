@@ -23,6 +23,8 @@ extern u32 JoyMode;                     // Joystick / Paddle management
 extern u32 JoyStat[2];                  // Joystick / Paddle management
 
 extern u32 ExitNow;
+extern u8 bMagicMegaCart;
+extern u8 bActivisionPCB;
 
 extern u8 VDPInit[8];
 

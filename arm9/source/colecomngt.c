@@ -519,6 +519,9 @@ u8 colecoCartVerify(const u8 *cartData) {
   return RetFct;
 }
 
+u8 bMagicMegaCart = 0;
+u8 bActivisionPCB = 0;
+
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
@@ -542,20 +545,25 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         }
         else    // Bankswitched Cart!!
         {
-            if (iSSize == (64 * 1024))  // Activision PCB is different... bank0 is placed in fixed ROM
+            bMagicMegaCart = ((romBuffer[0xC000] == 0x55 && romBuffer[0xC001] == 0xAA) ? 1:0);
+            if ((iSSize == (64 * 1024)) && !bMagicMegaCart)
             {
+                bActivisionPCB = 1;
                 memcpy(ptr, romBuffer, 0x4000);                     // bank 0
                 memcpy(ptr+0x4000, romBuffer+0x4000, 0x4000);       // bank 1
                 romBankMask = 0x03;
             }
             else
             {
+                bMagicMegaCart = 1;
                 memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest bank into fixed ROM
                 memcpy(ptr+0x4000, romBuffer, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 0 in there
-                romBankMask = 0x07;
-                if (iSSize == (128 * 1024)) romBankMask = 0x07;
-                if (iSSize == (256 * 1024)) romBankMask = 0x0F;
-                if (iSSize == (512 * 1024)) romBankMask = 0x1F;
+                
+                if (iSSize == (64  * 1024)) romBankMask = 0x03;
+                else if (iSSize == (128 * 1024)) romBankMask = 0x07;
+                else if (iSSize == (256 * 1024)) romBankMask = 0x0F;
+                else if (iSSize == (512 * 1024)) romBankMask = 0x1F;
+                else romBankMask = 0x07;    // Not sure what to do... good enough
             }
         }
         bOK = 1;
