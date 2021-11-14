@@ -424,79 +424,6 @@ ITCM_CODE void colecoUpdateScreen(void)
     }
 }
 
-/*********************************************************************************
- * Manage key / Paddle
- ********************************************************************************/
-/*
-    PORT_START_TAG("IN0")
-    PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("0 (pad 1)") PORT_CODE(KEYCODE_0)
-    PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("1 (pad 1)") PORT_CODE(KEYCODE_1)
-    PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("2 (pad 1)") PORT_CODE(KEYCODE_2)
-    PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("3 (pad 1)") PORT_CODE(KEYCODE_3)
-    PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("4 (pad 1)") PORT_CODE(KEYCODE_4)
-    PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("5 (pad 1)") PORT_CODE(KEYCODE_5)
-    PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("6 (pad 1)") PORT_CODE(KEYCODE_6)
-    PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("7 (pad 1)") PORT_CODE(KEYCODE_7)
-
-    PORT_START_TAG("IN1")
-    PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("8 (pad 1)") PORT_CODE(KEYCODE_8)
-    PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("9 (pad 1)") PORT_CODE(KEYCODE_9)
-    PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("# (pad 1)") PORT_CODE(KEYCODE_MINUS)
-    PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME(". (pad 1)") PORT_CODE(KEYCODE_EQUALS)
-    PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON2 )
-    PORT_BIT( 0xb0, IP_ACTIVE_LOW, IPT_UNKNOWN )
-
-    PORT_START_TAG("IN2")
-    PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_JOYSTICK_UP )
-    PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT )
-    PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN )
-    PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT )
-    PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON1 )
-    PORT_BIT( 0xb0, IP_ACTIVE_LOW, IPT_UNKNOWN )
-
-    PORT_START_TAG("IN3")
-    PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("0 (pad 2)") PORT_CODE(KEYCODE_0_PAD)
-    PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("1 (pad 2)") PORT_CODE(KEYCODE_1_PAD)
-    PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("2 (pad 2)") PORT_CODE(KEYCODE_2_PAD)
-    PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("3 (pad 2)") PORT_CODE(KEYCODE_3_PAD)
-    PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("4 (pad 2)") PORT_CODE(KEYCODE_4_PAD)
-    PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("5 (pad 2)") PORT_CODE(KEYCODE_5_PAD)
-    PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("6 (pad 2)") PORT_CODE(KEYCODE_6_PAD)
-    PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("7 (pad 2)") PORT_CODE(KEYCODE_7_PAD)
-
-    PORT_START_TAG("IN4")
-    PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("8 (pad 2)") PORT_CODE(KEYCODE_8_PAD)
-    PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("9 (pad 2)") PORT_CODE(KEYCODE_9_PAD)
-    PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME("# (pad 2)") PORT_CODE(KEYCODE_MINUS_PAD)
-    PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_KEYBOARD ) PORT_NAME(". (pad 2)") PORT_CODE(KEYCODE_PLUS_PAD)
-    PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON2 )		PORT_PLAYER(2)
-    PORT_BIT( 0xb0, IP_ACTIVE_LOW, IPT_UNKNOWN )
-
-    PORT_START_TAG("IN5")
-    PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_JOYSTICK_UP )	PORT_PLAYER(2)
-    PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT )	PORT_PLAYER(2)
-    PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN )	PORT_PLAYER(2)
-    PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT )	PORT_PLAYER(2)
-    PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON1 )		PORT_PLAYER(2)
-    PORT_BIT( 0xb0, IP_ACTIVE_LOW, IPT_UNKNOWN )
-
-    PORT_START_TAG("IN6")
-    PORT_DIPNAME( 0x07, 0x00, "Extra Controllers" )
-    PORT_DIPSETTING(	0x00, DEF_STR( None ) )
-    PORT_DIPSETTING(	0x01, "Driving Controller" )
-    PORT_DIPSETTING(	0x02, "Roller Controller" )
-    PORT_DIPSETTING(	0x04, "Super Action Controllers" )
-    PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_NAME("SAC Blue Button P1")	PORT_CODE(KEYCODE_Z)
-    PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_NAME("SAC Purple Button P1")	PORT_CODE(KEYCODE_X)
-    PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_NAME("SAC Blue Button P2")	PORT_CODE(KEYCODE_Q) PORT_PLAYER(2)
-    PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_NAME("SAC Purple Button P2")	PORT_CODE(KEYCODE_W) PORT_PLAYER(2)
-
-    PORT_START_TAG("IN7")	// Extra Controls (Driving Controller, SAC P1 slider, Roller Controller X Axis)
-    PORT_BIT( 0x0f, 0x00, IPT_TRACKBALL_X ) PORT_SENSITIVITY(20) PORT_KEYDELTA(10) PORT_MINMAX(0, 0) PORT_CODE_DEC(KEYCODE_L) PORT_CODE_INC(KEYCODE_J) PORT_RESET
-
-    PORT_START_TAG("IN8")	// Extra Controls (SAC P2 slider, Roller Controller Y Axis)
-    PORT_BIT( 0x0f, 0x00, IPT_TRACKBALL_Y ) PORT_SENSITIVITY(20) PORT_KEYDELTA(10) PORT_MINMAX(0, 0) PORT_CODE_DEC(KEYCODE_I) PORT_CODE_INC(KEYCODE_K) PORT_RESET PORT_PLAYER(2)
-*/
 
 /*********************************************************************************
  * Check if the cart is valid...
@@ -552,6 +479,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(ptr, romBuffer, 0x4000);                     // bank 0
                 memcpy(ptr+0x4000, romBuffer+0x4000, 0x4000);       // bank 1
                 romBankMask = 0x03;
+                // TODO: Eventually handle EEPROM for these PCBs...
             }
             else
             {
@@ -565,6 +493,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 else if (iSSize == (512 * 1024)) romBankMask = 0x1F;
                 else romBankMask = 0x07;    // Not sure what to do... good enough
             }
+            extern u8 lastBank;
+            lastBank = 199;  // Force load of bank if needed
         }
         bOK = 1;
     }
@@ -767,7 +697,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
                if (noise_enable)
                {
                   SN76496_w(&sncol, 0xE2);
-                  SN76496_w(&sncol, 0xF6);
+                  SN76496_w(&sncol, 0xF9);
                }
               break;
               
@@ -843,13 +773,13 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
               }
               
               // Noise Channel
-              if ((sgm_reg[0x07] & 0x38) != 0x38)
+              if ( (!(sgm_reg[0x07] & 0x08) && channel_a_enable) || (!(sgm_reg[0x07] & 0x10) && channel_b_enable) || (!(sgm_reg[0x07] & 0x20) && channel_c_enable) )
               {
                   if (!noise_enable)
                   {
                       noise_enable=1;
                       SN76496_w(&sncol, 0xE2);
-                      SN76496_w(&sncol, 0xF6);
+                      SN76496_w(&sncol, 0xF9);
                   }
               }
               else

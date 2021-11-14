@@ -57,6 +57,25 @@ ITCM_CODE u16 drz80MemReadW(u16 addr)
     return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
 }
 
+// ------------------------------------------------
+// Switch banks... do this as fast as possible..
+// ------------------------------------------------
+ITCM_CODE void BankSwitch(u8 bank)
+{
+    if (lastBank != bank)
+    {
+        u32 *src = (u32*)(romBuffer + (bank * 0x4000));
+        u32 *dest = (u32*)(pColecoMem+0xC000);
+        for (int i=0; i<0x1000; i++)
+        {
+            *dest++ = *src++;
+        }
+        //memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+        lastBank = bank;
+    }
+}
+
+
 // -------------------------------------------------
 // 8-bit read with bankswitch support... slower...
 // -------------------------------------------------
@@ -66,14 +85,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
   {
       if (address >= 0xFFC0)
       {
-          u16 bank = 0;
-          bank = address & romBankMask;
-
-          if (lastBank != bank)
-          {
-            memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
-            lastBank = bank;
-          }
+          BankSwitch(address & romBankMask);
       }
   }    
   return (pColecoMem[address]);
@@ -86,16 +98,7 @@ ITCM_CODE u16 drz80MemReadW_banked(u16 addr)
 {
   if (bMagicMegaCart) // Handle Megacart Hot Spots
   {
-      if (addr >= 0xFFC0)
-      {
-          u16 bank = 0;
-          bank = addr & romBankMask;
-          if (lastBank != bank)
-          {
-              memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
-              lastBank = bank;
-          }
-      }
+      return (cpu_readmem16_banked(addr) | (cpu_readmem16_banked(addr+1)<<8));   // These handle both hotspots - slower but easier than reproducing the hotspot stuff
   }    
   return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
 }
@@ -133,39 +136,23 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     {
       if (sgm_enable && (address == 0xFFFF))    // SGM can write to this address to set bank #
       {
-          u16 bank = value & romBankMask;
-          if (lastBank != bank)
-          {
-            memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
-            lastBank = bank;
-          }
+          BankSwitch(value & romBankMask);
       }
-      else
+      else  // Check for hotspots...
       {
           /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
           if(bActivisionPCB)
           {
               if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
               {
-                  u16 bank = (address>>4) & romBankMask;
-                  if (lastBank != bank)
-                  {
-                    memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
-                    lastBank = bank;
-                  }
+                  BankSwitch((address>>4) & romBankMask);
               }
           }
           else if (bMagicMegaCart)
           { 
               if (address >= 0xFFC0)   // Otherwise check if we are hitting one of the MegaCart hotspots...
               {
-                  u16 bank = 0;
-                  bank = address & romBankMask;
-                  if (lastBank != bank)
-                  {
-                      memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
-                      lastBank = bank;
-                  }              
+                  BankSwitch(address & romBankMask);
               }
           }
       }
