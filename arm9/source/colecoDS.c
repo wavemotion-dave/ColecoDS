@@ -105,7 +105,7 @@ void dsInstallSoundEmuFIFO(void)
 {
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 48000;
+  msg.SoundPlay.freq = 44000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -125,7 +125,7 @@ void dsInstallSoundEmuFIFO(void)
   }
     
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(24000);
+  TIMER2_DATA = TIMER_FREQ(23500);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
@@ -140,6 +140,8 @@ void dsInstallSoundEmuFIFO(void)
 //*****************************************************************************
 void ResetColecovision(void)
 {
+  soundEmuPause=1;
+   
   JoyMode=0;                           // Joystick mode key
   JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
     
@@ -160,7 +162,7 @@ void ResetColecovision(void)
   TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
     
   timingFrames = 0;
-
+  soundEmuPause=0;
 }
 
 //*****************************************************************************
