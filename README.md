@@ -24,4 +24,32 @@ core emulation (Z80, TMS9918 and SN76489).
 I think the original port was circa ColEM 2.1
 with some fixes incorproated from ColEM 2.9
 
+Known Issues :
+-----------------------
+* Fathom won't render screen properly. Unknown cause.
+* 64K Activision PCB carts (Mario Bros, Ghostbusters, etc) don't load right.
+* MegaCart games are limited to 512K (MegaCart supports up to 1MB)
+
+Features :
+-----------------------
+A huge change is the new "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
+two frames are blended together - this is really useful when playing games like Space Fury or Galaxian 
+where the bullets on screen are only 1 pixel wide and the DSi LCD just doesn't hold onto the pixels 
+long enough to be visible. These games were designed to run on an old tube TV with phosphor which 
+decays slowly so your eye will see slight traces as the image fades. This emulates that (crudely).
+On the DSi using this new mode renders those games really bright and visible.
+
+The DSi XL/LL has a slower refresh on the LCD and it more closely approximates the old tube TVs... 
+so blend mode is not needed for the XL/LL models.
+
+However! Using blend mode comes at at 25% CPU cost!! The DSi can handle it... the DS-LITE/PHAT cannot.
+
+So my recommendation is as follows:
+* DSi non XL/LL - use Blend Mode for the games that benefit from it (Space Fury, Galaxian, etc).
+* DSi XL/LL - don't bother... the XL/LL screen decay is slower and games look great on it.
+* DS-LITE/PHAT - sorry, just not enough CPU to handle blending mode. Games will still play fine as-is.
+
+To enable this new blend mode, when you pick your game use Y instead of A to select the game. I
+I've added it to the game loading instructions to remind you.
+
 
