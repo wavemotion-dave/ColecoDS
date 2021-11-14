@@ -87,6 +87,9 @@ u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
 
+  soundEmuPause=0;
+  swiWaitForVBlank();
+    
   // Wipe RAM
   memset(pColecoMem+0x2000, 0x00, 0x6000);
   
