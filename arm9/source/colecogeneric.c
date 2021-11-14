@@ -775,7 +775,7 @@ void colecoDSChangeOptions(void) {
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
         affInfoOptions(32);
-        ucY = (ucY == 9 ? 17 : ucY -2);
+        ucY = (ucY == 9 ? 15 : ucY -2);
         ucHaut=0x01;
         affInfoOptions(ucY);
       }
@@ -790,7 +790,7 @@ void colecoDSChangeOptions(void) {
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         affInfoOptions(32);
-        ucY = (ucY == 17 ? 9 : ucY +2);
+        ucY = (ucY == 15 ? 9 : ucY +2);
         ucBas=0x01;
         affInfoOptions(ucY);
       }
@@ -849,26 +849,6 @@ void colecoDSChangeOptions(void) {
               if (strlen(szName)>32) szName[32]='\0';
               AffChaine(0,23,0,szName);
             }
-            break;
-          case 17 : 
-            while (keysCurrent()  & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L));
-            if (ucGameChoice != -1) { 
-              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
-              if (affInfoReport()) {
-              }
-            }
-            else {    
-              while (keysCurrent()  & (KEY_START | KEY_A));
-              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-              AffChaine(5,10,0,(lgeEmul == 0 ? "PAS DE JEU SELECTIONNE" : "   NO GAME SELECTED   ")); 
-              AffChaine(5,12,0,(lgeEmul == 0 ? "SVP, UTILISEZ L'OPTION" : "  PLEASE, USE OPTION  ")); 
-              AffChaine(5,14,0,(lgeEmul == 0 ? "    CHARGEMENT JEU    " : "      LOAD  GAME      "));
-              while (!(keysCurrent()  & (KEY_START | KEY_A)));
-              while (keysCurrent()  & (KEY_START | KEY_A));
-            }
-            dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-            AffChaine(9,5,0,"=* OPTIONS *=");
-            affInfoOptions(ucY);
             break;
         }
       }
