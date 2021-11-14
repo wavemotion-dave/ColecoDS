@@ -11,7 +11,7 @@
 
 	  .equiv INTERRUPT_MODE, 		1		;@1 = Call MAME before IRQ handling
 	  .equiv FAST_Z80SP,			1		;@0 = Use mem functions for stack pointer, 1 = Use direct mem pointer
-	  .equiv UPDATE_CONTEXT,		1		;@1 = Update context vars for MAME
+	  .equiv UPDATE_CONTEXT,		0		;@1 = Update context vars for MAME
 
 .if INTERRUPT_MODE
 	  .extern Interrupt
