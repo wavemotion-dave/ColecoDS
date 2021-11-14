@@ -25,7 +25,7 @@
 extern byte Loop9918(void);
 extern void DrZ80_InitFonct(void);
 
-#include "cpu/tms9928a/tms9928a.h"
+#include "cpu/tms9928a/tms9918a.h"
 
 #include "cpu/sn76496/sn76496_c.h"
 
@@ -159,9 +159,9 @@ void colecoSetPal(void) {
   u8 uBcl,r,g,b;
   
   for (uBcl=0;uBcl<16;uBcl++) {
-    r = (u8) ((float) TMS9928A_palette[uBcl*3+0]*0.121568f);
-    g = (u8) ((float) TMS9928A_palette[uBcl*3+1]*0.121568f);
-    b = (u8) ((float) TMS9928A_palette[uBcl*3+2]*0.121568f);
+    r = (u8) ((float) TMS9918A_palette[uBcl*3+0]*0.121568f);
+    g = (u8) ((float) TMS9918A_palette[uBcl*3+1]*0.121568f);
+    b = (u8) ((float) TMS9918A_palette[uBcl*3+2]*0.121568f);
 
     SPRITE_PALETTE[uBcl] = RGB15(r,g,b);
     BG_PALETTE[uBcl] = RGB15(r,g,b);
@@ -355,9 +355,9 @@ void colecoLoadState()
             
               if (BGColor)
               {
-                 u8 r = (u8) ((float) TMS9928A_palette[BGColor*3+0]*0.121568f);
-                 u8 g = (u8) ((float) TMS9928A_palette[BGColor*3+1]*0.121568f);
-                 u8 b = (u8) ((float) TMS9928A_palette[BGColor*3+2]*0.121568f);
+                 u8 r = (u8) ((float) TMS9918A_palette[BGColor*3+0]*0.121568f);
+                 u8 g = (u8) ((float) TMS9918A_palette[BGColor*3+1]*0.121568f);
+                 u8 b = (u8) ((float) TMS9918A_palette[BGColor*3+2]*0.121568f);
                  BG_PALETTE[0] = RGB15(r,g,b);
               }
               else
