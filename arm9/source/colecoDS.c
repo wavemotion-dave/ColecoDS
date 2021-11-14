@@ -1,10 +1,13 @@
-/******************************************************************************
-*  ColecoDS main file
-*  Ver 1.0
-*
-*  Copyright (C) 2006 AlekMaul . All rights reserved.
-*       http://www.portabledev.com
-******************************************************************************/
+// =====================================================================================
+// Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+//
+// Copying and distribution of this emulator, it's source code and associated 
+// readme files, with or without modification, are permitted in any medium without 
+// royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
+// Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
+//
+// The ColecoDS emulator is offered as-is, without any warranty.
+// =====================================================================================
 #include <nds.h>
 #include <nds/fifomessages.h>
 
@@ -31,6 +34,8 @@
 #include "ecranHaut.h"
 
 #include "cpu/sn76496/sn76496_c.h"
+
+
 extern s16 xfer_buf[4];
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern sn76496 sncol;
@@ -102,7 +107,6 @@ ITCM_CODE void VsoundHandler(void)
 //---------------------------------------------------------------------------------
 void dsInstallSoundEmuFIFO(void) 
 {
-       
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
   msg.SoundPlay.freq = 48000;
@@ -132,11 +136,34 @@ void dsInstallSoundEmuFIFO(void)
 }
 
 //*****************************************************************************
-// Boucle principale d'execution
+// Reset the Colecovision - mostly CPU, Super Game Module and memory...
 //*****************************************************************************
-ITCM_CODE void colecoDS_main (void) {
+void ResetColecovision(void)
+{
+  JoyMode=0;                           // Joystick mode key
+  JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
+    
+  Reset9918();                         // Reset video chip
+
+  sgm_reset();                         // Reset Super Game Module
+
+  DrZ80_Reset();                       // Reset the Z80 CPU Core
+
+  // Clear Main RAM memory...
+  for (u16 iBcl=0x02000;iBcl<0x07FFF;iBcl++)
+    *(pColecoMem+iBcl) = 0x00;
+    
+  // Restore Coleco BIOS
+  memcpy(pColecoMem,ColecoBios,0x2000);
+}
+
+//*****************************************************************************
+// The main emulation loop is here... call into the Z80, VDP and PSG 
+//*****************************************************************************
+ITCM_CODE void colecoDS_main (void) 
+{
   u32 keys_pressed;
-  u16 iTx, iTy,iBcl;
+  u16 iTx, iTy;
   u32 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, LoadNow = 0;
   
   // Affiche le nouveau menu
@@ -174,6 +201,12 @@ ITCM_CODE void colecoDS_main (void) {
             szChai[2] = '0' + (emuFps%100) % 10;
             szChai[3] = 0;
             AffChaine(29,0,6,szChai);
+            
+            char zzz[12];
+            sprintf(zzz,"V:%02X", TMS9918_Mode);
+            AffChaine(8,0,6,zzz);
+            sprintf(zzz,"[%02X][%02X]", VDP[0], VDP[1]);
+            AffChaine(14,0,6,zzz);
            
             emuActFrames = 0;
         }
@@ -210,26 +243,11 @@ ITCM_CODE void colecoDS_main (void) {
             soundEmuPause=1;
             
             // Ask for verification
-            if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][38]) == ID_SHM_YES) { 
-              memcpy(VDP,VDPInit,sizeof(VDP));   // Initialize VDP registers
-              VKey=1;                              // VDP address latch key
-              VDPStatus=0x9F;                      // VDP status register
-              FGColor=BGColor=0;                   // Fore/Background color
-              ScrMode=0;                           // Current screenmode
-              CurLine=0;                           // Current scanline
-              ChrTab=ColTab=ChrGen=pVDPVidMem;     // VDP tables (screen)
-              SprTab=SprGen=pVDPVidMem;            // VDP tables (sprites)
-              JoyMode=0;                           // Joystick mode key
-              JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
-                
-              sgm_reset();
-              
-              DrZ80_Reset();
-              for (iBcl=0x06000;iBcl<0x07FFF;iBcl++)
-                *(pColecoMem+iBcl) = 0xFF;
-              for (iBcl=0;iBcl<0x04000;iBcl++)
-                *(pVDPVidMem+iBcl) = 0xFF;
+            if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][38]) == ID_SHM_YES) 
+            { 
+                ResetColecovision();
             }
+              
             showMainMenu();
             soundEmuPause=0;
           }
