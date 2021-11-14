@@ -1,5 +1,5 @@
 /******************************************************************************
-*  ColecoDS TMS9928A (video) file
+*  ColecoDS TMS9918A (video) file
 *  Ver 1.0
 *
 *  Copyright (C) 2006 AlekMaul . All rights reserved.
@@ -58,7 +58,7 @@
 
 #include "../../colecoDS.h"
 
-#include "tms9928a.h"
+#include "tms9918a.h"
 
 u16 *pVidFlipBuf= (u16*) (0x06000000);    // Video flipping buffer
 
@@ -80,7 +80,7 @@ tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
 /** Palette9918[] ********************************************/
 /** 16 standard colors used by TMS9918/TMS9928 VDP chips.   **/
 /*************************************************************/
-u8 TMS9928A_palette[16*3] = {
+u8 TMS9918A_palette[16*3] = {
   0x00,0x00,0x00,0x00,0x00,0x00,0x20,0xC0,0x20,0x60,0xE0,0x60,
   0x20,0x20,0xE0,0x40,0x60,0xE0,0xA0,0x20,0x20,0x40,0xC0,0xE0,
   0xE0,0x20,0x20,0xE0,0x60,0x60,0xC0,0xC0,0x20,0xC0,0xC0,0x80,
@@ -577,9 +577,9 @@ ITCM_CODE byte Write9918(int iReg, u8 value)
       BGColor=value&0x0F;
       if (BGColor)
       {
-         u8 r = (u8) ((float) TMS9928A_palette[BGColor*3+0]*0.121568f);
-         u8 g = (u8) ((float) TMS9928A_palette[BGColor*3+1]*0.121568f);
-         u8 b = (u8) ((float) TMS9928A_palette[BGColor*3+2]*0.121568f);
+         u8 r = (u8) ((float) TMS9918A_palette[BGColor*3+0]*0.121568f);
+         u8 g = (u8) ((float) TMS9918A_palette[BGColor*3+1]*0.121568f);
+         u8 b = (u8) ((float) TMS9918A_palette[BGColor*3+2]*0.121568f);
          BG_PALETTE[0] = RGB15(r,g,b);
       }
       else

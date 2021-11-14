@@ -1,5 +1,5 @@
-#ifndef _TMS9928A_H_
-#define _TMS9928A_H_
+#ifndef _TMS9918A_H_
+#define _TMS9918A_H_
 
 #include <nds.h>
 
@@ -48,7 +48,7 @@ extern u8 *XBuf;
 extern u8 XBuf_A[];
 extern u8 XBuf_B[];
 
-extern u8 TMS9928A_palette[16*3];
+extern u8 TMS9918A_palette[16*3];
 extern tScrMode SCR[MAXSCREEN+1];
 
 extern void ITCM_CODE RefreshLine0(u8 uY);
