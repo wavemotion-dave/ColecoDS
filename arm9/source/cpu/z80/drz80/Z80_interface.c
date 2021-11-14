@@ -7,13 +7,13 @@
 
 #include "Z80_interface.h"
 #include "../../../colecoDS.h"
+#include "../../../colecomngt.h"
 
 #define INT_IRQ 0x01
 #define NMI_IRQ 0x02
 
-s16 xfer_buf[4] ALIGN(32) = {0};
 
-//#define PUSH_PC() { drz80.Z80SP=drz80.z80_rebaseSP(drz80.Z80SP-drz80.Z80SP_BASE-2); drz80.z80_write16(drz80.Z80PC - drz80.Z80PC_BASE,drz80.Z80SP - drz80.Z80SP_BASE); }
+s16 xfer_buf[4] ALIGN(32) = {0};
 
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
@@ -62,9 +62,9 @@ ITCM_CODE u16 drz80MemReadW(u16 addr)
 // -------------------------------------------------
 ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
 {
-  if (address >= 0xFFC0)
+  if (bMagicMegaCart) // Handle Megacart Hot Spots
   {
-      if (romBankMask > 0x03) // Activision PCB different
+      if (address >= 0xFFC0)
       {
           u16 bank = 0;
           bank = address & romBankMask;
@@ -84,9 +84,9 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 // -------------------------------------------------
 ITCM_CODE u16 drz80MemReadW_banked(u16 addr) 
 {
-  if (addr >= 0xFFC0)
+  if (bMagicMegaCart) // Handle Megacart Hot Spots
   {
-      if (romBankMask > 0x03) // Activision PCB different
+      if (addr >= 0xFFC0)
       {
           u16 bank = 0;
           bank = addr & romBankMask;
@@ -143,7 +143,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
       else
       {
           /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
-          if(romBankMask == 0x03)
+          if(bActivisionPCB)
           {
               if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
               {
@@ -155,7 +155,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                   }
               }
           }
-          else  
+          else if (bMagicMegaCart)
           { 
               if (address >= 0xFFC0)   // Otherwise check if we are hitting one of the MegaCart hotspots...
               {
