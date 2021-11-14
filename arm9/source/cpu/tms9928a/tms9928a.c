@@ -364,32 +364,35 @@ void RefreshBorder(register byte Y)
 /** Refresh line Y (0..191) of SCREEN0, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE RefreshLine0(u8 uY) 
+void ITCM_CODE RefreshLine0(u8 Y) 
 {
-  register byte X,K,Offset,FC,BC;
-  register u8 *P;
-  u8 *T;
+  register byte *T,X,K,Offset;
+  register byte *P,FC,BC;
 
-  P=XBuf+(uY<<8);
+  P=XBuf+(Y<<8);
+  BC = BGColor;
+  FC = FGColor;
 
-  if(!ScreenON) 
+  if(!ScreenON)
     memset(P,BGColor,256);
-  else {
-    BC=BGColor;
-    FC=FGColor;
-    T=ChrTab+(uY>>3)*40;
-    Offset=uY&0x07;
-  
-    for(X=0;X<40;X++) {
+  else
+  {
+    T=ChrTab+(Y>>3)*40;
+    Offset=Y&0x07;
+
+    for(X=0;X<40;X++)
+    {
       K=ChrGen[((int)*T<<3)+Offset];
-      P[0]=K&0x80? FC:BC;P[1]=K&0x40? FC:BC;
-      P[2]=K&0x20? FC:BC;P[3]=K&0x10? FC:BC;
-      P[4]=K&0x08? FC:BC;P[5]=K&0x04? FC:BC;
+      P[0]=K&0x80? FC:BC;
+      P[1]=K&0x40? FC:BC;
+      P[2]=K&0x20? FC:BC;
+      P[3]=K&0x10? FC:BC;
+      P[4]=K&0x08? FC:BC;
+      P[5]=K&0x04? FC:BC;
       P+=6;T++;
     }
   }
-    
-  RefreshBorder(uY);
+  RefreshBorder(Y);
 }
 
 /** RefreshLine1() *******************************************/
