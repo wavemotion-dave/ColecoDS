@@ -64,7 +64,7 @@ ITCM_CODE void BankSwitch(u8 bank)
 {
     if (lastBank != bank)
     {
-        u32 *src = (u32*)(romBuffer + (bank * 0x4000));
+        u32 *src = (u32*)((u32)romBuffer + ((u32)bank * (u32)0x4000));
         u32 *dest = (u32*)(pColecoMem+0xC000);
         for (int i=0; i<0x1000; i++)
         {
