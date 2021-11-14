@@ -727,8 +727,6 @@ void colecoDSChangeOptions(void) {
   bg0 = bgInit(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
   bg1 = bgInit(1, BgType_Text8bpp, BgSize_T_256x512, 29,0);
   bgSetPriority(bg0,1);bgSetPriority(bg1,0);
-  //dmaCopy((void*) ecranHaut_tiles,bgGetGfxPtr(bg0),sizeof(ecranHaut_tiles));
-  //dmaCopy((void*) ecranHaut_map,(void*) bgGetMapPtr(bg1),32*24*2);
   decompress(ecranHautTiles, bgGetGfxPtr(bg0), LZ77Vram);
   decompress(ecranHautMap, (void*) bgGetMapPtr(bg0), LZ77Vram);
   dmaCopy((void*) ecranHautPal,(void*) BG_PALETTE,256*2);

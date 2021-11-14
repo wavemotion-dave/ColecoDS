@@ -231,9 +231,8 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&FGColor, sizeof(FGColor),1, handle); 
     if (uNbO) uNbO = fwrite(&BGColor, sizeof(BGColor),1, handle); 
     if (uNbO) uNbO = fwrite(&ScrMode, sizeof(ScrMode),1, handle); 
-    if (uNbO) uNbO = fwrite(&VDPClatch, sizeof(VDPClatch),1, handle); 
+    if (uNbO) uNbO = fwrite(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
     if (uNbO) uNbO = fwrite(&VAddr, sizeof(VAddr),1, handle); 
-    if (uNbO) uNbO = fwrite(&WKey, sizeof(WKey),1, handle); 
     if (uNbO) uNbO = fwrite(&CurLine, sizeof(CurLine),1, handle); 
     if (uNbO) uNbO = fwrite(&ColTabM, sizeof(ColTabM),1, handle); 
     if (uNbO) uNbO = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle); 
@@ -332,9 +331,8 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&FGColor, sizeof(FGColor),1, handle); 
             if (uNbO) uNbO = fread(&BGColor, sizeof(BGColor),1, handle); 
             if (uNbO) uNbO = fread(&ScrMode, sizeof(ScrMode),1, handle); 
-            if (uNbO) uNbO = fread(&VDPClatch, sizeof(VDPClatch),1, handle); 
+            if (uNbO) uNbO = fread(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
             if (uNbO) uNbO = fread(&VAddr, sizeof(VAddr),1, handle); 
-            if (uNbO) uNbO = fread(&WKey, sizeof(WKey),1, handle); 
             if (uNbO) uNbO = fread(&CurLine, sizeof(CurLine),1, handle); 
             if (uNbO) uNbO = fread(&ColTabM, sizeof(ColTabM),1, handle); 
             if (uNbO) uNbO = fread(&ChrGenM, sizeof(ChrGenM),1, handle); 
@@ -472,7 +470,7 @@ ITCM_CODE void colecoUpdateScreen(void)
 */
 
 /*********************************************************************************
- * Manage key / Paddle
+ * Check if the cart is valid...
  ********************************************************************************/
 u8 colecoCartVerify(const u8 *cartData) {
   u8 RetFct = IMAGE_VERIFY_FAIL;
@@ -484,6 +482,9 @@ u8 colecoCartVerify(const u8 *cartData) {
   // 2) "Test" Cartridge. Some games use this method to skip ColecoVision title screen and delay
   if ((cartData[0] == 0x55) && (cartData[1] == 0xAA)) 
     RetFct = IMAGE_VERIFY_PASS;
+
+  // TODO: for now... who are we to argue? Some SGM roms shift this up to bank 0 and it's not worth the hassle. The game either runs or it won't.
+   RetFct = IMAGE_VERIFY_PASS;
 
   // Quit with verification cheched
   return RetFct;

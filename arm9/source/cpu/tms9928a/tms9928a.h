@@ -49,9 +49,9 @@ extern u8 XBuf[256*256];
 extern u8 TMS9928A_palette[16*3];
 extern tScrMode SCR[MAXSCREEN+1];
 
-extern void ITCM_CODE _TMS9928A_mode0(u8 uY);
-extern void ITCM_CODE _TMS9928A_mode1(u8 uY);
-extern void ITCM_CODE _TMS9928A_mode2(u8 uY);
+extern void ITCM_CODE RefreshLine0(u8 uY);
+extern void ITCM_CODE RefreshLine1(u8 uY);
+extern void ITCM_CODE RefreshLine2(u8 uY);
 extern void ITCM_CODE RefreshLine3(u8 uY);
 
 extern byte WrCtrl9918(byte value);
@@ -62,9 +62,9 @@ extern void Reset9918(void);
 
 extern u16 CurLine;
 extern u8 pVDPVidMem[0x4000];                  // VDP video memory
-extern u8 VDP[8],VDPStatus,VDPClatch;          // VDP registers
+extern u8 VDP[8],VDPStatus,VDPDlatch;          // VDP registers
 extern u16 VAddr;                              // Storage for VIDRAM addresses
-extern u8 VKey,WKey;                           // VDP address latch key
+extern u8 VKey;                                // VDP address latch key
 extern u8 *ChrGen,*ChrTab,*ColTab;             // VDP tables (screens)
 extern u8 *SprGen,*SprTab;                     // VDP tables (sprites)
 extern u8 ScrMode;                             // Current screen mode

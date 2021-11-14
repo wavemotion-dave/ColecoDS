@@ -67,10 +67,10 @@ u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
 
 // Screen handlers and masks for VDP table address registers
 tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
-  { _TMS9928A_mode0,0x7F,0x00,0x3F,0x00,0x3F },   // SCREEN 0:TEXT 40x24
-  { _TMS9928A_mode1,0x7F,0xFF,0x3F,0xFF,0x3F },   // SCREEN 1:TEXT 32x24
-  { _TMS9928A_mode2,0x7F,0x80,0x3C,0xFF,0x3F },   // SCREEN 2:BLOCK 256x192
-  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F }       // SCREEN 3:GFX 64x48x16
+  { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F },   // SCREEN 0:TEXT 40x24
+  { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F },   // SCREEN 1:TEXT 32x24
+  { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F },   // SCREEN 2:BLOCK 256x192
+  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F }    // SCREEN 3:GFX 64x48x16
 };
 
 /** Palette9918[] ********************************************/
@@ -83,22 +83,25 @@ u8 TMS9928A_palette[16*3] = {
   0x20,0x80,0x20,0xC0,0x40,0xA0,0xA0,0xA0,0xA0,0xE0,0xE0,0xE0,
 };
 
-u8 pVDPVidMem[0x4000]={0};                      // VDP video memory
-u16 CurLine __attribute__((section(".dtcm")));                                 // Current scanline
-u8 VDP[8] __attribute__((section(".dtcm")));
-u8 VDPStatus __attribute__((section(".dtcm")));
-u8 VDPClatch __attribute__((section(".dtcm")));              // VDP registers
-u16 VAddr __attribute__((section(".dtcm")));                                 // Storage for VIDRAM addresses
-u8 VKey, WKey;                              // VDP address latch key
-u8 *ChrGen,*ChrTab,*ColTab;                 // VDP tables (screens)
-u8 *SprGen,*SprTab;                         // VDP tables (sprites)
-u8 ScrMode __attribute__((section(".dtcm"))); // Current screen mode
-u8 FGColor __attribute__((section(".dtcm")));
-u8 BGColor __attribute__((section(".dtcm")));                         // Colors
+u8 pVDPVidMem[0x4000]={0};                          // VDP video memory
+u16 CurLine __attribute__((section(".dtcm")));      // Current scanline
+u8 VDP[8] __attribute__((section(".dtcm")));        // VDP Registers
+u8 VDPStatus __attribute__((section(".dtcm")));     // VDP Status
+u8 VDPDlatch __attribute__((section(".dtcm")));     // VDP register D Latch
+u16 VAddr __attribute__((section(".dtcm")));        // Storage for VIDRAM addresses
+u8 VKey;                                            // VDP address latch key
+u8 *ChrGen,*ChrTab,*ColTab;                         // VDP tables (screens)
+u8 *SprGen,*SprTab;                                 // VDP tables (sprites)
+u8 ScrMode __attribute__((section(".dtcm")));       // Current screen mode
+u8 FGColor __attribute__((section(".dtcm")));       // Foreground Color
+u8 BGColor __attribute__((section(".dtcm")));       // Background Color
 
-u32 ColTabM = ~0;
-u32 ChrGenM = ~0;
+u32 ColTabM = ~0;                                   // Mode2 Color Table Mask
+u32 ChrGenM = ~0;                                   // Mode2 Character Generator Mask
+u32 M3=0x7F;                                        // Mask Inputs
+u32 M4=0x03;                                        // Mask Inputs
 
+u8  UCount=0;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -106,55 +109,63 @@ u32 ChrGenM = ~0;
 /** bits in the VDP status register.                        **/
 /*************************************************************/
 byte ITCM_CODE CheckSprites(void) {
-  register int LS,LD;
-  //register byte DH,DV,*PS,*PD,*T;
-  unsigned int DH,DV;
-  unsigned char *PS,*PD,*T;
-  //byte I,J,N,*S,*D;
-  unsigned int I,J,N;
-  unsigned char *S,*D;
+  unsigned int I,J,LS,LD;
+  byte *S,*D,*PS,*PD,*T;
+  int DH,DV;
 
-  /* Find first sprite to display */
-  for(N=0,S=SprTab;(N<32)&&(S[0]!=208);N++,S+=4);
+  /* Find valid, displayed sprites */
+  DV = TMS9918_Sprites16? -16:-8;
+  for(I=J=0,S=SprTab;(I<32)&&(S[0]!=208);++I,S+=4)
+    if(((S[0]<191)||(S[0]>255+DV))&&((int)S[1]-(S[3]&0x80? 32:0)>DV))
+      J|=1<<I;
 
-  if(TMS9918_Sprites16) {
-    for(J=0,S=SprTab;J<N;J++,S+=4)
-      if(S[3]&0x0F)
-        for(I=J+1,D=S+4;I<N;I++,D+=4)
-          if(D[3]&0x0F) {
-            DV=S[0]-D[0];
-            if((DV<16)||(DV>240)) {
-              DH=S[1]-D[1];
-              if((DH<16)||(DH>240)) {
+  if(TMS9918_Sprites16)
+  {
+    for(S=SprTab;J;J>>=1,S+=4)
+      if(J&1)
+        for(I=J>>1,D=S+4;I;I>>=1,D+=4)
+          if(I&1)
+          {
+            DV=(int)S[0]-(int)D[0];
+            if((DV<16)&&(DV>-16))
+            {
+              DH=(int)S[1]-(int)D[1]-(S[3]&0x80? 32:0)+(D[3]&0x80? 32:0);
+              if((DH<16)&&(DH>-16))
+              {
                 PS=SprGen+((int)(S[2]&0xFC)<<3);
                 PD=SprGen+((int)(D[2]&0xFC)<<3);
-                if(DV<16) PD+=DV; else { DV=256-DV;PS+=DV; }
-                if(DH>240) { DH=256-DH;T=PS;PS=PD;PD=T; }
-                while(DV<16) {
-                  LS=((int)PS[0]<<8)+PS[16];
-                  LD=((int)PD[0]<<8)+PD[16];
+                if(DV>0) PD+=DV; else { DV=-DV;PS+=DV; }
+                if(DH<0) { DH=-DH;T=PS;PS=PD;PD=T; }
+                while(DV<16)
+                {
+                  LS=((unsigned int)PS[0]<<8)+PS[16];
+                  LD=((unsigned int)PD[0]<<8)+PD[16];
                   if(LD&(LS>>DH)) break;
-                  else { DV++;PS++;PD++; }
+                  else { ++DV;++PS;++PD; }
                 }
                 if(DV<16) return(1);
               }
             }
           }
   }
-  else {
-    for(J=0,S=SprTab;J<N;J++,S+=4)
-      if(S[3]&0x0F)
-        for(I=J+1,D=S+4;I<N;I++,D+=4)
-          if(D[3]&0x0F) {
-            DV=S[0]-D[0];
-            if((DV<8)||(DV>248)) {
-              DH=S[1]-D[1];
-              if((DH<8)||(DH>248)) {
+  else
+  {
+    for(S=SprTab;J;J>>=1,S+=4)
+      if(J&1)
+        for(I=J>>1,D=S+4;I;I>>=1,D+=4)
+          if(I&1)
+          {
+            DV=(int)S[0]-(int)D[0];
+            if((DV<8)&&(DV>-8))
+            {
+              DH=(int)S[1]-(int)D[1]-(S[3]&0x80? 32:0)+(D[3]&0x80? 32:0);
+              if((DH<8)&&(DH>-8))
+              {
                 PS=SprGen+((int)S[2]<<3);
                 PD=SprGen+((int)D[2]<<3);
-                if(DV<8) PD+=DV; else { DV=256-DV;PS+=DV; }
-                if(DH>248) { DH=256-DH;T=PS;PS=PD;PD=T; }
-                while((DV<8)&&!(*PD&(*PS>>DH))) { DV++;PS++;PD++; }
+                if(DV>0) PD+=DV; else { DV=-DV;PS+=DV; }
+                if(DH<0) { DH=-DH;T=PS;PS=PD;PD=T; }
+                while((DV<8)&&!(*PD&(*PS>>DH))) { ++DV;++PS;++PD; }
                 if(DV<8) return(1);
               }
             }
@@ -164,67 +175,8 @@ byte ITCM_CODE CheckSprites(void) {
   /* No collision */
   return(0);
 }
-/*
-void CheckSprites(void) {
-  register u16 LS,LD;
-  register byte DH,DV,*PS,*PD,*T;
-  byte I,J,N,*S,*D;
 
-  VDPStatus=(VDPStatus&0x9F)|0x1F;
-  for(N=0,S=SprTab;(N<32)&&(S[0]!=208);N++,S+=4);
-
-  if(Sprites16x16) {
-    for(J=0,S=SprTab;J<N;J++,S+=4)
-      if(S[3]&0x0F)
-        for(I=J+1,D=S+4;I<N;I++,D+=4)
-          if(D[3]&0x0F)
-          {
-            DV=S[0]-D[0];
-            if((DV<16)||(DV>240))
-            {
-              DH=S[1]-D[1];
-              if((DH<16)||(DH>240))
-              {
-                PS=SprGen+((long)(S[2]&0xFC)<<3);
-                PD=SprGen+((long)(D[2]&0xFC)<<3);
-                if(DV<16) PD+=DV; else { DV=256-DV;PS+=DV; }
-                if(DH>240) { DH=256-DH;T=PS;PS=PD;PD=T; }
-                while(DV<16)
-                {
-                  LS=((u16)*PS<<8)+*(PS+16);
-                  LD=((u16)*PD<<8)+*(PD+16);
-                  if(LD&(LS>>DH)) break;
-                  else { DV++;PS++;PD++; }
-                }
-                if(DV<16) { VDPStatus|=0x20;return; }
-              }
-            }
-          }
-  }
-  else   {
-    for(J=0,S=SprTab;J<N;J++,S+=4)
-      if(S[3]&0x0F)
-        for(I=J+1,D=S+4;I<N;I++,D+=4)
-          if(D[3]&0x0F)
-          {
-            DV=S[0]-D[0];
-            if((DV<8)||(DV>248))
-            {
-              DH=S[1]-D[1];
-              if((DH<8)||(DH>248))
-              {
-                PS=SprGen+((long)S[2]<<3);
-                PD=SprGen+((long)D[2]<<3);
-                if(DV<8) PD+=DV; else { DV=256-DV;PS+=DV; }
-                if(DH>248) { DH=256-DH;T=PS;PS=PD;PD=T; }
-                while((DV<8)&&!(*PD&(*PS>>DH))) { DV++;PS++;PD++; }
-                if(DV<8) { VDPStatus|=0x20;return; }
-              }
-            }
-          }
-  }
-}
-*/
+#define MaxSprites  8
 
 /** RefreshSprites() *****************************************/
 /** This function is called from RefreshLine#() to refresh  **/
@@ -232,41 +184,50 @@ void CheckSprites(void) {
 /*************************************************************/
 void ITCM_CODE RefreshSprites(register byte Y) {
   static const byte SprHeights[4] = { 8,16,16,32 };
-  byte OH,IH,*PT,*AT;
-  byte *P,*T,C,FifthSprite;
-  signed int L,K;
-  unsigned int M;
-  unsigned short *POPT, COPT;
-  
-  VDPStatus &= ~(TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);    
-    
+  register byte OH,IH,*PT,*AT;
+  register byte *P,*T,C;
+  register int L,K;
+  register unsigned int M;
+
+  /* No 5th sprite yet */
+  VDPStatus &= ~(TMS9918_STAT_5THNUM|TMS9918_STAT_5THSPR);
+
   T  = XBuf+256*Y;
   OH = SprHeights[VDP[1]&0x03];
   IH = SprHeights[VDP[1]&0x02];
   AT = SprTab-4;
-  C  = 8;   // Was 4... allow 8 sprites on a line
-  FifthSprite = 4;
+  C  = MaxSprites+1;
   M  = 0;
-  L  = 0;
 
-  do {
-    M<<=1;AT+=4;L++;     /* Iterate through SprTab */
+  for(L=0;L<32;++L)
+  {
+    M<<=1;AT+=4;         /* Iterate through SprTab */
     K=AT[0];             /* K = sprite Y coordinate */
     if(K==208) break;    /* Iteration terminates if Y=208 */
     if(K>256-IH) K-=256; /* Y coordinate may be negative */
 
     /* Mark all valid sprites with 1s, break at MaxSprites */
-    if((Y>K)&&(Y<=K+OH)) 
-    { 
-        M|=1;
-        if (!--FifthSprite) VDPStatus |= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
-        if(!--C) break; 
+    if((Y>K)&&(Y<=K+OH))
+    {
+      /* If we exceed the maximum number of sprites per line... */
+      if(!--C)
+      {
+        /* Set extra sprite flag in the VDP status register */
+        VDPStatus|=TMS9918_STAT_5THSPR;
+        break;
+      }
+
+      /* Mark sprite as ready to draw */
+      M|=1;
     }
   }
-  while(L<32);
+
+  /* Set last checked sprite number (5th sprite, or Y=208, or sprite #31) */
+  VDPStatus|=L<32? L:31;
 
   for(;M;M>>=1,AT-=4)
-    if(M&1) {
+    if(M&1)
+    {
       C=AT[3];                  /* C = sprite attributes */
       L=C&0x80? AT[1]-32:AT[1]; /* Sprite may be shifted left by 32 */
       C&=0x0F;                  /* C = sprite color */
@@ -286,8 +247,9 @@ void ITCM_CODE RefreshSprites(register byte Y) {
         K=L>=0? 0xFFFF:(0x10000>>(OH>IH? (-L>>1):-L))-1;
 
         /* Mask 2: clip right sprite boundary */
-        L+=OH-257;
-        if(L>=0) {
+        L+=(int)OH-257;
+        if(L>=0)
+        {
           L=(IH>8? 0x0002:0x0200)<<(OH>IH? (L>>1):L);
           K&=~(L-1);
         }
@@ -295,21 +257,13 @@ void ITCM_CODE RefreshSprites(register byte Y) {
         /* Get and clip the sprite data */
         K&=((int)PT[0]<<8)|(IH>8? PT[16]:0x00);
 
-        if(OH>IH) {
+        if(OH>IH)
+        {
           /* Big (zoomed) sprite */
+
           /* Draw left 16 pixels of the sprite */
-          POPT = (unsigned short *)P;
-          COPT = (C<<8) | C;
-          if(K&0xFF00) {
-            if(K&0x8000) POPT[0] = COPT;
-            if(K&0x4000) POPT[1] = COPT;
-            if(K&0x2000) POPT[2] = COPT;
-            if(K&0x1000) POPT[3] = COPT;
-            if(K&0x0800) POPT[4] = COPT;
-            if(K&0x0400) POPT[5] = COPT;
-            if(K&0x0200) POPT[6] = COPT;
-            if(K&0x0100) POPT[7] = COPT;
-            /*
+          if(K&0xFF00)
+          {
             if(K&0x8000) P[1]=P[0]=C;
             if(K&0x4000) P[3]=P[2]=C;
             if(K&0x2000) P[5]=P[4]=C;
@@ -318,12 +272,11 @@ void ITCM_CODE RefreshSprites(register byte Y) {
             if(K&0x0400) P[11]=P[10]=C;
             if(K&0x0200) P[13]=P[12]=C;
             if(K&0x0100) P[15]=P[14]=C;
-            */
           }
 
           /* Draw right 16 pixels of the sprite */
-          if(K&0x00FF) {
-            /*
+          if(K&0x00FF)
+          {
             if(K&0x0080) P[17]=P[16]=C;
             if(K&0x0040) P[19]=P[18]=C;
             if(K&0x0020) P[21]=P[20]=C;
@@ -332,14 +285,15 @@ void ITCM_CODE RefreshSprites(register byte Y) {
             if(K&0x0004) P[27]=P[26]=C;
             if(K&0x0002) P[29]=P[28]=C;
             if(K&0x0001) P[31]=P[30]=C;
-            */
           }
         }
-        else {
+        else
+        {
           /* Normal (unzoomed) sprite */
 
           /* Draw left 8 pixels of the sprite */
-          if(K&0xFF00) {
+          if(K&0xFF00)
+          {
             if(K&0x8000) P[0]=C;
             if(K&0x4000) P[1]=C;
             if(K&0x2000) P[2]=C;
@@ -366,73 +320,52 @@ void ITCM_CODE RefreshSprites(register byte Y) {
       }
     }
 }
-/*
 
-void RefreshSprites(u8 uY) {
-  register byte C,H;
-  register byte *P,*PT,*AT;
-  register int L,K;
-  register unsigned int M;
 
-  H=Sprites16x16? 16:8;
-  C=0;M=0;L=0;AT=SprTab-4;
-  do
-  {
-    M<<=1;AT+=4;L++;    // Iterating through SprTab 
-    K=AT[0];            // K = sprite Y coordinate 
-    if(K==208) break;   // Iteration terminates if Y=208 
-    if(K>256-H) K-=256; // Y coordinate may be negative 
+/** RefreshBorder() ******************************************/
+/** This function is called from RefreshLine#() to refresh  **/
+/** the screen border.                                      **/
+/*************************************************************/
+#define Width 256
+#define Height 192
+void RefreshBorder(register byte Y)
+{
+  register byte *P,BC;
+  register int J,N;
 
-    // Mark all valid sprites with 1s, break at 4 sprites 
-    if((uY>K)&&(uY<=K+H)) { M|=1;if(++C==4) break; }
-  }
-  while(L<32);
+  /* Border color */
+  BC=BGColor;
 
-  for(;M;M>>=1,AT-=4)
-    if(M&1) {
-      C=AT[3];                  // C = sprite attributes
-      L=C&0x80? AT[1]-32:AT[1]; // Sprite may be shifted left by 32 
-      C&=0x0F;                  // C = sprite color 
+  /* Screen buffer */
+  P=(byte *)XBuf;
+  J=Width*(Y+(Height-192)/2);
 
-      if((L<256)&&(L>-H)&&C)
-      {
-        K=AT[0];                // K = sprite Y coordinate 
-        if(K>256-H) K-=256;     // Y coordinate may be negative 
+  /* For the first line, refresh top border */
+  if(Y) P+=J;
+  else for(;J;J--) *P++=BC;
 
-        P=XBuf+(uY<<8)+L;
-        PT=SprGen+((int)(H>8? AT[2]&0xFC:AT[2])<<3)+uY-K-1;
+  /* Calculate number of pixels */
+  N=(Width-(ScrMode ? 256:240))/2;  
 
-        // Mask 1: clip left sprite boundary 
-        K=L>=0? 0x0FFFF:(0x10000>>-L)-1;
-        // Mask 2: clip right sprite boundary 
-        if(L>256-H) K^=((0x00200>>(H-8))<<(L-257+H))-1;
-        // Get and clip the sprite data 
-        K&=((int)PT[0]<<8)|(H>8? PT[16]:0x00);
+  /* Refresh left border */
+  for(J=N;J;J--) *P++=BC;
 
-        // Draw left 8 pixels of the sprite 
-        if(K&0xFF00) {
-          if(K&0x8000) P[0]=C;if(K&0x4000) P[1]=C;
-          if(K&0x2000) P[2]=C;if(K&0x1000) P[3]=C;
-          if(K&0x0800) P[4]=C;if(K&0x0400) P[5]=C;
-          if(K&0x0200) P[6]=C;if(K&0x0100) P[7]=C;
-        }
+  /* Refresh right border */
+  P+=Width-(N<<1);
+  for(J=N;J;J--) *P++=BC;
 
-        // Draw right 8 pixels of the sprite 
-        if(K&0x00FF) {
-          if(K&0x0080) P[8]=C; if(K&0x0040) P[9]=C;
-          if(K&0x0020) P[10]=C;if(K&0x0010) P[11]=C;
-          if(K&0x0008) P[12]=C;if(K&0x0004) P[13]=C;
-          if(K&0x0002) P[14]=C;if(K&0x0001) P[15]=C;
-        }
-      }
-    }
+  /* For the last line, refresh bottom border */
+  if(Y==191)
+    for(J=Width*(Height-192)/2;J;J--) *P++=BC;
 }
-*/
+
+
 /** RefreshLine0() *******************************************/
 /** Refresh line Y (0..191) of SCREEN0, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE _TMS9928A_mode0(u8 uY) {
+void ITCM_CODE RefreshLine0(u8 uY) 
+{
   register byte X,K,Offset,FC,BC;
   register u8 *P;
   u8 *T;
@@ -455,44 +388,16 @@ void ITCM_CODE _TMS9928A_mode0(u8 uY) {
       P+=6;T++;
     }
   }
-
-
-/*
-  register byte *T,X,K,Offset;
-  register pixel *P,FC,BC;
-
-  P  = (pixel *)(VDP->XBuf)
-     + VDP->Width*(Y+(VDP->Height-192)/2)
-     + VDP->Width/2-128+8;
-  BC = VDP->BGColor;
-  FC = VDP->FGColor;
-
-  if(!TMS9918_ScreenON(VDP))
-    for(X=0;X<240;X++) *P++=BC;
-  else
-  {
-    T=VDP->ChrTab+(Y>>3)*40;
-    Offset=Y&0x07;
-
-    for(X=0;X<40;X++)
-    {
-      K=VDP->ChrGen[((int)*T<<3)+Offset];
-      P[0]=K&0x80? FC:BC;
-      P[1]=K&0x40? FC:BC;
-      P[2]=K&0x20? FC:BC;
-      P[3]=K&0x10? FC:BC;
-      P[4]=K&0x08? FC:BC;
-      P[5]=K&0x04? FC:BC;
-      P+=6;T++;
-    }
-*/
+    
+  RefreshBorder(uY);
 }
 
 /** RefreshLine1() *******************************************/
 /** Refresh line Y (0..191) of SCREEN1, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE _TMS9928A_mode1(u8 uY) {
+void ITCM_CODE RefreshLine1(u8 uY) 
+{
   register byte X,K,Offset,FC,BC;
   register u8 *T;
   register u32 *P;
@@ -519,13 +424,14 @@ void ITCM_CODE _TMS9928A_mode1(u8 uY) {
     }
     RefreshSprites(uY);
   }
+  RefreshBorder(uY);
 }
 
 /** RefreshLine2() *******************************************/
 /** Refresh line Y (0..191) of SCREEN2, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE _TMS9928A_mode2(u8 uY) {
+void ITCM_CODE RefreshLine2(u8 uY) {
   unsigned int X,K,BC,Offset;
   register u8 *T;
   register u32 *P;
@@ -566,6 +472,7 @@ void ITCM_CODE _TMS9928A_mode2(u8 uY) {
     }
     RefreshSprites(uY);
   }    
+  RefreshBorder(uY);
 }
 
 /** RefreshLine3() *******************************************/
@@ -593,15 +500,15 @@ void ITCM_CODE RefreshLine3(u8 uY) {
     }
     RefreshSprites(uY);
   }
+  RefreshBorder(uY);
 }
 
-u32 M3=0x7F;
-u32 M4=0x03;
 
 /*********************************************************************************
  * Emulator calls this function to write byte V into a VDP register R
  ********************************************************************************/
-ITCM_CODE byte Write9918(int iReg,u8 value) { 
+ITCM_CODE byte Write9918(int iReg, u8 value) 
+{ 
   int J;
   int VRAMMask;
   byte bIRQ;
@@ -623,11 +530,11 @@ ITCM_CODE byte Write9918(int iReg,u8 value) {
       switch(TMS9918_Mode) {
         case 0x00: J=1;break;
         case 0x01: J=2;break;
-        case 0x02: J=0;break;
-        case 0x04: J=3;break;
+        case 0x02: J=3;break;
+        case 0x04: J=0;break;
         default:   J=ScrMode;break;
       }
-
+        
       /* If mode was changed, recompute table addresses */
       if((J!=ScrMode)||!VRAMMask) {
         VRAMMask    = TMS9918_VRAMMask;
@@ -657,8 +564,6 @@ ITCM_CODE byte Write9918(int iReg,u8 value) {
       SprTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R5)<<7)&VRAMMask);
       break;
     case  6: 
-      //value&=0x3F;
-      //SprGen=pVDPVidMem+((long)value<<11);
       SprGen=pVDPVidMem+(((int)(value&SCR[ScrMode].R6)<<11)&VRAMMask);
       break;
     case  7: 
@@ -674,8 +579,7 @@ ITCM_CODE byte Write9918(int iReg,u8 value) {
       else
       {
           BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
-      }
-          
+      }          
       break;
   }
 
@@ -687,45 +591,49 @@ ITCM_CODE byte Write9918(int iReg,u8 value) {
 /** WrData9918() *********************************************/
 /** Write a value V to the VDP Data Port.                   **/
 /*************************************************************/
-ITCM_CODE void WrData9918(byte V) {
-#ifdef DEBUG
-  //iprintf("WrData9918 %d wkey%d\n",V,WKey);
-#endif
-
-  if(WKey) {
-//  if(!VKey) {
-    /* VDP in the proper WRITE mode */
-    //VDP->DLatch = VDP->VDPVRAM[VDP->VAddr]=V;
-    pVDPVidMem[VAddr]=V;
-    VAddr  = (VAddr+1)&0x3FFF;
-  }
-  else
-  {
-    /* VDP in the READ mode */
-    //VDP->DLatch = VDP->VDPVRAM[VDP->VAddr];
-    VAddr  = (VAddr+1)&0x3FFF;
-    pVDPVidMem[VAddr]=V;
-  }
+ITCM_CODE void WrData9918(byte V) 
+{
+    VDPDlatch = pVDPVidMem[VAddr] = V;
+    VAddr     = (VAddr+1)&0x3FFF;
 }
+
+
+/** RdData9918() *********************************************/
+/** Read a value from the VDP Data Port.                    **/
+/*************************************************************/
+ITCM_CODE byte RdData9918(void) 
+{
+  register byte J;
+
+  J         = VDPDlatch;
+  VDPDlatch = pVDPVidMem[VAddr];
+  VAddr     = (VAddr+1)&0x3FFF;
+    
+  return(J);
+}
+
 
 /** WrCtrl9918() *********************************************/
 /** Write a value V to the VDP Control Port. Enabling IRQs  **/
 /** in this function may cause an IRQ to be generated. In   **/
 /** this case, WrCtrl9918() returns 1. Returns 0 otherwise. **/
 /*************************************************************/
-ITCM_CODE byte WrCtrl9918(byte value) {
-  if(VKey) { VKey=0;VDPClatch=value; }
-  else {
+ITCM_CODE byte WrCtrl9918(byte value) 
+{
+  if(VKey) { VKey=0; VAddr=(VAddr&0xFF00)|value; }
+  else 
+  {
     VKey=1;
-    switch(value&0xC0) {
+    VAddr = ((VAddr&0x00FF)|((int)value<<8))&0x3FFF;
+    switch(value&0xC0) 
+    {
       case 0x00:
-      case 0x40:
-        VAddr=(VDPClatch|((int)value<<8))&0x3FFF;
-        WKey=value&0x40;
+        VDPDlatch = pVDPVidMem[VAddr];
+        VAddr     = (VAddr+1)&0x3FFF;
         break;
       case 0x80:
         /* Enabling IRQs may cause an IRQ here */ 
-        return(Write9918(value&0x07,VDPClatch));
+        return(Write9918(value&0x07,VAddr&0x00FF));
     }
   }
 
@@ -734,26 +642,11 @@ ITCM_CODE byte WrCtrl9918(byte value) {
 }
 
 
-/** RdData9918() *********************************************/
-/** Read a value from the VDP Data Port.                    **/
-/*************************************************************/
-ITCM_CODE byte RdData9918(void) {
-  register byte J;
-
-/*
-  J=VDP->DLatch;
-  VDP->DLatch=VDP->VRAM[VDP->VAddr];
-*/
-  J          = pVDPVidMem[VAddr];
-  VAddr = (VAddr+1)&0x3FFF;
-  return(J);
-}
-
-
 /** RdCtrl9918() *********************************************/
 /** Read a value from the VDP Control Port.                 **/
 /*************************************************************/
-ITCM_CODE byte RdCtrl9918(void) {
+ITCM_CODE byte RdCtrl9918(void) 
+{
   register byte J;
 
   J = VDPStatus;
@@ -761,7 +654,6 @@ ITCM_CODE byte RdCtrl9918(void) {
   return(J);
 }
 
-u8  UCount=0;
 
 /** Loop9918() ***********************************************/
 /** Call this routine on every scanline to update the       **/
@@ -809,21 +701,33 @@ ITCM_CODE byte Loop9918(void)
 /** by pointing Buffer to it and setting Width and Height.  **/
 /** Set Buffer to 0 to use the existing screen buffer.      **/
 /*************************************************************/
-void Reset9918(void) {
+void Reset9918(void) 
+{
+    //memset(VDP,0x00,sizeof(VDP));     // Initialize VDP registers
+    
     extern u8 VDPInit[8];
-    memcpy(VDP,VDPInit,sizeof(VDP));   // Initialize VDP registers
-    memset(pVDPVidMem, 0x00, 0x4000);
-    VKey=1;                              // VDP address latch key
-    WKey=1;
-    VDPStatus=0x00;                      // VDP status register
-    VAddr = 0x0000;                      // VDP address register
-    FGColor=BGColor=0;                   // Fore/Background color
-    ScrMode=0;                           // Current screenmode
-    CurLine=0;                           // Current scanline
-    ChrTab=ColTab=ChrGen=pVDPVidMem;     // VDP tables (screen)
-    SprTab=SprGen=pVDPVidMem;            // VDP tables (sprites)
+    memcpy(VDP,VDPInit,sizeof(VDP));    // Initialize VDP registers
+    
+    memset(pVDPVidMem, 0x00, 0x4000);   // Reset Video memory 
+    VKey=1;                             // VDP address latch key
+    VDPStatus=0x00;                     // VDP status register
+    VAddr = 0x0000;                     // VDP address register
+    FGColor=BGColor=0;                  // Fore/Background color
+    ScrMode=0;                          // Current screenmode
+    CurLine=0;                          // Current scanline
+    ChrTab=ColTab=ChrGen=pVDPVidMem;    // VDP tables (screen)
+    SprTab=SprGen=pVDPVidMem;           // VDP tables (sprites)
     UCount = 0;
+    VDPDlatch = 0;                      // VDP Data latch
+   
+    ColTabM = ~0;                       // Full mask
+    ChrGenM = ~0;                       // Full mask
+    
+    BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
 
+    // -------------------------------------------------------------
+    // Our background/foreground table makes computations FAST!
+    // -------------------------------------------------------------
   int colfg,colbg;
   for (colfg=0;colfg<16;colfg++) {
     for (colbg=0;colbg<16;colbg++) {
