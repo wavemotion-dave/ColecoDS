@@ -24,7 +24,7 @@
 
 #include "colecogeneric.h"
 #include "colecomngt.h"
-#include "cpu/tms9928a/tms9918a.h"
+#include "cpu/tms9918a/tms9918a.h"
 
 #include "intro.h"
 
