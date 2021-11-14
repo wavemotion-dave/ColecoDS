@@ -155,6 +155,12 @@ void ResetColecovision(void)
     
   // Restore Coleco BIOS
   memcpy(pColecoMem,ColecoBios,0x2000);
+    
+  TIMER1_DATA=0;
+  TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
+    
+  timingFrames = 0;
+
 }
 
 //*****************************************************************************

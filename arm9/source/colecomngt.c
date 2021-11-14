@@ -523,6 +523,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             {
                 memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest bank into fixed ROM
                 memcpy(ptr+0x4000, romBuffer, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 1 in there
+                romBankMask = 0x07;
                 if (iSSize == (128 * 1024)) romBankMask = 0x07;
                 if (iSSize == (256 * 1024)) romBankMask = 0x0F;
                 if (iSSize == (512 * 1024)) romBankMask = 0x1F;
