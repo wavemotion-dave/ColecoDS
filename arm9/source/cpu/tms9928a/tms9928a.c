@@ -60,7 +60,11 @@
 
 #include "tms9928a.h"
 
-extern u8 XBuf[256*256];
+u16 *pVidFlipBuf= (u16*) (0x06000000);    // Video flipping buffer
+
+u8 XBuf_A[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer A
+u8 XBuf_B[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer B
+u8 *XBuf __attribute__((section(".dtcm"))) = XBuf_A;
 
 //u32 lutTablehh[16][16][16];
 u32 (*lutTablehh)[16][16] = (void*)0x068A0000;

@@ -40,6 +40,8 @@ extern u32*lutTablehh;
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
 u8 romBankMask = 0x00;
 
+u8 bBlendMode = false;
+
 u8 sgm_enable = false;
 u8 sgm_idx=0;
 u8 sgm_reg[256] = {0};
@@ -383,15 +385,43 @@ void colecoLoadState()
     fclose(handle);
 }
 
-
 /*********************************************************************************
  * Update the screen for the current cycle
  ********************************************************************************/
 ITCM_CODE void colecoUpdateScreen(void) 
 {
-  // Change background
-  dmaCopyWordsAsynch(2, (u32*)XBuf, (u32*)pVidFlipBuf, 256*192);
-  
+    // ----------------------------------------------------------------   
+    // If we are in 'blendMode' we will OR the last two frames. 
+    // This helps on some games where things are just 1 pixel 
+    // wide and the non XL/LL DSi will just not hold onto the
+    // image long enough to render it properly for the eye to 
+    // pick up. This takes CPU speed, however, and will not be
+    // supported for older DS-LITE/PHAT units with slower processors.
+    // ----------------------------------------------------------------   
+    if (bBlendMode)
+    {
+      if (XBuf == XBuf_A)
+      {
+          XBuf = XBuf_B;
+      }
+      else
+      {
+          XBuf = XBuf_A;
+      }
+      u32 *p1 = (u32*)XBuf_A;
+      u32 *p2 = (u32*)XBuf_B;
+      u32 *destP = (u32*)pVidFlipBuf;
+        
+      for (u16 i=0; i<(256*192)/4; i++)
+      {
+          *destP++ = (*p1++ | *p2++);       // Simple OR blending of 2 frames...
+      }
+    }
+    else
+    {
+        // Not blend mode... just blast it out via DMA as fast as we can...
+        dmaCopyWordsAsynch(2, (u32*)XBuf_A, (u32*)pVidFlipBuf, 256*192);
+    }
 }
 
 /*********************************************************************************
@@ -521,7 +551,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             else
             {
                 memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest bank into fixed ROM
-                memcpy(ptr+0x4000, romBuffer, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 1 in there
+                memcpy(ptr+0x4000, romBuffer, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 0 in there
                 romBankMask = 0x07;
                 if (iSSize == (128 * 1024)) romBankMask = 0x07;
                 if (iSSize == (256 * 1024)) romBankMask = 0x0F;
@@ -548,7 +578,8 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
 
   //JGD 18/04/2007  
   Port &= 0x00FF; 
-    
+  
+  // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
       return sgm_reg[sgm_idx];
@@ -598,7 +629,6 @@ static const unsigned char Envelopes[16][32] =
   { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
 };
 
-//static const u8 Volumes[16] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 };
 static const u8 Volumes[16] = { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
 u8 a_idx=0;
 u8 b_idx=0;
@@ -660,37 +690,29 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   //JGD 18/04/2007 
   Port &= 0x00FF;
 
+  // -----------------------------------------------------------------
+  // Port 53 is used for the Super Game Module to enable SGM mode...
+  // -----------------------------------------------------------------
   if ((Port == 0x53) && (Value & 0x01))
   {
       sgm_enable = true;
       return;
   }
+  // -----------------------------------------------
+  // Port 50 is the AY sound chip register set...
+  // -----------------------------------------------
   if (Port == 0x50)
   {
-      sgm_idx=Value;
+      sgm_idx=Value&0x0F;
       return;
   }
   else if (Port == 0x51)
   {
+      // ----------------------------------------------------------------------------------------
+      // This is the AY sound chip support... we're cheating here and just mapping those sounds
+      // onto the original Colecovision SN sound chip. Not perfect but good enough for now...
+      // ----------------------------------------------------------------------------------------
       sgm_reg[sgm_idx]=Value;
-#if 1
-//+--+--+--+--+--+--+--+--+
-//|1 |R2|R1|R0|D3|D2|D1|D0|
-//+--+--+--+--+--+--+--+--+
-//+--+--+--+--+--+--+--+--+
-//|0 |xx|D9|D8|D7|D6|D5|D4|
-//+--+--+--+--+--+--+--+--+
-//
-//1: This denotes that this is a control word
-//R2-R0 the register number:
-//000 Tone 1 Frequency
-//001 Tone 1 Volume
-//010 Tone 2 Frequency
-//011 Tone 2 Volume
-//100 Tone 3 Frequency
-//101 Tone 3 Volume
-//110 Noise Control
-//111 Noise Volume      
       u16 freq=0;
       switch (sgm_idx)
       {
@@ -850,7 +872,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
               break;
 
       }
-#endif      
+     
       return;
   }
   else if (Port == 0x7F)
