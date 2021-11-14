@@ -134,11 +134,11 @@ u8 colecoInit(char *szGame) {
     DrZ80_Reset();
     Reset9918();
       
+    XBuf = XBuf_A;
+      
     soundEmuPause=0;
   }
   
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
-        
   // Return with result
   return (RetFct);
 }
@@ -485,7 +485,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             {
                 bMagicMegaCart = 1;
                 memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest bank into fixed ROM
-                memcpy(ptr+0x4000, romBuffer, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 0 in there
+                memcpy(ptr+0x4000, romBuffer+0x4000, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 1 in there
                 
                 if (iSSize == (64  * 1024)) romBankMask = 0x03;
                 else if (iSSize == (128 * 1024)) romBankMask = 0x07;
@@ -772,7 +772,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
                   }
               }
               
-              // Noise Channel
+              // Noise Channel - we turn it on if the noise channel is enable along with the normal tone channel...
               if ( (!(sgm_reg[0x07] & 0x08) && channel_a_enable) || (!(sgm_reg[0x07] & 0x10) && channel_b_enable) || (!(sgm_reg[0x07] & 0x20) && channel_c_enable) )
               {
                   if (!noise_enable)

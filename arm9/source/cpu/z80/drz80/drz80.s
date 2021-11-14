@@ -1,22 +1,37 @@
       .DATA
-;@ Reesy's Z80 Emulator Version 0.001
-
-;@ (c) Copyright 2004 Reesy, All rights reserved
-;@ DrZ80 is free for non-commercial use.
-
-;@ For commercial use, separate licencing terms must be obtained.
+/*
+ * DrZ80 Version 1.0
+ * Z80 Emulator by Reesy
+ * Copyright 2005 Reesy
+ * 
+ * This file is part of DrZ80.
+ * 
+ *     DrZ80 is free software; you can redistribute it and/or modify
+ *     it under the terms of the GNU General Public License as published by
+ *     the Free Software Foundation; either version 2 of the License, or
+ *     (at your option) any later version.
+ * 
+ *     DrZ80 is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ * 
+ *     You should have received a copy of the GNU General Public License
+ *     along with DrZ80; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * 
+ */
 
       .global DrZ80Run
       .global DrZ80Ver
 
 	  .equiv INTERRUPT_MODE, 		1		;@1 = Call MAME before IRQ handling
 	  .equiv FAST_Z80SP,			1		;@0 = Use mem functions for stack pointer, 1 = Use direct mem pointer
-	  .equiv UPDATE_CONTEXT,		0		;@1 = Update context vars for MAME
-
+	  
 .if INTERRUPT_MODE
 	  .extern Interrupt
 .endif
-
+      
 DrZ80Ver: .long 0x0001
 
 ;@---------------------------------------
@@ -33,20 +48,10 @@ DrZ80Ver: .long 0x0001
 .endm
 
 .macro readmem8
-.if UPDATE_CONTEXT
-	str z80_icount,[cpucontext,#cycles_pointer]
-     	str z80pc,[cpucontext,#z80pc_pointer]
-     	str z80de,[cpucontext,#z80de_pointer]
-     	str z80bc,[cpucontext,#z80bc_pointer]
-     	str z80hl,[cpucontext,#z80hl_pointer]
-.endif
 	stmfd sp!,{r3,r12}
 	mov lr,pc
 	ldr pc,[cpucontext,#z80_read8]			;@ r0 = addr - data returned in r0
 	ldmfd sp!,{r3,r12}
-.if UPDATE_CONTEXT
-	ldr z80_icount,[cpucontext,#cycles_pointer]
-.endif
 .endm
 
 .macro readmem8HL
@@ -55,34 +60,17 @@ DrZ80Ver: .long 0x0001
 .endm
 
 .macro readmem16
-.if UPDATE_CONTEXT
-	str z80_icount,[cpucontext,#cycles_pointer]
-     	str z80pc,[cpucontext,#z80pc_pointer]
-     	str z80de,[cpucontext,#z80de_pointer]
-     	str z80bc,[cpucontext,#z80bc_pointer]
-     	str z80hl,[cpucontext,#z80hl_pointer]
-.endif
 	stmfd sp!,{r3,r12}
 	mov lr,pc
 	ldr pc,[cpucontext,#z80_read16]
 	ldmfd sp!,{r3,r12}
-.if UPDATE_CONTEXT
-	ldr z80_icount,[cpucontext,#cycles_pointer]
-.endif
 .endm
 
 .macro writemem8
-.if UPDATE_CONTEXT
-	str z80_icount,[cpucontext,#cycles_pointer]
-     	str z80pc,[cpucontext,#z80pc_pointer]
-.endif
 	stmfd sp!,{r3,r12}
 	mov lr,pc
 	ldr pc,[cpucontext,#z80_write8]			;@ r0=data r1=addr
 	ldmfd sp!,{r3,r12}
-.if UPDATE_CONTEXT
-	ldr z80_icount,[cpucontext,#cycles_pointer]
-.endif
 .endm
 
 .macro writemem8DE
@@ -96,17 +84,10 @@ DrZ80Ver: .long 0x0001
 .endm
 
 .macro writemem16
-.if UPDATE_CONTEXT
-	str z80_icount,[cpucontext,#cycles_pointer]
-     	str z80pc,[cpucontext,#z80pc_pointer]
-.endif
 	stmfd sp!,{r3,r12}
 	mov lr,pc
 	ldr pc,[cpucontext,#z80_write16]		;@ r0=data r1=addr
 	ldmfd sp!,{r3,r12}
-.if UPDATE_CONTEXT
-	ldr z80_icount,[cpucontext,#cycles_pointer]
-.endif
 .endm
 
 .macro copymem8HL_DE
@@ -120,6 +101,7 @@ DrZ80Ver: .long 0x0001
 	ldmfd sp!,{r3,r12}
 .endm
 ;@---------------------------------------
+
 .macro rebasepc
 	stmfd sp!,{r3,r12}
 	mov lr,pc
@@ -127,7 +109,7 @@ DrZ80Ver: .long 0x0001
 	ldmfd sp!,{r3,r12}
 	mov z80pc,r0
 .endm
-	
+
 .macro rebasesp
 	stmfd sp!,{r3,r12}
 	mov lr,pc
@@ -412,19 +394,10 @@ DrZ80Ver: .long 0x0001
 ;@---------------------------------------
 
 .macro opIN
-.if UPDATE_CONTEXT
-	str z80_icount,[cpucontext,#cycles_pointer]
-     	str z80pc,[cpucontext,#z80pc_pointer]
-     	str z80de,[cpucontext,#z80de_pointer]
-     	str z80bc,[cpucontext,#z80bc_pointer]
-.endif
 	stmfd sp!,{r3,r12}
 	mov lr,pc
 	ldr pc,[cpucontext,#z80_in]				;@ r0=port - data returned in r0
 	ldmfd sp!,{r3,r12}
-.if UPDATE_CONTEXT
-	ldr z80_icount,[cpucontext,#cycles_pointer]
-.endif
 .endm
 
 .macro opIN_C
@@ -489,18 +462,10 @@ DrZ80Ver: .long 0x0001
 ;@---------------------------------------
 
 .macro opOUT
-.if UPDATE_CONTEXT
-	str z80_icount,[cpucontext,#cycles_pointer]
-     	str z80pc,[cpucontext,#z80pc_pointer]
-     	str z80bc,[cpucontext,#z80bc_pointer]
-.endif
 	stmfd sp!,{r3,r12}
 	mov lr,pc
 	ldr pc,[cpucontext,#z80_out]			;@ r0=port r1=data
 	ldmfd sp!,{r3,r12}
-.if UPDATE_CONTEXT
-	ldr z80_icount,[cpucontext,#cycles_pointer]
-.endif
 .endm
 
 .macro opOUT_C
@@ -4241,15 +4206,16 @@ opcode_2_6:
 DAATABLE_LOCAL: .word DAATable
 ;@DAA
 opcode_2_7:
-	mov r1,z80a, lsr #23
+	mov r1,z80a, lsr #24
 	tst z80f,#1<<CFlag
-	orrne r1,r1,#512
+	orrne r1,r1,#256
 	tst z80f,#1<<HFlag
-	orrne r1,r1,#1024
+	orrne r1,r1,#512
 	tst z80f,#1<<NFlag
-	orrne r1,r1,#2048
+	orrne r1,r1,#1024
 	ldr r2,DAATABLE_LOCAL
-	ldrh r1,[r2,r1]
+	add r2,r2,r1, lsl #1
+	ldrh r1,[r2]
 	and z80f,r1,#0xFF
 	and r2,r1,#0xFF<<8
 	mov z80a,r2, lsl #16
@@ -4676,8 +4642,6 @@ opcode_7_6:
 	ldrb r0,[cpucontext,#z80if]
 	orr r0,r0,#Z80_HALT
 	strb r0,[cpucontext,#z80if]
-	and z80_icount,z80_icount,#3
-	eatcycles 4
 	b z80_execute_end
 ;@LD (HL),A
 opcode_7_7:

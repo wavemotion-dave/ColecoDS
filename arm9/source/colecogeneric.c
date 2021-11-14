@@ -719,7 +719,7 @@ void colecoDSChangeOptions(void) {
   char szName[64];
   
   // Stop sound
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (0) | SOUND_SET_VOLUME);
+  soundEmuPause=1;
 
   // Affiche l'ecran en haut
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -875,6 +875,7 @@ void colecoDSChangeOptions(void) {
     swiWaitForVBlank();
   }
   while (keysCurrent()  & (KEY_START | KEY_A));
+  soundEmuPause=0;
 }
 
 //*****************************************************************************

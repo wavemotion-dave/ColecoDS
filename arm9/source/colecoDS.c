@@ -129,6 +129,10 @@ void dsInstallSoundEmuFIFO(void)
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
+
+  // We will use soundEmuPause from now on...
+  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
+
 }
 
 //*****************************************************************************
