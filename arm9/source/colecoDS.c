@@ -27,7 +27,6 @@
 #include "cpu/tms9928a/tms9928a.h"
 
 #include "intro.h"
-#include "wifimanage.h"
 
 #include "ecranBas.h"
 #include "ecranBasSel.h"
