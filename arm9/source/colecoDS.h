@@ -50,6 +50,7 @@ extern u16 timingFrames;
 
 extern volatile u16 vusCptVBL;                   // Video Management
 extern u8 XBuf[256*256] ALIGN(32);
+extern u8 XBufOld[256*256] ALIGN(32);
 
 extern char szKeyName[18][15];
 extern u16 keyCoresp[18];

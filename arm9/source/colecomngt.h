@@ -17,7 +17,6 @@
 
 #define SN76FREQ  15840
 
-extern u8  UCount;
 extern u8 VR;                           // Sound and VDP register storage
 
 extern u32 JoyMode;                     // Joystick / Paddle management

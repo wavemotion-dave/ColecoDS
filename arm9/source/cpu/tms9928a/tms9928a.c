@@ -101,7 +101,6 @@ u32 ChrGenM = ~0;                                   // Mode2 Character Generator
 u32 M3=0x7F;                                        // Mask Inputs
 u32 M4=0x03;                                        // Mask Inputs
 
-u8  UCount=0;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -706,11 +705,7 @@ ITCM_CODE byte Loop9918(void)
 /*************************************************************/
 void Reset9918(void) 
 {
-    //memset(VDP,0x00,sizeof(VDP));     // Initialize VDP registers
-    
-    extern u8 VDPInit[8];
-    memcpy(VDP,VDPInit,sizeof(VDP));    // Initialize VDP registers
-    
+    memset(VDP,0x00,sizeof(VDP));       // Initialize VDP registers
     memset(pVDPVidMem, 0x00, 0x4000);   // Reset Video memory 
     VKey=1;                             // VDP address latch key
     VDPStatus=0x00;                     // VDP status register
@@ -720,7 +715,6 @@ void Reset9918(void)
     CurLine=0;                          // Current scanline
     ChrTab=ColTab=ChrGen=pVDPVidMem;    // VDP tables (screen)
     SprTab=SprGen=pVDPVidMem;           // VDP tables (sprites)
-    UCount = 0;
     VDPDlatch = 0;                      // VDP Data latch
    
     ColTabM = ~0;                       // Full mask
