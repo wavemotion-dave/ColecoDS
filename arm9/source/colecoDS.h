@@ -4,7 +4,7 @@
 #include <nds.h>
 #include <string.h>
 
-#define VERSIONCLDS "0.5"
+#define VERSIONCLDS "0.6"
 
 #define DEBUGNO
 #define USEDRZ80
