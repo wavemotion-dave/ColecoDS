@@ -109,7 +109,7 @@ char szLang[3][62][35] = {
    "> NO  <",                       // 18
    
    "%03d/%03d FILES AVAILABLE ",    // 19
-   "CHOOSE A FILE",                 // 20
+   "A=SELECT, Y=BLEND, B=EXIT",     // 20
    
    "=* KEYS *=",                    // 21
    

@@ -327,6 +327,7 @@ void colecoDSFindFiles(void)
 }
 
 u8 bFullSpeed = false;
+extern u8 bBlendMode;
 
 //*****************************************************************************
 // charge une rom
@@ -497,6 +498,7 @@ u8 colecoDSLoadFile(void)
       if (gpFic[ucGameAct].uType != DIRECT)
       {
         if (keysCurrent() & KEY_X) bFullSpeed = true; else bFullSpeed = false;
+        if (keysCurrent() & KEY_Y) bBlendMode = true; else bBlendMode = false;          
         bDone=true;
         ucGameChoice = ucGameAct;
         WAITVBL;

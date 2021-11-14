@@ -42,36 +42,96 @@ ITCM_CODE void z80_irq_callback(void) {
 	previouspc=0;
 }
 
+// -----------------------------
+// Normal 8-bit Read... fast!
+// -----------------------------
 ITCM_CODE u8 cpu_readmem16 (u16 address) {
   return (pColecoMem[address]);
 }
 
+// -----------------------------
+// Normal 16-bit Read... fast!
+// -----------------------------
+ITCM_CODE u16 drz80MemReadW(u16 addr) 
+{
+    return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
+}
+
+// -------------------------------------------------
+// 8-bit read with bankswitch support... slower...
+// -------------------------------------------------
 ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
 {
   if (address >= 0xFFC0)
   {
-      u16 bank = 0;
-      if (romBankMask == 0x03) // Activision PCB different
-         bank = (address>>4)&romBankMask;
-      else bank = address & romBankMask;
-      
-      if (lastBank != bank)
+      if (romBankMask > 0x03) // Activision PCB different
       {
-        memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
-        lastBank = bank;
+          u16 bank = 0;
+          bank = address & romBankMask;
+
+          if (lastBank != bank)
+          {
+            memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+            lastBank = bank;
+          }
       }
   }    
   return (pColecoMem[address]);
 }
 
+// -------------------------------------------------
+// 16-bit read with bankswitch support... slower...
+// -------------------------------------------------
+ITCM_CODE u16 drz80MemReadW_banked(u16 addr) 
+{
+  if (addr >= 0xFFC0)
+  {
+      if (romBankMask > 0x03) // Activision PCB different
+      {
+          u16 bank = 0;
+          bank = addr & romBankMask;
+          if (lastBank != bank)
+          {
+              memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+              lastBank = bank;
+          }
+      }
+  }    
+  return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
+}
+
+
+
+// ------------------------------------------------------------------
+// Write memory handles both normal writes and bankswitched since
+// write is much less common than reads... 
+// ------------------------------------------------------------------
 ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
 {
     extern u8 sgm_enable;
     extern u16 sgm_low_addr;
+    
+    // -----------------------------------------------------------
+    // If the Super Game Module has been enabled, we have a much 
+    // wider range of RAM that can be written (and no mirroring)
+    // -----------------------------------------------------------
     if (sgm_enable)
     {
-      if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
-      if (address == 0xFFFF)    // SGM can write to this address to set bank #
+        if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
+    }    
+    else if((address>0x5FFF)&&(address<0x8000)) // Normal memory RAM write... with mirrors...
+    {
+        address&=0x03FF;
+        pColecoMem[0x6000+address]=pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x6C00+address]=
+        pColecoMem[0x7000+address]=pColecoMem[0x7400+address]=pColecoMem[0x7800+address]=pColecoMem[0x7C00+address]=value;
+    }
+
+    // ---------------------------------------------------------------------
+    // Check for writing hotspots in Activision PCB carts and MegaCarts...
+    // ---------------------------------------------------------------------
+    if (romBankMask != 0)
+    {
+      if (sgm_enable && (address == 0xFFFF))    // SGM can write to this address to set bank #
       {
           u16 bank = value & romBankMask;
           if (lastBank != bank)
@@ -80,38 +140,41 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
             lastBank = bank;
           }
       }
-    }
-    else if((address>0x5FFF)&&(address<0x8000)) 
-    {
-        address&=0x03FF;
-        pColecoMem[0x6000+address]=pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x6C00+address]=
-        pColecoMem[0x7000+address]=pColecoMem[0x7400+address]=pColecoMem[0x7800+address]=pColecoMem[0x7C00+address]=value;
-    }
-}
-
-ITCM_CODE u16 drz80MemReadW(u16 addr) 
-{
-    return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
-}
-
-ITCM_CODE u16 drz80MemReadW_banked(u16 addr) 
-{
-  if (addr >= 0xFFC0)
-  {
-      u16 bank = 0;
-      if (romBankMask == 0x03) // Activision PCB different
-         bank = (addr>>4)&romBankMask;
-      else bank = addr & romBankMask;
-      if (lastBank != bank)
+      else
       {
-          memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
-          lastBank = bank;
+          /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
+          if(romBankMask == 0x03)
+          {
+              if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
+              {
+                  u16 bank = (address>>4) & romBankMask;
+                  if (lastBank != bank)
+                  {
+                    memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+                    lastBank = bank;
+                  }
+              }
+          }
+          else  
+          { 
+              if (address >= 0xFFC0)   // Otherwise check if we are hitting one of the MegaCart hotspots...
+              {
+                  u16 bank = 0;
+                  bank = address & romBankMask;
+                  if (lastBank != bank)
+                  {
+                      memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
+                      lastBank = bank;
+                  }              
+              }
+          }
       }
-  }    
-  return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
+    }
 }
 
-
+// -----------------------------------------------------------------
+// The 16-bit write simply makes 2 calls into the 8-bit writes...
+// -----------------------------------------------------------------
 ITCM_CODE void drz80MemWriteW(u16 data,u16 addr) {
   cpu_writemem16(data & 0xff , addr);
   cpu_writemem16(data>>8,addr+1);
@@ -251,9 +314,10 @@ void DrZ80_Reset(void) {
   drz80.Z80SP=z80_rebaseSP(0xF000); 
   drz80.z80intadr = 0x38;
 
-	Z80_Clear_Pending_Interrupts();
-	previouspc=0;
+  Z80_Clear_Pending_Interrupts();
+  previouspc=0;
   cpuirequest=0;
+  lastBank = 199;
 }
 
 u16 DrZ80_GetPC (void) {
