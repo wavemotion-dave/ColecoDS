@@ -126,9 +126,7 @@ u8 colecoInit(char *szGame) {
     SN76496_set_frequency(&sncol,TMS9918_BASE);
     SN76496_init(&sncol,(u16 *) &freqtablcol);
     SN76496_reset(&sncol,0);
-
       
-    UCount=0;
     ExitNow = 0;
 
     DrZ80_Reset();
@@ -393,6 +391,7 @@ ITCM_CODE void colecoUpdateScreen(void)
 {
   // Change background
   dmaCopyWordsAsynch(2, (u32*)XBuf, (u32*)pVidFlipBuf, 256*192);
+  
 }
 
 /*********************************************************************************
