@@ -8,7 +8,6 @@
 
 #include "colecoDS.h"
 #include "colecogeneric.h"
-#include "wifimanage.h"
 
 #include "sprMario.h"
 #include "ecranBas.h"
