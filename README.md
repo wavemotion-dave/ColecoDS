@@ -1,8 +1,6 @@
 # ColecoDS
 ColecoDS - An Emulator for the DS/DSi
 
-(c) 2021 by wavemotion-dave
-
 To run requires a coleco.rom bios to 
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
@@ -13,6 +11,19 @@ for games larger than 32K.
 
 This is a work-in-progress... more readme 
 coming soon.
+
+Copyright :
+-----------------------
+ColecoDS is Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+
+Copying and distribution of this emulator, it's source code
+and associated readme files, with or without modification, 
+are permitted in any medium without royalty provided this 
+copyright notice is used and wavemotion-dave (Phoenix-Edition),
+Alekmaul (original port) and Marat Fayzullin (ColEM core) are 
+thanked profusely.
+
+The ColecoDS emulator is offered as-is, without any warranty.
 
 Credits :
 -----------------------
