@@ -477,6 +477,15 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         }
         else    // Bankswitched Cart!!
         {
+            // Copy 128K worth up to the VRAM for faster bank switching on the first 8 banks
+            u32 copySize = ((iSSize <= 128*1024) ? iSSize : (128*1024));
+            u32 *dest = (u32*)0x06880000;
+            u32 *src  = (u32*)romBuffer;
+            for (u32 i=0; i<copySize/4; i++)
+            {
+                *dest++ = *src++;
+            }
+                
             bMagicMegaCart = ((romBuffer[0xC000] == 0x55 && romBuffer[0xC001] == 0xAA) ? 1:0);
             if ((iSSize == (64 * 1024)) && !bMagicMegaCart)
             {
