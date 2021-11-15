@@ -4,7 +4,7 @@
 #include <nds.h>
 #include <string.h>
 
-#define VERSIONCLDS "0.6"
+#define VERSIONCLDS "0.7"
 
 #define DEBUGNO
 #define USEDRZ80
@@ -54,11 +54,11 @@ extern char szKeyName[18][15];
 extern u16 keyCoresp[18];
 extern u16 keyboard_JoyNDS[12];
 
-extern u32 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
+extern u8 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
 
 extern u8 pColecoMem[0x10000];                   // Coleco Memory
 
-extern unsigned int soundEmuPause;
+extern u8 soundEmuPause;
 
 extern int bg0, bg1, bg0b,bg1b;
 

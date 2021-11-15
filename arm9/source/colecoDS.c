@@ -58,7 +58,7 @@ typedef enum {
 
 #define ds_GetTicks() (TIMER0_DATA)
 
-unsigned int soundEmuPause=1;
+u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;
 
 int bg0, bg1, bg0b,bg1b;
 
@@ -79,7 +79,7 @@ u16 keyboard_JoyNDS[12] = {
       0,    1,    2,    3, 4, 5, 8, 9, 10, 11,     6,      7
 };
 
-u32 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
+u8 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
 
 
 //*****************************************************************************
