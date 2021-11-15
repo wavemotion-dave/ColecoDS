@@ -1089,7 +1089,7 @@ DrZ80Ver: .long 0x0001
 	.equ Z80_HALT, 1<<2
 
 ;@ --------------------------- Framework --------------------------
-    
+.section .itcm
 DrZ80Run:
 	;@ r0 = pointer to cpu context
 	;@ r1 = ISTATES to execute  
@@ -1302,6 +1302,8 @@ DoInterrupt_end:
 	mov pc,r0    ;@ call callback function
 	ldmfd sp!,{r3,r12}
 	ldmfd sp!,{pc} ;@ return
+
+.section .text
 
 DAATable: .hword  (0x00<<8)|(1<<ZFlag)|(1<<VFlag)
          .hword  (0x01<<8)                  
