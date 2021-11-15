@@ -14,9 +14,13 @@ for games larger than 32K.
 This is a work-in-progress... more readme 
 coming soon.
 
+Known Issues :
+-----------------------
 Thanks to Alekmaul who provided the 
 baseline code to work with and to lobo
 for the menu graphical design.
+
+Thanks to Reesy for the DrZ80 core.
 
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
@@ -27,7 +31,14 @@ with some fixes incorproated from ColEM 2.9
 Known Issues :
 -----------------------
 * Fathom won't render screen properly. Unknown cause.
-* 64K Activision PCB carts (Mario Bros, Ghostbusters, etc) don't load right.
+* 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle).
+* Deep Dungeon Adventures won't run.
+* Uridium won't run.
+* Flappy Bird has graphical issues.
+* Super Space Acer crashes after a few seconds of play.
+* Pillars won't run.
+* Vexxed won't run.
+* Lord of the Dungeon doesn't play (need SRAM support).
 * MegaCart games are limited to 512K (MegaCart supports up to 1MB)
 
 Features :
