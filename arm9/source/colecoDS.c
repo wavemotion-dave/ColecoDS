@@ -142,6 +142,8 @@ void ResetColecovision(void)
   Reset9918();                         // Reset video chip
 
   sgm_reset();                         // Reset Super Game Module
+    
+  SN76496_reset(&sncol,0);             // Reset the SN sound chip
 
   DrZ80_Reset();                       // Reset the Z80 CPU Core
 
