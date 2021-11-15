@@ -105,7 +105,7 @@ void dsInstallSoundEmuFIFO(void)
 {
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 44000;
+  msg.SoundPlay.freq = 48000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -125,14 +125,10 @@ void dsInstallSoundEmuFIFO(void)
   }
     
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(23500);
+  TIMER2_DATA = TIMER_FREQ(23700);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
-
-  // We will use soundEmuPause from now on...
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
-
 }
 
 //*****************************************************************************
