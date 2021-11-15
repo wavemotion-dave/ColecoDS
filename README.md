@@ -14,7 +14,7 @@ for games larger than 32K.
 This is a work-in-progress... more readme 
 coming soon.
 
-Known Issues :
+Credits :
 -----------------------
 Thanks to Alekmaul who provided the 
 baseline code to work with and to lobo
