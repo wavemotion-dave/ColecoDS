@@ -47,7 +47,7 @@ Known Issues :
 * Mario Bros. has graphical issues.
 * Sudoku has graphical issues (still playable).
 * Uridium won't run.
-* Flappy Bird has graphical issues.
+* Super Pac Man has major graphical issues.
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
 * Vexxed won't run.
