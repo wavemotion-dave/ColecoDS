@@ -33,6 +33,7 @@ Known Issues :
 * Fathom won't render screen properly. Unknown cause.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle).
 * Deep Dungeon Adventures won't run.
+* Mario Bros. has graphical issues.
 * Uridium won't run.
 * Flappy Bird has graphical issues.
 * Super Space Acer crashes after a few seconds of play.
