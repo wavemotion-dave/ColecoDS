@@ -42,7 +42,7 @@ with some fixes incorproated from ColEM 2.9
 Known Issues :
 -----------------------
 * Fathom won't render screen properly. Unknown cause.
-* 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle).
+* 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * Deep Dungeon Adventures won't run.
 * Mario Bros. has graphical issues.
 * Sudoku has graphical issues (still playable).
