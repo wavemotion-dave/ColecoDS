@@ -86,7 +86,8 @@ u16 freqtablcol[1024*2] __attribute__((section(".dtcm")));
 u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
-
+  
+  soundEmuPause=1;
   fifoSendValue32(FIFO_USER_01,(1<<16) | (0) | SOUND_SET_VOLUME);
     
   // Wipe RAM
@@ -141,6 +142,7 @@ u8 colecoInit(char *szGame) {
     // We will use soundEmuPause from now on...
     fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
   }
+  soundEmuPause=0;
   
   // Return with result
   return (RetFct);

@@ -158,6 +158,7 @@ void ResetColecovision(void)
   TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
     
   timingFrames = 0;
+    
   soundEmuPause=0;
 }
 

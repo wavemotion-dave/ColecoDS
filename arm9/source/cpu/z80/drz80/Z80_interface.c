@@ -12,7 +12,6 @@
 #define INT_IRQ 0x01
 #define NMI_IRQ 0x02
 
-
 s16 xfer_buf[4] ALIGN(32) = {0};
 
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
