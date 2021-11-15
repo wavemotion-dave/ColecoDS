@@ -45,12 +45,14 @@ Known Issues :
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle).
 * Deep Dungeon Adventures won't run.
 * Mario Bros. has graphical issues.
+* Sudoku has graphical issues (still playable).
 * Uridium won't run.
 * Flappy Bird has graphical issues.
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
 * Vexxed won't run.
 * Lord of the Dungeon doesn't play (need SRAM support).
+* The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
 * MegaCart games are limited to 512K (MegaCart supports up to 1MB)
 
 Features :
