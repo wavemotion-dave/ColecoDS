@@ -136,8 +136,6 @@ void dsInstallSoundEmuFIFO(void)
 //*****************************************************************************
 void ResetColecovision(void)
 {
-  soundEmuPause=1;
-   
   JoyMode=0;                           // Joystick mode key
   JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
     
@@ -158,8 +156,6 @@ void ResetColecovision(void)
   TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
     
   timingFrames = 0;
-    
-  soundEmuPause=0;
 }
 
 //*****************************************************************************
