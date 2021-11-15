@@ -16,7 +16,11 @@ s16 xfer_buf[4] ALIGN(32) = {0};
 
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
+#define PUSH_PC() { drz80.Z80SP=drz80.z80_rebaseSP(drz80.Z80SP-drz80.Z80SP_BASE-2); drz80.z80_write16(drz80.Z80PC - drz80.Z80PC_BASE,drz80.Z80SP - drz80.Z80SP_BASE); }
+
 u16 previouspc,cpuirequest;
+
+u32 dwElapsedTicks __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
@@ -194,13 +198,13 @@ ITCM_CODE void Interrupt(void) {
 		drz80.pending_irq &= ~INT_IRQ;
 	}
 
-/*
+#if 0
   // This extra check is because DrZ80 calls this function directly but does
   //    not have access to the Z80.pending_irq variable.  So we check here instead. 
-  if(!cpu.pending_irq ) {	return; } // If no pending ints exit 
+  if(!drz80.pending_irq ) {	return; } // If no pending ints exit 
 	
   // Check if ints enabled 
-  if ( (cpu.pending_irq  & NMI_IRQ) || (drz80.Z80IF&1) ) {
+  if ( (drz80.pending_irq  & NMI_IRQ) || (drz80.Z80IF&1) ) {
     int irq_vector = Z80_IGNORE_INT;
 
 		// DrZ80 Z80IF 
@@ -214,18 +218,18 @@ ITCM_CODE void Interrupt(void) {
 			 drz80.Z80IF&= ~4; 	// and clear halt 
 		}  
 		
-		if (cpu.pending_irq & NMI_IRQ)  {
+		if (drz80.pending_irq & NMI_IRQ)  {
 			drz80.Z80IF = (drz80.Z80IF&1)<<1;  // Save interrupt flip-flop 1 to 2 and Clear interrupt flip-flop 1 
 			PUSH_PC();
 			drz80.Z80PC=drz80.z80_rebasePC(0x0066);
 			// reset NMI interrupt request 
-			cpu.pending_irq &= ~NMI_IRQ;
+			drz80.pending_irq &= ~NMI_IRQ;
 		}
 		else  {
 			// Clear interrupt flip-flop 1 
       drz80.Z80IF &= ~1;
 			// reset INT interrupt request 
-			cpu.pending_irq &= ~INT_IRQ;
+			drz80.pending_irq &= ~INT_IRQ;
       irq_vector = drz80.z80irqvector;
 
       // Interrupt mode 2. Call [Z80.I:databyte] 
@@ -261,7 +265,7 @@ ITCM_CODE void Interrupt(void) {
 			}
 		}
   }
-*/
+#endif    
 }
 
 void DrZ80_InitFonct() {
@@ -310,11 +314,6 @@ void DrZ80_Reset(void) {
   lastBank = 199;
 }
 
-u16 DrZ80_GetPC (void) {
-	return (drz80.Z80PC - drz80.Z80PC_BASE);
-}
-
-u32 dwElapsedTicks = 0;
 
 ITCM_CODE int DrZ80_execute(u32 cycles) {
   drz80.cycles = cycles;
