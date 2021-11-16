@@ -118,6 +118,7 @@ ITCM_CODE u16 drz80MemReadW_banked(u16 addr)
 // ------------------------------------------------------------------
 ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
 {
+    extern u8 sRamAtE000_OK;
     extern u8 sgm_enable;
     extern u16 sgm_low_addr;
     
@@ -135,17 +136,23 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         pColecoMem[0x6000+address]=pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x6C00+address]=
         pColecoMem[0x7000+address]=pColecoMem[0x7400+address]=pColecoMem[0x7800+address]=pColecoMem[0x7C00+address]=value;
     }
+    else if ((address >= 0xE000) && (address < 0xE800)) // Allow SRAM if cart doesn't extend this high...
+    {
+        if (sRamAtE000_OK) pColecoMem[address+0x800]=value;
+    }
 
     // ---------------------------------------------------------------------
     // Check for writing hotspots in Activision PCB carts and MegaCarts...
     // ---------------------------------------------------------------------
     if (romBankMask != 0)
     {
-      if (sgm_enable && (address == 0xFFFF))    // SGM can write to this address to set bank #
+#if 0        
+      if (address == 0xFFFF)    // SGM can write to this address to set bank #
       {
           BankSwitch(value & romBankMask);
       }
       else  // Check for hotspots...
+#endif          
       {
           /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
           if(bActivisionPCB)
