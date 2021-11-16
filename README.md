@@ -51,6 +51,7 @@ Known Issues :
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
 * Vexxed won't run.
+* Arno Dash and Diamond Dash 2 glitch out soon after loading.
 * Lord of the Dungeon doesn't play (need SRAM support).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
 * MegaCart games are limited to 512K (MegaCart supports up to 1MB)
