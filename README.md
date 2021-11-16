@@ -44,7 +44,6 @@ Known Issues :
 * Fathom won't render screen properly. Unknown cause.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * Deep Dungeon Adventures won't run.
-* Mario Bros. has graphical issues.
 * Sudoku has graphical issues (still playable).
 * Uridium won't run.
 * Super Pac Man has major graphical issues.

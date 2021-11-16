@@ -41,7 +41,7 @@
 
 typedef struct {
   void (*Refresh)(u8 uY);
-  byte R2,R3,R4,R5,R6;
+  byte R2,R3,R4,R5,R6,M2,M3,M4,M5;
 } tScrMode;
 
 extern u8 *XBuf;
@@ -64,7 +64,7 @@ extern void Reset9918(void);
 
 extern u16 CurLine;
 extern u8 pVDPVidMem[0x4000];                  // VDP video memory
-extern u8 VDP[8],VDPStatus,VDPDlatch;          // VDP registers
+extern u8 VDP[16],VDPStatus,VDPDlatch;         // VDP registers
 extern u16 VAddr;                              // Storage for VIDRAM addresses
 extern u8 VKey;                                // VDP address latch key
 extern u8 *ChrGen,*ChrTab,*ColTab;             // VDP tables (screens)

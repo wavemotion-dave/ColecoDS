@@ -71,10 +71,10 @@ u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
 
 // Screen handlers and masks for VDP table address registers
 tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
-  { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F },   // SCREEN 0:TEXT 40x24
-  { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F },   // SCREEN 1:TEXT 32x24
-  { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F },   // SCREEN 2:BLOCK 256x192
-  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F }    // SCREEN 3:GFX 64x48x16
+  { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 0:TEXT 40x24    */
+  { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 1:TEXT 32x24    */
+  { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F,0x00,0x7F,0x03,0x00 },/* SCREEN 2:BLOCK 256x192 */
+  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 3:GFX 64x48x16  */
 };
 
 /** Palette9918[] ********************************************/
@@ -87,9 +87,9 @@ u8 TMS9918A_palette[16*3] = {
   0x20,0x80,0x20,0xC0,0x40,0xA0,0xA0,0xA0,0xA0,0xE0,0xE0,0xE0,
 };
 
-u8 pVDPVidMem[0x4000]={0};                          // VDP video memory
+u8 pVDPVidMem[0x4000] ALIGN(32) ={0};               // VDP video memory
 u16 CurLine __attribute__((section(".dtcm")));      // Current scanline
-u8 VDP[8] __attribute__((section(".dtcm")));        // VDP Registers
+u8 VDP[16] __attribute__((section(".dtcm")));       // VDP Registers
 u8 VDPStatus __attribute__((section(".dtcm")));     // VDP Status
 u8 VDPDlatch __attribute__((section(".dtcm")));     // VDP register D Latch
 u16 VAddr __attribute__((section(".dtcm")));        // Storage for VIDRAM addresses
@@ -100,10 +100,11 @@ u8 ScrMode __attribute__((section(".dtcm")));       // Current screen mode
 u8 FGColor __attribute__((section(".dtcm")));       // Foreground Color
 u8 BGColor __attribute__((section(".dtcm")));       // Background Color
 
-u32 ColTabM = ~0;                                   // Mode2 Color Table Mask
-u32 ChrGenM = ~0;                                   // Mode2 Character Generator Mask
-u32 M3=0x7F;                                        // Mask Inputs
-u32 M4=0x03;                                        // Mask Inputs
+// Sprite and Character Masks for the VDP
+u32 ChrTabM = ~0;
+u32 ColTabM = ~0;
+u32 ChrGenM = ~0;
+u32 SprTabM = ~0;
 
 
 /** CheckSprites() *******************************************/
@@ -414,7 +415,7 @@ void ITCM_CODE RefreshLine1(u8 uY)
   if(!ScreenON) 
     memset(P,BGColor,256);
   else {
-    T=ChrTab+(uY>>3)*32;
+    T=ChrTab+((int)(uY&0xF8)<<2);
     Offset=uY&0x07;
 
     for(X=0;X<32;X++) {
@@ -438,44 +439,39 @@ void ITCM_CODE RefreshLine1(u8 uY)
 /** in this line.                                           **/
 /*************************************************************/
 void ITCM_CODE RefreshLine2(u8 uY) {
-  unsigned int X,K,BC,Offset;
-  register u8 *T;
-  register u32 *P;
-  register byte *PGT,*CLT;
-  unsigned int I;
+  u32 *P;
+  register byte FC,BC;
+  register byte X,K,*T,*PGT,*CLT;
+  register int J,I,PGTMask,CLTMask;
   u32 *ptLut;
 
   P=(u32*)(XBuf+(uY<<8));
 
   if (!ScreenON) 
     memset(P,BGColor,256);
-  else {
-    Offset=uY&0x07;
-    PGT = ChrGen+Offset;
-    CLT = ColTab+Offset;
-    if (uY >= 0x80) {
-      if (VDP[4] & 0x02) {
-        PGT += (0x200 << 3);
-        CLT += (0x200 << 3);
-      }
-    } else if (uY >= 0x40) {
-      if (VDP[4] & 0x01) {
-        PGT += (0x100 << 3);
-        CLT += (0x100 << 3);
-      }
-    }
-    //PGT = ChrGen+Offset+((uY & 0xC0) << 5);
-    //CLT = ColTab+Offset+((uY & 0xC0) << 5);
-    T = ChrTab + ((uY & 0xF8) << 2);
-    for(X=0;X<32;X++) {
-      I=((int)*T<<3);
-      K=PGT[I & ChrGenM];
-      BC=CLT[I & ColTabM];
-      ptLut = (u32*)(lutTablehh[BC>>4][BC&0x0F]);
+  else 
+  {
+    J       = ((int)(uY&0xC0)<<5)+(uY&0x07);
+    PGT     = ChrGen;
+    CLT     = ColTab;
+    PGTMask = ChrGenM;
+    CLTMask = ColTabM;
+    T       = ChrTab+((int)(uY&0xF8)<<2);
+
+    for(X=0;X<32;X++)
+    {
+      I    = (int)*T<<3;
+      K    = CLT[(J+I)&CLTMask];
+      FC   = K>>4;
+      BC   = K&0x0F;
+      K    = PGT[(J+I)&PGTMask];
+        
+      ptLut = (u32*)(lutTablehh[FC][BC]);
       *P++ = *(ptLut + ((K>>4)));
       *P++ = *(ptLut + ((K & 0xF)));
       T++;
     }
+      
     RefreshSprites(uY);
   }    
   RefreshBorder(uY);
@@ -495,8 +491,7 @@ void ITCM_CODE RefreshLine3(u8 uY) {
     memset(P,BGColor,256);
   }
   else {
-    //T=ChrTab+(uY>>3)*32;
-     T=ChrTab+((int)(uY&0xF8)<<2);
+    T=ChrTab+((int)(uY&0xF8)<<2);
     Offset=(uY&0x1C)>>2;
     for(X=0;X<32;X++) {
       K=ChrGen[((int)*T<<3)+Offset];
@@ -542,7 +537,8 @@ ITCM_CODE byte Write9918(int iReg, u8 value)
       }
         
       /* If mode was changed, recompute table addresses */
-      if((J!=ScrMode)||!VRAMMask) {
+      if ((J!=ScrMode) || !VRAMMask) 
+      {
         VRAMMask    = TMS9918_VRAMMask;
         ChrTab=pVDPVidMem+(((int)(VDP[2]&SCR[J].R2)<<10)&VRAMMask);
         ColTab=pVDPVidMem+(((int)(VDP[3]&SCR[J].R3)<<6)&VRAMMask);
@@ -550,24 +546,28 @@ ITCM_CODE byte Write9918(int iReg, u8 value)
         SprTab=pVDPVidMem+(((int)(VDP[5]&SCR[J].R5)<<7)&VRAMMask);
         SprGen=pVDPVidMem+(((int)(VDP[6]&SCR[J].R6)<<11)&VRAMMask);
           
-        ColTabM = ((int)(VDP[3]|~M3)<<6)|0x1C03F;
-        ChrGenM = ((int)(VDP[4]|~M4)<<11)|0x007FF;          
+        ChrTabM = ((int)(VDP[2]|~SCR[value].M2)<<10)|0x03FF;
+        ColTabM = ((int)(VDP[3]|~SCR[value].M3)<<6)|0x1C03F;
+        ChrGenM = ((int)(VDP[4]|~SCR[value].M4)<<11)|0x007FF;
+        SprTabM = ((int)(VDP[5]|~SCR[value].M5)<<7)|0x1807F;
         ScrMode=J;
       }
       break;
     case  2: 
       ChrTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R2)<<10)&VRAMMask);
+      ChrTabM = ((int)(value|~SCR[ScrMode].M2)<<10)|0x03FF;
       break;
     case  3: 
       ColTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R3)<<6)&VRAMMask);
-      ColTabM = ((int)(value|~M3)<<6)|0x1C03F;
+      ColTabM = ((int)(value|~SCR[ScrMode].M3)<<6)|0x1C03F;
       break;
     case  4: 
       ChrGen=pVDPVidMem+(((int)(value&SCR[ScrMode].R4)<<11)&VRAMMask);
-      ChrGenM = ((int)(value|~M4)<<11)|0x007FF;          
+      ChrGenM = ((int)(value|~SCR[ScrMode].M4)<<11)|0x007FF;
       break;
     case  5: 
       SprTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R5)<<7)&VRAMMask);
+      SprTabM = ((int)(value|~SCR[ScrMode].M5)<<7)|0x1807F;
       break;
     case  6: 
       SprGen=pVDPVidMem+(((int)(value&SCR[ScrMode].R6)<<11)&VRAMMask);
@@ -639,7 +639,7 @@ ITCM_CODE byte WrCtrl9918(byte value)
         break;
       case 0x80:
         /* Enabling IRQs may cause an IRQ here */ 
-        return(Write9918(value&0x07,VAddr&0x00FF));
+        return(Write9918(value&0x0F,VAddr&0x00FF));
     }
   }
 
@@ -721,8 +721,10 @@ void Reset9918(void)
     SprTab=SprGen=pVDPVidMem;           // VDP tables (sprites)
     VDPDlatch = 0;                      // VDP Data latch
    
+    ChrGenM = ~0;                       // Full mask
     ColTabM = ~0;                       // Full mask
     ChrGenM = ~0;                       // Full mask
+    SprTabM = ~0;                       // Full mask
     
     BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
 
