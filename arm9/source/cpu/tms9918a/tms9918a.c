@@ -14,41 +14,6 @@
 **
 ** http://www.msxnet.org/tech/tms9918a.txt
 **
-** By Sean Young 1999 (sean@msxnet.org).
-** Based on code by Mike Balfour. Features added:
-** - read-ahead
-** - single read/write address
-** - AND mask for mode 2
-** - multicolor mode
-** - undocumented screen modes
-** - illegal sprites (max 4 on one line)
-** - vertical coordinate corrected -- was one to high (255 => 0, 0 => 1)
-** - errors in interrupt emulation
-** - back drop correctly emulated.
-**
-** 19 feb 2000, Sean:
-** - now uses plot_pixel (..), so -ror works properly
-** - fixed bug in tms.patternmask
-**
-** 3 nov 2000, Raphael Nabet:
-** - fixed a nasty bug in _TMS9928A_sprites. A transparent sprite caused
-**   sprites at lower levels not to be displayed, which is wrong.
-**
-** 3 jan 2001, Sean Young:
-** - A few minor cleanups
-** - Changed TMS9928A_vram_[rw] and  TMS9928A_register_[rw] to READ8_HANDLER
-**   and WRITE8_HANDLER.
-** - Got rid of the color table, unused. Also got rid of the old colors,
-**   which were commented out anyway.
-**
-**
-** Todo:
-** - The screen image is rendered in `one go'. Modifications during
-**   screen build up are not shown.
-** - Correctly emulate 4,8,16 kb VRAM if needed.
-** - uses plot_pixel (...) in TMS_sprites (...), which is rended in
-**   in a back buffer created with malloc (). Hmm..
-** - Colours are incorrect. [fixed by R Nabet ?]
 ******************************************************************************/
 #include <nds.h>
 #include <nds/arm9/console.h> //basic print functionality
@@ -66,7 +31,7 @@ u8 XBuf_A[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buff
 u8 XBuf_B[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer B
 u8 *XBuf __attribute__((section(".dtcm"))) = XBuf_A;
 
-//u32 lutTablehh[16][16][16];
+// Look up table for colors - pre-generated and in VRAM for maximum speed!
 u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
 
 // Screen handlers and masks for VDP table address registers
@@ -81,10 +46,10 @@ tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
 /** 16 standard colors used by TMS9918/TMS9928 VDP chips.   **/
 /*************************************************************/
 u8 TMS9918A_palette[16*3] = {
-  0x00,0x00,0x00,0x00,0x00,0x00,0x20,0xC0,0x20,0x60,0xE0,0x60,
-  0x20,0x20,0xE0,0x40,0x60,0xE0,0xA0,0x20,0x20,0x40,0xC0,0xE0,
-  0xE0,0x20,0x20,0xE0,0x60,0x60,0xC0,0xC0,0x20,0xC0,0xC0,0x80,
-  0x20,0x80,0x20,0xC0,0x40,0xA0,0xA0,0xA0,0xA0,0xE0,0xE0,0xE0,
+  0x00,0x00,0x00,   0x00,0x00,0x00,   0x20,0xC0,0x20,   0x60,0xE0,0x60,
+  0x20,0x20,0xE0,   0x40,0x60,0xE0,   0xA0,0x20,0x20,   0x40,0xC0,0xE0,
+  0xE0,0x20,0x20,   0xE0,0x60,0x60,   0xC0,0xC0,0x20,   0xC0,0xC0,0x80,
+  0x20,0x80,0x20,   0xC0,0x40,0xA0,   0xA0,0xA0,0xA0,   0xE0,0xE0,0xE0,
 };
 
 u8 pVDPVidMem[0x4000] ALIGN(32) ={0};               // VDP video memory
