@@ -31,7 +31,7 @@ extern void DrZ80_InitFonct(void);
 
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0003
+#define COLECODS_SAVE_VER 0x0004
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
