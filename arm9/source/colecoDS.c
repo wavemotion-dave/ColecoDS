@@ -46,7 +46,6 @@ u16 emuFps=0;
 u16 emuActFrames=0;
 u16 timingFrames=0;
 
-
 /*******************************************************************************/
 volatile u16 vusCptVBL;                   // Video Management
 extern u8 bFullSpeed;
@@ -347,7 +346,7 @@ ITCM_CODE void colecoDS_main (void)
       JoyStat[0]= ucUN | ucDEUX;
 
       JoyStat[0]=~JoyStat[0];
-      JoyStat[1]=JoyStat[0];
+      JoyStat[1]=JoyStat[0];        // Mirror Joystick 1 on Joystick 2... maybe not a good idea?
     }
   }
 }
