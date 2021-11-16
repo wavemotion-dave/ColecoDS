@@ -807,9 +807,9 @@ void colecoDSChangeOptions(void) {
             colecoDSLoadFile();
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
             if (ucGameChoice != -1) { 
-              (lgeEmul == 0 ? sprintf(szName,"JEU :%-28s",gpFic[ucGameChoice].szName) : sprintf(szName, "GAME:%-28s",gpFic[ucGameChoice].szName));
-              if (strlen(szName)>32) szName[32]='\0';
-              AffChaine(0,23,0,szName);
+              (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
+               if (strlen(szName)>30) szName[30]='\0';
+               AffChaine(1,22,0,szName);
             }
             ucY = 11;
             AffChaine(9,5,0,"=* OPTIONS *=");
