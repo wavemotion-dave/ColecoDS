@@ -38,6 +38,7 @@ author of ColEM which is the code for the
 core emulation (Z80, TMS9918 and SN76489).
 I think the original port was circa ColEM 2.1
 with some fixes incorproated from ColEM 2.9
+and updated Sprite/Line handling from ColEM 5.6
 
 Known Issues :
 -----------------------
