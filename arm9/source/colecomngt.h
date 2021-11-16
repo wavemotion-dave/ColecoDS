@@ -19,10 +19,10 @@
 
 extern u8 VR;                           // Sound and VDP register storage
 
-extern u32 JoyMode;                     // Joystick / Paddle management
-extern u32 JoyStat[2];                  // Joystick / Paddle management
+extern u16 JoyMode;                     // Joystick / Paddle management
+extern u16 JoyStat[2];                  // Joystick / Paddle management
 
-extern u32 ExitNow;
+extern u8 ExitNow;
 extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
 

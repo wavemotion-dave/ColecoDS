@@ -25,6 +25,9 @@
 
 #include "tms9918a.h"
 
+#define MaxSprites  32
+
+
 u16 *pVidFlipBuf= (u16*) (0x06000000);    // Video flipping buffer
 
 u8 XBuf_A[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer A
@@ -145,7 +148,64 @@ byte ITCM_CODE CheckSprites(void) {
   return(0);
 }
 
-#define MaxSprites  8
+
+/** ScanSprites() ********************************************/
+/** Compute bitmask of sprites shown in a given scanline.   **/
+/** Returns the first sprite to show or -1 if none shown.   **/
+/** Also updates 5th sprite fields in the status register.  **/
+/*************************************************************/
+ITCM_CODE int ScanSprites(register byte Y,unsigned int *Mask)
+{
+  static const byte SprHeights[4] = { 8,16,16,32 };
+  register byte OH,IH,*AT;
+  register int L,K,C1,C2;
+  register unsigned int M;
+
+  /* No 5th sprite yet */
+  VDPStatus &= ~(TMS9918_STAT_5THNUM|TMS9918_STAT_5THSPR);
+
+  /* Must have MODE1+ and screen enabled */
+  if(!ScrMode || !TMS9918_ScreenON)
+  {
+    if(Mask) *Mask=0;
+    return(-1);
+  }
+
+  OH = SprHeights[VDP[1]&0x03];
+  IH = SprHeights[VDP[1]&0x02];
+  AT = SprTab;
+  C1 = MaxSprites+1;
+  C2 = 5;
+  M  = 0;
+
+  for(L=0;L<32;++L,AT+=4)
+  {
+    K=AT[0];             /* K = sprite Y coordinate */
+    if(K==208) break;    /* Iteration terminates if Y=208 */
+    if(K>256-IH) K-=256; /* Y coordinate may be negative */
+
+    /* Mark all valid sprites with 1s, break at MaxSprites */
+    if((Y>K)&&(Y<=K+OH))
+    {
+      /* If we exceed four sprites per line, set 5th sprite flag */
+      if(!--C2) VDPStatus|=TMS9918_STAT_5THSPR|L;
+
+      /* If we exceed maximum number of sprites per line, stop here */
+      if(!--C1) break;
+
+      /* Mark sprite as ready to draw */
+      M|=(1<<L);
+    }
+  }
+
+  /* Set last checked sprite number (5th sprite, or Y=208, or sprite #31) */
+  if(C2>0) VDPStatus |= L<32? L:31;
+
+  /* Return first shown sprite and bit mask of shown sprites */
+  if(Mask) *Mask=M;
+  return(L-1);
+}
+
 
 /** RefreshSprites() *****************************************/
 /** This function is called from RefreshLine#() to refresh  **/
@@ -155,57 +215,34 @@ void ITCM_CODE RefreshSprites(register byte Y) {
   static const byte SprHeights[4] = { 8,16,16,32 };
   register byte OH,IH,*PT,*AT;
   register byte *P,*T,C;
-  register int L,K;
-  register unsigned int M;
+  register int L,K,N;
+  unsigned int M;
 
-  /* No 5th sprite yet */
-  VDPStatus &= ~(TMS9918_STAT_5THNUM|TMS9918_STAT_5THSPR);
+  /* Find sprites to show, update 5th sprite status */
+  N = ScanSprites(Y,&M);
+  if((N<0) || !M) return;
 
   T  = XBuf+256*Y;
   OH = SprHeights[VDP[1]&0x03];
   IH = SprHeights[VDP[1]&0x02];
-  AT = SprTab-4;
-  C  = MaxSprites+1;
-  M  = 0;
+  AT = SprTab+(N<<2);
 
-  for(L=0;L<32;++L)
+  /* For each possibly shown sprite... */
+  for( ; N>=0 ; --N, AT-=4)
   {
-    M<<=1;AT+=4;         /* Iterate through SprTab */
-    K=AT[0];             /* K = sprite Y coordinate */
-    if(K==208) break;    /* Iteration terminates if Y=208 */
-    if(K>256-IH) K-=256; /* Y coordinate may be negative */
-
-    /* Mark all valid sprites with 1s, break at MaxSprites */
-    if((Y>K)&&(Y<=K+OH))
-    {
-      /* If we exceed the maximum number of sprites per line... */
-      if(!--C)
-      {
-        /* Set extra sprite flag in the VDP status register */
-        VDPStatus|=TMS9918_STAT_5THSPR;
-        break;
-      }
-
-      /* Mark sprite as ready to draw */
-      M|=1;
-    }
-  }
-
-  /* Set last checked sprite number (5th sprite, or Y=208, or sprite #31) */
-  VDPStatus|=L<32? L:31;
-
-  for(;M;M>>=1,AT-=4)
-    if(M&1)
+    /* If showing this sprite... */
+    if(M&(1<<N))
     {
       C=AT[3];                  /* C = sprite attributes */
       L=C&0x80? AT[1]-32:AT[1]; /* Sprite may be shifted left by 32 */
       C&=0x0F;                  /* C = sprite color */
 
-      if((L<256)&&(L>-OH)&&C)
+      if((L<256) && (L>-OH) && C)
       {
         K=AT[0];                /* K = sprite Y coordinate */
         if(K>256-IH) K-=256;    /* Y coordinate may be negative */
 
+        //C  = VDP->XPal[C];
         P  = T+L;
         K  = Y-K-1;
         PT = SprGen
@@ -288,6 +325,7 @@ void ITCM_CODE RefreshSprites(register byte Y) {
         }
       }
     }
+  }
 }
 
 

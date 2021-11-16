@@ -232,7 +232,8 @@ ITCM_CODE void colecoDS_main (void)
         iTy = touch.py;
     
         // Test if "Reset Game" selected
-        if ((iTx>=1*8) && (iTy>=6*8) && (iTx<=(1+14)*8) && (iTy<9*8) ) {
+        if ((iTx>=6) && (iTy>=40) && (iTx<=130) && (iTy<67)) 
+        {
           if (!ResetNow) {
             ResetNow = 1;
             // Stop sound
@@ -253,7 +254,8 @@ ITCM_CODE void colecoDS_main (void)
         }
         
         // Test if "End Game" selected
-        if ((iTx>=1*8) && (iTy>=9*8) && (iTx<=(1+14)*8) && (iTy<12*8) ) {
+        if ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95)) 
+        {
           // Stop sound
           soundEmuPause=1;
     
@@ -267,7 +269,8 @@ ITCM_CODE void colecoDS_main (void)
         }
 
         // Test if "High Score" selected
-        if ((iTx>=1*8) && (iTy>=12*8) && (iTx<=(1+14)*8) && (iTy<15*8) ) {
+        if ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125)) 
+        {
           // Stop sound
           soundEmuPause=1;
           highscore_display(crc32(0xFFFFFFFF, pColecoMem+0x8000, 0x8000));
@@ -275,7 +278,7 @@ ITCM_CODE void colecoDS_main (void)
         }
           
         // Test if "Save State" selected
-        if ((iTx>=1*8) && (iTy>=16*8) && (iTx<=(1+14)*8) && (iTy<19*8) ) 
+        if ((iTx>=6) && (iTy>=125) && (iTx<=130) && (iTy<155) ) 
         {
           if (!SaveNow) 
           {
@@ -290,7 +293,7 @@ ITCM_CODE void colecoDS_main (void)
           SaveNow = 0;
           
         // Test if "Load State" selected
-        if ((iTx>=1*8) && (iTy>=20*8) && (iTx<=(1+14)*8) && (iTy<23*8) ) 
+        if ((iTx>=6) && (iTy>=155) && (iTx<=130) && (iTy<184) ) 
         {
           if (!LoadNow) 
           {
@@ -346,7 +349,8 @@ ITCM_CODE void colecoDS_main (void)
       JoyStat[0]= ucUN | ucDEUX;
 
       JoyStat[0]=~JoyStat[0];
-      JoyStat[1]=JoyStat[0];        // Mirror Joystick 1 on Joystick 2... maybe not a good idea?
+      JoyStat[0] &= ~0x3000;
+      //JoyStat[1]=JoyStat[0];        // Mirror Joystick 1 on Joystick 2... maybe not a good idea?
     }
   }
 }

@@ -597,11 +597,12 @@ void colecoDSChangeTouches(void) {
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);// ecranBas_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(9,5,0,(lgeEmul == 0 ? "=* TOUCHES *=" : "=*   KEYS  *="));
-  AffChaine(4 ,20,0,(lgeEmul == 0 ? "START : RETOUR AUX OPTIONS" : "START : RETURN TO OPTIONS "));
-  AffChaine(4 ,21,0,(lgeEmul == 0 ? "    A : CHOISIR TOUCHE    " : "    A : CHOOSE KEY        "));
+  AffChaine(4 ,20,0,(lgeEmul == 0 ? "    B : RETOUR AUX OPTIONS" : "    B : RETURN TO OPTIONS "));
+  AffChaine(4 ,21,0,(lgeEmul == 0 ? "    A : CHOISIR TOUCHE    " : "    A : REDEFINE THIS KEY "));
   affInfoTouches(ucY);
   
-  while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_A | KEY_UP | KEY_DOWN))!=0);
+  while ((keysCurrent() & (KEY_TOUCH | KEY_B | KEY_A | KEY_UP | KEY_DOWN))!=0)
+      ;
  
   while (!bOK) {
     if (keysCurrent() & KEY_UP) {
@@ -638,7 +639,7 @@ void colecoDSChangeTouches(void) {
       if (!ucA) {
         ucA = 0x01;
         AffChaine(4 ,20,0,(lgeEmul == 0 ? " GCHE/DRTE : CHANGE TOUCHE" : "LEFT/RIGHT : CHANGE KEY   "));
-        AffChaine(4 ,21,0,(lgeEmul == 0 ? "         A : VALIDE CHOIX " : "         A : VALID ENTRY  "));
+        AffChaine(4 ,21,0,(lgeEmul == 0 ? "         A : VALIDE CHOIX " : "         A : CONFIRM ENTRY  "));
         while (keysCurrent() & KEY_A);
         bTch = 0x00;
         bIndTch = keyboard_JoyNDS[ucY-7];
@@ -678,23 +679,20 @@ void colecoDSChangeTouches(void) {
           else
             ucR  = 0;
         }
-        AffChaine(4 ,20,0,(lgeEmul == 0 ? "START : RETOUR AUX OPTIONS" : "START : RETURN TO OPTIONS "));
+        AffChaine(4 ,20,0,(lgeEmul == 0 ? "    B : RETOUR AUX OPTIONS" : "    B : RETURN TO OPTIONS "));
         AffChaine(4 ,21,0,(lgeEmul == 0 ? "    A : CHOISIR TOUCHE    " : "    A : CHOOSE KEY        "));
         while (keysCurrent()  & KEY_A);
       }
     }
     else
       ucA = 0x00;
-    if (keysCurrent() & KEY_START) {
+    if (keysCurrent() & KEY_B) {
       bOK = 1;
     }
     affMario();
     swiWaitForVBlank();
   }
-  while (keysCurrent() & KEY_START);
-
-  // Enleve les affichages pour remettre les options
-  //forceDMA(&ecranUp_map[24][0],(void*) SCREEN_BASE_BLOCK(31),32*24*2);
+  while (keysCurrent() & KEY_B);
 }
 
 
@@ -711,8 +709,8 @@ void affInfoOptions(u32 uY) {
   AffChaine(2,11,(uY==11 ? 2 : 0),(lgeEmul == 0 ? "  LANCEMENT DU JEU ACTUEL   " : "    EXECUTE ACTUAL GAME     "));
   AffChaine(2,13,(uY==13 ? 2 : 0),(lgeEmul == 0 ? "     REDEFINIR TOUCHES      " : "      REDEFINE   KEYS       "));
   AffChaine(2,15,(uY==15 ? 2 : 0),(lgeEmul == 0 ? "     LANGUE : FRANCAIS      " : "     LANGUAGE : ENGLISH     "));
-  AffChaine(5,20,0,(lgeEmul == 0 ? "START : LANCER LE JEU " : "START : PLAY GAME     "));
-  AffChaine(5,21,0,(lgeEmul == 0 ? "    A : CHOISIR OPTION" : "    A : CHOOSE OPTION "));
+  AffChaine(5,19,0,(lgeEmul == 0 ? "START : LANCER LE JEU " : "START : PLAY GAME     "));
+  AffChaine(5,20,0,(lgeEmul == 0 ? "    A : CHOISIR OPTION" : "    A : CHOOSE OPTION "));
 }
 void colecoDSChangeOptions(void) {
   u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 9, bOK=0, bBcl;
@@ -765,9 +763,9 @@ void colecoDSChangeOptions(void) {
   affInfoOptions(ucY);
   
   if (ucGameChoice != -1) { 
-    (lgeEmul == 0 ? sprintf(szName,"JEU :%-28s",gpFic[ucGameChoice].szName) : sprintf(szName, "GAME:%-28s",gpFic[ucGameChoice].szName));
-    if (strlen(szName)>32) szName[32]='\0';
-    AffChaine(0,23,0,szName);
+    (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
+    if (strlen(szName)>30) szName[30]='\0';
+    AffChaine(1,22,0,szName);
   }
   
   while (!bOK) {
@@ -844,9 +842,9 @@ void colecoDSChangeOptions(void) {
             lgeEmul = (lgeEmul == 1 ? 0 : 1);
             affInfoOptions(ucY);
             if (ucGameChoice != -1) { 
-              (lgeEmul == 0 ? sprintf(szName,"JEU :%-28s",gpFic[ucGameChoice].szName) : sprintf(szName, "GAME:%-28s",gpFic[ucGameChoice].szName));
-              if (strlen(szName)>32) szName[32]='\0';
-              AffChaine(0,23,0,szName);
+              (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
+              if (strlen(szName)>30) szName[30]='\0';
+              AffChaine(1,22,0,szName);
             }
             break;
         }
