@@ -90,7 +90,6 @@ u8 colecoInit(char *szGame) {
   u16 uVide;
   
   soundEmuPause=1;
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (0) | SOUND_SET_VOLUME);
     
   // Wipe RAM
   memset(pColecoMem+0x2000, 0x00, 0x6000);
@@ -140,9 +139,6 @@ u8 colecoInit(char *szGame) {
     Reset9918();
       
     XBuf = XBuf_A;
-      
-    // We will use soundEmuPause from now on...
-    fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
   }
   soundEmuPause=0;
   

@@ -89,10 +89,21 @@ void showMainMenu(void)
   dmaCopy((void*) bgGetMapPtr(bg0b),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
 
+
+void SoundPause(void)
+{
+    soundEmuPause = 1;
+}
+
+void SoundUnPause(void)
+{
+    soundEmuPause = 0;
+}
+
 ITCM_CODE void VsoundHandler(void)
 {
     u16 samples[4];
-    if (soundEmuPause) {*aptr=0; return;}
+    if (soundEmuPause) {return;}
     sncol.mixlength=2;
     sncol.pcmptr=(u8*)samples;
     SN76496_mixer(&sncol);
@@ -128,6 +139,8 @@ void dsInstallSoundEmuFIFO(void)
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
+    
+  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
 }
 
 //*****************************************************************************
@@ -237,7 +250,7 @@ ITCM_CODE void colecoDS_main (void)
           if (!ResetNow) {
             ResetNow = 1;
             // Stop sound
-            soundEmuPause=1;
+            SoundPause();
             
             // Ask for verification
             if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][38]) == ID_SHM_YES) 
@@ -246,7 +259,7 @@ ITCM_CODE void colecoDS_main (void)
             }
               
             showMainMenu();
-            soundEmuPause=0;
+            SoundUnPause();
           }
         }
         else {
@@ -257,7 +270,7 @@ ITCM_CODE void colecoDS_main (void)
         if ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95)) 
         {
           // Stop sound
-          soundEmuPause=1;
+          SoundPause();
     
           // Ask for verification
           if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][39]) == ID_SHM_YES) 
@@ -265,16 +278,17 @@ ITCM_CODE void colecoDS_main (void)
               return;
           }
           showMainMenu();
-          soundEmuPause=0;
+            
+          SoundUnPause();
         }
 
         // Test if "High Score" selected
         if ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125)) 
         {
           // Stop sound
-          soundEmuPause=1;
+          SoundPause();
           highscore_display(crc32(0xFFFFFFFF, pColecoMem+0x8000, 0x8000));
-          soundEmuPause=0;
+          SoundUnPause();
         }
           
         // Test if "Save State" selected
@@ -283,10 +297,10 @@ ITCM_CODE void colecoDS_main (void)
           if (!SaveNow) 
           {
             // Stop sound
-            soundEmuPause=1;
+            SoundPause();
             SaveNow = 1;
             colecoSaveState();
-            soundEmuPause=0;
+            SoundUnPause();
           }
         }
         else
@@ -298,10 +312,10 @@ ITCM_CODE void colecoDS_main (void)
           if (!LoadNow) 
           {
             // Stop sound
-            soundEmuPause=1;
+            SoundPause();
             LoadNow = 1;
             colecoLoadState();
-            soundEmuPause=0;
+            SoundUnPause();
           }
         }
         else
