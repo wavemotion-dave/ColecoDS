@@ -27,6 +27,7 @@
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/ay38910/AY38910.h"
 
+
 #include "intro.h"
 
 #include "ecranBas.h"
@@ -34,6 +35,7 @@
 #include "ecranHaut.h"
 
 #include "cpu/sn76496/SN76496.h"
+#include "cpu/sn76496/Fake_AY.h"
 
 
 s16 xfer_buf[16] ALIGN(32) = {0};
@@ -128,9 +130,13 @@ void SetSoundHandlerSN(void)
 
 void SetSoundHandlerAY(void)
 {
+#ifdef USE_AY
     irqDisable(IRQ_TIMER2);
     irqSet(IRQ_TIMER2, VsoundHandlerAY);
     irqEnable(IRQ_TIMER2);
+#else
+    return;
+#endif    
 }
 
 
@@ -178,7 +184,7 @@ void dsInstallSoundEmuFIFO(void)
   sn76496W(0xFF, &sncol);           // Disable Noise Channel
     
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(isDSiMode() ? 27500:26500);
+  TIMER2_DATA = TIMER_FREQ(27000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandlerSN);
   irqEnable(IRQ_TIMER2);

@@ -29,10 +29,10 @@ extern void DrZ80_InitFonct(void);
 
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/ay38910/AY38910.h"
-
+#include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0004
+#define COLECODS_SAVE_VER 0x0005
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
@@ -53,26 +53,21 @@ static u8 Port60 = 0x0F;
 
 AY38910 ay_chip;
 
-u8 channel_a_enable = 0;
-u8 channel_b_enable = 0;
-u8 channel_c_enable = 0;
-u8 noise_enable = 0;      
 u8 bFirstTimeAY = true;
 
 // Reset the Super Game Module vars...
 void sgm_reset(void)
 {
-#if 0
     //make sure Super Game Module registers for AY chip are clear...
     memset(sgm_reg, 0x00, 256);
     sgm_reg[0x07] = 0xFF; // Everything turned off to start...
-#endif    
     channel_a_enable = 0;
     channel_b_enable = 0;
     channel_c_enable = 0;
     noise_enable = 0;      
-    bFirstTimeAY = true;
     
+#ifdef USE_AY
+    bFirstTimeAY = true;
     memset(&ay_chip, 0x00, sizeof(ay_chip));
     ay38910Reset(&ay_chip);
     for (u8 i=0; i<16; i++)
@@ -80,6 +75,9 @@ void sgm_reset(void)
         ay38910IndexW(i, &ay_chip);
         ay38910DataW(0x00, &ay_chip);        
     }
+#else
+    bFirstTimeAY = true;        // We are using FAKE AY for now...
+#endif    
     sgm_enable = false;
     
     Port53 = 0x00;
@@ -237,6 +235,8 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&noise_enable, sizeof(noise_enable), 1, handle); 
+    if (uNbO) uNbO = fwrite(&ay_chip, sizeof(ay_chip), 1, handle);       
+    
       
     // A few frame counters
     if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -337,6 +337,7 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
             if (uNbO) uNbO = fread(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
             if (uNbO) uNbO = fread(&noise_enable, sizeof(noise_enable), 1, handle); 
+            if (uNbO) uNbO = fread(&ay_chip, sizeof(ay_chip), 1, handle);       
             
             // A few frame counters
             if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -551,13 +552,16 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
   // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
+#ifdef USE_AY
       ay38910DataR(&ay_chip);
       return ay_chip.ayRegs[sgm_idx&0x0F];
+#else
+      return sgm_reg[sgm_idx];
+#endif
   }
 
   switch(Port&0xE0) {
-    case 0x40: // Printer Status
-      //if(Adam&&(Port==0x40)) return(0xFF);
+    case 0x40: // Printer Status - not used
       break;
 
     case 0xE0: // Joysticks Data
@@ -619,19 +623,29 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x50)  
   {
-      sgm_idx = Value; 
+      sgm_idx = Value & 0x0F; 
+#ifdef USE_AY      
       if (bFirstTimeAY) // If someone is accessing the sound index register, assume AY sound and enable it.
       {
           bFirstTimeAY = false;
           SetSoundHandlerAY();
       }
       ay38910IndexW(Value, &ay_chip); 
+#endif      
       return;
   }
   // -----------------------------------------------
   // Port 51 is the AY Sound chip register write...
   // -----------------------------------------------
-  else if (Port == 0x51) {ay38910DataW(Value, &ay_chip); return;}
+  else if (Port == 0x51) 
+  {
+#ifdef USE_AY      
+      ay38910DataW(Value, &ay_chip); 
+      return;
+#else
+    HandleAYsound(Value);      
+#endif      
+  }
     
   switch(Port&0xE0) 
   {
@@ -666,7 +680,9 @@ ITCM_CODE u32 LoopZ80()
   DrZ80_execute(TMS9918_LINE);
 
   // Just in case there is AY audio envelopes...
-  //if (sgm_enable) LoopAY();
+#ifndef USE_AY    
+  if (sgm_enable) LoopAY();
+#endif    
 
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
