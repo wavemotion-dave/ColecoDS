@@ -35,7 +35,7 @@
 #include "cpu/sn76496/SN76496.h"
 
 
-extern s16 xfer_buf[4];
+s16 xfer_buf[4] ALIGN(32) = {0};
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern SN76496 sncol;
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
@@ -114,7 +114,7 @@ void dsInstallSoundEmuFIFO(void)
 {
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 65500;
+  msg.SoundPlay.freq = 64000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -132,12 +132,17 @@ void dsInstallSoundEmuFIFO(void)
   {
       aptr = (u32*)((u32)xfer_buf + 0x00400000);
   }
+  
+  sn76496Mixer(6, samples, &sncol);
+  *aptr = 0;
     
   // We convert 3 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(36000);
+  TIMER2_DATA = TIMER_FREQ(32000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
+    
+  WAITVBL;
     
   fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
 }

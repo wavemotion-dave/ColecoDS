@@ -46,7 +46,7 @@ static const unsigned char Envelopes[16][32] =
 
 u16 noise_period = 0;
 
-static const u8 Volumes[32] = { 15,15,15,14,14,13,13,12,12,12,11,11,10,10,9,9,9,8,8,7,7,6,6,5,5,4,4,3,2,2,0,0 };
+static const u8 Volumes[32] = { 15,14,13,12,11,10,10,9,9,8,8,7,7,6,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,0,0 };
 u8 a_idx=0;
 u8 b_idx=0;
 u8 c_idx=0;
