@@ -701,6 +701,15 @@ u32 affInfoReport(void)
   return 0;
 }
 
+void DisplayFileName(void)
+{
+    char szName[64];
+    (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
+    if (strlen(szName)>30) szName[30]='\0';
+    AffChaine((16 - (strlen(szName)/2)),22,0,szName);
+}
+
+
 //*****************************************************************************
 // Affiche l'ecran de colecoDSlus et change les options 
 //*****************************************************************************
@@ -714,7 +723,6 @@ void affInfoOptions(u32 uY) {
 }
 void colecoDSChangeOptions(void) {
   u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 9, bOK=0, bBcl;
-  char szName[64];
   
   // Affiche l'ecran en haut
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -759,10 +767,9 @@ void colecoDSChangeOptions(void) {
   AffChaine(9,5,0,"=* OPTIONS *=");
   affInfoOptions(ucY);
   
-  if (ucGameChoice != -1) { 
-    (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
-    if (strlen(szName)>30) szName[30]='\0';
-    AffChaine(1,22,0,szName);
+  if (ucGameChoice != -1) 
+  { 
+      DisplayFileName();
   }
   
   while (!bOK) {
@@ -804,9 +811,7 @@ void colecoDSChangeOptions(void) {
             colecoDSLoadFile();
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
             if (ucGameChoice != -1) { 
-              (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
-               if (strlen(szName)>30) szName[30]='\0';
-               AffChaine(1,22,0,szName);
+                DisplayFileName();
             }
             ucY = 11;
             AffChaine(9,5,0,"=* OPTIONS *=");
@@ -839,9 +844,7 @@ void colecoDSChangeOptions(void) {
             lgeEmul = (lgeEmul == 1 ? 0 : 1);
             affInfoOptions(ucY);
             if (ucGameChoice != -1) { 
-              (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
-              if (strlen(szName)>30) szName[30]='\0';
-              AffChaine(1,22,0,szName);
+                DisplayFileName();
             }
             break;
         }

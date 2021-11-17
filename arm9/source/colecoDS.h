@@ -75,5 +75,7 @@ extern void showMainMenu(void);
 extern void InitBottomScreen(void);
 extern void PauseSound(void);
 extern void UnPauseSound(void);
+extern void SetSoundHandlerSN(void);
+extern void SetSoundHandlerAY(void);
 
 #endif

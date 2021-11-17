@@ -25,6 +25,7 @@
 #include "colecogeneric.h"
 #include "colecomngt.h"
 #include "cpu/tms9918a/tms9918a.h"
+#include "cpu/ay38910/AY38910.h"
 
 #include "intro.h"
 
@@ -103,11 +104,36 @@ void SoundUnPause(void)
     soundEmuPause = 0;
 }
 
-ITCM_CODE void VsoundHandler(void)
+
+ITCM_CODE void VsoundHandlerSN(void)
 {
     if (soundEmuPause) {return;}
     sn76496Mixer(8, aptr, &sncol);
 }
+
+ITCM_CODE void VsoundHandlerAY(void)
+{
+    extern AY38910 ay_chip;
+    if (soundEmuPause) {return;}
+    ay38910Mixer(8, aptr, &ay_chip);
+}
+
+
+void SetSoundHandlerSN(void)
+{
+    irqDisable(IRQ_TIMER2);
+    irqSet(IRQ_TIMER2, VsoundHandlerSN);
+    irqEnable(IRQ_TIMER2);
+}
+
+void SetSoundHandlerAY(void)
+{
+    irqDisable(IRQ_TIMER2);
+    irqSet(IRQ_TIMER2, VsoundHandlerAY);
+    irqEnable(IRQ_TIMER2);
+}
+
+
 
 //---------------------------------------------------------------------------------
 void dsInstallSoundEmuFIFO(void) 
@@ -152,9 +178,9 @@ void dsInstallSoundEmuFIFO(void)
   sn76496W(0xFF, &sncol);           // Disable Noise Channel
     
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(isDSiMode() ? 27500:26000);
+  TIMER2_DATA = TIMER_FREQ(isDSiMode() ? 27500:26500);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
-  irqSet(IRQ_TIMER2, VsoundHandler);
+  irqSet(IRQ_TIMER2, VsoundHandlerSN);
   irqEnable(IRQ_TIMER2);
     
   fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);    
@@ -172,6 +198,8 @@ void ResetColecovision(void)
     
   Reset9918();                         // Reset video chip
 
+  SetSoundHandlerSN();                 // By default we use SN sound
+    
   sgm_reset();                         // Reset Super Game Module
     
   sn76496Reset(1, &sncol);             // Reset the SN sound chip

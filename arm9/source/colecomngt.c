@@ -28,7 +28,7 @@ extern void DrZ80_InitFonct(void);
 #include "cpu/tms9918a/tms9918a.h"
 
 #include "cpu/sn76496/SN76496.h"
-#include "cpu/sn76496/ay38910.h"
+#include "cpu/ay38910/AY38910.h"
 
 #define NORAM 0xFF
 
@@ -51,16 +51,35 @@ u16 sgm_low_addr __attribute__((section(".dtcm"))) = 0x2000;
 static u8 Port53 = 0x00;
 static u8 Port60 = 0x0F;
 
+AY38910 ay_chip;
+
+u8 channel_a_enable = 0;
+u8 channel_b_enable = 0;
+u8 channel_c_enable = 0;
+u8 noise_enable = 0;      
+u8 bFirstTimeAY = true;
+
 // Reset the Super Game Module vars...
 void sgm_reset(void)
 {
+#if 0
     //make sure Super Game Module registers for AY chip are clear...
     memset(sgm_reg, 0x00, 256);
     sgm_reg[0x07] = 0xFF; // Everything turned off to start...
+#endif    
     channel_a_enable = 0;
     channel_b_enable = 0;
     channel_c_enable = 0;
     noise_enable = 0;      
+    bFirstTimeAY = true;
+    
+    memset(&ay_chip, 0x00, sizeof(ay_chip));
+    ay38910Reset(&ay_chip);
+    for (u8 i=0; i<16; i++)
+    {
+        ay38910IndexW(i, &ay_chip);
+        ay38910DataW(0x00, &ay_chip);        
+    }
     sgm_enable = false;
     
     Port53 = 0x00;
@@ -119,6 +138,9 @@ u8 colecoInit(char *szGame) {
       uVide=(uBcl/12);//+((uBcl/12)<<8);
       dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
     }
+    
+    // Assume SN sound handler to start...
+    SetSoundHandlerSN();
   
     // Make sure the super game module is disabled to start
     sgm_reset();
@@ -513,7 +535,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   return bOK;
 }
 
-
 /** InZ80() **************************************************/
 /** Z80 emulation calls this function to read a byte from   **/
 /** a given I/O port.                                       **/
@@ -530,7 +551,8 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
   // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
-      return sgm_reg[sgm_idx];
+      ay38910DataR(&ay_chip);
+      return ay_chip.ayRegs[sgm_idx&0x0F];
   }
 
   switch(Port&0xE0) {
@@ -595,11 +617,21 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   // Port 50 is the AY sound chip register index...
   // -----------------------------------------------
-  else if (Port == 0x50)  {sgm_idx = Value & 0x0F; return;}
+  else if (Port == 0x50)  
+  {
+      sgm_idx = Value; 
+      if (bFirstTimeAY) // If someone is accessing the sound index register, assume AY sound and enable it.
+      {
+          bFirstTimeAY = false;
+          SetSoundHandlerAY();
+      }
+      ay38910IndexW(Value, &ay_chip); 
+      return;
+  }
   // -----------------------------------------------
   // Port 51 is the AY Sound chip register write...
   // -----------------------------------------------
-  else if (Port == 0x51) {HandleAYsound(Value); return;}
+  else if (Port == 0x51) {ay38910DataW(Value, &ay_chip); return;}
     
   switch(Port&0xE0) 
   {
@@ -634,7 +666,7 @@ ITCM_CODE u32 LoopZ80()
   DrZ80_execute(TMS9918_LINE);
 
   // Just in case there is AY audio envelopes...
-  if (sgm_enable) LoopAY();
+  //if (sgm_enable) LoopAY();
 
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
