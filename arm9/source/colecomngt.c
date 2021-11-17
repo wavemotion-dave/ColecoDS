@@ -27,7 +27,7 @@ extern void DrZ80_InitFonct(void);
 
 #include "cpu/tms9918a/tms9918a.h"
 
-#include "cpu/sn76496/sn76496_c.h"
+#include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/ay38910.h"
 
 #define NORAM 0xFF
@@ -78,7 +78,7 @@ u8 ExitNow=0;
 
 u8 VDPInit[8] = { 0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x00 };   // VDP control register states
 
-sn76496 sncol __attribute__((section(".dtcm")));
+SN76496 sncol __attribute__((section(".dtcm")));
 u16 freqtablcol[1024*2] __attribute__((section(".dtcm")));
 
 
@@ -128,10 +128,9 @@ u8 colecoInit(char *szGame) {
     JoyMode=0;                           // Joystick mode key
     JoyStat[0]=JoyStat[1]=0xCFFF;        // Joystick states
 
-    SN76496_set_mixrate(&sncol,1);
-    SN76496_set_frequency(&sncol,TMS9918_BASE);
-    SN76496_init(&sncol,(u16 *) &freqtablcol);
-    SN76496_reset(&sncol,0);
+    sn76496Reset(1, &sncol);             // Reset the SN sound chip
+    u16 tmp_samples[32];
+    sn76496Mixer(32, tmp_samples, &sncol);
       
     ExitNow = 0;
 
@@ -609,7 +608,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   {
     case 0x80: JoyMode=0;return;
     case 0xC0: JoyMode=1;return;
-    case 0xE0: SN76496_w(&sncol, Value);
+    case 0xE0: sn76496W(Value, &sncol);
       return;
     case 0xA0:
       if(!(Port&0x01)) WrData9918(Value);
