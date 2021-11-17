@@ -12,8 +12,6 @@
 #define INT_IRQ 0x01
 #define NMI_IRQ 0x02
 
-s16 xfer_buf[4] ALIGN(32) = {0};
-
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
 #define PUSH_PC() { drz80.Z80SP=drz80.z80_rebaseSP(drz80.Z80SP-drz80.Z80SP_BASE-2); drz80.z80_write16(drz80.Z80PC - drz80.Z80PC_BASE,drz80.Z80SP - drz80.Z80SP_BASE); }
