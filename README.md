@@ -33,6 +33,8 @@ for the menu graphical design.
 
 Thanks to Reesy for the DrZ80 core.
 
+Thanks to Flubba for the SN76496 sound core.
+
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
 core emulation (Z80, TMS9918 and SN76489).

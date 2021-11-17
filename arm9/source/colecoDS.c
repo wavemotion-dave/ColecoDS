@@ -32,12 +32,12 @@
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
 
-#include "cpu/sn76496/sn76496_c.h"
+#include "cpu/sn76496/SN76496.h"
 
 
 extern s16 xfer_buf[4];
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
-extern sn76496 sncol;
+extern SN76496 sncol;
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
 
 u8 ColecoBios[8192] = {0};
@@ -100,13 +100,12 @@ void SoundUnPause(void)
     soundEmuPause = 0;
 }
 
+u16 samples[16] __attribute__((section(".dtcm"))) ALIGN(32);
+
 ITCM_CODE void VsoundHandler(void)
 {
-    u16 samples[4];
     if (soundEmuPause) {return;}
-    sncol.mixlength=2;
-    sncol.pcmptr=(u8*)samples;
-    SN76496_mixer(&sncol);
+    sn76496Mixer(6, samples, &sncol);
     *aptr = *((u32*)samples);
 }
 
@@ -115,7 +114,7 @@ void dsInstallSoundEmuFIFO(void)
 {
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 48000;
+  msg.SoundPlay.freq = 65500;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -134,8 +133,8 @@ void dsInstallSoundEmuFIFO(void)
       aptr = (u32*)((u32)xfer_buf + 0x00400000);
   }
     
-  // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(23700);
+  // We convert 3 samples per VSoundHandler interrupt...
+  TIMER2_DATA = TIMER_FREQ(36000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
@@ -155,7 +154,7 @@ void ResetColecovision(void)
 
   sgm_reset();                         // Reset Super Game Module
     
-  SN76496_reset(&sncol,0);             // Reset the SN sound chip
+  sn76496Reset(1, &sncol);             // Reset the SN sound chip
 
   DrZ80_Reset();                       // Reset the Z80 CPU Core
 
