@@ -135,20 +135,24 @@ void dsInstallSoundEmuFIFO(void)
       aptr = (u32*)((u32)xfer_buf + 0x00400000);
   }
   
-  memset(aptr, 0x00, sizeof(xfer_buf));
+  memset(aptr, 0x55, sizeof(xfer_buf));
     
   sn76496W(0x80 | 0x00,&sncol);     // Write new Frequency for Channel A
+  sn76496W(0x00 | 0x00,&sncol);     // Write new Frequency for Channel A
   sn76496W(0x90 | 0x0F,&sncol);     // Write new Volume for Channel A
+    
   sn76496W(0xA0 | 0x00,&sncol);     // Write new Frequency for Channel B
+  sn76496W(0x00 | 0x00,&sncol);     // Write new Frequency for Channel B
   sn76496W(0xB0 | 0x0F,&sncol);     // Write new Volume for Channel B
+    
   sn76496W(0xC0 | 0x00,&sncol);     // Write new Frequency for Channel C
+  sn76496W(0x00 | 0x00,&sncol);     // Write new Frequency for Channel C
   sn76496W(0xD0 | 0x0F,&sncol);     // Write new Volume for Channel C
+
   sn76496W(0xFF, &sncol);           // Disable Noise Channel
     
-  sn76496Mixer(8, aptr, &sncol);
-    
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(32000);
+  TIMER2_DATA = TIMER_FREQ(isDSiMode() ? 32000:26000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
