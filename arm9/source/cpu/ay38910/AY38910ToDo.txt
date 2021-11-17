@@ -1,0 +1,7 @@
+AY38910 To Do
+--------------
+
+	Test all the envelope forms somehow.
+	Should compare against current frequency value instead of counting
+	from frequency value to zero.
+	Save more info of state.
