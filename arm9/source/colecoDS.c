@@ -152,7 +152,7 @@ void dsInstallSoundEmuFIFO(void)
   sn76496W(0xFF, &sncol);           // Disable Noise Channel
     
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(isDSiMode() ? 32000:26000);
+  TIMER2_DATA = TIMER_FREQ(isDSiMode() ? 27500:26000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
