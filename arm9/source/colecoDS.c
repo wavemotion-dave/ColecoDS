@@ -35,7 +35,8 @@
 #include "cpu/sn76496/SN76496.h"
 
 
-s16 xfer_buf[4] ALIGN(32) = {0};
+s16 xfer_buf[16] ALIGN(32) = {0};
+u16 samples[16] __attribute__((section(".dtcm"))) ALIGN(32);
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern SN76496 sncol;
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
@@ -58,6 +59,8 @@ typedef enum {
 #define ds_GetTicks() (TIMER0_DATA)
 
 u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;
+
+u8 bStartSoundEngine = false;
 
 int bg0, bg1, bg0b,bg1b;
 
@@ -100,18 +103,17 @@ void SoundUnPause(void)
     soundEmuPause = 0;
 }
 
-u16 samples[16] __attribute__((section(".dtcm"))) ALIGN(32);
-
 ITCM_CODE void VsoundHandler(void)
 {
     if (soundEmuPause) {return;}
-    sn76496Mixer(6, samples, &sncol);
-    *aptr = *((u32*)samples);
+    sn76496Mixer(8, aptr, &sncol);
 }
 
 //---------------------------------------------------------------------------------
 void dsInstallSoundEmuFIFO(void) 
 {
+  SoundPause();
+    
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
   msg.SoundPlay.freq = 64000;
@@ -120,7 +122,7 @@ void dsInstallSoundEmuFIFO(void)
   msg.SoundPlay.loop = 1;
   msg.SoundPlay.format = ((1)<<4) | SoundFormat_16Bit;
   msg.SoundPlay.loopPoint = 0;
-  msg.SoundPlay.dataSize = 4 >> 2;
+  msg.SoundPlay.dataSize = 8 >> 2;
   msg.type = EMUARM7_PLAY_SND;
   fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (u8*)&msg);
     
@@ -133,18 +135,27 @@ void dsInstallSoundEmuFIFO(void)
       aptr = (u32*)((u32)xfer_buf + 0x00400000);
   }
   
-  sn76496Mixer(6, samples, &sncol);
-  *aptr = 0;
+  memset(aptr, 0x00, sizeof(xfer_buf));
     
-  // We convert 3 samples per VSoundHandler interrupt...
+  sn76496W(0x80 | 0x00,&sncol);     // Write new Frequency for Channel A
+  sn76496W(0x90 | 0x0F,&sncol);     // Write new Volume for Channel A
+  sn76496W(0xA0 | 0x00,&sncol);     // Write new Frequency for Channel B
+  sn76496W(0xB0 | 0x0F,&sncol);     // Write new Volume for Channel B
+  sn76496W(0xC0 | 0x00,&sncol);     // Write new Frequency for Channel C
+  sn76496W(0xD0 | 0x0F,&sncol);     // Write new Volume for Channel C
+  sn76496W(0xFF, &sncol);           // Disable Noise Channel
+    
+  sn76496Mixer(8, aptr, &sncol);
+    
+  // We convert 2 samples per VSoundHandler interrupt...
   TIMER2_DATA = TIMER_FREQ(32000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandler);
   irqEnable(IRQ_TIMER2);
     
-  WAITVBL;
-    
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
+  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);    
+  
+  bStartSoundEngine = true;
 }
 
 //*****************************************************************************
@@ -200,7 +211,13 @@ ITCM_CODE void colecoDS_main (void)
   {
     // Take a tour of the Z80 counter and display the screen if necessary
     if (!LoopZ80()) 
-    {        
+    {   
+        if (bStartSoundEngine)
+        {
+              bStartSoundEngine = false;
+              SoundUnPause();
+        }
+        
         // -------------------------------------------------------------
         // Stuff to do once/second such as FPS display and Debug Data
         // -------------------------------------------------------------
@@ -582,7 +599,9 @@ int main(int argc, char **argv)
       }
       else 
       {
+          SoundPause();
           colecoDSChangeOptions();
+          SoundUnPause();
       }
 
       // Run Machine

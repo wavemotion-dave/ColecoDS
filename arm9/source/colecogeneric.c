@@ -716,9 +716,6 @@ void colecoDSChangeOptions(void) {
   u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 9, bOK=0, bBcl;
   char szName[64];
   
-  // Stop sound
-  soundEmuPause=1;
-
   // Affiche l'ecran en haut
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
   vramSetBankA(VRAM_A_MAIN_BG);
@@ -873,7 +870,6 @@ void colecoDSChangeOptions(void) {
     swiWaitForVBlank();
   }
   while (keysCurrent()  & (KEY_START | KEY_A));
-  soundEmuPause=0;
 }
 
 //*****************************************************************************
