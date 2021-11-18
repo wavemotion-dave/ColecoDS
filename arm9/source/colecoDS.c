@@ -203,6 +203,9 @@ void ResetColecovision(void)
   sgm_reset();                         // Reset Super Game Module
     
   sn76496Reset(1, &sncol);             // Reset the SN sound chip
+  sn76496W(0x90 | 0x0F ,&sncol);       // Write new Volume for Channel A  
+  sn76496W(0xB0 | 0x0F ,&sncol);       // Write new Volume for Channel B
+  sn76496W(0xD0 | 0x0F ,&sncol);       // Write new Volume for Channel C      
 
   DrZ80_Reset();                       // Reset the Z80 CPU Core
 
