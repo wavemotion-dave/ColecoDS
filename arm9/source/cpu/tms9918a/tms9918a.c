@@ -59,7 +59,7 @@ u8 TMS9918A_palette[16*3] = {
   0x20,0x80,0x20,   0xC0,0x40,0xA0,   0xA0,0xA0,0xA0,   0xE0,0xE0,0xE0,
 };
 
-u8 pVDPVidMem[0x4000] ALIGN(32) ={0};               // VDP video memory
+u8 pVDPVidMem[0x10000] ALIGN(32) ={0};              // VDP video memory... only 16K but we set to 64K so we don't have to handle out of bounds checks
 u16 CurLine __attribute__((section(".dtcm")));      // Current scanline
 u8 VDP[16] __attribute__((section(".dtcm")));       // VDP Registers
 u8 VDPStatus __attribute__((section(".dtcm")));     // VDP Status
@@ -339,35 +339,9 @@ void ITCM_CODE RefreshSprites(register byte Y) {
 /*************************************************************/
 #define Width 256
 #define Height 192
-void RefreshBorder(register byte Y)
+ITCM_CODE void RefreshBorder(register byte Y)
 {
-  register byte *P,BC;
-  register int J,N;
 
-  /* Border color */
-  BC=BGColor;
-
-  /* Screen buffer */
-  P=(byte *)XBuf;
-  J=Width*(Y+(Height-192)/2);
-
-  /* For the first line, refresh top border */
-  if(Y) P+=J;
-  else for(;J;J--) *P++=BC;
-
-  /* Calculate number of pixels */
-  N=(Width-(ScrMode ? 256:240))/2;  
-
-  /* Refresh left border */
-  for(J=N;J;J--) *P++=BC;
-
-  /* Refresh right border */
-  P+=Width-(N<<1);
-  for(J=N;J;J--) *P++=BC;
-
-  /* For the last line, refresh bottom border */
-  if(Y==191)
-    for(J=Width*(Height-192)/2;J;J--) *P++=BC;
 }
 
 
@@ -524,7 +498,7 @@ ITCM_CODE byte Write9918(int iReg, u8 value)
   /* Enabling IRQs may cause an IRQ here */
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
 
-  /* VRAM can either be 4kB or 16kB */
+  /* VRAM can either be 4kB or 16kB - this checks if the bit has changed on this call which will force the logic in case 1 below*/
   VRAMMask = (iReg==1) && ( (VDP[1]^value) & TMS9918_REG1_RAM16K ) ? 0 : TMS9918_VRAMMask;
 
   /* Store value into the register */
