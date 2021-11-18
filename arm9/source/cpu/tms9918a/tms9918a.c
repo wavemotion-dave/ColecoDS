@@ -14,6 +14,10 @@
 **
 ** http://www.msxnet.org/tech/tms9918a.txt
 **
+** Note: much of this file is from the ColEM emulator core by Marat Fayzullin
+**       but heavily modified for specific NDS use. If you want to use this
+**       code, you are advised to seek out the latest ColEM core online.
+**
 ******************************************************************************/
 #include <nds.h>
 #include <nds/arm9/console.h> //basic print functionality
