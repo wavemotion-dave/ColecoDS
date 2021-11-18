@@ -55,6 +55,14 @@ AY38910 ay_chip;
 
 u8 bFirstTimeAY = true;
 
+u16 JoyMode;                     // Joystick / Paddle management
+u16 JoyStat[2];                  // Joystick / Paddle management
+
+u16 JoyState=0;                  // Joystick V2
+
+SN76496 sncol __attribute__((section(".dtcm")));
+u16 freqtablcol[1024*2] __attribute__((section(".dtcm")));
+
 // Reset the Super Game Module vars...
 void sgm_reset(void)
 {
@@ -84,17 +92,6 @@ void sgm_reset(void)
     Port60 = 0x0F;    
 }
 
-/********************************************************************************/
-
-u16 JoyMode;                     // Joystick / Paddle management
-u16 JoyStat[2];                  // Joystick / Paddle management
-
-u16 JoyState=0;                  // Joystick V2
-
-u8 ExitNow=0;
-
-SN76496 sncol __attribute__((section(".dtcm")));
-u16 freqtablcol[1024*2] __attribute__((section(".dtcm")));
 
 
 /*********************************************************************************
@@ -151,8 +148,6 @@ u8 colecoInit(char *szGame) {
     u16 tmp_samples[32];
     sn76496Mixer(32, tmp_samples, &sncol);
       
-    ExitNow = 0;
-
     DrZ80_Reset();
     Reset9918();
       

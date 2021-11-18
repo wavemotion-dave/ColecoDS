@@ -704,7 +704,7 @@ u32 affInfoReport(void)
 void DisplayFileName(void)
 {
     char szName[64];
-    (lgeEmul == 0 ? sprintf(szName,"%-30s",gpFic[ucGameChoice].szName) : sprintf(szName, "%-30s",gpFic[ucGameChoice].szName));
+    sprintf(szName,"%-30s",gpFic[ucGameChoice].szName);
     if (strlen(szName)>30) szName[30]='\0';
     AffChaine((16 - (strlen(szName)/2)),22,0,szName);
 }
