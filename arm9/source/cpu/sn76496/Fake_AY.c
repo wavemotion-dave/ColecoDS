@@ -1,3 +1,9 @@
+// ------------------------------------------------------------------------------------
+// The 'Fake' AY handler simply turns AY sound register access into corresponding
+// SN sound chip calls. There is some loss of fidelity and we have to handle the
+// volume envelopes in a very crude way... but it works and is good enough for now.
+// ------------------------------------------------------------------------------------
+
 #include <nds.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +56,7 @@ static const u8 Volumes[32] = { 15,14,13,12,11,10,10,9,9,8,8,7,7,6,6,6,5,5,5,4,4
 u8 a_idx=0;
 u8 b_idx=0;
 u8 c_idx=0;
-ITCM_CODE void LoopAY(void)
+ITCM_CODE void FakeAY_Loop(void)
 {
     static u16 delay=0;
     
@@ -95,7 +101,17 @@ ITCM_CODE void LoopAY(void)
     }
 }
 
-void HandleAYsound(u8 Value)
+void FakeAY_WriteIndex(u8 Value)
+{
+    sgm_idx = Value;
+}
+
+u8 FakeAY_ReadData(void)
+{
+    return sgm_reg[sgm_idx];   
+}
+
+void FakeAY_WriteData(u8 Value)
 {
       // ----------------------------------------------------------------------------------------
       // This is the AY sound chip support... we're cheating here and just mapping those sounds

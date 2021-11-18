@@ -7,8 +7,9 @@ extern u8 channel_c_enable;
 extern u8 noise_enable;
 
 
-extern void LoopAY(void);
-extern void HandleAYsound(u8 Value);
-
+extern void FakeAY_Loop(void);
+extern void FakeAY_WriteIndex(u8 Value);
+extern void FakeAY_WriteData(u8 Value);
+extern u8   FakeAY_ReadData(void);
 
 #endif
