@@ -37,13 +37,11 @@
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 
-
-s16 xfer_buf[16] ALIGN(32) = {0};
-u16 samples[16] __attribute__((section(".dtcm"))) ALIGN(32);
+extern s16 xfer_buf[16];
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern SN76496 sncol;
-u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
 
+u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
 u8 ColecoBios[8192] = {0};
 
 u16 emuFps=0;
@@ -130,13 +128,9 @@ void SetSoundHandlerSN(void)
 
 void SetSoundHandlerAY(void)
 {
-#ifdef USE_AY
     irqDisable(IRQ_TIMER2);
     irqSet(IRQ_TIMER2, VsoundHandlerAY);
     irqEnable(IRQ_TIMER2);
-#else
-    return;
-#endif    
 }
 
 

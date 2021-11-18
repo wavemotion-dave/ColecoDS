@@ -40,7 +40,7 @@ extern u32*lutTablehh;
 
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
 u8 romBankMask = 0x00;
-
+s16 xfer_buf[16] ALIGN(32);
 u8 bBlendMode __attribute__((section(".dtcm"))) = false;
 
 u8 sgm_enable __attribute__((section(".dtcm"))) = false;
@@ -92,8 +92,6 @@ u16 JoyStat[2];                  // Joystick / Paddle management
 u16 JoyState=0;                  // Joystick V2
 
 u8 ExitNow=0;
-
-u8 VDPInit[8] = { 0x00,0x10,0x00,0x00,0x00,0x00,0x00,0x00 };   // VDP control register states
 
 SN76496 sncol __attribute__((section(".dtcm")));
 u16 freqtablcol[1024*2] __attribute__((section(".dtcm")));
@@ -541,9 +539,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 /** a given I/O port.                                       **/
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
-#ifdef DEBUG
-  //iprintf("cpu_readport16 %d \n",Port);
-#endif
   static byte KeyCodes[16] = { 0x0A,0x0D,0x07,0x0C,0x02,0x03,0x0E,0x05, 0x01,0x0B,0x06,0x09,0x08,0x04,0x0F,0x0F, };
 
   //JGD 18/04/2007  
