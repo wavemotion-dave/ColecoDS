@@ -32,7 +32,7 @@ extern void DrZ80_InitFonct(void);
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0005
+#define COLECODS_SAVE_VER 0x0006
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
@@ -61,7 +61,6 @@ u16 JoyStat[2];                  // Joystick / Paddle management
 u16 JoyState=0;                  // Joystick V2
 
 SN76496 sncol __attribute__((section(".dtcm")));
-u16 freqtablcol[1024*2] __attribute__((section(".dtcm")));
 
 // Reset the Super Game Module vars...
 void sgm_reset(void)
@@ -267,7 +266,6 @@ void colecoSaveState()
 
     // Write PSG
     if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
-    if (uNbO) uNbO = fwrite(freqtablcol, sizeof(freqtablcol),1, handle); 
       
     if (uNbO) 
       strcpy(szCh2,"OK ");
@@ -369,7 +367,6 @@ void colecoLoadState()
             
             // Load PSG
             if (uNbO) uNbO = fread(&sncol, sizeof(sncol),1, handle); 
-            if (uNbO) uNbO = fread(freqtablcol, sizeof(freqtablcol),1, handle); 
             
               if (BGColor)
               {
