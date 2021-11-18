@@ -537,49 +537,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   return bOK;
 }
 
-/** InZ80() **************************************************/
-/** Z80 emulation calls this function to read a byte from   **/
-/** a given I/O port.                                       **/
-/*************************************************************/
-ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
-  static byte KeyCodes[16] = { 0x0A,0x0D,0x07,0x0C,0x02,0x03,0x0E,0x05, 0x01,0x0B,0x06,0x09,0x08,0x04,0x0F,0x0F, };
-
-  //JGD 18/04/2007  
-  Port &= 0x00FF; 
-  
-  // Port 52 is used for the AY sound chip for the Super Game Module
-  if (Port == 0x52)
-  {
-#ifdef USE_AY
-      ay38910DataR(&ay_chip);
-      return ay_chip.ayRegs[sgm_idx&0x0F];
-#else
-      return sgm_reg[sgm_idx];
-#endif
-  }
-
-  switch(Port&0xE0) {
-    case 0x40: // Printer Status - not used
-      break;
-
-    case 0xE0: // Joysticks Data
-/* JGD 18/04/2007
-      Port = Port&0x02? (JoyState>>16):JoyState;
-      Port = JoyMode?   (Port>>8):Port;
-      return(~Port&0x7F);
-*/
-      Port=(Port>>1)&0x01;
-      Port=JoyMode? (JoyStat[Port]>>8): (JoyStat[Port]&0xF0)|KeyCodes[JoyStat[Port]&0x0F];
-      return((Port|0xB0)&0x7F);
-
-    case 0xA0: /* VDP Status/Data */
-      return(Port&0x01? RdCtrl9918():RdData9918());
-  }
-
-  // No such port
-  return(NORAM);
-}
-
 
 // --------------------------------------------------------------------------
 // Based on writes to Port53 and Port60 we configure the SGM handling of 
@@ -603,6 +560,45 @@ void SetupSGM(void)
     }
 }
 
+/** InZ80() **************************************************/
+/** Z80 emulation calls this function to read a byte from   **/
+/** a given I/O port.                                       **/
+/*************************************************************/
+ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
+  static byte KeyCodes[16] = { 0x0A,0x0D,0x07,0x0C,0x02,0x03,0x0E,0x05, 0x01,0x0B,0x06,0x09,0x08,0x04,0x0F,0x0F, };
+
+  // Colecovision ports are 8-bit
+  Port &= 0x00FF; 
+  
+  // Port 52 is used for the AY sound chip for the Super Game Module
+  if (Port == 0x52)
+  {
+#ifdef USE_AY
+      ay38910DataR(&ay_chip);
+      return ay_chip.ayRegs[sgm_idx&0x0F];
+#else
+      return FakeAY_ReadData();
+#endif
+  }
+
+  switch(Port&0xE0) {
+    case 0x40: // Printer Status - not used
+      break;
+
+    case 0xE0: // Joysticks Data
+      Port=(Port>>1)&0x01;
+      Port=JoyMode? (JoyStat[Port]>>8): (JoyStat[Port]&0xF0)|KeyCodes[JoyStat[Port]&0x0F];
+      return((Port|0xB0)&0x7F);
+
+    case 0xA0: /* VDP Status/Data */
+      return(Port&0x01? RdCtrl9918():RdData9918());
+  }
+
+  // No such port
+  return(NORAM);
+}
+
+
 /** OutZ80() *************************************************/
 /** Z80 emulation calls this function to write a byte to a  **/
 /** given I/O port.                                         **/
@@ -621,7 +617,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x50)  
   {
-      sgm_idx = Value & 0x0F; 
+      FakeAY_WriteIndex(Value & 0x0F); 
 #ifdef USE_AY      
       if (bFirstTimeAY) // If someone is accessing the sound index register, assume AY sound and enable it.
       {
@@ -641,7 +637,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       ay38910DataW(Value, &ay_chip); 
       return;
 #else
-    HandleAYsound(Value);      
+    FakeAY_WriteData(Value);      
 #endif      
   }
     
@@ -679,7 +675,7 @@ ITCM_CODE u32 LoopZ80()
 
   // Just in case there is AY audio envelopes...
 #ifndef USE_AY    
-  if (sgm_enable) LoopAY();
+  if (sgm_enable) FakeAY_Loop();
 #endif    
 
   // Refresh VDP 
