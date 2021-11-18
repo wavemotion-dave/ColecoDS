@@ -63,7 +63,7 @@ extern byte RdCtrl9918(void);
 extern void Reset9918(void);
 
 extern u16 CurLine;
-extern u8 pVDPVidMem[0x4000];                  // VDP video memory
+extern u8 pVDPVidMem[0x10000];                 // VDP video memory
 extern u8 VDP[16],VDPStatus,VDPDlatch;         // VDP registers
 extern u16 VAddr;                              // Storage for VIDRAM addresses
 extern u8 VKey;                                // VDP address latch key
