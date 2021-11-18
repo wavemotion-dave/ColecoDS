@@ -14,15 +14,12 @@
 
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
-#define PUSH_PC() { drz80.Z80SP=drz80.z80_rebaseSP(drz80.Z80SP-drz80.Z80SP_BASE-2); drz80.z80_write16(drz80.Z80PC - drz80.Z80PC_BASE,drz80.Z80SP - drz80.Z80SP_BASE); }
-
-u16 previouspc,cpuirequest;
-
-u32 dwElapsedTicks __attribute__((section(".dtcm"))) = 0;
+u16 cpuirequest     __attribute__((section(".dtcm"))) = 0;
+u32 dwElapsedTicks  __attribute__((section(".dtcm"))) = 0;
+u8 lastBank         __attribute__((section(".dtcm"))) = 199;
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
-u8 lastBank = 199;
 
 
 ITCM_CODE u32 z80_rebaseSP(u16 address) {
@@ -40,7 +37,6 @@ ITCM_CODE u32 z80_rebasePC(u16 address) {
 ITCM_CODE void z80_irq_callback(void) {
 	//drz80.pending_irq &= ~drz80.Z80_IRQ;
 	drz80.Z80_IRQ = 0x00;
-	previouspc=0;
 }
 
 // -----------------------------
@@ -75,7 +71,6 @@ ITCM_CODE void BankSwitch(u8 bank)
         {
             *dest++ = *src++;
         }
-        //memcpy(pColecoMem+0xC000, romBuffer + (bank * 0x4000), 0x4000);
         lastBank = bank;
     }
 }
@@ -144,7 +139,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     // ---------------------------------------------------------------------
     if (romBankMask != 0)
     {
-#if 0        
+#if 0
       if (address == 0xFFFF)    // SGM can write to this address to set bank #
       {
           BankSwitch(value & romBankMask);
@@ -194,7 +189,6 @@ ITCM_CODE void Z80_Clear_Pending_Interrupts(void) {
 }
 
 ITCM_CODE void Interrupt(void) {
-	previouspc = -1;
 	if (drz80.pending_irq & NMI_IRQ) { /* NMI IRQ */
 		drz80.Z80_IRQ = NMI_IRQ;
 		drz80.pending_irq &= ~NMI_IRQ;
@@ -202,75 +196,6 @@ ITCM_CODE void Interrupt(void) {
 		drz80.Z80_IRQ = INT_IRQ;
 		drz80.pending_irq &= ~INT_IRQ;
 	}
-
-#if 0
-  // This extra check is because DrZ80 calls this function directly but does
-  //    not have access to the Z80.pending_irq variable.  So we check here instead. 
-  if(!drz80.pending_irq ) {	return; } // If no pending ints exit 
-	
-  // Check if ints enabled 
-  if ( (drz80.pending_irq  & NMI_IRQ) || (drz80.Z80IF&1) ) {
-    int irq_vector = Z80_IGNORE_INT;
-
-		// DrZ80 Z80IF 
-		// bit1 = _IFF1 
-		// bit2 = _IFF2 
-		// bit3 = _HALT 
-		
-    // Check if processor was halted 
-		if (drz80.Z80IF&4)  {
-			 drz80.Z80PC=drz80.z80_rebasePC(drz80.Z80PC - drz80.Z80PC_BASE + 1);  	// Inc PC 
-			 drz80.Z80IF&= ~4; 	// and clear halt 
-		}  
-		
-		if (drz80.pending_irq & NMI_IRQ)  {
-			drz80.Z80IF = (drz80.Z80IF&1)<<1;  // Save interrupt flip-flop 1 to 2 and Clear interrupt flip-flop 1 
-			PUSH_PC();
-			drz80.Z80PC=drz80.z80_rebasePC(0x0066);
-			// reset NMI interrupt request 
-			drz80.pending_irq &= ~NMI_IRQ;
-		}
-		else  {
-			// Clear interrupt flip-flop 1 
-      drz80.Z80IF &= ~1;
-			// reset INT interrupt request 
-			drz80.pending_irq &= ~INT_IRQ;
-      irq_vector = drz80.z80irqvector;
-
-      // Interrupt mode 2. Call [Z80.I:databyte] 
-			if( drz80.Z80IM == 2 ) {
-				irq_vector = (irq_vector & 0xff) | (drz80.Z80I << 8);
-        PUSH_PC();
-				drz80.Z80PC=drz80.z80_rebasePC(drz80.z80_read16(irq_vector));
-			}
-			else {
-				// Interrupt mode 1. RST 38h 
-				if( drz80.Z80IM == 1 ) {
-        //iprintf("int ! IM1\n");
-					PUSH_PC();
-					drz80.Z80PC=drz80.z80_rebasePC(0x0038);
-				} 
-				else  {
-					// Interrupt mode 0. We check for CALL and JP instructions, 
-					// if neither of these were found we assume a 1 byte opcode 
-					// was placed on the databus 
-					switch (irq_vector & 0xff0000)  {
-						case 0xcd0000:	// call 
-							PUSH_PC();
-						case 0xc30000:	// jump 
-							drz80.Z80PC=drz80.z80_rebasePC(irq_vector & 0xffff);
-							break;
-						default:
-							irq_vector &= 0xff;
-							PUSH_PC();
-							drz80.Z80PC=drz80.z80_rebasePC(0x0038);
-							break;
-					}
-				}
-			}
-		}
-  }
-#endif    
 }
 
 void DrZ80_InitFonct() {
@@ -287,9 +212,6 @@ void DrZ80_InitFonct() {
 }
 
 void DrZ80_Reset(void) {
-#ifdef DEBUG
-  iprintf("DrZ80_Reset\n");
-#endif
   memset (&drz80, 0, sizeof(struct DrZ80));
   DrZ80_InitFonct();
 
@@ -314,7 +236,6 @@ void DrZ80_Reset(void) {
   drz80.z80intadr = 0x38;
 
   Z80_Clear_Pending_Interrupts();
-  previouspc=0;
   cpuirequest=0;
   lastBank = 199;
 }

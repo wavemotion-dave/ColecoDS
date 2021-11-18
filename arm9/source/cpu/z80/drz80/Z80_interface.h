@@ -19,7 +19,6 @@
 
 struct Z80_Regs {
   struct DrZ80 regs;
-  //int pending_irq;
   u8 *z80Base;
   u32 port16bits;
 };
