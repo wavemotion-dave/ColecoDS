@@ -145,6 +145,9 @@ u8 colecoInit(char *szGame) {
     JoyStat[0]=JoyStat[1]=0xCFFF;        // Joystick states
 
     sn76496Reset(1, &sncol);             // Reset the SN sound chip
+    sn76496W(0x90 | 0x0F ,&sncol);     // Write new Volume for Channel A  
+    sn76496W(0xB0 | 0x0F ,&sncol);     // Write new Volume for Channel B
+    sn76496W(0xD0 | 0x0F ,&sncol);     // Write new Volume for Channel C  
     u16 tmp_samples[32];
     sn76496Mixer(32, tmp_samples, &sncol);
       

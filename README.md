@@ -60,6 +60,13 @@ Known Issues :
 
 Features :
 -----------------------
+* Super Game Module support.
+* Megacart Bankswitching support (up to 512K).
+* Controller button mapping.
+* High-Score support.
+* Save/Load Game State (one slot).
+* Blend Mode (see below).
+
 A huge change is the new "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
 two frames are blended together - this is really useful when playing games like Space Fury or Galaxian 
 where the bullets on screen are only 1 pixel wide and the DSi LCD just doesn't hold onto the pixels 
@@ -79,5 +86,11 @@ So my recommendation is as follows:
 
 To enable this new blend mode, when you pick your game use Y instead of A to select the game. I
 I've added it to the game loading instructions to remind you.
+
+Versions :
+-----------------------
+V3.0: 18-Nov-2021 by wavemotion-dave
+* Ressurected from the ashes
+
 
 

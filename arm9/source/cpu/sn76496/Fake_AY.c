@@ -162,9 +162,9 @@ void HandleAYsound(u8 Value)
                noise_period = Value & 0x1F;
                if (noise_enable)
                {
-                  if (noise_period > 16) sn76496W(0xE2, &sncol);       // E2 is the lowest frequency (highest period)
-                  else if (noise_period > 8) sn76496W(0xE1, &sncol);   // E1 is the middle frequency (middle period)
-                  else sn76496W(0xE0,&sncol);                         // E0 is the highest frequency (lowest period)
+                  if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
+                  else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
+                  else sn76496W(0xE0|0x04,&sncol);                         // E0 is the highest frequency (lowest period)
                   sn76496W(0xF9, &sncol);
                }
               break;
@@ -246,9 +246,9 @@ void HandleAYsound(u8 Value)
                   if (!noise_enable)
                   {
                       noise_enable=1;
-                      if (noise_period > 16) sn76496W(0xE2, &sncol);       // E2 is the lowest frequency (highest period)
-                      else if (noise_period > 8) sn76496W(0xE1, &sncol);   // E1 is the middle frequency (middle period)
-                      else sn76496W(0xE0, &sncol);                         // E0 is the highest frequency (lowest period)
+                      if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
+                      else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
+                      else sn76496W(0xE0|0x04, &sncol);                         // E0 is the highest frequency (lowest period)
                       sn76496W(0xF9, &sncol);
                   }
               }
