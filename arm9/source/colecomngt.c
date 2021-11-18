@@ -51,8 +51,6 @@ u16 sgm_low_addr __attribute__((section(".dtcm"))) = 0x2000;
 static u8 Port53 = 0x00;
 static u8 Port60 = 0x0F;
 
-AY38910 ay_chip;
-
 u8 bFirstTimeAY = true;
 
 u16 JoyMode;                     // Joystick / Paddle management
@@ -60,7 +58,8 @@ u16 JoyStat[2];                  // Joystick / Paddle management
 
 u16 JoyState=0;                  // Joystick V2
 
-SN76496 sncol __attribute__((section(".dtcm")));
+SN76496 sncol   __attribute__((section(".dtcm")));
+AY38910 ay_chip __attribute__((section(".dtcm")));
 
 // Reset the Super Game Module vars...
 void sgm_reset(void)
@@ -68,6 +67,8 @@ void sgm_reset(void)
     //make sure Super Game Module registers for AY chip are clear...
     memset(sgm_reg, 0x00, 256);
     sgm_reg[0x07] = 0xFF; // Everything turned off to start...
+    sgm_reg[0x0E] = 0xFF;
+    sgm_reg[0x0F] = 0xFF;
     channel_a_enable = 0;
     channel_b_enable = 0;
     channel_c_enable = 0;
@@ -83,7 +84,7 @@ void sgm_reset(void)
         ay38910DataW(0x00, &ay_chip);        
     }
 #else
-    bFirstTimeAY = true;        // We are using FAKE AY for now...
+    bFirstTimeAY = false;        // We are using FAKE AY for now...
 #endif    
     sgm_enable = false;
     
