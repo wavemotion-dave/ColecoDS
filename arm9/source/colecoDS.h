@@ -8,6 +8,7 @@
 
 #define DEBUGNO
 #define USEDRZ80
+//#define USE_AY
 
 #ifdef USECOLEMZ80C
 #include "cpu/z80/z80/Z80.h"

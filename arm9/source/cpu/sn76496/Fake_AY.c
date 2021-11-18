@@ -33,22 +33,22 @@ u16 envelope_period = 0;
 
 static const unsigned char Envelopes[16][32] =
 {
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 },
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 },
-  { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 },
-  { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
 };
 
 u16 noise_period = 0;
@@ -64,14 +64,14 @@ ITCM_CODE void FakeAY_Loop(void)
     
     if (envelope_period == 0) return;
 
-    if (++delay > ((envelope_period/128)+1))
+    if (++delay > ((envelope_period)+1))
     {
         delay = 0;
         u8 shape=0;
         shape = sgm_reg[0x0D] & 0x0F;
         if ((sgm_reg[0x08] & 0x20) && (!(sgm_reg[0x07] & 0x01)))
         {
-            u8 vol = 15-Envelopes[shape][a_idx]; 
+            u8 vol = Envelopes[shape][a_idx]; 
             if (++a_idx > 31)
             {
                 if ((shape & 0x09) == 0x08) a_idx = 0; else a_idx=31;
@@ -81,7 +81,7 @@ ITCM_CODE void FakeAY_Loop(void)
         
         if ((sgm_reg[0x09] & 0x20) && (!(sgm_reg[0x07] & 0x02)))
         {
-            u8 vol = 15-Envelopes[shape][b_idx]; 
+            u8 vol = Envelopes[shape][b_idx]; 
             if (++b_idx > 31)
             {
                 if ((shape & 0x09) == 0x08) b_idx = 0; else b_idx=31;
@@ -91,7 +91,7 @@ ITCM_CODE void FakeAY_Loop(void)
 
         if ((sgm_reg[0x0A] & 0x20) && (!(sgm_reg[0x07] & 0x04)))
         {
-            u8 vol = 15-Envelopes[shape][c_idx]; 
+            u8 vol = Envelopes[shape][c_idx]; 
             if (++c_idx > 31)
             {
                 if ((shape & 0x09) == 0x08) c_idx = 0; else c_idx=31;
@@ -167,8 +167,10 @@ void FakeAY_WriteData(u8 Value)
                {
                   if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
                   else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
-                  else sn76496W(0xE0|0x04,&sncol);                          // E0 is the highest frequency (lowest period)
-                  sn76496W(0xF9, &sncol);
+                  else sn76496W(0xE0|0x04, &sncol);                         // E0 is the highest frequency (lowest period)
+                  if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &sncol);
+                  if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &sncol);
+                  if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &sncol);
                }
               break;
               
@@ -244,8 +246,10 @@ void FakeAY_WriteData(u8 Value)
                   }
               }
               
-              // Noise Channel - we turn it on if the noise channel is enable along with the normal tone channel...
-              if ( (!(sgm_reg[0x07] & 0x08) && channel_a_enable) || (!(sgm_reg[0x07] & 0x10) && channel_b_enable) || (!(sgm_reg[0x07] & 0x20) && channel_c_enable) )
+              // Noise Channel - we turn it on if the noise channel is enable along with the channel's volume not zero...
+              if ( (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) || 
+                   (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) || 
+                   (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) )
               {
                   if (!noise_enable)
                   {
@@ -253,7 +257,9 @@ void FakeAY_WriteData(u8 Value)
                       if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
                       else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
                       else sn76496W(0xE0|0x04, &sncol);                         // E0 is the highest frequency (lowest period)
-                      sn76496W(0xF9, &sncol);
+                      if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &sncol);
+                      if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &sncol);
+                      if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &sncol);
                   }
               }
               else
@@ -282,7 +288,8 @@ void FakeAY_WriteData(u8 Value)
               sn76496W(0xD0 | Volumes[(Value & 0x1F)],&sncol);    // Write new Volume for Channel C
               c_idx=0;
               break;
-              
+             
+          // Envelope Period
           case 0x0B:
           case 0x0C:
               envelope_period = ((sgm_reg[0x0C] << 8) | sgm_reg[0x0B]) & 0x3FFF;
