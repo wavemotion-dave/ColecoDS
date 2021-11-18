@@ -53,6 +53,7 @@ Known Issues :
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
 * Vexxed won't run.
+* Astrostorm crashes about 10-15 seconds into the gameplay.
 * Arno Dash and Diamond Dash 2 glitch out soon after loading.
 * Ghostblaster starts but controls don't work.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
