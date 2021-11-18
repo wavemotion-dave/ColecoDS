@@ -5,9 +5,6 @@
 
 #include "colecoDS.h"
 
-#ifdef USECOLEMZ80C
-#include "cpu/z80/z80/Z80.h"
-#endif
 #ifdef USEDRZ80
 #include "cpu/z80/drz80/Z80_interface.h"
 #endif
@@ -22,7 +19,6 @@ extern u8 VR;                           // Sound and VDP register storage
 extern u16 JoyMode;                     // Joystick / Paddle management
 extern u16 JoyStat[2];                  // Joystick / Paddle management
 
-extern u8 ExitNow;
 extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
 
