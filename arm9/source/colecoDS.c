@@ -48,6 +48,7 @@ u16 emuFps=0;
 u16 emuActFrames=0;
 u16 timingFrames=0;
 
+int biggest=0;
 /*******************************************************************************/
 volatile u16 vusCptVBL;                   // Video Management
 extern u8 bFullSpeed;
@@ -110,6 +111,7 @@ ITCM_CODE void VsoundHandlerSN(void)
 {
     if (soundEmuPause) {return;}
     sn76496Mixer(8, aptr, &sncol);
+    //for (i=0; i<4; i++) if (xfer_buf[i] > biggest) biggest=xfer_buf[i];
 }
 
 ITCM_CODE void VsoundHandlerAY(void)
