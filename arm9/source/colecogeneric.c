@@ -338,7 +338,7 @@ u8 colecoDSLoadFile(void)
 {
   bool bDone=false;
   u32 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00,romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
-  u32 uLenFic=0, ucFlip=0, ucFlop=0;
+  s32 uLenFic=0, ucFlip=0, ucFlop=0;
 
   // Show the menu...
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
@@ -394,7 +394,7 @@ u8 colecoDSLoadFile(void)
         ucHaut++;
         if (ucHaut>10) ucHaut=0;
       }
-      uLenFic=0; ucFlip=0; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;     
     }
     else
     {
@@ -423,7 +423,7 @@ u8 colecoDSLoadFile(void)
         ucBas++;
         if (ucBas>10) ucBas=0;
       }
-      uLenFic=0; ucFlip=0; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;     
     }
     else {
       ucBas = 0;
@@ -448,7 +448,7 @@ u8 colecoDSLoadFile(void)
         ucSBas++;
         if (ucSBas>10) ucSBas=0;
       }
-      uLenFic=0; ucFlip=0; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;     
     }
     else {
       ucSBas = 0;
@@ -474,7 +474,7 @@ u8 colecoDSLoadFile(void)
         ucSHaut++;
         if (ucSHaut>10) ucSHaut=0;
       }
-      uLenFic=0; ucFlip=0; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;     
     }
     else {
       ucSHaut = 0;
