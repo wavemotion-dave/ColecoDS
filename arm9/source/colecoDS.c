@@ -139,19 +139,7 @@ void SetSoundHandlerAY(void)
 void dsInstallSoundEmuFIFO(void) 
 {
   SoundPause();
-    
-  FifoMessage msg;
-  msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 64000;
-  msg.SoundPlay.volume = 127;
-  msg.SoundPlay.pan = 64;
-  msg.SoundPlay.loop = 1;
-  msg.SoundPlay.format = ((1)<<4) | SoundFormat_16Bit;
-  msg.SoundPlay.loopPoint = 0;
-  msg.SoundPlay.dataSize = 8 >> 2;
-  msg.type = EMUARM7_PLAY_SND;
-  fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (u8*)&msg);
-    
+
   if (isDSiMode())
   {
       aptr = (u32*)((u32)xfer_buf + 0xA000000);
@@ -161,7 +149,7 @@ void dsInstallSoundEmuFIFO(void)
       aptr = (u32*)((u32)xfer_buf + 0x00400000);
   }
   
-  memset(aptr, 0x55, sizeof(xfer_buf));
+  sn76496Reset(1, &sncol);          // Reset the SN sound chip
     
   sn76496W(0x80 | 0x00,&sncol);     // Write new Frequency for Channel A
   sn76496W(0x00 | 0x00,&sncol);     // Write new Frequency for Channel A
@@ -177,14 +165,27 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496W(0xFF, &sncol);           // Disable Noise Channel
     
+  sn76496Mixer(8, aptr, &sncol);    // Do an initial mix conversion to clear the output
+    
   // We convert 2 samples per VSoundHandler interrupt...
   TIMER2_DATA = TIMER_FREQ(27000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandlerSN);
   irqEnable(IRQ_TIMER2);
     
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);    
-  
+  FifoMessage msg;
+  msg.SoundPlay.data = &xfer_buf;
+  msg.SoundPlay.freq = 64000;
+  msg.SoundPlay.volume = 127;
+  msg.SoundPlay.pan = 64;
+  msg.SoundPlay.loop = 1;
+  msg.SoundPlay.format = ((1)<<4) | SoundFormat_16Bit;
+  msg.SoundPlay.loopPoint = 0;
+  msg.SoundPlay.dataSize = 8 >> 2;
+  msg.type = EMUARM7_PLAY_SND;
+  fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (u8*)&msg);
+  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
+ 
   bStartSoundEngine = true;
 }
 
