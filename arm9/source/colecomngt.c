@@ -40,7 +40,6 @@ extern u32*lutTablehh;
 
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
 u8 romBankMask = 0x00;
-s16 xfer_buf[16] ALIGN(32);
 u8 bBlendMode __attribute__((section(".dtcm"))) = false;
 
 u8 sgm_enable __attribute__((section(".dtcm"))) = false;
@@ -101,8 +100,11 @@ u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
   
+  // Wipe area between BIOS and RAM
+  memset(pColecoMem+0x2000, 0xFF, 0x4000);
+    
   // Wipe RAM
-  memset(pColecoMem+0x2000, 0x00, 0x6000);
+  memset(pColecoMem+0x6000, 0x00, 0x2000);
   
   // Set ROM area to 0xFF before load
   memset(pColecoMem+0x8000, 0xFF, 0x8000);
@@ -581,7 +583,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
     case 0xE0: // Joysticks Data
       Port=(Port>>1)&0x01;
       Port=JoyMode? (JoyStat[Port]>>8): (JoyStat[Port]&0xF0)|KeyCodes[JoyStat[Port]&0x0F];
-      return((Port|0xB0)&0x7F);
+      return(Port&0x7F);
 
     case 0xA0: /* VDP Status/Data */
       return(Port&0x01? RdCtrl9918():RdData9918());

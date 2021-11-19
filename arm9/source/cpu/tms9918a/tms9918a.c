@@ -527,10 +527,10 @@ ITCM_CODE byte Write9918(int iReg, u8 value)
         SprTab=pVDPVidMem+(((int)(VDP[5]&SCR[J].R5)<<7)&VRAMMask);
         SprGen=pVDPVidMem+(((int)(VDP[6]&SCR[J].R6)<<11)&VRAMMask);
           
-        ChrTabM = ((int)(VDP[2]|~SCR[value].M2)<<10)|0x03FF;
-        ColTabM = ((int)(VDP[3]|~SCR[value].M3)<<6)|0x1C03F;
-        ChrGenM = ((int)(VDP[4]|~SCR[value].M4)<<11)|0x007FF;
-        SprTabM = ((int)(VDP[5]|~SCR[value].M5)<<7)|0x1807F;
+        ChrTabM = ((int)(VDP[2]|~SCR[J].M2)<<10)|0x03FF;
+        ColTabM = ((int)(VDP[3]|~SCR[J].M3)<<6)|0x1C03F;
+        ChrGenM = ((int)(VDP[4]|~SCR[J].M4)<<11)|0x007FF;
+        SprTabM = ((int)(VDP[5]|~SCR[J].M5)<<7)|0x1807F;
         ScrMode=J;
       }
       break;

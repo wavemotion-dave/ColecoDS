@@ -37,7 +37,7 @@
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 
-extern s16 xfer_buf[16];
+s16 xfer_buf[16] ALIGN(32);
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern SN76496 sncol;
 
@@ -196,7 +196,7 @@ void dsInstallSoundEmuFIFO(void)
 void ResetColecovision(void)
 {
   JoyMode=0;                           // Joystick mode key
-  JoyStat[0]=JoyStat[1]=0xFFFF;        // Joystick states
+  JoyStat[0]=JoyStat[1]=0x3FFF;        // Joystick states
     
   Reset9918();                         // Reset video chip
 
@@ -423,9 +423,9 @@ ITCM_CODE void colecoDS_main (void)
 
       JoyStat[0]= ucUN | ucDEUX;
 
-      JoyStat[0]=~JoyStat[0];
-      JoyStat[0] &= ~0x3000;
-      //JoyStat[1]=JoyStat[0];        // Mirror Joystick 1 on Joystick 2... maybe not a good idea?
+      JoyStat[0]=~JoyStat[0];         // Logic if flipped
+      JoyStat[0] &= ~0x3000;          // Reset spinner bits
+      JoyStat[1] &= ~0x3000;          // Reset spinner bits
     }
   }
 }
