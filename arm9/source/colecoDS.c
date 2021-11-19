@@ -177,7 +177,7 @@ void dsInstallSoundEmuFIFO(void)
     
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 64000;
+  msg.SoundPlay.freq = 50000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
