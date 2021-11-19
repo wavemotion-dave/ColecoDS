@@ -97,6 +97,7 @@ void showMainMenu(void)
 void SoundPause(void)
 {
     soundEmuPause = 1;
+    for (int i=1; i<8; i++) xfer_buf[i] = xfer_buf[0];
 }
 
 void SoundUnPause(void)
@@ -242,6 +243,9 @@ ITCM_CODE void colecoDS_main (void)
     
   TIMER1_DATA=0;
   TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
+    
+  
+  bStartSoundEngine = true;
     
   while(1) 
   {
@@ -557,7 +561,7 @@ int main(int argc, char **argv)
   // Init sound
   consoleDemoInit();
   soundEnable();
-
+    
   if (!fatInitDefault()) {
 	  iprintf("Unable to initialize libfat!\n");
 	  return -1;
@@ -601,6 +605,7 @@ int main(int argc, char **argv)
       }
   } else initial_file[0]=0; // No file passed on command line...
     
+  SoundPause();
   // BOUCLE INFINIE !!!!
   while(1) {
     // init de l'emul et chargement des roms
@@ -626,6 +631,7 @@ int main(int argc, char **argv)
   
     while(1) 
     {
+      SoundPause();
       // Choose option
       if (initial_file[0] != 0)
       {
@@ -635,9 +641,7 @@ int main(int argc, char **argv)
       }
       else 
       {
-          SoundPause();
           colecoDSChangeOptions();
-          SoundUnPause();
       }
 
       // Run Machine
