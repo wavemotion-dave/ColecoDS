@@ -37,7 +37,7 @@
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 
-s16 xfer_buf[16] ALIGN(32);
+u16 xfer_buf[16] ALIGN(32);
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern SN76496 sncol;
 
@@ -48,7 +48,7 @@ u16 emuFps=0;
 u16 emuActFrames=0;
 u16 timingFrames=0;
 
-int biggest=0;
+
 /*******************************************************************************/
 volatile u16 vusCptVBL;                   // Video Management
 extern u8 bFullSpeed;
@@ -111,7 +111,6 @@ ITCM_CODE void VsoundHandlerSN(void)
 {
     if (soundEmuPause) {return;}
     sn76496Mixer(8, aptr, &sncol);
-    //for (i=0; i<4; i++) if (xfer_buf[i] > biggest) biggest=xfer_buf[i];
 }
 
 ITCM_CODE void VsoundHandlerAY(void)
@@ -220,10 +219,15 @@ void ResetColecovision(void)
   // Restore Coleco BIOS
   memcpy(pColecoMem,ColecoBios,0x2000);
     
+  TIMER1_CR = 0;
   TIMER1_DATA=0;
   TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
     
+  TIMER0_CR=0;
+  TIMER0_DATA=0;
+  TIMER0_CR=TIMER_ENABLE | TIMER_DIV_1024;
   timingFrames = 0;
+  emuFps=0;
 }
 
 //*****************************************************************************
@@ -242,10 +246,16 @@ ITCM_CODE void colecoDS_main (void)
 
   colecoSetPal();
   colecoRun();
-    
+  
+  TIMER1_CR = 0;
   TIMER1_DATA=0;
   TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
     
+  TIMER0_CR=0;
+  TIMER0_DATA=0;
+  TIMER0_CR=TIMER_ENABLE | TIMER_DIV_1024;
+  timingFrames = 0;
+  emuFps=0;
   
   bStartSoundEngine = true;
     
