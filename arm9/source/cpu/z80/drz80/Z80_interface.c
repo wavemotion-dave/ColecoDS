@@ -72,11 +72,6 @@ ITCM_CODE void BankSwitch(u8 bank)
             *dest++ = *src++;
         }
         lastBank = bank;
-        
-        extern void AffChaine(int iX,int iY,int iScr,char *szMessage);
-        char zzz[20];
-        sprintf(zzz, "B: %02d", lastBank);
-        AffChaine(20,5,0,zzz);
     }
 }
 
