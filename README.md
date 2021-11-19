@@ -90,6 +90,12 @@ I've added it to the game loading instructions to remind you.
 
 Versions :
 -----------------------
+V3.1: 19-Nov-2021 by wavemotion-dave
+* Fixed noise sound handling on AY/SGM games.
+* Fixed pop going into first game.
+* Optmized video rendering for speed improvement across the board.
+* More robust VDP handling to avoid memory overflow.
+
 V3.0: 18-Nov-2021 by wavemotion-dave
 * Ressurected from the ashes
 

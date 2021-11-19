@@ -670,7 +670,7 @@ ITCM_CODE u32 LoopZ80()
 #ifndef USE_AY    
   if (sgm_enable) FakeAY_Loop();
 #endif    
-
+    
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
     

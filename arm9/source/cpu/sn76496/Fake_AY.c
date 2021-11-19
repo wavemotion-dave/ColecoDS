@@ -111,6 +111,31 @@ u8 FakeAY_ReadData(void)
     return sgm_reg[sgm_idx];   
 }
 
+
+void UpdateNoiseAY(void)
+{
+      // Noise Channel - we turn it on if the noise channel is enable along with the channel's volume not zero...
+      if ( (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) || 
+           (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) || 
+           (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) )
+      {
+          if (!noise_enable)
+          {
+              noise_enable=1;
+              if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
+              else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
+              else sn76496W(0xE0|0x04, &sncol);                         // E0 is the highest frequency (lowest period)
+              if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &sncol);
+              if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &sncol);
+              if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &sncol);
+          }
+      }
+      else
+      {
+          sn76496W(0xFF, &sncol);
+      }
+}
+
 u8 AY_RegisterMasks[] = {0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0x1F, 0xFF, 0x1F, 0x1F, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF};
 void FakeAY_WriteData(u8 Value)
 {
@@ -245,28 +270,7 @@ void FakeAY_WriteData(u8 Value)
                       sn76496W(0xD0 | 0x0F, &sncol);
                   }
               }
-              
-              // Noise Channel - we turn it on if the noise channel is enable along with the channel's volume not zero...
-              if ( (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) || 
-                   (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) || 
-                   (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) )
-              {
-                  if (!noise_enable)
-                  {
-                      noise_enable=1;
-                      if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
-                      else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
-                      else sn76496W(0xE0|0x04, &sncol);                         // E0 is the highest frequency (lowest period)
-                      if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &sncol);
-                      if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &sncol);
-                      if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &sncol);
-                  }
-              }
-              else
-              {
-                  sn76496W(0xFF, &sncol);
-              }
-              
+              UpdateNoiseAY();
               break;
               
           // Volume Registers for all channels...
@@ -274,18 +278,21 @@ void FakeAY_WriteData(u8 Value)
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
               if (sgm_reg[0x07] & 0x01) Value = 0x0;              // If Channel A is disabled, volume OFF
               sn76496W(0x90 | Volumes[(Value & 0x1F)],&sncol);    // Write new Volume for Channel A
+              UpdateNoiseAY();
               a_idx=0;
               break;
           case 0x09:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
               if (sgm_reg[0x07] & 0x02) Value = 0x0;              // If Channel B is disabled, volume OFF
               sn76496W(0xB0 | Volumes[(Value & 0x1F)],&sncol);    // Write new Volume for Channel B
+              UpdateNoiseAY();
               b_idx=0;
               break;
           case 0x0A:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
               if (sgm_reg[0x07] & 0x04) Value = 0x0;              // If Channel C is disabled, volume OFF
               sn76496W(0xD0 | Volumes[(Value & 0x1F)],&sncol);    // Write new Volume for Channel C
+              UpdateNoiseAY();
               c_idx=0;
               break;
              
