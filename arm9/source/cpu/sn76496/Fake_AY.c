@@ -28,7 +28,7 @@ extern u8 sgm_reg[256];
 extern u16 sgm_low_addr;
 extern SN76496 sncol;
 
-static const u8 Volumes[32] = { 15,14,13,12,11,10,10,9,9,8,8,7,7,6,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,0,0 };
+static const u8 Volumes[32] = { 15,14,13,12,11,10,10,9,8,7,7,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,1,1,1,0,0 };
 u16 envelope_period = 0;
 
 static const unsigned char Envelopes[16][32] =
