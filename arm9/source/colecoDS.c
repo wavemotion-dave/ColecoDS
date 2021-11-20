@@ -194,7 +194,9 @@ void dsInstallSoundEmuFIFO(void)
 //*****************************************************************************
 // Reset the Colecovision - mostly CPU, Super Game Module and memory...
 //*****************************************************************************
-int debug1=0;
+static u8 last_sgm_mode = false;
+static u8 last_ay_mode = false;
+
 void ResetColecovision(void)
 {
   JoyMode=0;                           // Joystick mode key
@@ -228,7 +230,10 @@ void ResetColecovision(void)
   TIMER0_CR=TIMER_ENABLE | TIMER_DIV_1024;
   timingFrames = 0;
   emuFps=0;
+  last_sgm_mode = false;
+  last_ay_mode = false;
 }
+
 
 //*****************************************************************************
 // The main emulation loop is here... call into the Z80, VDP and PSG 
@@ -256,6 +261,8 @@ ITCM_CODE void colecoDS_main (void)
   TIMER0_CR=TIMER_ENABLE | TIMER_DIV_1024;
   timingFrames = 0;
   emuFps=0;
+  last_sgm_mode = false;
+  last_ay_mode = false;
   
   bStartSoundEngine = true;
     
@@ -290,9 +297,18 @@ ITCM_CODE void colecoDS_main (void)
             szChai[3] = 0;
             AffChaine(29,0,6,szChai);
             
-            char zzz[12];
-            sprintf(zzz, "[%d]", debug1);
-            AffChaine(20,0,6,zzz);
+            if (last_sgm_mode != sgm_enable)
+            {
+                last_sgm_mode = sgm_enable;
+                AffChaine(25,0,6, (sgm_enable ? "SGM":"   "));
+            }
+            
+            if (last_ay_mode != AY_Enable)
+            {
+                last_ay_mode = AY_Enable;
+                AffChaine(22,0,6, (AY_Enable ? "AY":"  "));
+            }
+            
             emuActFrames = 0;
         }
         emuActFrames++;

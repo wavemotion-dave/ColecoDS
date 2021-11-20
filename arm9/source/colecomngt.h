@@ -12,8 +12,6 @@
 #define IMAGE_VERIFY_FAIL 0X01
 #define IMAGE_VERIFY_PASS 0x02
 
-#define SN76FREQ  15840
-
 extern u8 VR;                           // Sound and VDP register storage
 
 extern u16 JoyMode;                     // Joystick / Paddle management
@@ -21,8 +19,8 @@ extern u16 JoyStat[2];                  // Joystick / Paddle management
 
 extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
-
-extern u8 VDPInit[8];
+extern u8 sgm_enable;
+extern u8 AY_Enable;
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);

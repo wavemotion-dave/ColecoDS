@@ -74,10 +74,10 @@ u8 FGColor __attribute__((section(".dtcm")));       // Foreground Color
 u8 BGColor __attribute__((section(".dtcm")));       // Background Color
 
 // Sprite and Character Masks for the VDP
-u16 ChrTabM = ~0;
-u16 ColTabM = ~0;
-u16 ChrGenM = ~0;
-u16 SprTabM = ~0;
+u16 ChrTabM = 0x3FFF;
+u16 ColTabM = 0x3FFF;
+u16 ChrGenM = 0x3FFF;
+u16 SprTabM = 0x3FFF;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -474,7 +474,11 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
   int J;
   int VRAMMask;
   byte bIRQ;
-
+  static u8 VDP_RegisterMasks[] = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };    
+    
+  iReg &= 0x07;
+  value &= VDP_RegisterMasks[iReg & 0x07];
+    
   /* Enabling IRQs may cause an IRQ here */
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
 
@@ -483,7 +487,7 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
 
   /* Store value into the register */
   VDP[iReg]=value;
-  
+
   /* Depending on the register, do... */  
   switch (iReg) {
     case 0: /* Mode register 0 */
@@ -682,10 +686,10 @@ void Reset9918(void)
     SprTab=SprGen=pVDPVidMem;           // VDP tables (sprites)
     VDPDlatch = 0;                      // VDP Data latch
    
-    ChrGenM = ~0;                       // Full mask
-    ColTabM = ~0;                       // Full mask
-    ChrGenM = ~0;                       // Full mask
-    SprTabM = ~0;                       // Full mask
+    ChrGenM = 0x3FFF;                   // Full mask
+    ColTabM = 0x3FFF;                   // Full mask
+    ChrGenM = 0x3FFF;                   // Full mask
+    SprTabM = 0x3FFF;                   // Full mask
     
     BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
 
