@@ -25,6 +25,24 @@ thanked profusely.
 
 The ColecoDS emulator is offered as-is, without any warranty.
 
+Versions :
+-----------------------
+V3.2: 20-Nov-2021 by wavemotion-dave
+* More AY sound improvements for the Super Game Module.
+* Slight optmization of VDP rendering.
+* Improved display of Game Titles - slower scroll and centered.
+* Increase in contrast on game selection.
+* Other cleanups and minor improvements across the board.
+
+V3.1: 19-Nov-2021 by wavemotion-dave
+* Fixed noise sound handling on AY/SGM games.
+* Fixed audio pop going into first game.
+* Optimized video rendering for speed improvement across the board.
+* More robust VDP handling to avoid memory overflow.
+
+V3.0: 18-Nov-2021 by wavemotion-dave
+* Ressurected from the ashes
+
 Credits :
 -----------------------
 Thanks to Alekmaul who provided the 
@@ -37,7 +55,7 @@ Thanks to Flubba for the SN76496 sound core.
 
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
-core emulation (Z80, TMS9918 and SN76489).
+core emulation (specifically TMS9918 VDP).
 I think the original port was circa ColEM 2.1
 with some fixes incorproated from ColEM 2.9
 and updated Sprite/Line handling from ColEM 5.6
@@ -87,17 +105,4 @@ So my recommendation is as follows:
 
 To enable this new blend mode, when you pick your game use Y instead of A to select the game. I
 I've added it to the game loading instructions to remind you.
-
-Versions :
------------------------
-V3.1: 19-Nov-2021 by wavemotion-dave
-* Fixed noise sound handling on AY/SGM games.
-* Fixed audio pop going into first game.
-* Optimized video rendering for speed improvement across the board.
-* More robust VDP handling to avoid memory overflow.
-
-V3.0: 18-Nov-2021 by wavemotion-dave
-* Ressurected from the ashes
-
-
 

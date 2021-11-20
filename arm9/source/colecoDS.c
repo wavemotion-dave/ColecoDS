@@ -41,7 +41,7 @@ u16 xfer_buf[16] ALIGN(32);
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 extern SN76496 sncol;
 
-u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory
+u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory... 64K addressable
 u8 ColecoBios[8192] = {0};
 
 u16 emuFps=0;
@@ -170,14 +170,14 @@ void dsInstallSoundEmuFIFO(void)
   sn76496Mixer(8, aptr, &sncol);    // Do an initial mix conversion to clear the output
     
   // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(27000);
+  TIMER2_DATA = TIMER_FREQ(26000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandlerSN);
   irqEnable(IRQ_TIMER2);
     
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 56000;
+  msg.SoundPlay.freq = 53025;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
