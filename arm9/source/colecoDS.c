@@ -177,7 +177,7 @@ void dsInstallSoundEmuFIFO(void)
     
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 50000;
+  msg.SoundPlay.freq = 56000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -213,8 +213,7 @@ void ResetColecovision(void)
   DrZ80_Reset();                       // Reset the Z80 CPU Core
 
   // Clear Main RAM memory...
-  for (u16 iBcl=0x02000;iBcl<0x07FFF;iBcl++)
-    *(pColecoMem+iBcl) = 0x00;
+  memset(pColecoMem+0x2000, 0x00, 0x6000);
     
   // Restore Coleco BIOS
   memcpy(pColecoMem,ColecoBios,0x2000);
