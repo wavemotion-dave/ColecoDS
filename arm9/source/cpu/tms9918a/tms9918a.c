@@ -43,6 +43,7 @@ u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
 
 // Screen handlers and masks for VDP table address registers
 tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
+                // R2,  R3,  R4,  R5,  R6,  M2,  M3,  M4,  M5
   { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 0:TEXT 40x24    */
   { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 1:TEXT 32x24    */
   { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F,0x00,0x7F,0x03,0x00 },/* SCREEN 2:BLOCK 256x192 */
@@ -73,11 +74,10 @@ u8 FGColor __attribute__((section(".dtcm")));       // Foreground Color
 u8 BGColor __attribute__((section(".dtcm")));       // Background Color
 
 // Sprite and Character Masks for the VDP
-u32 ChrTabM = ~0;
-u32 ColTabM = ~0;
-u32 ChrGenM = ~0;
-u32 SprTabM = ~0;
-
+u16 ChrTabM = ~0;
+u16 ColTabM = ~0;
+u16 ChrGenM = ~0;
+u16 SprTabM = ~0;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -333,18 +333,6 @@ void ITCM_CODE RefreshSprites(register byte Y) {
 }
 
 
-/** RefreshBorder() ******************************************/
-/** This function is called from RefreshLine#() to refresh  **/
-/** the screen border.                                      **/
-/*************************************************************/
-#define Width 256
-#define Height 192
-ITCM_CODE void RefreshBorder(register byte Y)
-{
-
-}
-
-
 /** RefreshLine0() *******************************************/
 /** Refresh line Y (0..191) of SCREEN0, including sprites   **/
 /** in this line.                                           **/
@@ -377,7 +365,6 @@ void ITCM_CODE RefreshLine0(u8 Y)
       P+=6;T++;
     }
   }
-  RefreshBorder(Y);
 }
 
 /** RefreshLine1() *******************************************/
@@ -412,7 +399,6 @@ void ITCM_CODE RefreshLine1(u8 uY)
     }
     RefreshSprites(uY);
   }
-  RefreshBorder(uY);
 }
 
 /** RefreshLine2() *******************************************/
@@ -422,8 +408,8 @@ void ITCM_CODE RefreshLine1(u8 uY)
 void ITCM_CODE RefreshLine2(u8 uY) {
   u32 *P;
   register byte FC,BC;
-  register byte X,K,*T,*PGT,*CLT;
-  register int J,I,PGTMask,CLTMask;
+  register byte X,K,*T;
+  u16 J,I;
   u32 *ptLut;
 
   P=(u32*)(XBuf+(uY<<8));
@@ -432,20 +418,16 @@ void ITCM_CODE RefreshLine2(u8 uY) {
     memset(P,BGColor,256);
   else 
   {
-    J       = ((int)(uY&0xC0)<<5)+(uY&0x07);
-    PGT     = ChrGen;
-    CLT     = ColTab;
-    PGTMask = ChrGenM;
-    CLTMask = ColTabM;
-    T       = ChrTab+((int)(uY&0xF8)<<2);
+    J   = ((u16)((u16)uY&0xC0)<<5)+(uY&0x07);
+    T   = ChrTab+((u16)((u16)uY&0xF8)<<2);
 
     for(X=0;X<32;X++)
     {
-      I    = (int)*T<<3;
-      K    = CLT[(J+I)&CLTMask];
-      FC   = K>>4;
-      BC   = K&0x0F;
-      K    = PGT[(J+I)&PGTMask];
+      I    = (u16)*T<<3;
+      K    = ColTab[(J+I)&ColTabM];
+      FC   = (K>>4) & 0x0F;
+      BC   = K & 0x0F;
+      K    = ChrGen[(J+I)&ChrGenM];
         
       ptLut = (u32*)(lutTablehh[FC][BC]);
       *P++ = *(ptLut + ((K>>4)));
@@ -455,7 +437,6 @@ void ITCM_CODE RefreshLine2(u8 uY) {
       
     RefreshSprites(uY);
   }    
-  RefreshBorder(uY);
 }
 
 /** RefreshLine3() *******************************************/
@@ -482,14 +463,13 @@ void ITCM_CODE RefreshLine3(u8 uY) {
     }
     RefreshSprites(uY);
   }
-  RefreshBorder(uY);
 }
 
 
 /*********************************************************************************
  * Emulator calls this function to write byte V into a VDP register R
  ********************************************************************************/
-ITCM_CODE byte Write9918(int iReg, u8 value) 
+ITCM_CODE byte Write9918(u8 iReg, u8 value) 
 { 
   int J;
   int VRAMMask;
@@ -498,12 +478,12 @@ ITCM_CODE byte Write9918(int iReg, u8 value)
   /* Enabling IRQs may cause an IRQ here */
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
 
-  /* VRAM can either be 4kB or 16kB - this checks if the bit has changed on this call which will force the logic in case 1 below*/
+  /* VRAM can either be 4kB or 16kB - this checks if the bit has changed on this call which will force the logic in case 1 below */
   VRAMMask = (iReg==1) && ( (VDP[1]^value) & TMS9918_REG1_RAM16K ) ? 0 : TMS9918_VRAMMask;
 
   /* Store value into the register */
   VDP[iReg]=value;
-
+  
   /* Depending on the register, do... */  
   switch (iReg) {
     case 0: /* Mode register 0 */
@@ -517,38 +497,38 @@ ITCM_CODE byte Write9918(int iReg, u8 value)
         default:   J=ScrMode;break;
       }
         
-      /* If mode was changed, recompute table addresses */
+      /* If mode was changed or VRAM size changed: recompute table addresses */
       if ((J!=ScrMode) || !VRAMMask) 
       {
         VRAMMask    = TMS9918_VRAMMask;
-        ChrTab=pVDPVidMem+(((int)(VDP[2]&SCR[J].R2)<<10)&VRAMMask);
-        ColTab=pVDPVidMem+(((int)(VDP[3]&SCR[J].R3)<<6)&VRAMMask);
-        ChrGen=pVDPVidMem+(((int)(VDP[4]&SCR[J].R4)<<11)&VRAMMask);
-        SprTab=pVDPVidMem+(((int)(VDP[5]&SCR[J].R5)<<7)&VRAMMask);
-        SprGen=pVDPVidMem+(((int)(VDP[6]&SCR[J].R6)<<11)&VRAMMask);
-          
-        ChrTabM = ((int)(VDP[2]|~SCR[J].M2)<<10)|0x03FF;
-        ColTabM = ((int)(VDP[3]|~SCR[J].M3)<<6)|0x1C03F;
-        ChrGenM = ((int)(VDP[4]|~SCR[J].M4)<<11)|0x007FF;
-        SprTabM = ((int)(VDP[5]|~SCR[J].M5)<<7)|0x1807F;
         ScrMode=J;
+        ChrTab=pVDPVidMem+(((int)(VDP[2]&SCR[ScrMode].R2)<<10)&VRAMMask);
+        ColTab=pVDPVidMem+(((int)(VDP[3]&SCR[ScrMode].R3)<<6)&VRAMMask);
+        ChrGen=pVDPVidMem+(((int)(VDP[4]&SCR[ScrMode].R4)<<11)&VRAMMask);
+        SprTab=pVDPVidMem+(((int)(VDP[5]&SCR[ScrMode].R5)<<7)&VRAMMask);
+        SprGen=pVDPVidMem+(((int)(VDP[6]&SCR[ScrMode].R6)<<11)&VRAMMask);
+          
+        ChrTabM = ((int)(VDP[2]|(u8)~SCR[ScrMode].M2)<<10)|0x03FF;
+        ColTabM = ((int)(VDP[3]|(u8)~SCR[ScrMode].M3)<<6) |0x003F;
+        ChrGenM = ((int)(VDP[4]|(u8)~SCR[ScrMode].M4)<<11)|0x07FF;
+        SprTabM = ((int)(VDP[5]|(u8)~SCR[ScrMode].M5)<<7) |0x007F;
       }
       break;
     case  2: 
       ChrTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R2)<<10)&VRAMMask);
-      ChrTabM = ((int)(value|~SCR[ScrMode].M2)<<10)|0x03FF;
+      ChrTabM = ((int)(value|(u8)~SCR[ScrMode].M2)<<10)|0x03FF;
       break;
     case  3: 
       ColTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R3)<<6)&VRAMMask);
-      ColTabM = ((int)(value|~SCR[ScrMode].M3)<<6)|0x1C03F;
+      ColTabM = ((int)(value|(u8)~SCR[ScrMode].M3)<<6)|0x003F;
       break;
     case  4: 
       ChrGen=pVDPVidMem+(((int)(value&SCR[ScrMode].R4)<<11)&VRAMMask);
-      ChrGenM = ((int)(value|~SCR[ScrMode].M4)<<11)|0x007FF;
+      ChrGenM = ((int)(value|(u8)~SCR[ScrMode].M4)<<11)|0x07FF;
       break;
     case  5: 
       SprTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R5)<<7)&VRAMMask);
-      SprTabM = ((int)(value|~SCR[ScrMode].M5)<<7)|0x1807F;
+      SprTabM = ((int)(value|(u8)~SCR[ScrMode].M5)<<7)|0x007F;
       break;
     case  6: 
       SprGen=pVDPVidMem+(((int)(value&SCR[ScrMode].R6)<<11)&VRAMMask);
@@ -591,7 +571,7 @@ ITCM_CODE void WrData9918(byte V)
 ITCM_CODE byte RdData9918(void) 
 {
   register byte J;
-
+    
   J         = VDPDlatch;
   VDPDlatch = pVDPVidMem[VAddr];
   VAddr     = (VAddr+1)&0x3FFF;

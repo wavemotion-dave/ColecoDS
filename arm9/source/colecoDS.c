@@ -194,6 +194,7 @@ void dsInstallSoundEmuFIFO(void)
 //*****************************************************************************
 // Reset the Colecovision - mostly CPU, Super Game Module and memory...
 //*****************************************************************************
+int debug1=0;
 void ResetColecovision(void)
 {
   JoyMode=0;                           // Joystick mode key
@@ -289,6 +290,9 @@ ITCM_CODE void colecoDS_main (void)
             szChai[3] = 0;
             AffChaine(29,0,6,szChai);
             
+            char zzz[12];
+            sprintf(zzz, "[%d]", debug1);
+            AffChaine(20,0,6,zzz);
             emuActFrames = 0;
         }
         emuActFrames++;
@@ -359,7 +363,7 @@ ITCM_CODE void colecoDS_main (void)
         {
           // Stop sound
           SoundPause();
-          highscore_display(crc32(0xFFFFFFFF, pColecoMem+0x8000, 0x8000));
+          highscore_display(crc32(0xFFFFFFFF, pColecoMem+0x8000, 0x4000));  // This 16K rom segment never changes... good enough
           SoundUnPause();
         }
           
@@ -414,10 +418,11 @@ ITCM_CODE void colecoDS_main (void)
         ResetNow=SaveNow=LoadNow = 0;
       }
     
-      // Test touches
+      // Test DS keypresses and map to corresponding Coleco keys
       ucDEUX = 0;  
       keys_pressed = keysCurrent();
-      if (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) {
+      if (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
+      {
         if (keys_pressed & KEY_UP) ucDEUX |=  keyCoresp[keyboard_JoyNDS[0]];
         if (keys_pressed & KEY_DOWN) ucDEUX |=  keyCoresp[keyboard_JoyNDS[1]];
         if (keys_pressed & KEY_LEFT) ucDEUX |=  keyCoresp[keyboard_JoyNDS[2]];

@@ -24,7 +24,7 @@
 // this 300 game limit should be more than enough to handle the entire library.
 // ------------------------------------------------------------------------------
 #define MAX_HS_GAMES    400
-#define HS_VERSION      0x0002      // Changing this will wipe high scores on the next install
+#define HS_VERSION      0x0003      // Changing this will wipe high scores on the next install
 
 // --------------------------------------------------------------------------
 // We allow sorting on various criteria. By default sorting is high-to-low.

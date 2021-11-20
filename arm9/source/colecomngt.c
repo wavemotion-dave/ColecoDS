@@ -32,7 +32,7 @@ extern void DrZ80_InitFonct(void);
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0006
+#define COLECODS_SAVE_VER 0x0007
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
