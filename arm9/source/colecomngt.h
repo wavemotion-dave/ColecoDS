@@ -2,12 +2,8 @@
 #define _COLECOMNGT_H
 
 #include <nds.h>
-
 #include "colecoDS.h"
-
-#ifdef USEDRZ80
 #include "cpu/z80/drz80/Z80_interface.h"
-#endif
 
 #define IMAGE_VERIFY_FAIL 0X01
 #define IMAGE_VERIFY_PASS 0x02
@@ -21,6 +17,8 @@ extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
 extern u8 sgm_enable;
 extern u8 AY_Enable;
+extern u8 lastBank; 
+extern u8 romBankMask;
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);
@@ -37,5 +35,6 @@ extern void sgm_reset(void);
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 
 extern u32 LoopZ80();
+extern void BankSwitch(u8 bank);
 
 #endif

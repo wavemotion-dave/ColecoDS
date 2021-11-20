@@ -58,7 +58,6 @@ typedef enum {
   EMUARM7_PLAY_SND = 0x123E,
 } FifoMesType;
 
-#define ds_GetTicks() (TIMER0_DATA)
 
 u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;
 
@@ -177,7 +176,7 @@ void dsInstallSoundEmuFIFO(void)
     
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 53025;
+  msg.SoundPlay.freq = 52075;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -196,11 +195,12 @@ void dsInstallSoundEmuFIFO(void)
 //*****************************************************************************
 static u8 last_sgm_mode = false;
 static u8 last_ay_mode = false;
+static u8 last_mc_mode = 0;
 
 void ResetColecovision(void)
 {
-  JoyMode=0;                           // Joystick mode key
-  JoyStat[0]=JoyStat[1]=0x3FFF;        // Joystick states
+  JoyMode=JOYMODE_JOYSTICK;            // Joystick mode key
+  JoyStat[0]=JoyStat[1]=0xCFFF;        // Joystick states
     
   Reset9918();                         // Reset video chip
 
@@ -232,6 +232,7 @@ void ResetColecovision(void)
   emuFps=0;
   last_sgm_mode = false;
   last_ay_mode = false;
+  last_mc_mode = 0;
 }
 
 
@@ -242,10 +243,9 @@ ITCM_CODE void colecoDS_main (void)
 {
   u32 keys_pressed;
   u16 iTx, iTy;
-  u32 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, LoadNow = 0;
+  u16 ucUN, ucDEUX, ResetNow = 0, SaveNow = 0, LoadNow = 0;
   
-  // Affiche le nouveau menu
-  showMainMenu();
+  showMainMenu();       // Returns when user has asked for a game to run...
 
   colecoInit(gpFic[ucGameAct].szName);
 
@@ -263,6 +263,7 @@ ITCM_CODE void colecoDS_main (void)
   emuFps=0;
   last_sgm_mode = false;
   last_ay_mode = false;
+  last_mc_mode = 0;
   
   bStartSoundEngine = true;
     
@@ -307,6 +308,12 @@ ITCM_CODE void colecoDS_main (void)
             {
                 last_ay_mode = AY_Enable;
                 AffChaine(22,0,6, (AY_Enable ? "AY":"  "));
+            }
+            
+            if (last_mc_mode != romBankMask)
+            {
+                last_mc_mode = romBankMask;
+                AffChaine(19,0,6, (romBankMask ? "MC":"  "));
             }
             
             emuActFrames = 0;
