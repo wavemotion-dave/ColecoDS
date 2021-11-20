@@ -71,20 +71,6 @@ extern u8 *ChrGen,*ChrTab,*ColTab;             // VDP tables (screens)
 extern u8 *SprGen,*SprTab;                     // VDP tables (sprites)
 extern u8 ScrMode;                             // Current screen mode
 extern u8 FGColor,BGColor;                     // Colors
-extern u32 ColTabM, ChrGenM;
-
-extern u32 text_counter;
-
-extern void make_tms_tables(void);
-extern void render_bg_tms(u32 line);
-extern void render_bg_m0(u32 line);
-extern void render_bg_m1(u32 line);
-extern void render_bg_m1x(u32 line);
-extern void render_bg_inv(u32 line);
-extern void render_bg_m3(u32 line);
-extern void render_bg_m3x(u32 line);
-extern void render_bg_m2(u32 line);
-extern void render_obj_tms(u32 line);
-extern void parse_line(u32 line);
+extern u16 ColTabM, ChrGenM;
 
 #endif
