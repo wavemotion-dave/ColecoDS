@@ -51,6 +51,7 @@ static u8 Port53 = 0x00;
 static u8 Port60 = 0x0F;
 
 u8 bFirstTimeAY = true;
+u8 AY_Enable = false;
 
 u16 JoyMode;                     // Joystick / Paddle management
 u16 JoyStat[2];                  // Joystick / Paddle management
@@ -86,6 +87,9 @@ void sgm_reset(void)
     bFirstTimeAY = false;        // We are using FAKE AY for now...
 #endif    
     sgm_enable = false;
+    sgm_low_addr = 0x2000;
+    
+    AY_Enable = false;
     
     Port53 = 0x00;
     Port60 = 0x0F;    
@@ -612,7 +616,8 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x50)  
   {
-      FakeAY_WriteIndex(Value & 0x0F); 
+      FakeAY_WriteIndex(Value & 0x0F);
+      if ((Value & 0x0F) == 0x07) AY_Enable = true;
 #ifdef USE_AY      
       if (bFirstTimeAY) // If someone is accessing the sound index register, assume AY sound and enable it.
       {
@@ -632,7 +637,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       ay38910DataW(Value, &ay_chip); 
       return;
 #else
-    FakeAY_WriteData(Value);      
+    FakeAY_WriteData(Value);
 #endif      
   }
     
@@ -670,7 +675,7 @@ ITCM_CODE u32 LoopZ80()
 
   // Just in case there is AY audio envelopes...
 #ifndef USE_AY    
-  if (sgm_enable) FakeAY_Loop();
+  if (AY_Enable) FakeAY_Loop();
 #endif    
     
   // Refresh VDP 
