@@ -3,19 +3,12 @@
 
 #include <nds.h>
 #include <string.h>
+#include "cpu/z80/drz80/Z80_interface.h"
 
 #define VERSIONCLDS "3.2"
 
-#define DEBUGNO
-#define USEDRZ80
-//#define USE_AY
+//#define REAL_AY       // Enable this to use the real AY emulation 
 
-#ifdef USECOLEMZ80C
-#include "cpu/z80/z80/Z80.h"
-#endif
-#ifdef USEDRZ80
-#include "cpu/z80/drz80/Z80_interface.h"
-#endif
 
 #define JST_NONE      0x0000
 #define JST_KEYPAD    0x000F
@@ -41,6 +34,10 @@
 #define JST_BLUE      0x000B
 #define JST_RED       JST_FIRER
 #define JST_YELLOW    JST_FIREL
+
+
+#define JOYMODE_JOYSTICK  0
+#define JOYMODE_KEYPAD    1
 
 extern u16 emuFps;
 extern u16 emuActFrames;

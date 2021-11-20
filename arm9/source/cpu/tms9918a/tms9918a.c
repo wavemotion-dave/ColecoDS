@@ -32,7 +32,7 @@
 #define MaxSprites  32
 
 
-u16 *pVidFlipBuf= (u16*) (0x06000000);    // Video flipping buffer
+u16 *pVidFlipBuf __attribute__((section(".dtcm"))) = (u16*) (0x06000000);    // Video flipping buffer
 
 u8 XBuf_A[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer A
 u8 XBuf_B[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer B
@@ -60,24 +60,28 @@ u8 TMS9918A_palette[16*3] = {
   0x20,0x80,0x20,   0xC0,0x40,0xA0,   0xA0,0xA0,0xA0,   0xE0,0xE0,0xE0,
 };
 
-u8 pVDPVidMem[0x10000] ALIGN(32) ={0};              // VDP video memory... only 16K but we set to 64K so we don't have to handle out of bounds checks
-u16 CurLine __attribute__((section(".dtcm")));      // Current scanline
-u8 VDP[16] __attribute__((section(".dtcm")));       // VDP Registers
-u8 VDPStatus __attribute__((section(".dtcm")));     // VDP Status
-u8 VDPDlatch __attribute__((section(".dtcm")));     // VDP register D Latch
-u16 VAddr __attribute__((section(".dtcm")));        // Storage for VIDRAM addresses
-u8 VKey;                                            // VDP address latch key
-u8 *ChrGen,*ChrTab,*ColTab;                         // VDP tables (screens)
-u8 *SprGen,*SprTab;                                 // VDP tables (sprites)
-u8 ScrMode __attribute__((section(".dtcm")));       // Current screen mode
-u8 FGColor __attribute__((section(".dtcm")));       // Foreground Color
-u8 BGColor __attribute__((section(".dtcm")));       // Background Color
+u8 pVDPVidMem[0x10000] ALIGN(32) ={0};                  // VDP video memory... only 16K but we set to 64K so we don't have to handle out of bounds checks
+
+u16 CurLine     __attribute__((section(".dtcm")));      // Current scanline
+u8 VDP[16]      __attribute__((section(".dtcm")));      // VDP Registers
+u8 VDPStatus    __attribute__((section(".dtcm")));      // VDP Status
+u8 VDPDlatch    __attribute__((section(".dtcm")));      // VDP register D Latch
+u16 VAddr       __attribute__((section(".dtcm")));      // Storage for VIDRAM addresses
+u8 VKey         __attribute__((section(".dtcm")));      // VDP address latch key
+u8 *ChrGen      __attribute__((section(".dtcm")));      // VDP tables (screens)
+u8 *ChrTab      __attribute__((section(".dtcm")));      // VDP tables (screens)
+u8 *ColTab      __attribute__((section(".dtcm")));      // VDP tables (screens)
+u8 *SprGen      __attribute__((section(".dtcm")));      // VDP tables (sprites)
+u8 *SprTab      __attribute__((section(".dtcm")));      // VDP tables (sprites)
+u8 ScrMode      __attribute__((section(".dtcm")));      // Current screen mode
+u8 FGColor      __attribute__((section(".dtcm")));      // Foreground Color
+u8 BGColor      __attribute__((section(".dtcm")));      // Background Color
 
 // Sprite and Character Masks for the VDP
-u16 ChrTabM = 0x3FFF;
-u16 ColTabM = 0x3FFF;
-u16 ChrGenM = 0x3FFF;
-u16 SprTabM = 0x3FFF;
+u16 ChrTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
+u16 ColTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
+u16 ChrGenM     __attribute__((section(".dtcm"))) = 0x3FFF;
+u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/

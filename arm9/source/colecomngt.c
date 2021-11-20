@@ -36,10 +36,10 @@ extern void DrZ80_InitFonct(void);
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
-extern u32*lutTablehh;
+extern u32* lutTablehh;
 
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
-u8 romBankMask = 0x00;
+u8 romBankMask __attribute__((section(".dtcm"))) = 0x00;
 u8 bBlendMode __attribute__((section(".dtcm"))) = false;
 
 u8 sgm_enable __attribute__((section(".dtcm"))) = false;
@@ -47,16 +47,14 @@ u8 sgm_idx __attribute__((section(".dtcm"))) = 0;
 u8 sgm_reg[256] __attribute__((section(".dtcm"))) = {0};
 u16 sgm_low_addr __attribute__((section(".dtcm"))) = 0x2000;
 
-static u8 Port53 = 0x00;
-static u8 Port60 = 0x0F;
+static u8 Port53 __attribute__((section(".dtcm"))) = 0x00;
+static u8 Port60 __attribute__((section(".dtcm"))) = 0x0F;
 
-u8 bFirstTimeAY = true;
-u8 AY_Enable = false;
+u8 bFirstTimeAY __attribute__((section(".dtcm"))) = true;
+u8 AY_Enable __attribute__((section(".dtcm")))    = false;
 
-u16 JoyMode;                     // Joystick / Paddle management
+u16 JoyMode=0;                   // Joystick / Paddle management
 u16 JoyStat[2];                  // Joystick / Paddle management
-
-u16 JoyState=0;                  // Joystick V2
 
 SN76496 sncol   __attribute__((section(".dtcm")));
 AY38910 ay_chip __attribute__((section(".dtcm")));
@@ -74,7 +72,7 @@ void sgm_reset(void)
     channel_c_enable = 0;
     noise_enable = 0;      
     
-#ifdef USE_AY
+#ifdef REAL_AY
     bFirstTimeAY = true;
     memset(&ay_chip, 0x00, sizeof(ay_chip));
     ay38910Reset(&ay_chip);
@@ -134,7 +132,7 @@ u8 colecoInit(char *szGame) {
     }
     // Init var
     for (uBcl=0;uBcl<192;uBcl++) {
-      uVide=(uBcl/12);//+((uBcl/12)<<8);
+      uVide=(uBcl/12);
       dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
     }
     
@@ -144,7 +142,7 @@ u8 colecoInit(char *szGame) {
     // Make sure the super game module is disabled to start
     sgm_reset();
 
-    JoyMode=0;                           // Joystick mode key
+    JoyMode=JOYMODE_JOYSTICK;            // Joystick mode key
     JoyStat[0]=JoyStat[1]=0xCFFF;        // Joystick states
 
     sn76496Reset(1, &sncol);             // Reset the SN sound chip
@@ -198,8 +196,8 @@ void colecoSaveState()
 {
   u32 uNbO;
   long pSvg;
-  char szFile[256];
-  char szCh1[128],szCh2[128];
+  char szFile[128];
+  char szCh1[32],szCh2[32];
 
   // Init filename = romname and STA in place of ROM
   strcpy(szFile,gpFic[ucGameAct].szName);
@@ -296,8 +294,8 @@ void colecoLoadState()
 {
   u32 uNbO;
   long pSvg;
-  char szFile[256];
-  char szCh1[128],szCh2[128];
+  char szFile[128];
+  char szCh1[32],szCh2[32];
 
     // Init filename = romname and STA in place of ROM
     strcpy(szFile,gpFic[ucGameAct].szName);
@@ -450,24 +448,15 @@ ITCM_CODE void colecoUpdateScreen(void)
 /*********************************************************************************
  * Check if the cart is valid...
  ********************************************************************************/
-u8 colecoCartVerify(const u8 *cartData) {
-  u8 RetFct = IMAGE_VERIFY_FAIL;
-
-  // Verify the file is in Colecovision format
-  // 1) Production Cartridge 
-  if ((cartData[0] == 0xAA) && (cartData[1] == 0x55)) 
-    RetFct = IMAGE_VERIFY_PASS;
-  // 2) "Test" Cartridge. Some games use this method to skip ColecoVision title screen and delay
-  if ((cartData[0] == 0x55) && (cartData[1] == 0xAA)) 
-    RetFct = IMAGE_VERIFY_PASS;
-
-  // TODO: for now... who are we to argue? Some SGM roms shift this up to bank 0 and it's not worth the hassle. The game either runs or it won't.
-   RetFct = IMAGE_VERIFY_PASS;
-
-  // Quit with verification cheched
-  return RetFct;
+u8 colecoCartVerify(const u8 *cartData) 
+{
+  //Who are we to argue? Some SGM roms shift this up to bank 0 and it's not worth the hassle. The game either runs or it won't.
+  return IMAGE_VERIFY_PASS;
 }
 
+// ------------------------------------------------------------
+// Some global vars to track what kind of cart/rom we have...
+// ------------------------------------------------------------
 u8 bMagicMegaCart = 0;
 u8 bActivisionPCB = 0;
 u8 sRamAtE000_OK = 0;
@@ -518,7 +507,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             {
                 bMagicMegaCart = 1;
                 memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest bank into fixed ROM
-                memcpy(ptr+0x4000, romBuffer, 0x4000);          // Unclear what goes in the 16K "switchable" bank - we'll put bank 0 in there (based on a post from Nanochess in AA forums)
+                lastBank = 199;                                 // Force load of the first bank...
+                BankSwitch(0);                                  // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
                 
                 if (iSSize == (64  * 1024)) romBankMask = 0x03;
                 else if (iSSize == (128 * 1024)) romBankMask = 0x07;
@@ -526,8 +516,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 else if (iSSize == (512 * 1024)) romBankMask = 0x1F;
                 else romBankMask = 0x07;    // Not sure what to do... good enough
             }
-            extern u8 lastBank;
-            lastBank = 199;  // Force load of bank if needed
         }
         bOK = 1;
     }
@@ -572,7 +560,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
   // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
-#ifdef USE_AY
+#ifdef REAL_AY
       ay38910DataR(&ay_chip);
       return ay_chip.ayRegs[sgm_idx&0x0F];
 #else
@@ -586,7 +574,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
 
     case 0xE0: // Joysticks Data
       Port=(Port>>1)&0x01;
-      Port=JoyMode? (JoyStat[Port]>>8): (JoyStat[Port]&0xF0)|KeyCodes[JoyStat[Port]&0x0F];
+      Port=JoyMode ? (JoyStat[Port]>>8): (JoyStat[Port]&0xF0)|KeyCodes[JoyStat[Port]&0x0F];
       return(Port&0x7F);
 
     case 0xA0: /* VDP Status/Data */
@@ -604,7 +592,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
 /*************************************************************/
 ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 {
-  // Colecovision is 8 bit ports...
+  // Colecovision ports are 8-bit
   Port &= 0x00FF;
 
   // -----------------------------------------------------------------
@@ -618,7 +606,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   {
       FakeAY_WriteIndex(Value & 0x0F);
       if ((Value & 0x0F) == 0x07) AY_Enable = true;
-#ifdef USE_AY      
+#ifdef REAL_AY      
       if (bFirstTimeAY) // If someone is accessing the sound index register, assume AY sound and enable it.
       {
           bFirstTimeAY = false;
@@ -633,7 +621,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x51) 
   {
-#ifdef USE_AY      
+#ifdef REAL_AY      
       ay38910DataW(Value, &ay_chip); 
       return;
 #else
@@ -643,9 +631,14 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
     
   switch(Port&0xE0) 
   {
-    case 0x80: JoyMode=0;return;
-    case 0xC0: JoyMode=1;return;
-    case 0xE0: sn76496W(Value, &sncol);
+    case 0x80: 
+      JoyMode=JOYMODE_JOYSTICK;
+      return;
+    case 0xC0: 
+      JoyMode=JOYMODE_KEYPAD;
+      return;
+    case 0xE0: 
+      sn76496W(Value, &sncol);
       return;
     case 0xA0:
       if(!(Port&0x01)) WrData9918(Value);
@@ -674,7 +667,7 @@ ITCM_CODE u32 LoopZ80()
   DrZ80_execute(TMS9918_LINE);
 
   // Just in case there is AY audio envelopes...
-#ifndef USE_AY    
+#ifndef REAL_AY    
   if (AY_Enable) FakeAY_Loop();
 #endif    
     

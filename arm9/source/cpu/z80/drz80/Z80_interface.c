@@ -139,13 +139,6 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     // ---------------------------------------------------------------------
     if (romBankMask != 0)
     {
-#if 0
-      if (address == 0xFFFF)    // SGM can write to this address to set bank #
-      {
-          BankSwitch(value & romBankMask);
-      }
-      else  // Check for hotspots...
-#endif          
       {
           /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
           if(bActivisionPCB)
