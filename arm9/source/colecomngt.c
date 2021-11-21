@@ -1,10 +1,13 @@
-/******************************************************************************
-*  ColecoDS managment file
-*  Ver 1.0
-*
-*  Copyright (C) 2006 AlekMaul . All rights reserved.
-*       http://www.portabledev.com
-******************************************************************************/
+// =====================================================================================
+// Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+//
+// Copying and distribution of this emulator, it's source code and associated 
+// readme files, with or without modification, are permitted in any medium without 
+// royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
+// Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
+//
+// The ColecoDS emulator is offered as-is, without any warranty.
+// =====================================================================================
 #include <nds.h>
 #include <nds/arm9/console.h> //basic print funcionality
 
@@ -24,6 +27,7 @@
 
 extern byte Loop9918(void);
 extern void DrZ80_InitFonct(void);
+extern u8 lastBank;
 
 #include "cpu/tms9918a/tms9918a.h"
 
@@ -388,7 +392,6 @@ void colecoLoadState()
             // Restore the screen as it was...
             dmaCopyWords(2, (u32*)XBuf, (u32*)pVidFlipBuf, 256*192);
             
-            extern u8 lastBank;
             lastBank = 199;  // Force load of bank if needed
         }
         else uNbO = 0;
@@ -666,6 +669,21 @@ ITCM_CODE u32 LoopZ80()
   // Execute 1 scanline worth of CPU
   DrZ80_execute(TMS9918_LINE);
 
+#if 0
+  char str[33];
+  sprintf(str, "PC:   %08X ", drz80.Z80PC);
+  AffChaine(1,6,2,str);
+  sprintf(str, "SP:   %08X ", drz80.Z80SP);
+  AffChaine(1,7,2,str);
+  sprintf(str, "PCB:  %08X ", drz80.Z80PC_BASE);
+  AffChaine(1,8,2,str);
+  sprintf(str, "SPB:  %08X ", drz80.Z80SP_BASE);
+  AffChaine(1,9,2,str);
+  sprintf(str, "Bank: %-7d ", lastBank);
+  AffChaine(1,10,2,str);
+  sprintf(str, "LowM: %04X  ", sgm_low_addr);
+  AffChaine(1,11,2,str);
+#endif    
   // Just in case there is AY audio envelopes...
 #ifndef REAL_AY    
   if (AY_Enable) FakeAY_Loop();
