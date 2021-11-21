@@ -8,7 +8,6 @@
 #define TMS9918_BASE        10738635
 
 #define TMS9918_FRAMES      60
-#define TMS9918_LINES       262
 #define TMS9918_CLOCK       (TMS9918_BASE/3)
 #define TMS9918_FRAME       (TMS9918_BASE/(3*60))
 #define TMS9918_LINE        (TMS9918_BASE/(3*60*262))

@@ -21,15 +21,11 @@
 
 #include "colecoDS.h"
 #include "highscore.h"
-
 #include "colecogeneric.h"
 #include "colecomngt.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/ay38910/AY38910.h"
-
-
 #include "intro.h"
-
 #include "ecranBas.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
@@ -50,8 +46,10 @@ u16 timingFrames=0;
 
 
 /*******************************************************************************/
-volatile u16 vusCptVBL;                   // Video Management
+volatile u16 vusCptVBL = 0;    // Video Management
+
 extern u8 bFullSpeed;
+
 typedef enum {
   EMUARM7_INIT_SND = 0x123C,
   EMUARM7_STOP_SND = 0x123D,
@@ -85,14 +83,10 @@ u16 keyboard_JoyNDS[12] = {
 u8 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
 
 
-//*****************************************************************************
-// Boucle principale d'execution
-//*****************************************************************************
 void showMainMenu(void) 
 {
   dmaCopy((void*) bgGetMapPtr(bg0b),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
-
 
 void SoundPause(void)
 {
@@ -134,8 +128,6 @@ void SetSoundHandlerAY(void)
     irqEnable(IRQ_TIMER2);
 }
 
-
-
 //---------------------------------------------------------------------------------
 void dsInstallSoundEmuFIFO(void) 
 {
@@ -168,15 +160,15 @@ void dsInstallSoundEmuFIFO(void)
     
   sn76496Mixer(8, aptr, &sncol);    // Do an initial mix conversion to clear the output
     
-  // We convert 2 samples per VSoundHandler interrupt...
-  TIMER2_DATA = TIMER_FREQ(26000);
+  // We convert 2 samples per VSoundHandler interrupt... Roughly 52KHz sampling sounds about right
+  TIMER2_DATA = TIMER_FREQ(26100);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandlerSN);
   irqEnable(IRQ_TIMER2);
     
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 52075;
+  msg.SoundPlay.freq = 52275;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -328,8 +320,11 @@ ITCM_CODE void colecoDS_main (void)
             timingFrames = 0;
         }
 
-        
+        // --------------------------------------------
         // Time 1 frame... 546 ticks of Timer0
+        // This is how we time frame-to frame
+        // to keep the game running at 60FPS
+        // --------------------------------------------
         while(TIMER0_DATA < (546*(timingFrames+1)))
         {
             if (bFullSpeed) break;
@@ -494,26 +489,22 @@ void colecoDSInit(void) {
   // Stop blending effect of intro
   REG_BLDCNT=0; REG_BLDCNT_SUB=0; REG_BLDY=0; REG_BLDY_SUB=0;
   
-  // Affiche l'ecran en haut
+  // Render the top screen
   bg0 = bgInit(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
   bg1 = bgInit(1, BgType_Text8bpp, BgSize_T_256x512, 29,0);
   bgSetPriority(bg0,1);bgSetPriority(bg1,0);
   decompress(ecranHautTiles, bgGetGfxPtr(bg0), LZ77Vram);
   decompress(ecranHautMap, (void*) bgGetMapPtr(bg0), LZ77Vram);
   dmaCopy((void*) ecranHautPal,(void*) BG_PALETTE,256*2);
-  //dmaCopy((void*) ecranHaut_tiles,bgGetGfxPtr(bg0),sizeof(ecranHaut_tiles));
-  //dmaCopy((void*) ecranHaut_map,(void*) bgGetMapPtr(bg0),32*24*2);
   unsigned short dmaVal =*(bgGetMapPtr(bg0)+51*32);//  ecranHaut_map[51][0];            
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
 
-  // Affiche le clavier en bas
+  // Render the bottom screen
   bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
   bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x512, 29,0);
   bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
   decompress(ecranBasSelTiles, bgGetGfxPtr(bg0b), LZ77Vram);
   decompress(ecranBasSelMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
-  //dmaCopy((void*) ecranBasSel_tiles,bgGetGfxPtr(bg0b),sizeof(ecranBasSel_tiles));
-  //dmaCopy((void*) ecranBasSel_map,(void*) bgGetMapPtr(bg1b),32*24*2);
   dmaCopy((void*) ecranBasSelPal,(void*) BG_PALETTE_SUB,256*2);
   dmaVal = *(bgGetMapPtr(bg0b)+24*32);// ecranBasSel_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
@@ -534,21 +525,21 @@ void InitBottomScreen(void)
   decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
   dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
   dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
-  unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);//ecranBas_map[24][0];
+  unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
 
 /*********************************************************************************
  * Init CPU for the current game
  ********************************************************************************/
-u16 colecoDSInitCPU(void) {
-#ifdef NOCASH
-    nocashMessage("colecoDSInitCPU !\n");
-#endif  
+u16 colecoDSInitCPU(void) 
+{ 
   u16 RetFct=0x0000;
   int iBcl;
   
-  // Init Rom
+  // -----------------------------------------
+  // Init Main Memory and VDP Video Memory
+  // -----------------------------------------
   for (iBcl=0;iBcl<0x10000;iBcl++)
     *(pColecoMem+iBcl) = 0xFF;
   for (iBcl=0;iBcl<0x04000;iBcl++)
@@ -575,6 +566,9 @@ void irqVBlank(void)
   vusCptVBL++;
 }
 
+// ----------------------------------------------------------------
+// Look for the coleco.rom bios in several possible locations...
+// ----------------------------------------------------------------
 bool ColecoBIOSFound(void)
 {
     FILE *fp;
@@ -608,10 +602,9 @@ int main(int argc, char **argv)
     
   highscore_init();
 
-  // Met les ecran comme il faut
   lcdMainOnTop();
 
-  // Affichage de l'intro PortableDev
+  // Show the fade-away intro logo...
   intro_logo();
   
   // Init timer for frame management
@@ -645,9 +638,12 @@ int main(int argc, char **argv)
   } else initial_file[0]=0; // No file passed on command line...
     
   SoundPause();
-  // BOUCLE INFINIE !!!!
-  while(1) {
-    // init de l'emul et chargement des roms
+  
+  // ------------------------------------------------------------
+  // We run this loop forever until game exit is selected...
+  // ------------------------------------------------------------
+  while(1) 
+  {
     colecoDSInit();
 
     if (ColecoBIOSFound())
