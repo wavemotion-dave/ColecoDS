@@ -103,7 +103,7 @@ void SoundUnPause(void)
 ITCM_CODE void VsoundHandlerSN(void)
 {
     if (soundEmuPause) {return;}
-    sn76496Mixer(8, aptr, &sncol);
+    sn76496Mixer(4, aptr, &sncol);
 }
 
 ITCM_CODE void VsoundHandlerAY(void)
@@ -160,21 +160,21 @@ void dsInstallSoundEmuFIFO(void)
     
   sn76496Mixer(8, aptr, &sncol);    // Do an initial mix conversion to clear the output
     
-  // We convert 2 samples per VSoundHandler interrupt... Roughly 52KHz sampling sounds about right
-  TIMER2_DATA = TIMER_FREQ(26100);
+  // We convert 2 samples per VSoundHandler interrupt... Roughly 53.5KHz sampling sounds about right
+  TIMER2_DATA = TIMER_FREQ(26300);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandlerSN);
   irqEnable(IRQ_TIMER2);
     
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 52275;
+  msg.SoundPlay.freq = 56000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
   msg.SoundPlay.format = ((1)<<4) | SoundFormat_16Bit;
   msg.SoundPlay.loopPoint = 0;
-  msg.SoundPlay.dataSize = 8 >> 2;
+  msg.SoundPlay.dataSize = 4 >> 2;
   msg.type = EMUARM7_PLAY_SND;
   fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (u8*)&msg);
   fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
