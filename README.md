@@ -77,7 +77,6 @@ Known Issues :
 * Deep Dungeon Adventures won't run.
 * Sudoku has graphical issues (still playable).
 * Uridium won't run.
-* Ghostblaster starts up but can't get off title screen.
 * Super Pac Man has major graphical issues.
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
