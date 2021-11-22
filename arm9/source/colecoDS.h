@@ -9,7 +9,6 @@
 
 //#define REAL_AY       // Enable this to use the real AY emulation 
 
-
 #define JST_NONE      0x0000
 #define JST_KEYPAD    0x000F
 #define JST_UP        0x0100
@@ -73,7 +72,5 @@ extern void showMainMenu(void);
 extern void InitBottomScreen(void);
 extern void PauseSound(void);
 extern void UnPauseSound(void);
-extern void SetSoundHandlerSN(void);
-extern void SetSoundHandlerAY(void);
 
 #endif

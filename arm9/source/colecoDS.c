@@ -34,8 +34,11 @@
 #include "cpu/sn76496/Fake_AY.h"
 
 u16 xfer_buf[16] ALIGN(32);
+u16 xfer_buf_ay[16] ALIGN(32);
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
+u32* bptr = (u32*)((u32)xfer_buf_ay + 0xA000000);
 extern SN76496 sncol;
+extern SN76496 aycol;
 
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory... 64K addressable
 u8 ColecoBios[8192] = {0};
@@ -92,6 +95,7 @@ void SoundPause(void)
 {
     soundEmuPause = 1;
     for (int i=1; i<8; i++) xfer_buf[i] = xfer_buf[0];
+    for (int i=1; i<8; i++) xfer_buf_ay[i] = xfer_buf_ay[0];
 }
 
 void SoundUnPause(void)
@@ -104,29 +108,14 @@ ITCM_CODE void VsoundHandlerSN(void)
 {
     if (soundEmuPause) {return;}
     sn76496Mixer(4, aptr, &sncol);
-}
-
-ITCM_CODE void VsoundHandlerAY(void)
-{
+#ifdef REAL_AY    
     extern AY38910 ay_chip;
-    if (soundEmuPause) {return;}
-    ay38910Mixer(8, aptr, &ay_chip);
+    if (AY_Enable) ay38910Mixer(4, bptr, &ay_chip);
+#else    
+    if (AY_Enable) sn76496Mixer(4, bptr, &aycol);
+#endif    
 }
 
-
-void SetSoundHandlerSN(void)
-{
-    irqDisable(IRQ_TIMER2);
-    irqSet(IRQ_TIMER2, VsoundHandlerSN);
-    irqEnable(IRQ_TIMER2);
-}
-
-void SetSoundHandlerAY(void)
-{
-    irqDisable(IRQ_TIMER2);
-    irqSet(IRQ_TIMER2, VsoundHandlerAY);
-    irqEnable(IRQ_TIMER2);
-}
 
 //---------------------------------------------------------------------------------
 void dsInstallSoundEmuFIFO(void) 
@@ -136,12 +125,17 @@ void dsInstallSoundEmuFIFO(void)
   if (isDSiMode())
   {
       aptr = (u32*)((u32)xfer_buf + 0xA000000);
+      bptr = (u32*)((u32)xfer_buf_ay + 0xA000000);
   }
   else
   {
       aptr = (u32*)((u32)xfer_buf + 0x00400000);
+      bptr = (u32*)((u32)xfer_buf_ay + 0x00400000);
   }
   
+  // ------------------------------------------------------------------
+  // NDS Audio Channel 5 will output the normal Colecovision SN audio
+  // ------------------------------------------------------------------
   sn76496Reset(1, &sncol);          // Reset the SN sound chip
     
   sn76496W(0x80 | 0x00,&sncol);     // Write new Frequency for Channel A
@@ -159,26 +153,63 @@ void dsInstallSoundEmuFIFO(void)
   sn76496W(0xFF, &sncol);           // Disable Noise Channel
     
   sn76496Mixer(8, aptr, &sncol);    // Do an initial mix conversion to clear the output
+
     
-  // We convert 2 samples per VSoundHandler interrupt... Roughly 53.5KHz sampling sounds about right
-  TIMER2_DATA = TIMER_FREQ(26300);
+  // ------------------------------------------------------------------
+  // NDS Audio Channel 6 will output the Super Game Module AY audio
+  // ------------------------------------------------------------------
+  sn76496Reset(1, &aycol);          // Reset the "AY" sound chip
+    
+  sn76496W(0x80 | 0x00,&aycol);     // Write new Frequency for Channel A
+  sn76496W(0x00 | 0x00,&aycol);     // Write new Frequency for Channel A
+  sn76496W(0x90 | 0x0F,&aycol);     // Write new Volume for Channel A
+    
+  sn76496W(0xA0 | 0x00,&aycol);     // Write new Frequency for Channel B
+  sn76496W(0x00 | 0x00,&aycol);     // Write new Frequency for Channel B
+  sn76496W(0xB0 | 0x0F,&aycol);     // Write new Volume for Channel B
+    
+  sn76496W(0xC0 | 0x00,&aycol);     // Write new Frequency for Channel C
+  sn76496W(0x00 | 0x00,&aycol);     // Write new Frequency for Channel C
+  sn76496W(0xD0 | 0x0F,&aycol);     // Write new Volume for Channel C
+
+  sn76496W(0xFF, &aycol);           // Disable Noise Channel
+    
+  sn76496Mixer(8, bptr, &aycol);    // Do an initial mix conversion to clear the output
+    
+  // We convert 2 samples per VSoundHandler interrupt... Roughly 54KHz sampling sounds about right
+  TIMER2_DATA = TIMER_FREQ(27000);
   TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
   irqSet(IRQ_TIMER2, VsoundHandlerSN);
   irqEnable(IRQ_TIMER2);
-    
+  
+  // Channel 1 - SN sound on DS Channel 5
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 56000;
+  msg.SoundPlay.freq = 54000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
-  msg.SoundPlay.format = ((1)<<4) | SoundFormat_16Bit;
+  msg.SoundPlay.format = ((5)<<4) | SoundFormat_16Bit;
   msg.SoundPlay.loopPoint = 0;
   msg.SoundPlay.dataSize = 4 >> 2;
   msg.type = EMUARM7_PLAY_SND;
   fifoSendDatamsg(FIFO_USER_01, sizeof(msg), (u8*)&msg);
-  fifoSendValue32(FIFO_USER_01,(1<<16) | (127) | SOUND_SET_VOLUME);
- 
+  fifoSendValue32(FIFO_USER_01,(5<<16) | (127) | SOUND_SET_VOLUME);
+
+  // Channel 2 - AY sound on DS Channel 6
+  FifoMessage msg2;
+  msg2.SoundPlay.data = &xfer_buf_ay;
+  msg2.SoundPlay.freq = 54000;
+  msg2.SoundPlay.volume = 127;
+  msg2.SoundPlay.pan = 64;
+  msg2.SoundPlay.loop = 1;
+  msg2.SoundPlay.format = ((6)<<4) | SoundFormat_16Bit;
+  msg2.SoundPlay.loopPoint = 0;
+  msg2.SoundPlay.dataSize = 4 >> 2;
+  msg2.type = EMUARM7_PLAY_SND;
+  fifoSendDatamsg(FIFO_USER_01, sizeof(msg2), (u8*)&msg2);
+  fifoSendValue32(FIFO_USER_01,(6<<16) | (127) | SOUND_SET_VOLUME);
+    
   bStartSoundEngine = true;
 }
 
@@ -196,8 +227,6 @@ void ResetColecovision(void)
     
   Reset9918();                         // Reset video chip
 
-  SetSoundHandlerSN();                 // By default we use SN sound
-    
   sgm_reset();                         // Reset Super Game Module
     
   sn76496Reset(1, &sncol);             // Reset the SN sound chip
@@ -205,6 +234,11 @@ void ResetColecovision(void)
   sn76496W(0xB0 | 0x0F ,&sncol);       // Write new Volume for Channel B
   sn76496W(0xD0 | 0x0F ,&sncol);       // Write new Volume for Channel C      
 
+  sn76496Reset(1, &aycol);             // Reset the SN sound chip
+  sn76496W(0x90 | 0x0F ,&aycol);       // Write new Volume for Channel A  
+  sn76496W(0xB0 | 0x0F ,&aycol);       // Write new Volume for Channel B
+  sn76496W(0xD0 | 0x0F ,&aycol);       // Write new Volume for Channel C      
+    
   DrZ80_Reset();                       // Reset the Z80 CPU Core
 
   // Clear Main RAM memory...
