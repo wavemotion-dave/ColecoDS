@@ -46,7 +46,12 @@ V3.1: 19-Nov-2021 by wavemotion-dave
 * More robust VDP handling to avoid memory overflow.
 
 V3.0: 18-Nov-2021 by wavemotion-dave
-* Ressurected from the ashes - ported to the latest LIBNDS and DEVKIT PRO development tools, sound core updated to latest, DrZ80 updated to latest and speed improvements across the board.
+* Ressurected from the ashes - ported to the latest LIBNDS and DEVKIT PRO development tools.
+* Sound core updated to latest SN76496.
+* CPU core DrZ80 updated to latest.
+* Added Super Game Module support with AY sound handling.
+* Added MegaCart and Activision PCB cart support for larger games.
+* Speed improvements and optmizations across the board.
 
 Credits :
 -----------------------
