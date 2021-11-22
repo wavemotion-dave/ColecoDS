@@ -14,7 +14,7 @@ coming soon.
 
 Copyright :
 -----------------------
-ColecoDS is Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+ColecoDS Phoenix-Edition is Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
 
 Copying and distribution of this emulator, it's source code
 and associated readme files, with or without modification, 
