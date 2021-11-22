@@ -46,7 +46,7 @@ V3.1: 19-Nov-2021 by wavemotion-dave
 * More robust VDP handling to avoid memory overflow.
 
 V3.0: 18-Nov-2021 by wavemotion-dave
-* Ressurected from the ashes
+* Ressurected from the ashes - ported to the latest LIBNDS and DEVKIT PRO development tools, sound core updated to latest, DrZ80 updated to latest and speed improvements across the board.
 
 Credits :
 -----------------------
