@@ -26,7 +26,7 @@ extern u8 sgm_enable;
 extern u8 sgm_idx;
 extern u8 sgm_reg[256];
 extern u16 sgm_low_addr;
-extern SN76496 sncol;
+extern SN76496 aycol;
 
 static const u8 Volumes[32] = { 15,14,13,12,11,10,10,9,8,7,7,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,1,1,1,0,0 };
 u16 envelope_period = 0;
@@ -76,7 +76,7 @@ ITCM_CODE void FakeAY_Loop(void)
             {
                 if ((shape & 0x09) == 0x08) a_idx = 0; else a_idx=31;
             }
-            sn76496W(0x90 | vol, &sncol);
+            sn76496W(0x90 | vol, &aycol);
         }
         
         if ((sgm_reg[0x09] & 0x20) && (!(sgm_reg[0x07] & 0x02)))
@@ -86,7 +86,7 @@ ITCM_CODE void FakeAY_Loop(void)
             {
                 if ((shape & 0x09) == 0x08) b_idx = 0; else b_idx=31;
             }
-            sn76496W(0xB0 | vol, &sncol);
+            sn76496W(0xB0 | vol, &aycol);
         }
 
         if ((sgm_reg[0x0A] & 0x20) && (!(sgm_reg[0x07] & 0x04)))
@@ -96,7 +96,7 @@ ITCM_CODE void FakeAY_Loop(void)
             {
                 if ((shape & 0x09) == 0x08) c_idx = 0; else c_idx=31;
             }
-            sn76496W(0xD0 | vol, &sncol);
+            sn76496W(0xD0 | vol, &aycol);
         }
     }
 }
@@ -122,17 +122,17 @@ void UpdateNoiseAY(void)
           if (!noise_enable)
           {
               noise_enable=1;
-              if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
-              else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
-              else sn76496W(0xE0|0x04, &sncol);                         // E0 is the highest frequency (lowest period)
-              if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &sncol);
-              if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &sncol);
-              if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &sncol);
+              if (noise_period > 16) sn76496W(0xE2|0x04, &aycol);       // E2 is the lowest frequency (highest period)
+              else if (noise_period > 8) sn76496W(0xE1|0x04, &aycol);   // E1 is the middle frequency (middle period)
+              else sn76496W(0xE0|0x04, &aycol);                         // E0 is the highest frequency (lowest period)
+              if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &aycol);
+              if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &aycol);
+              if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &aycol);
           }
       }
       else
       {
-          sn76496W(0xFF, &sncol);
+          sn76496W(0xFF, &aycol);
       }
 }
 
@@ -155,8 +155,8 @@ void FakeAY_WriteData(u8 Value)
               {
                   freq = (sgm_reg[0x01] << 8) | sgm_reg[0x00];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-                  sn76496W(0x80 | (freq & 0xF), &sncol);
-                  sn76496W((freq >> 4) & 0x3F, &sncol);
+                  sn76496W(0x80 | (freq & 0xF), &aycol);
+                  sn76496W((freq >> 4) & 0x3F, &aycol);
               }
               break;
               
@@ -168,8 +168,8 @@ void FakeAY_WriteData(u8 Value)
               {
                   freq = (sgm_reg[0x03] << 8) | sgm_reg[0x02];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-                  sn76496W(0xA0 | (freq & 0xF), &sncol);
-                  sn76496W((freq >> 4) & 0x3F, &sncol);
+                  sn76496W(0xA0 | (freq & 0xF), &aycol);
+                  sn76496W((freq >> 4) & 0x3F, &aycol);
               }
               break;
           
@@ -180,8 +180,8 @@ void FakeAY_WriteData(u8 Value)
               {
                   freq = (sgm_reg[0x05] << 8) | sgm_reg[0x04];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-                  sn76496W(0xC0 | (freq & 0xF), &sncol);
-                  sn76496W((freq >> 4) & 0x3F, &sncol);
+                  sn76496W(0xC0 | (freq & 0xF), &aycol);
+                  sn76496W((freq >> 4) & 0x3F, &aycol);
               }
               break;
               
@@ -190,12 +190,12 @@ void FakeAY_WriteData(u8 Value)
                noise_period = Value & 0x1F;
                if (noise_enable)
                {
-                  if (noise_period > 16) sn76496W(0xE2|0x04, &sncol);       // E2 is the lowest frequency (highest period)
-                  else if (noise_period > 8) sn76496W(0xE1|0x04, &sncol);   // E1 is the middle frequency (middle period)
-                  else sn76496W(0xE0|0x04, &sncol);                         // E0 is the highest frequency (lowest period)
-                  if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &sncol);
-                  if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &sncol);
-                  if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &sncol);
+                  if (noise_period > 16) sn76496W(0xE2|0x04, &aycol);       // E2 is the lowest frequency (highest period)
+                  else if (noise_period > 8) sn76496W(0xE1|0x04, &aycol);   // E1 is the middle frequency (middle period)
+                  else sn76496W(0xE0|0x04, &aycol);                         // E0 is the highest frequency (lowest period)
+                  if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &aycol);
+                  if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &aycol);
+                  if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &aycol);
                }
               break;
               
@@ -210,9 +210,9 @@ void FakeAY_WriteData(u8 Value)
                       a_idx=0;
                       freq = (sgm_reg[0x01] << 8) | sgm_reg[0x00];
                       freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-                      sn76496W(0x80 | (freq & 0xF), &sncol);
-                      sn76496W((freq >> 4) & 0x3F, &sncol);
-                      sn76496W(0x90 | Volumes[(sgm_reg[0x08] & 0x1F)], &sncol);
+                      sn76496W(0x80 | (freq & 0xF), &aycol);
+                      sn76496W((freq >> 4) & 0x3F, &aycol);
+                      sn76496W(0x90 | Volumes[(sgm_reg[0x08] & 0x1F)], &aycol);
                   }
               }
               else
@@ -220,7 +220,7 @@ void FakeAY_WriteData(u8 Value)
                   if (channel_a_enable)
                   {
                       channel_a_enable = 0;
-                      sn76496W(0x90 | 0x0F, &sncol);
+                      sn76496W(0x90 | 0x0F, &aycol);
                   }
               }
               
@@ -233,9 +233,9 @@ void FakeAY_WriteData(u8 Value)
                       b_idx=0;
                       freq = (sgm_reg[0x03] << 8) | sgm_reg[0x02];
                       freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-                      sn76496W(0xA0 | (freq & 0xF), &sncol);
-                      sn76496W((freq >> 4) & 0x3F, &sncol);
-                      sn76496W(0xB0 | Volumes[(sgm_reg[0x09] & 0x1F)], &sncol);
+                      sn76496W(0xA0 | (freq & 0xF), &aycol);
+                      sn76496W((freq >> 4) & 0x3F, &aycol);
+                      sn76496W(0xB0 | Volumes[(sgm_reg[0x09] & 0x1F)], &aycol);
                   }
               }
               else
@@ -243,7 +243,7 @@ void FakeAY_WriteData(u8 Value)
                   if (channel_b_enable)
                   {
                       channel_b_enable = 0;
-                      sn76496W(0xB0 | 0x0F, &sncol);
+                      sn76496W(0xB0 | 0x0F, &aycol);
                   }
               }
               
@@ -257,9 +257,9 @@ void FakeAY_WriteData(u8 Value)
                       c_idx=0;
                       freq = (sgm_reg[0x05] << 8) | sgm_reg[0x04];
                       freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-                      sn76496W(0xC0 | (freq & 0xF), &sncol);
-                      sn76496W((freq >> 4) & 0x3F, &sncol);
-                      sn76496W(0xD0 | Volumes[(sgm_reg[0x0A] & 0x1F)], &sncol);
+                      sn76496W(0xC0 | (freq & 0xF), &aycol);
+                      sn76496W((freq >> 4) & 0x3F, &aycol);
+                      sn76496W(0xD0 | Volumes[(sgm_reg[0x0A] & 0x1F)], &aycol);
                   }
               }
               else
@@ -267,7 +267,7 @@ void FakeAY_WriteData(u8 Value)
                   if (channel_c_enable)
                   {
                       channel_c_enable = 0;
-                      sn76496W(0xD0 | 0x0F, &sncol);
+                      sn76496W(0xD0 | 0x0F, &aycol);
                   }
               }
               UpdateNoiseAY();
@@ -277,21 +277,21 @@ void FakeAY_WriteData(u8 Value)
           case 0x08:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
               if (sgm_reg[0x07] & 0x01) Value = 0x0;              // If Channel A is disabled, volume OFF
-              sn76496W(0x90 | Volumes[(Value & 0x1F)],&sncol);    // Write new Volume for Channel A
+              sn76496W(0x90 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel A
               UpdateNoiseAY();
               a_idx=0;
               break;
           case 0x09:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
               if (sgm_reg[0x07] & 0x02) Value = 0x0;              // If Channel B is disabled, volume OFF
-              sn76496W(0xB0 | Volumes[(Value & 0x1F)],&sncol);    // Write new Volume for Channel B
+              sn76496W(0xB0 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel B
               UpdateNoiseAY();
               b_idx=0;
               break;
           case 0x0A:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
               if (sgm_reg[0x07] & 0x04) Value = 0x0;              // If Channel C is disabled, volume OFF
-              sn76496W(0xD0 | Volumes[(Value & 0x1F)],&sncol);    // Write new Volume for Channel C
+              sn76496W(0xD0 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel C
               UpdateNoiseAY();
               c_idx=0;
               break;

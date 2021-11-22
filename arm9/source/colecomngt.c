@@ -61,6 +61,7 @@ u16 JoyMode=0;                   // Joystick / Paddle management
 u16 JoyStat[2];                  // Joystick / Paddle management
 
 SN76496 sncol   __attribute__((section(".dtcm")));
+SN76496 aycol   __attribute__((section(".dtcm")));
 AY38910 ay_chip __attribute__((section(".dtcm")));
 
 // Reset the Super Game Module vars...
@@ -140,9 +141,6 @@ u8 colecoInit(char *szGame) {
       dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
     }
     
-    // Assume SN sound handler to start...
-    SetSoundHandlerSN();
-  
     // Make sure the super game module is disabled to start
     sgm_reset();
 
@@ -155,6 +153,12 @@ u8 colecoInit(char *szGame) {
     sn76496W(0xD0 | 0x0F ,&sncol);     // Write new Volume for Channel C  
     u16 tmp_samples[32];
     sn76496Mixer(32, tmp_samples, &sncol);
+
+    sn76496Reset(1, &aycol);             // Reset the SN sound chip
+    sn76496W(0x90 | 0x0F ,&aycol);     // Write new Volume for Channel A  
+    sn76496W(0xB0 | 0x0F ,&aycol);     // Write new Volume for Channel B
+    sn76496W(0xD0 | 0x0F ,&aycol);     // Write new Volume for Channel C  
+    sn76496Mixer(32, tmp_samples, &aycol);
       
     DrZ80_Reset();
     Reset9918();
@@ -607,15 +611,11 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x50)  
   {
-      FakeAY_WriteIndex(Value & 0x0F);
       if ((Value & 0x0F) == 0x07) AY_Enable = true;
 #ifdef REAL_AY      
-      if (bFirstTimeAY) // If someone is accessing the sound index register, assume AY sound and enable it.
-      {
-          bFirstTimeAY = false;
-          SetSoundHandlerAY();
-      }
       ay38910IndexW(Value, &ay_chip); 
+#else
+      FakeAY_WriteIndex(Value & 0x0F);
 #endif      
       return;
   }
@@ -626,10 +626,10 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   {
 #ifdef REAL_AY      
       ay38910DataW(Value, &ay_chip); 
-      return;
 #else
     FakeAY_WriteData(Value);
 #endif      
+    return;
   }
     
   switch(Port&0xE0) 
@@ -668,7 +668,7 @@ ITCM_CODE u32 LoopZ80()
   
   // Execute 1 scanline worth of CPU
   DrZ80_execute(TMS9918_LINE);
-
+    
 #if 0
   char str[33];
   sprintf(str, "PC:   %08X ", drz80.Z80PC);
