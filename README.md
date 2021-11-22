@@ -77,10 +77,12 @@ Known Issues :
 * Deep Dungeon Adventures won't run.
 * Sudoku has graphical issues (still playable).
 * Uridium won't run.
+* Ghostblaster starts up but can't get off title screen.
 * Super Pac Man has major graphical issues.
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
 * Vexxed won't run.
+* Missile-Strike crashes about 10-15 seconds into the gameplay.
 * Astrostorm crashes about 10-15 seconds into the gameplay.
 * Arno Dash and Diamond Dash 2 glitch out soon after loading.
 * Ghostblaster starts but controls don't work.
