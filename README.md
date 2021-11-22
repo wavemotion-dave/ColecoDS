@@ -27,6 +27,11 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V3.3: 22-Nov-2021 by wavemotion-dave
+* AY sound channels are now independent - for a CV total of 6 channels.
+* Added MC/AY/SGM indicators on-screen for enhanced carts.
+* Other cleanups and minor improvements across the board.
+
 V3.2: 20-Nov-2021 by wavemotion-dave
 * More AY sound improvements for the Super Game Module.
 * Slight optmization of VDP rendering.
