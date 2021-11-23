@@ -33,15 +33,16 @@
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 
-u16 xfer_buf[16] ALIGN(32);
-u16 xfer_buf_ay[16] ALIGN(32);
+
+u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory... 64K addressable
+u8 ColecoBios[8192] = {0};
+
+u16 xfer_buf[16] ALIGN(32) = {0};
+u16 xfer_buf_ay[16] ALIGN(32) = {0};
 u32* aptr = (u32*)((u32)xfer_buf + 0xA000000);
 u32* bptr = (u32*)((u32)xfer_buf_ay + 0xA000000);
 extern SN76496 sncol;
 extern SN76496 aycol;
-
-u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory... 64K addressable
-u8 ColecoBios[8192] = {0};
 
 u16 emuFps=0;
 u16 emuActFrames=0;
@@ -78,13 +79,10 @@ u16 keyCoresp[18] = {
   0x0004,0x000F,0x0005,
 };
 
-u16 keyboard_JoyNDS[12] = {
+u8 keyboard_JoyNDS[12] = {
   // UP  DOWN  LEFT RIGHT  A  B  X  Y  R  L  START  SELECT
       0,    1,    2,    3, 4, 5, 8, 9, 10, 11,     6,      7
 };
-
-u8 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
-
 
 void showMainMenu(void) 
 {
@@ -185,7 +183,7 @@ void dsInstallSoundEmuFIFO(void)
   // Channel 1 - SN sound on DS Channel 5
   FifoMessage msg;
   msg.SoundPlay.data = &xfer_buf;
-  msg.SoundPlay.freq = 54000;
+  msg.SoundPlay.freq = 64000;
   msg.SoundPlay.volume = 127;
   msg.SoundPlay.pan = 64;
   msg.SoundPlay.loop = 1;
@@ -199,7 +197,7 @@ void dsInstallSoundEmuFIFO(void)
   // Channel 2 - AY sound on DS Channel 6
   FifoMessage msg2;
   msg2.SoundPlay.data = &xfer_buf_ay;
-  msg2.SoundPlay.freq = 54000;
+  msg2.SoundPlay.freq = 64000;
   msg2.SoundPlay.volume = 127;
   msg2.SoundPlay.pan = 64;
   msg2.SoundPlay.loop = 1;
@@ -381,7 +379,7 @@ ITCM_CODE void colecoDS_main (void)
             SoundPause();
             
             // Ask for verification
-            if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][38]) == ID_SHM_YES) 
+            if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES) 
             { 
                 ResetColecovision();
             }
@@ -401,7 +399,7 @@ ITCM_CODE void colecoDS_main (void)
           SoundPause();
     
           // Ask for verification
-          if (showMessage(szLang[lgeEmul][37],szLang[lgeEmul][39]) == ID_SHM_YES) 
+          if (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES) 
           { 
               return;
           }
@@ -475,18 +473,18 @@ ITCM_CODE void colecoDS_main (void)
       keys_pressed = keysCurrent();
       if (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
-        if (keys_pressed & KEY_UP) ucDEUX |=  keyCoresp[keyboard_JoyNDS[0]];
-        if (keys_pressed & KEY_DOWN) ucDEUX |=  keyCoresp[keyboard_JoyNDS[1]];
-        if (keys_pressed & KEY_LEFT) ucDEUX |=  keyCoresp[keyboard_JoyNDS[2]];
-        if (keys_pressed & KEY_RIGHT) ucDEUX |=  keyCoresp[keyboard_JoyNDS[3]];
-        if (keys_pressed & KEY_A) ucDEUX |=  keyCoresp[keyboard_JoyNDS[4]];
-        if (keys_pressed & KEY_B) ucDEUX |=  keyCoresp[keyboard_JoyNDS[5]];
-        if (keys_pressed & KEY_X) ucDEUX |=  keyCoresp[keyboard_JoyNDS[6]];
-        if (keys_pressed & KEY_Y) ucDEUX |=  keyCoresp[keyboard_JoyNDS[7]];
-        if (keys_pressed & KEY_R) ucDEUX |=  keyCoresp[keyboard_JoyNDS[8]];
-        if (keys_pressed & KEY_L)  ucDEUX |=  keyCoresp[keyboard_JoyNDS[9]];
-        if (keys_pressed & KEY_START) ucDEUX |=  keyCoresp[keyboard_JoyNDS[10]];
-        if (keys_pressed & KEY_SELECT) ucDEUX |=  keyCoresp[keyboard_JoyNDS[11]];
+        if (keys_pressed & KEY_UP)      ucDEUX |= keyCoresp[keyboard_JoyNDS[0]];
+        if (keys_pressed & KEY_DOWN)    ucDEUX |= keyCoresp[keyboard_JoyNDS[1]];
+        if (keys_pressed & KEY_LEFT)    ucDEUX |= keyCoresp[keyboard_JoyNDS[2]];
+        if (keys_pressed & KEY_RIGHT)   ucDEUX |= keyCoresp[keyboard_JoyNDS[3]];
+        if (keys_pressed & KEY_A)       ucDEUX |= keyCoresp[keyboard_JoyNDS[4]];
+        if (keys_pressed & KEY_B)       ucDEUX |= keyCoresp[keyboard_JoyNDS[5]];
+        if (keys_pressed & KEY_X)       ucDEUX |= keyCoresp[keyboard_JoyNDS[6]];
+        if (keys_pressed & KEY_Y)       ucDEUX |= keyCoresp[keyboard_JoyNDS[7]];
+        if (keys_pressed & KEY_R)       ucDEUX |= keyCoresp[keyboard_JoyNDS[8]];
+        if (keys_pressed & KEY_L)       ucDEUX |= keyCoresp[keyboard_JoyNDS[9]];
+        if (keys_pressed & KEY_START)   ucDEUX |= keyCoresp[keyboard_JoyNDS[10]];
+        if (keys_pressed & KEY_SELECT)  ucDEUX |= keyCoresp[keyboard_JoyNDS[11]];
       }
 
       JoyStat[0]= ucUN | ucDEUX;
@@ -501,11 +499,8 @@ ITCM_CODE void colecoDS_main (void)
 /*********************************************************************************
  * Init EMul
  ********************************************************************************/
-void colecoDSInit(void) {
-
-  // Get the personnals infos (language, name)
-  lgeEmul = (PersonalData->language == 2 ? 0 : 1);
-
+void colecoDSInit(void) 
+{
   // Init graphic mode (bitmap mode)
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
   videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -543,10 +538,9 @@ void colecoDSInit(void) {
   dmaVal = *(bgGetMapPtr(bg0b)+24*32);// ecranBasSel_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 
-  // Init sprites
-
-  AffChaine(2,6,0,szLang[lgeEmul][7]);
-  AffChaine(2,7,0,szLang[lgeEmul][8]);
+  // Put out the initial messages looking for a file system
+  AffChaine(2,6,0,"SEARCH FAT SYSTEM  ...   ");
+  AffChaine(2,7,0,"FAT SYSTEM FOUND   !");
 
   // Find the files
   colecoDSFindFiles();
@@ -682,9 +676,9 @@ int main(int argc, char **argv)
 
     if (ColecoBIOSFound())
     {
-        AffChaine(2,9,0,szLang[lgeEmul][13]);
+        AffChaine(2,9,0,"ALL IS OK ...");
         AffChaine(2,11,0,"coleco.rom BIOS FOUND");
-        AffChaine(2,13,0,szLang[lgeEmul][14]);
+        AffChaine(2,13,0,"TOUCH SCREEN / KEY TO BEGIN");
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);

@@ -49,9 +49,7 @@ extern volatile u16 vusCptVBL;                   // Video Management
 
 extern char szKeyName[18][15];
 extern u16 keyCoresp[18];
-extern u16 keyboard_JoyNDS[12];
-
-extern u8 lgeEmul;       // Langue emul : 0 = FR / 1 = UK
+extern u8 keyboard_JoyNDS[12];
 
 extern u8 pColecoMem[0x10000];                   // Coleco Memory
 
@@ -66,7 +64,6 @@ typedef union {
   unsigned short W;
 } pair;
 
-extern char szLang[3][62][35];
 
 extern void showMainMenu(void);
 extern void InitBottomScreen(void);
