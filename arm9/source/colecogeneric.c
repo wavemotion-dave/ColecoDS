@@ -33,6 +33,7 @@ int ucGameAct=0;
 int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
 
+
 /*********************************************************************************
  * Show A message with YES / NO
  ********************************************************************************/
@@ -46,8 +47,8 @@ u8 showMessage(char *szCh1, char *szCh2) {
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(16-strlen(szCh1)/2,10,6,szCh1);
   AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
-  AffChaine(8,14,6,(lgeEmul == 0 ? "> OUI <" : "> YES <"));
-  AffChaine(20,14,6,(lgeEmul == 0 ? "  NON  " : "  NO   "));
+  AffChaine(8,14,6,("> YES <"));
+  AffChaine(20,14,6,("  NO   "));
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
 
   while (uRet == ID_SHM_CANCEL) {
@@ -58,8 +59,8 @@ u8 showMessage(char *szCh1, char *szCh2) {
       iTy = touch.py;
       if ( (iTx>8*8) && (iTx<8*8+7*8) && (iTy>14*8-4) && (iTy<15*8+4) ) {
         if (!ucGauS) {
-          AffChaine(8,14,6,(lgeEmul == 0 ? "> OUI <" : "> YES <"));
-          AffChaine(20,14,6,(lgeEmul == 0 ? "  NON  " : "  NO   "));
+          AffChaine(8,14,6,("> YES <"));
+          AffChaine(20,14,6,("  NO   "));
           ucGauS = 1;
           if (ucCho == ID_SHM_YES) {
             uRet = ucCho;
@@ -73,8 +74,8 @@ u8 showMessage(char *szCh1, char *szCh2) {
         ucGauS = 0;
       if ( (iTx>20*8) && (iTx<20*8+7*8) && (iTy>14*8-4) && (iTy<15*8+4) ) {
         if (!ucDroS) {
-          AffChaine(8,14,6,(lgeEmul == 0 ? "  OUI  " : "  YES  "));
-          AffChaine(20,14,6,(lgeEmul == 0 ? "> NON <" : "> NO  <"));
+          AffChaine(8,14,6,("  YES  "));
+          AffChaine(20,14,6,("> NO  <"));
           ucDroS = 1;
           if (ucCho == ID_SHM_NO) {
             uRet = ucCho;
@@ -97,13 +98,13 @@ u8 showMessage(char *szCh1, char *szCh2) {
         ucGau = 1;
         if (ucCho == ID_SHM_YES) {
           ucCho = ID_SHM_NO;
-          AffChaine(8,14,6,(lgeEmul == 0 ? "  OUI  " : "  YES  "));
-          AffChaine(20,14,6,(lgeEmul == 0 ? "> NON <" : "> NO  <"));
+          AffChaine(8,14,6,("  YES  "));
+          AffChaine(20,14,6,("> NO  <"));
         }
         else {
           ucCho  = ID_SHM_YES;
-          AffChaine(8,14,6,(lgeEmul == 0 ? "> OUI <" : "> YES <"));
-          AffChaine(20,14,6,(lgeEmul == 0 ? "  NON  " : "  NO   "));
+          AffChaine(8,14,6,("> YES <"));
+          AffChaine(20,14,6,("  NO   "));
         }
       } 
     }
@@ -115,13 +116,13 @@ u8 showMessage(char *szCh1, char *szCh2) {
         ucDro = 1;
         if (ucCho == ID_SHM_YES) {
           ucCho  = ID_SHM_NO;
-          AffChaine(8,14,6,(lgeEmul == 0 ? "  OUI  " : "  YES  "));
-          AffChaine(20,14,6,(lgeEmul == 0 ? "> NON <" : "> NO  <"));
+          AffChaine(8,14,6,("  YES  "));
+          AffChaine(20,14,6,("> NO  <"));
         }
         else {
           ucCho  = ID_SHM_YES;
-          AffChaine(8,14,6,(lgeEmul == 0 ? "> OUI <" : "> YES <"));
-          AffChaine(20,14,6,(lgeEmul == 0 ? "  NON  " : "  NO   "));
+          AffChaine(8,14,6,("> YES <"));
+          AffChaine(20,14,6,("  NO   "));
         }
       } 
     }
@@ -233,8 +234,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel) {
 //  pusEcran=(u16*) SCREEN_BASE_BLOCK_SUB(31);
   AffChaine(30,8,0,(NoDebGame>0 ? "<" : " "));
   AffChaine(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
-  (lgeEmul == 0 ? sprintf(szName,"%03d/%03d FICHIERS DISPONIBLES",ucSel+1+NoDebGame,countCV) :  
-                   sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV));
+  sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
   AffChaine(2,6,0, szName);
   for (ucBcl=0;ucBcl<14; ucBcl++) {
     ucGame= ucBcl+NoDebGame;
@@ -354,7 +354,7 @@ u8 colecoDSLoadFile(void)
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);// ecranBas_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-  AffChaine(15-strlen(szLang[lgeEmul][20])/2,5,0,szLang[lgeEmul][20]);
+  AffChaine(15-strlen("A=SELECT, Y=BLEND, B=EXIT")/2,5,0,"A=SELECT, Y=BLEND, B=EXIT");
 
   colecoDSFindFiles();
     
@@ -606,9 +606,9 @@ void colecoDSChangeTouches(void) {
   // Efface l'ecran pour mettre les touches
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);// ecranBas_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-  AffChaine(9,5,0,(lgeEmul == 0 ? "=* TOUCHES *=" : "=*   KEYS  *="));
-  AffChaine(4 ,20,0,(lgeEmul == 0 ? "    B : RETOUR AUX OPTIONS" : "    B : RETURN TO OPTIONS "));
-  AffChaine(4 ,21,0,(lgeEmul == 0 ? "    A : CHOISIR TOUCHE    " : "    A : REDEFINE THIS KEY "));
+  AffChaine(9,5,0,("=*   KEYS  *="));
+  AffChaine(4 ,20,0,("    B : RETURN TO OPTIONS "));
+  AffChaine(4 ,21,0,("    A : REDEFINE THIS KEY "));
   affInfoTouches(ucY);
   
   while ((keysCurrent() & (KEY_TOUCH | KEY_B | KEY_A | KEY_UP | KEY_DOWN))!=0)
@@ -648,8 +648,8 @@ void colecoDSChangeTouches(void) {
     if (keysCurrent() & KEY_A) {
       if (!ucA) {
         ucA = 0x01;
-        AffChaine(4 ,20,0,(lgeEmul == 0 ? " GCHE/DRTE : CHANGE TOUCHE" : "LEFT/RIGHT : CHANGE KEY   "));
-        AffChaine(4 ,21,0,(lgeEmul == 0 ? "         A : VALIDE CHOIX " : "         A : CONFIRM ENTRY  "));
+        AffChaine(4 ,20,0,("LEFT/RIGHT : CHANGE KEY   "));
+        AffChaine(4 ,21,0,("         A : CONFIRM ENTRY  "));
         while (keysCurrent() & KEY_A);
         bTch = 0x00;
         bIndTch = keyboard_JoyNDS[ucY-7];
@@ -689,8 +689,8 @@ void colecoDSChangeTouches(void) {
           else
             ucR  = 0;
         }
-        AffChaine(4 ,20,0,(lgeEmul == 0 ? "    B : RETOUR AUX OPTIONS" : "    B : RETURN TO OPTIONS "));
-        AffChaine(4 ,21,0,(lgeEmul == 0 ? "    A : CHOISIR TOUCHE    " : "    A : CHOOSE KEY        "));
+        AffChaine(4 ,20,0,("    B : RETURN TO OPTIONS "));
+        AffChaine(4 ,21,0,("    A : CHOOSE KEY        "));
         while (keysCurrent()  & KEY_A);
       }
     }
@@ -725,12 +725,11 @@ void DisplayFileName(void)
 // Affiche l'ecran de colecoDSlus et change les options 
 //*****************************************************************************
 void affInfoOptions(u32 uY) {
-  AffChaine(2, 9,(uY== 9 ? 2 : 0),(lgeEmul == 0 ? "      CHARGEMENT JEU        " : "         LOAD  GAME         "));
-  AffChaine(2,11,(uY==11 ? 2 : 0),(lgeEmul == 0 ? "  LANCEMENT DU JEU ACTUEL   " : "    EXECUTE ACTUAL GAME     "));
-  AffChaine(2,13,(uY==13 ? 2 : 0),(lgeEmul == 0 ? "     REDEFINIR TOUCHES      " : "      REDEFINE   KEYS       "));
-  AffChaine(2,15,(uY==15 ? 2 : 0),(lgeEmul == 0 ? "     LANGUE : FRANCAIS      " : "     LANGUAGE : ENGLISH     "));
-  AffChaine(5,19,0,(lgeEmul == 0 ? "START : LANCER LE JEU " : "START : PLAY GAME     "));
-  AffChaine(5,20,0,(lgeEmul == 0 ? "    A : CHOISIR OPTION" : "    A : CHOOSE OPTION "));
+  AffChaine(2, 9,(uY== 9 ? 2 : 0),("         LOAD  GAME         "));
+  AffChaine(2,11,(uY==11 ? 2 : 0),("    EXECUTE ACTUAL GAME     "));
+  AffChaine(2,13,(uY==13 ? 2 : 0),("      REDEFINE   KEYS       "));
+  AffChaine(5,18,0,("START : PLAY GAME     "));
+  AffChaine(5,19,0,("    A : CHOOSE OPTION "));
 }
 void colecoDSChangeOptions(void) {
   u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 9, bOK=0, bBcl;
@@ -769,10 +768,8 @@ void colecoDSChangeOptions(void) {
   bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
   decompress(ecranBasSelTiles, bgGetGfxPtr(bg0b), LZ77Vram);
   decompress(ecranBasSelMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
-  //dmaCopy((void*) ecranBasSel_tiles,bgGetGfxPtr(bg0b),sizeof(ecranBasSel_tiles));
-  //dmaCopy((void*) ecranBasSel_map,(void*) bgGetMapPtr(bg1b),32*24*2);
   dmaCopy((void*) ecranBasSelPal,(void*) BG_PALETTE_SUB,256*2);
-  dmaVal = *(bgGetMapPtr(bg1b)+24*32); //ecranBasSel_map[24][0];
+  dmaVal = *(bgGetMapPtr(bg1b)+24*32); 
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 
   AffChaine(9,5,0,"=* OPTIONS *=");
@@ -787,7 +784,7 @@ void colecoDSChangeOptions(void) {
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
         affInfoOptions(32);
-        ucY = (ucY == 9 ? 15 : ucY -2);
+        ucY = (ucY == 9 ? 13 : ucY -2);
         ucHaut=0x01;
         affInfoOptions(ucY);
       }
@@ -802,7 +799,7 @@ void colecoDSChangeOptions(void) {
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         affInfoOptions(32);
-        ucY = (ucY == 15 ? 9 : ucY +2);
+        ucY = (ucY == 13 ? 9 : ucY +2);
         ucBas=0x01;
         affInfoOptions(ucY);
       }
@@ -835,9 +832,9 @@ void colecoDSChangeOptions(void) {
             else {    
               while (keysCurrent()  & (KEY_START | KEY_A));
               dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-              AffChaine(5,10,0,(lgeEmul == 0 ? "PAS DE JEU SELECTIONNE" : "   NO GAME SELECTED   ")); 
-              AffChaine(5,12,0,(lgeEmul == 0 ? "SVP, UTILISEZ L'OPTION" : "  PLEASE, USE OPTION  ")); 
-              AffChaine(5,14,0,(lgeEmul == 0 ? "    CHARGEMENT JEU    " : "      LOAD  GAME      "));
+              AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
+              AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
+              AffChaine(5,14,0,("      LOAD  GAME      "));
               while (!(keysCurrent()  & (KEY_START | KEY_A)));
               while (keysCurrent()  & (KEY_START | KEY_A));
               dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
@@ -851,13 +848,6 @@ void colecoDSChangeOptions(void) {
             AffChaine(9,5,0,"=* OPTIONS *=");
             affInfoOptions(ucY);
             break;
-          case 15 :
-            lgeEmul = (lgeEmul == 1 ? 0 : 1);
-            affInfoOptions(ucY);
-            if (ucGameChoice != -1) { 
-                DisplayFileName();
-            }
-            break;
         }
       }
     }
@@ -870,9 +860,9 @@ void colecoDSChangeOptions(void) {
       else {    
         while (keysCurrent()  & (KEY_START | KEY_A));
         dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-        AffChaine(5,10,0,(lgeEmul == 0 ? "PAS DE JEU SELECTIONNE" : "   NO GAME SELECTED   ")); 
-        AffChaine(5,12,0,(lgeEmul == 0 ? "SVP, UTILISEZ L'OPTION" : "  PLEASE, USE OPTION  ")); 
-        AffChaine(5,14,0,(lgeEmul == 0 ? "    CHARGEMENT JEU    " : "      LOAD  GAME      "));
+        AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
+        AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
+        AffChaine(5,14,0,("      LOAD  GAME      "));
         while (!(keysCurrent()  & (KEY_START | KEY_A)));
         while (keysCurrent()  & (KEY_START | KEY_A));
         dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);

@@ -279,6 +279,7 @@ void colecoSaveState()
 
     // Write PSG
     if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
+    if (uNbO) uNbO = fwrite(&aycol, sizeof(aycol),1, handle);       
       
     if (uNbO) 
       strcpy(szCh2,"OK ");
@@ -380,18 +381,19 @@ void colecoLoadState()
             
             // Load PSG
             if (uNbO) uNbO = fread(&sncol, sizeof(sncol),1, handle); 
+            if (uNbO) uNbO = fread(&aycol, sizeof(aycol),1, handle); 
             
-              if (BGColor)
-              {
-                 u8 r = (u8) ((float) TMS9918A_palette[BGColor*3+0]*0.121568f);
-                 u8 g = (u8) ((float) TMS9918A_palette[BGColor*3+1]*0.121568f);
-                 u8 b = (u8) ((float) TMS9918A_palette[BGColor*3+2]*0.121568f);
-                 BG_PALETTE[0] = RGB15(r,g,b);
-              }
-              else
-              {
-                  BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
-              }
+            if (BGColor)
+            {
+              u8 r = (u8) ((float) TMS9918A_palette[BGColor*3+0]*0.121568f);
+              u8 g = (u8) ((float) TMS9918A_palette[BGColor*3+1]*0.121568f);
+              u8 b = (u8) ((float) TMS9918A_palette[BGColor*3+2]*0.121568f);
+              BG_PALETTE[0] = RGB15(r,g,b);
+            }
+            else
+            {
+               BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
+            }
             
             // Restore the screen as it was...
             dmaCopyWords(2, (u32*)XBuf, (u32*)pVidFlipBuf, 256*192);
