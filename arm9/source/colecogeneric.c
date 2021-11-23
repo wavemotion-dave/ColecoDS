@@ -17,6 +17,7 @@
 #include <unistd.h>
 
 #include "colecoDS.h"
+#include "colecomngt.h"
 #include "colecogeneric.h"
 
 #include "sprMario.h"
@@ -32,7 +33,6 @@ int countCV=0;
 int ucGameAct=0;
 int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
-
 
 /*********************************************************************************
  * Show A message with YES / NO
@@ -568,59 +568,188 @@ u8 colecoDSLoadFile(void)
   return 0x01;
 }
 
+struct Config_t AllConfigs[MAX_CONFIGS];
+struct Config_t myConfig;
+extern u32 file_crc;
+
+// ---------------------------------------------------------------------------
+// Write out the ColecoDS.DAT configuration file to capture the settings for
+// each game.  This one file contains global settings + 400 game settings.
+// ---------------------------------------------------------------------------
+void SaveConfig(bool bShow)
+{
+    FILE *fp;
+    int slot = 0;
+    
+    if (bShow) dsPrintValue(0,23,0, (char*)"     SAVING CONFIGURATION       ");
+
+    // Set the global configuration version number...
+    myConfig.config_ver = CONFIG_VER;
+
+    // If there is a game loaded, save that into a slot... re-use the same slot if it exists
+    myConfig.game_crc = file_crc;
+    // Find the slot we should save into...
+    for (slot=0; slot<MAX_CONFIGS; slot++)
+    {
+        if (AllConfigs[slot].game_crc == myConfig.game_crc)  // Got a match?!
+        {
+            break;                           
+        }
+        if (AllConfigs[slot].game_crc == 0x00000000)  // Didn't find it... use a blank slot...
+        {
+            break;                           
+        }
+    }
+
+    // --------------------------------------------------------------------------
+    // Copy our current game configuration to the main configuration database...
+    // --------------------------------------------------------------------------
+    memcpy(&AllConfigs[slot], &myConfig, sizeof(struct Config_t));
+
+    // --------------------------------------------------
+    // Now save the config file out o the SD card...
+    // --------------------------------------------------
+    DIR* dir = opendir("/data");
+    if (dir)
+    {
+        closedir(dir);  // Directory exists.
+    }
+    else
+    {
+        mkdir("/data", 0777);   // Doesn't exist - make it...
+    }
+    fp = fopen("/data/ColecoDS.DAT", "wb+");
+    if (fp != NULL)
+    {
+        fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);
+        fclose(fp);
+    } else dsPrintValue(2,23,0, (char*)"  ERROR SAVING CONFIG FILE  ");
+
+    if (bShow) 
+    {
+        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+        dsPrintValue(0,23,0, (char*)"                                ");        
+    }
+}
+
+void SetDefaultGameConfig(void)
+{
+    myConfig.keymap[0]  = 0;
+    myConfig.keymap[1]  = 1;
+    myConfig.keymap[2]  = 2;
+    myConfig.keymap[3]  = 3;
+    myConfig.keymap[4]  = 4;
+    myConfig.keymap[5]  = 5;
+    myConfig.keymap[6]  = 8;
+    myConfig.keymap[7]  = 9;
+    myConfig.keymap[8]  = 10;
+    myConfig.keymap[9]  = 11;
+    myConfig.keymap[10] = 6;
+    myConfig.keymap[11] = 7;
+}
+
+// -------------------------------------------------------------------------
+// Find the ColecoDS.DAT file and load it... if it doesn't exist, then
+// default values will be used for the entire configuration database...
+// -------------------------------------------------------------------------
+void FindAndLoadConfig(void)
+{
+    FILE *fp;
+
+    // -----------------------------------------------------------------
+    // Start with defaults.. if we find a match in our config database
+    // below, we will fill in the config with data read from the file.
+    // -----------------------------------------------------------------
+    SetDefaultGameConfig();
+    
+    fp = fopen("/data/ColecoDS.DAT", "rb");
+    if (fp != NULL)
+    {
+        fread(&AllConfigs, sizeof(AllConfigs), 1, fp);
+        fclose(fp);
+        
+        if (AllConfigs[0].config_ver != CONFIG_VER)
+        {
+            memset(&AllConfigs, 0x00, sizeof(AllConfigs));
+            SetDefaultGameConfig();
+            SaveConfig(FALSE);
+        }
+        else
+        {
+            for (int slot=0; slot<MAX_CONFIGS; slot++)
+            {
+                if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
+                {
+                    memcpy(&myConfig, &AllConfigs[slot], sizeof(struct Config_t));
+                    break;                           
+                }
+            }
+        }
+    }
+    else    // Not found... init the entire database...
+    {
+        memset(&AllConfigs, 0x00, sizeof(AllConfigs));
+        SetDefaultGameConfig();
+        SaveConfig(FALSE);
+    }
+}
+
 //*****************************************************************************
 // Affiche l'ecran CPC et change les touches
 //*****************************************************************************
-void affInfoTouches(u32 uY) 
+void DisplayKeymapName(u32 uY) 
 {
-  char szCha[64];
+  char szCha[34];
 
-  sprintf(szCha," PAD UP    : %-17s",szKeyName[keyboard_JoyNDS[0]]);
+  sprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
   AffChaine(1, 7,(uY==  7 ? 2 : 0),szCha);
-  sprintf(szCha," PAD DOWN  : %-17s",szKeyName[keyboard_JoyNDS[1]]);
+  sprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
   AffChaine(1, 8,(uY==  8 ? 2 : 0),szCha);
-  sprintf(szCha," PAD LEFT  : %-17s",szKeyName[keyboard_JoyNDS[2]]);
+  sprintf(szCha," PAD LEFT  : %-17s",szKeyName[myConfig.keymap[2]]);
   AffChaine(1, 9,(uY==  9 ? 2 : 0),szCha);
-  sprintf(szCha," PAD RIGHT : %-17s",szKeyName[keyboard_JoyNDS[3]]);
+  sprintf(szCha," PAD RIGHT : %-17s",szKeyName[myConfig.keymap[3]]);
   AffChaine(1,10,(uY== 10 ? 2 : 0),szCha);
-  sprintf(szCha," KEY A     : %-17s",szKeyName[keyboard_JoyNDS[4]]);
+  sprintf(szCha," KEY A     : %-17s",szKeyName[myConfig.keymap[4]]);
   AffChaine(1,11,(uY== 11 ? 2 : 0),szCha);
-  sprintf(szCha," KEY B     : %-17s",szKeyName[keyboard_JoyNDS[5]]);
+  sprintf(szCha," KEY B     : %-17s",szKeyName[myConfig.keymap[5]]);
   AffChaine(1,12,(uY== 12 ? 2 : 0),szCha);
-  sprintf(szCha," KEY X     : %-17s",szKeyName[keyboard_JoyNDS[6]]);
+  sprintf(szCha," KEY X     : %-17s",szKeyName[myConfig.keymap[6]]);
   AffChaine(1,13,(uY== 13 ? 2 : 0),szCha);
-  sprintf(szCha," KEY Y     : %-17s",szKeyName[keyboard_JoyNDS[7]]);
+  sprintf(szCha," KEY Y     : %-17s",szKeyName[myConfig.keymap[7]]);
   AffChaine(1,14,(uY== 14 ? 2 : 0),szCha);
-  sprintf(szCha," KEY R     : %-17s",szKeyName[keyboard_JoyNDS[8]]);
+  sprintf(szCha," KEY R     : %-17s",szKeyName[myConfig.keymap[8]]);
   AffChaine(1,15,(uY== 15 ? 2 : 0),szCha);
-  sprintf(szCha," KEY L     : %-17s",szKeyName[keyboard_JoyNDS[9]]);
+  sprintf(szCha," KEY L     : %-17s",szKeyName[myConfig.keymap[9]]);
   AffChaine(1,16,(uY== 16 ? 2 : 0),szCha);
-  sprintf(szCha," START     : %-17s",szKeyName[keyboard_JoyNDS[10]]);
+  sprintf(szCha," START     : %-17s",szKeyName[myConfig.keymap[10]]);
   AffChaine(1,17,(uY== 17 ? 2 : 0),szCha);
-  sprintf(szCha," SELECT    : %-17s",szKeyName[keyboard_JoyNDS[11]]);
+  sprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
   AffChaine(1,18,(uY== 18 ? 2 : 0),szCha);
 }
-void colecoDSChangeTouches(void) {
+void colecoDSChangeKeymap(void) 
+{
   u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucA=0x00,ucY= 7, bOK=0, bTch, bIndTch;
 
   // Efface l'ecran pour mettre les touches
-  unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);// ecranBas_map[24][0];
+  unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(9,5,0,("=*   KEYS  *="));
-  AffChaine(4 ,20,0,("    B : RETURN TO OPTIONS "));
-  AffChaine(4 ,21,0,("    A : REDEFINE THIS KEY "));
-  affInfoTouches(ucY);
+  AffChaine(1 ,20,0,("       B : RETURN TO OPTIONS "));
+  AffChaine(1 ,21,0,("       A : CHOOSE KEY        "));
+  AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
+  DisplayKeymapName(ucY);
   
   while ((keysCurrent() & (KEY_TOUCH | KEY_B | KEY_A | KEY_UP | KEY_DOWN))!=0)
       ;
+  WAITVBL;
  
   while (!bOK) {
     if (keysCurrent() & KEY_UP) {
       if (!ucHaut) {
-        affInfoTouches(32);
+        DisplayKeymapName(32);
         ucY = (ucY == 7 ? 18 : ucY -1);
         ucHaut=0x01;
-        affInfoTouches(ucY);
+        DisplayKeymapName(ucY);
       }
       else {
         ucHaut++;
@@ -632,10 +761,10 @@ void colecoDSChangeTouches(void) {
     }  
     if (keysCurrent() & KEY_DOWN) {
       if (!ucBas) {
-        affInfoTouches(32);
+        DisplayKeymapName(32);
         ucY = (ucY == 18 ? 7 : ucY +1);
         ucBas=0x01;
-        affInfoTouches(ucY);
+        DisplayKeymapName(ucY);
       }
       else {
         ucBas++;
@@ -645,14 +774,22 @@ void colecoDSChangeTouches(void) {
     else {
       ucBas = 0;
     }  
-    if (keysCurrent() & KEY_A) {
+      
+    if (keysCurrent() & KEY_START) 
+    {
+        SaveConfig(true);
+    }
+      
+    if (keysCurrent() & KEY_A) 
+    {
       if (!ucA) {
         ucA = 0x01;
-        AffChaine(4 ,20,0,("LEFT/RIGHT : CHANGE KEY   "));
-        AffChaine(4 ,21,0,("         A : CONFIRM ENTRY  "));
+        AffChaine(4 ,20,0,("   DPAD : CHANGE KEY   "));
+        AffChaine(4 ,21,0,("      A : CONFIRM ENTRY  "));
+        AffChaine(1 ,22,0,("                          "));
         while (keysCurrent() & KEY_A);
         bTch = 0x00;
-        bIndTch = keyboard_JoyNDS[ucY-7];
+        bIndTch = myConfig.keymap[ucY-7];
         while(!bTch) {
           affMario();
           swiWaitForVBlank();
@@ -663,8 +800,8 @@ void colecoDSChangeTouches(void) {
             if (ucL == 0) {
               bIndTch = (bIndTch == 0 ? 17 : bIndTch-1);
               ucL=1;
-              keyboard_JoyNDS[ucY-7] = bIndTch;
-              affInfoTouches(ucY);
+              myConfig.keymap[ucY-7] = bIndTch;
+              DisplayKeymapName(ucY);
             }
             else {
               ucL++;
@@ -678,8 +815,8 @@ void colecoDSChangeTouches(void) {
             if (ucR == 0) {
               bIndTch = (bIndTch == 17 ? 0 : bIndTch+1);
               ucR=1;
-              keyboard_JoyNDS[ucY-7] = bIndTch;
-              affInfoTouches(ucY);
+              myConfig.keymap[ucY-7] = bIndTch;
+              DisplayKeymapName(ucY);
             }
             else {
               ucR++;
@@ -689,8 +826,9 @@ void colecoDSChangeTouches(void) {
           else
             ucR  = 0;
         }
-        AffChaine(4 ,20,0,("    B : RETURN TO OPTIONS "));
-        AffChaine(4 ,21,0,("    A : CHOOSE KEY        "));
+        AffChaine(1 ,20,0,("       B : RETURN TO OPTIONS "));
+        AffChaine(1 ,21,0,("       A : CHOOSE KEY        "));
+        AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
         while (keysCurrent()  & KEY_A);
       }
     }
@@ -818,7 +956,10 @@ void colecoDSChangeOptions(void) {
           case 9 :
             colecoDSLoadFile();
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-            if (ucGameChoice != -1) { 
+            if (ucGameChoice != -1) 
+            { 
+                getfile_crc(gpFic[ucGameChoice].szName);
+                FindAndLoadConfig();    // Try to find keymap for this file...
                 DisplayFileName();
             }
             ucY = 11;
@@ -826,10 +967,12 @@ void colecoDSChangeOptions(void) {
             affInfoOptions(ucY);
             break;
           case 11 :
-            if (ucGameChoice != -1) { 
+            if (ucGameChoice != -1) 
+            { 
               bOK = 1;
             }
-            else {    
+            else 
+            {    
               while (keysCurrent()  & (KEY_START | KEY_A));
               dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
               AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
@@ -843,10 +986,26 @@ void colecoDSChangeOptions(void) {
             }
             break;
           case 13 : 
-            colecoDSChangeTouches();
-            dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-            AffChaine(9,5,0,"=* OPTIONS *=");
-            affInfoOptions(ucY);
+            if (ucGameChoice != -1) 
+            { 
+                colecoDSChangeKeymap();
+                dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
+                AffChaine(9,5,0,"=* OPTIONS *=");
+                affInfoOptions(ucY);
+            }
+            else 
+            {    
+              while (keysCurrent()  & (KEY_START | KEY_A));
+              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
+              AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
+              AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
+              AffChaine(5,14,0,("      LOAD  GAME      "));
+              while (!(keysCurrent()  & (KEY_START | KEY_A)));
+              while (keysCurrent()  & (KEY_START | KEY_A));
+              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
+              AffChaine(9,5,0,"=* OPTIONS *=");
+              affInfoOptions(ucY);
+            }
             break;
         }
       }
