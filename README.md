@@ -27,6 +27,11 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V3.4: 23-Nov-2021 by wavemotion-dave
+* Save key map on a per-game basis.
+* English is now the only language option.
+* More cleanups and tweaks under the hood.
+
 V3.3: 22-Nov-2021 by wavemotion-dave
 * AY sound channels are now independent - for a CV total of 6 channels.
 * Added MC/AY/SGM indicators on-screen for enhanced carts.

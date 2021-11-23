@@ -79,11 +79,6 @@ u16 keyCoresp[18] = {
   0x0004,0x000F,0x0005,
 };
 
-u8 keyboard_JoyNDS[12] = {
-  // UP  DOWN  LEFT RIGHT  A  B  X  Y  R  L  START  SELECT
-      0,    1,    2,    3, 4, 5, 8, 9, 10, 11,     6,      7
-};
-
 void showMainMenu(void) 
 {
   dmaCopy((void*) bgGetMapPtr(bg0b),(void*) bgGetMapPtr(bg1b),32*24*2);
@@ -473,18 +468,18 @@ ITCM_CODE void colecoDS_main (void)
       keys_pressed = keysCurrent();
       if (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
-        if (keys_pressed & KEY_UP)      ucDEUX |= keyCoresp[keyboard_JoyNDS[0]];
-        if (keys_pressed & KEY_DOWN)    ucDEUX |= keyCoresp[keyboard_JoyNDS[1]];
-        if (keys_pressed & KEY_LEFT)    ucDEUX |= keyCoresp[keyboard_JoyNDS[2]];
-        if (keys_pressed & KEY_RIGHT)   ucDEUX |= keyCoresp[keyboard_JoyNDS[3]];
-        if (keys_pressed & KEY_A)       ucDEUX |= keyCoresp[keyboard_JoyNDS[4]];
-        if (keys_pressed & KEY_B)       ucDEUX |= keyCoresp[keyboard_JoyNDS[5]];
-        if (keys_pressed & KEY_X)       ucDEUX |= keyCoresp[keyboard_JoyNDS[6]];
-        if (keys_pressed & KEY_Y)       ucDEUX |= keyCoresp[keyboard_JoyNDS[7]];
-        if (keys_pressed & KEY_R)       ucDEUX |= keyCoresp[keyboard_JoyNDS[8]];
-        if (keys_pressed & KEY_L)       ucDEUX |= keyCoresp[keyboard_JoyNDS[9]];
-        if (keys_pressed & KEY_START)   ucDEUX |= keyCoresp[keyboard_JoyNDS[10]];
-        if (keys_pressed & KEY_SELECT)  ucDEUX |= keyCoresp[keyboard_JoyNDS[11]];
+        if (keys_pressed & KEY_UP)      ucDEUX |= keyCoresp[myConfig.keymap[0]];
+        if (keys_pressed & KEY_DOWN)    ucDEUX |= keyCoresp[myConfig.keymap[1]];
+        if (keys_pressed & KEY_LEFT)    ucDEUX |= keyCoresp[myConfig.keymap[2]];
+        if (keys_pressed & KEY_RIGHT)   ucDEUX |= keyCoresp[myConfig.keymap[3]];
+        if (keys_pressed & KEY_A)       ucDEUX |= keyCoresp[myConfig.keymap[4]];
+        if (keys_pressed & KEY_B)       ucDEUX |= keyCoresp[myConfig.keymap[5]];
+        if (keys_pressed & KEY_X)       ucDEUX |= keyCoresp[myConfig.keymap[6]];
+        if (keys_pressed & KEY_Y)       ucDEUX |= keyCoresp[myConfig.keymap[7]];
+        if (keys_pressed & KEY_R)       ucDEUX |= keyCoresp[myConfig.keymap[8]];
+        if (keys_pressed & KEY_L)       ucDEUX |= keyCoresp[myConfig.keymap[9]];
+        if (keys_pressed & KEY_START)   ucDEUX |= keyCoresp[myConfig.keymap[10]];
+        if (keys_pressed & KEY_SELECT)  ucDEUX |= keyCoresp[myConfig.keymap[11]];
       }
 
       JoyStat[0]= ucUN | ucDEUX;

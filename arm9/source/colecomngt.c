@@ -36,7 +36,7 @@ extern u8 lastBank;
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0007
+#define COLECODS_SAVE_VER 0x0008
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
@@ -469,10 +469,27 @@ u8 colecoCartVerify(const u8 *cartData)
 u8 bMagicMegaCart = 0;
 u8 bActivisionPCB = 0;
 u8 sRamAtE000_OK = 0;
-
+u32 file_crc = 0x00000000;
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
+void getfile_crc(const char *path)
+{
+  FILE* handle = fopen(path, "r");  
+  if (handle != NULL) 
+  {
+    fseek(handle, 0, SEEK_END);
+    int iSSize = ftell(handle);
+    fseek(handle, 0, SEEK_SET);
+    if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
+    {
+        fread((void*) romBuffer, iSSize, 1, handle); 
+        file_crc = crc32(0xFFFFFFFF, romBuffer, iSSize);
+    }
+    fclose(handle);
+  } else file_crc = 0x00000000;
+}
+
 u8 loadrom(const char *path,u8 * ptr, int nmemb) 
 {
   u8 bOK = 0;
@@ -486,7 +503,14 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
     {
         fread((void*) romBuffer, iSSize, 1, handle); 
-        if (iSSize <= (24*1024)) sRamAtE000_OK = 1; else sRamAtE000_OK = 0;
+        
+        // -----------------------------------------------------------------
+        // Only Lord of the Dungeon allows SRAM writting in this area... 
+        // -----------------------------------------------------------------
+        sRamAtE000_OK = 0;  
+        if (file_crc == 0x8112DB01) sRamAtE000_OK = 1;      //32K version of the rom
+        if (file_crc == 0x000152CF) sRamAtE000_OK = 1;      //24K version of the rom
+        
         if (iSSize <= (32*1024))
         {
             memcpy(ptr, romBuffer, nmemb);
