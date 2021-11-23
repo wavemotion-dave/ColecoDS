@@ -32,6 +32,7 @@
 #include <maxmod7.h>
 
 extern void installSoundEmuFIFO(void);
+extern void mmInstall( int fifo_channel );
 
 //---------------------------------------------------------------------------------
 void VblankHandler(void) {
@@ -54,6 +55,8 @@ void powerButtonCB() {
 	exitflag = true;
 }
 
+void mmInstall(int);
+
 //---------------------------------------------------------------------------------
 int main() {
 //---------------------------------------------------------------------------------
@@ -65,7 +68,7 @@ int main() {
 	touchInit();
 	fifoInit();
 
-	//mmInstall(FIFO_MAXMOD);
+    mmInstall( FIFO_MAXMOD );
 
 	SetYtrigger(80);
 
@@ -74,7 +77,7 @@ int main() {
 
 	installSystemFIFO();
 
-    installSoundEmuFIFO();
+    //installSoundEmuFIFO();
 
 	irqSet(IRQ_VCOUNT, VcountHandler);
 	irqSet(IRQ_VBLANK, VblankHandler);
