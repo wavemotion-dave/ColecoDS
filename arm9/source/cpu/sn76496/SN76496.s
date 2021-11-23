@@ -55,19 +55,19 @@ sn76496Mixer:				;@ r0=len, r1=dest, r12=snptr
 mixLoop:
 	mov lr,#0x80000000
 innerMixLoop:
-	adds r2,r2,#0x00800000
+	adds r2,r2,#0x00400000
 	subcs r2,r2,r2,lsl#16
 	eorcs r6,r6,#0x04
 
-	adds r3,r3,#0x00800000
+	adds r3,r3,#0x00400000
 	subcs r3,r3,r3,lsl#16
 	eorcs r6,r6,#0x08
 
-	adds r4,r4,#0x00800000
+	adds r4,r4,#0x00400000
 	subcs r4,r4,r4,lsl#16
 	eorcs r6,r6,#0x10
 
-	adds r5,r5,#0x00800000		;@ 0x00200000?
+	adds r5,r5,#0x00400000		;@ 0x00200000?
 	subcs r5,r5,r5,lsl#16
 	biccs r6,r6,#0x20
 	movscs r7,r7,lsr#1
