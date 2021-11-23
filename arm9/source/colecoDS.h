@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/drz80/Z80_interface.h"
 
-#define VERSIONCLDS "3.3"
+#define VERSIONCLDS "3.4"
 
 //#define REAL_AY       // Enable this to use the real AY emulation 
 
