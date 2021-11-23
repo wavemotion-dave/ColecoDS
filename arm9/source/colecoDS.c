@@ -169,20 +169,6 @@ static void	setupStream(void)
 }
 
 
-
-ITCM_CODE	void VsoundHandlerSN(void)
-{
-		if (soundEmuPause) {return;}
-		sn76496Mixer(4,	aptr,	&sncol);
-#ifdef REAL_AY		
-		extern AY38910 ay_chip;
-		if (AY_Enable) ay38910Mixer(4, bptr, &ay_chip);
-#else		 
-		if (AY_Enable) sn76496Mixer(4, bptr, &aycol);
-#endif		
-}
-
-
 //---------------------------------------------------------------------------------
 void dsInstallSoundEmuFIFO(void) 
 {
@@ -243,41 +229,7 @@ void dsInstallSoundEmuFIFO(void)
 	sn76496Mixer(8, bptr, &aycol);		 // Do	an initial mix conversion	to clear the output
 	
 	setupStream();
-#if	0		 
-	//	We convert 2 samples per VSoundHandler interrupt...	Roughly	54KHz	sampling sounds	about	right
-	TIMER2_DATA = TIMER_FREQ(27000);
-	TIMER2_CR = TIMER_DIV_1 | TIMER_IRQ_REQ | TIMER_ENABLE;
-	irqSet(IRQ_TIMER2,	VsoundHandlerSN);
-	irqEnable(IRQ_TIMER2);
-	
-	//	Channel	1	-	SN sound on	DS Channel 5
-	FifoMessage msg;
-	msg.SoundPlay.data	=	&xfer_buf;
-	msg.SoundPlay.freq	=	64000;
-	msg.SoundPlay.volume	=	127;
-	msg.SoundPlay.pan = 64;
-	msg.SoundPlay.loop	=	1;
-	msg.SoundPlay.format	=	((5)<<4) | SoundFormat_16Bit;
-	msg.SoundPlay.loopPoint = 0;
-	msg.SoundPlay.dataSize	=	4	>> 2;
-	msg.type	=	EMUARM7_PLAY_SND;
-	fifoSendDatamsg(FIFO_USER_01, sizeof(msg),	(u8*)&msg);
-	fifoSendValue32(FIFO_USER_01,(5<<16)	|	(127)	|	SOUND_SET_VOLUME);
 
-	//	Channel	2	-	AY sound on	DS Channel 6
-	FifoMessage msg2;
-	msg2.SoundPlay.data = &xfer_buf_ay;
-	msg2.SoundPlay.freq = 64000;
-	msg2.SoundPlay.volume = 127;
-	msg2.SoundPlay.pan	=	64;
-	msg2.SoundPlay.loop = 1;
-	msg2.SoundPlay.format = ((6)<<4)	|	SoundFormat_16Bit;
-	msg2.SoundPlay.loopPoint	=	0;
-	msg2.SoundPlay.dataSize = 4 >>	2;
-	msg2.type = EMUARM7_PLAY_SND;
-	fifoSendDatamsg(FIFO_USER_01, sizeof(msg2), (u8*)&msg2);
-	fifoSendValue32(FIFO_USER_01,(6<<16)	|	(127)	|	SOUND_SET_VOLUME);
-#endif		
 	bStartSoundEngine = true;
 }
 
