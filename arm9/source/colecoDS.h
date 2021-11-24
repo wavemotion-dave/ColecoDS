@@ -5,9 +5,7 @@
 #include <string.h>
 #include "cpu/z80/drz80/Z80_interface.h"
 
-#define VERSIONCLDS "3.4"
-
-//#define REAL_AY       // Enable this to use the real AY emulation 
+#define VERSIONCLDS "3.5"
 
 #define JST_NONE      0x0000
 #define JST_KEYPAD    0x000F
