@@ -99,6 +99,13 @@ Known Issues :
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
 * MegaCart games are limited to 512K (MegaCart supports up to 1MB)
 
+Controllers :
+-----------------------
+Right now only the Player 1 (left) controller is emulated. 
+For games that require other special controllers (Turbo, Slither, etc)
+you can seek out "SCE" (Standard Controller Editions) which are fan-made
+hacks that work with the standard controller. 
+
 Features :
 -----------------------
 * Super Game Module support.
