@@ -105,8 +105,8 @@ void SoundUnPause(void)
 
 mm_ds_system sys;
 mm_stream myStream;
-u16 mixbuf1[2048];
-u16 mixbuf2[2048];
+s16 mixbuf1[2048];
+s16 mixbuf2[2048];
 
 mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 {
@@ -120,10 +120,10 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
         {
           sn76496Mixer(len*4, mixbuf1, &aycol);
           sn76496Mixer(len*4, mixbuf2, &sncol);
-          u16 *p = (u16*)dest;
+          s16 *p = (s16*)dest;
           for (int i=0; i<len*2; i++)
           {
-            *p++ = (u16) (((u32)mixbuf1[i] + (u32)mixbuf2[i])); // In theory we should divide this by 2 so we don't overflow... but that halves the sound in many cases due to one channel being off
+            *p++ = (s16) ((((s32)mixbuf1[i] + (s32)mixbuf2[i])) / 2); // In theory we should divide this by 2 so we don't overflow... but that halves the sound in many cases due to one channel being off
           }
         }
         else  // This is the 'normal' case of just Colecovision SN sound chip output
