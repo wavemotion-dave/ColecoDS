@@ -27,6 +27,12 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V3.5: 24-Nov-2021 by wavemotion-dave
+* Sound finally fixed with use of maxmod library!
+* Updated CRC computation to match real crc32.
+* High scores, save states and key options all changed - sorry!
+* Lots of cleanups as timer permitted.
+
 V3.4: 23-Nov-2021 by wavemotion-dave
 * Save key map on a per-game basis.
 * English is now the only language option.

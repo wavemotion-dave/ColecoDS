@@ -19,6 +19,7 @@
 #include <fat.h>
 
 #include "colecoDS.h"
+#include "CRC32.h"
 
 #include "cpu/z80/drz80/Z80_interface.h"
 
@@ -36,33 +37,46 @@ extern u8 lastBank;
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0008
+#define COLECODS_SAVE_VER 0x0009
 
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 extern u32* lutTablehh;
 
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
-u8 romBankMask __attribute__((section(".dtcm"))) = 0x00;
-u8 bBlendMode __attribute__((section(".dtcm"))) = false;
+u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
+u8 bBlendMode     __attribute__((section(".dtcm"))) = false;
 
-u8 sgm_enable __attribute__((section(".dtcm"))) = false;
-u8 sgm_idx __attribute__((section(".dtcm"))) = 0;
-u8 sgm_reg[256] __attribute__((section(".dtcm"))) = {0};
-u16 sgm_low_addr __attribute__((section(".dtcm"))) = 0x2000;
+u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
+u8 sgm_idx        __attribute__((section(".dtcm"))) = 0;
+u8 sgm_reg[256]   __attribute__((section(".dtcm"))) = {0};
+u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 
-static u8 Port53 __attribute__((section(".dtcm"))) = 0x00;
-static u8 Port60 __attribute__((section(".dtcm"))) = 0x0F;
+static u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
+static u8 Port60  __attribute__((section(".dtcm"))) = 0x0F;
 
-u8 bFirstTimeAY __attribute__((section(".dtcm"))) = true;
-u8 AY_Enable __attribute__((section(".dtcm")))    = false;
+u8 bFirstTimeAY   __attribute__((section(".dtcm"))) = true;
+u8 AY_Enable      __attribute__((section(".dtcm"))) = false;
+u8 AY_NeverEnable __attribute__((section(".dtcm"))) = false;
 
+u8 pad0[32];
 u16 JoyMode=0;                   // Joystick / Paddle management
 u16 JoyStat[2];                  // Joystick / Paddle management
 
+// ------------------------------------------------------------
+// Some global vars to track what kind of cart/rom we have...
+// ------------------------------------------------------------
+u8 bMagicMegaCart = 0;
+u8 bActivisionPCB = 0;
+u8 sRamAtE000_OK = 0;
+u32 file_crc = 0x00000000;
+u8 pad1[32];
+
+// -----------------------------------------------------------
+// The two master sound chips... both are mapped to SN sound.
+// -----------------------------------------------------------
 SN76496 sncol   __attribute__((section(".dtcm")));
 SN76496 aycol   __attribute__((section(".dtcm")));
-AY38910 ay_chip __attribute__((section(".dtcm")));
 
 // Reset the Super Game Module vars...
 void sgm_reset(void)
@@ -77,22 +91,10 @@ void sgm_reset(void)
     channel_c_enable = 0;
     noise_enable = 0;      
     
-#ifdef REAL_AY
-    bFirstTimeAY = true;
-    memset(&ay_chip, 0x00, sizeof(ay_chip));
-    ay38910Reset(&ay_chip);
-    for (u8 i=0; i<16; i++)
-    {
-        ay38910IndexW(i, &ay_chip);
-        ay38910DataW(0x00, &ay_chip);        
-    }
-#else
     bFirstTimeAY = false;        // We are using FAKE AY for now...
-#endif    
-    sgm_enable = false;
-    sgm_low_addr = 0x2000;
-    
-    AY_Enable = false;
+    sgm_enable = false;          // Default to no SGM until enabled
+    sgm_low_addr = 0x2000;       // And the first 8K is BIOS
+    AY_Enable = false;           // Default to no AY use until accessed
     
     Port53 = 0x00;
     Port60 = 0x0F;    
@@ -243,8 +245,6 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&noise_enable, sizeof(noise_enable), 1, handle); 
-    if (uNbO) uNbO = fwrite(&ay_chip, sizeof(ay_chip), 1, handle);       
-    
       
     // A few frame counters
     if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -277,7 +277,7 @@ void colecoSaveState()
     pSvg = SprTab-pVDPVidMem;
     if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
 
-    // Write PSG
+    // Write PSG sound chips...
     if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
     if (uNbO) uNbO = fwrite(&aycol, sizeof(aycol),1, handle);       
       
@@ -290,7 +290,7 @@ void colecoSaveState()
     AffChaine(18,5,0,"              ");  
   }
   else {
-    strcpy(szCh2,"Error opening STA file ...");
+    strcpy(szCh2,"Error opening SAV file ...");
   }
   fclose(handle);
 }
@@ -306,7 +306,7 @@ void colecoLoadState()
   char szFile[128];
   char szCh1[32],szCh2[32];
 
-    // Init filename = romname and STA in place of ROM
+    // Init filename = romname and .SAV in place of ROM
     strcpy(szFile,gpFic[ucGameAct].szName);
     szFile[strlen(szFile)-3] = 's';
     szFile[strlen(szFile)-2] = 'a';
@@ -345,7 +345,6 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
             if (uNbO) uNbO = fread(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
             if (uNbO) uNbO = fread(&noise_enable, sizeof(noise_enable), 1, handle); 
-            if (uNbO) uNbO = fread(&ay_chip, sizeof(ay_chip), 1, handle);       
             
             // A few frame counters
             if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -463,31 +462,13 @@ u8 colecoCartVerify(const u8 *cartData)
   return IMAGE_VERIFY_PASS;
 }
 
-// ------------------------------------------------------------
-// Some global vars to track what kind of cart/rom we have...
-// ------------------------------------------------------------
-u8 bMagicMegaCart = 0;
-u8 bActivisionPCB = 0;
-u8 sRamAtE000_OK = 0;
-u32 file_crc = 0x00000000;
+
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
 void getfile_crc(const char *path)
 {
-  FILE* handle = fopen(path, "r");  
-  if (handle != NULL) 
-  {
-    fseek(handle, 0, SEEK_END);
-    int iSSize = ftell(handle);
-    fseek(handle, 0, SEEK_SET);
-    if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
-    {
-        fread((void*) romBuffer, iSSize, 1, handle); 
-        file_crc = crc32(0xFFFFFFFF, romBuffer, iSSize);
-    }
-    fclose(handle);
-  } else file_crc = 0x00000000;
+    file_crc = getFileCrc(path);        // The CRC is used as a unique ID to save out High Scores and Configuration...
 }
 
 u8 loadrom(const char *path,u8 * ptr, int nmemb) 
@@ -508,8 +489,11 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // Only Lord of the Dungeon allows SRAM writting in this area... 
         // -----------------------------------------------------------------
         sRamAtE000_OK = 0;  
-        if (file_crc == 0x8112DB01) sRamAtE000_OK = 1;      //32K version of the rom
-        if (file_crc == 0x000152CF) sRamAtE000_OK = 1;      //24K version of the rom
+        if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      //32K version of the rom
+        if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of the rom
+        
+        AY_NeverEnable = false; // Default to allow AY sound
+        if (file_crc == 0xd9207f30) AY_NeverEnable = true;      // Except for Wizard of Wor which pops due to speech attempts
         
         if (iSSize <= (32*1024))
         {
@@ -585,7 +569,7 @@ void SetupSGM(void)
 /** a given I/O port.                                       **/
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
-  static byte KeyCodes[16] = { 0x0A,0x0D,0x07,0x0C,0x02,0x03,0x0E,0x05, 0x01,0x0B,0x06,0x09,0x08,0x04,0x0F,0x0F, };
+  static byte KeyCodes[16] = { 0x0A,0x0D,0x07,0x0C,0x02,0x03,0x0E,0x05, 0x01,0x0B,0x06,0x09,0x08,0x04,0x0F,0x0F };
 
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
@@ -593,12 +577,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
   // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
-#ifdef REAL_AY
-      ay38910DataR(&ay_chip);
-      return ay_chip.ayRegs[sgm_idx&0x0F];
-#else
       return FakeAY_ReadData();
-#endif
   }
 
   switch(Port&0xE0) {
@@ -637,12 +616,8 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x50)  
   {
-      if ((Value & 0x0F) == 0x07) AY_Enable = true;
-#ifdef REAL_AY      
-      ay38910IndexW(Value, &ay_chip); 
-#else
+      if ((Value & 0x0F) == 0x07) {AY_Enable = (AY_NeverEnable ? false:true);}
       FakeAY_WriteIndex(Value & 0x0F);
-#endif      
       return;
   }
   // -----------------------------------------------
@@ -650,11 +625,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x51) 
   {
-#ifdef REAL_AY      
-      ay38910DataW(Value, &ay_chip); 
-#else
     FakeAY_WriteData(Value);
-#endif      
     return;
   }
     
@@ -695,6 +666,9 @@ ITCM_CODE u32 LoopZ80()
   // Execute 1 scanline worth of CPU
   DrZ80_execute(TMS9918_LINE);
     
+  // Just in case there are AY audio envelopes...
+  if (AY_Enable) FakeAY_Loop();
+    
 #if 0
   char str[33];
   sprintf(str, "PC:   %08X ", drz80.Z80PC);
@@ -709,10 +683,6 @@ ITCM_CODE u32 LoopZ80()
   AffChaine(1,10,2,str);
   sprintf(str, "LowM: %04X  ", sgm_low_addr);
   AffChaine(1,11,2,str);
-#endif    
-  // Just in case there is AY audio envelopes...
-#ifndef REAL_AY    
-  if (AY_Enable) FakeAY_Loop();
 #endif    
     
   // Refresh VDP 
