@@ -493,8 +493,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of the rom
         
         AY_NeverEnable = false; // Default to allow AY sound
-        if (file_crc == 0xd9207f30) AY_NeverEnable = true;      // Except for Wizard of Wor which pops due to speech attempts
-        if (file_crc == 0x146FAD7F) AY_NeverEnable = true;      // Except for Wizard of Wor which pops due to speech attempts
+        //if (file_crc == 0xd9207f30) AY_NeverEnable = true;      // Except for Wizard of Wor which pops due to speech attempts
+        //if (file_crc == 0x146FAD7F) AY_NeverEnable = true;      // Except for Wizard of Wor which pops due to speech attempts
         
         if (iSSize <= (32*1024))
         {
