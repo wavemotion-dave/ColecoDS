@@ -97,7 +97,7 @@ Known Issues :
 * Arno Dash and Diamond Dash 2 glitch out soon after loading.
 * Ghostblaster starts but controls don't work.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
-* MegaCart games are limited to 512K (MegaCart supports up to 1MB)
+* Super DK and Super DK Jr prototypes are designed for the Adam which is not emulated (but they kinda play... somewhat)
 
 Controllers :
 -----------------------
