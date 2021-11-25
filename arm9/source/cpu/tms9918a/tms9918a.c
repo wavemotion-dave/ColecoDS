@@ -26,11 +26,11 @@
 #include <string.h>
 
 #include "../../colecoDS.h"
+#include "../../colecogeneric.h"
 
 #include "tms9918a.h"
 
-#define MaxSprites  32
-
+#define MaxSprites  32      // Normally the CV only shows 4 sprites on a line... for emulation we bump this up
 
 u16 *pVidFlipBuf __attribute__((section(".dtcm"))) = (u16*) (0x06000000);    // Video flipping buffer
 
@@ -635,6 +635,7 @@ ITCM_CODE byte RdCtrl9918(void)
 /** screen buffer. Loop9918() returns 1 if an interrupt is  **/
 /** to be generated, 0 otherwise.                           **/
 /*************************************************************/
+u8 frameSkip = 0;
 ITCM_CODE byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
@@ -648,13 +649,23 @@ ITCM_CODE byte Loop9918(void)
 
   /* If refreshing display area, call scanline handler */
   if((CurLine>=TMS9918_START_LINE)&&(CurLine<TMS9918_END_LINE))
-      (SCR[ScrMode].Refresh)(CurLine-TMS9918_START_LINE);
+  {
+      if (frameSkip & myConfig.showFPS)
+          ScanSprites(CurLine-TMS9918_START_LINE,0);    // Skip rendering - but still scan sprites for collisions
+      else
+         (SCR[ScrMode].Refresh)(CurLine-TMS9918_START_LINE);
+  }
   /* If time for VBlank... */
   else if(CurLine==TMS9918_END_LINE) 
   {
       /* Refresh screen */
-      colecoUpdateScreen();
+      if (frameSkip & myConfig.showFPS)
+          asm("nop");   // Skip rendering this frame...
+      else
+          colecoUpdateScreen();
 
+      frameSkip++;
+      
       /* Generate IRQ when enabled and when VBlank flag goes up */
       bIRQ=TMS9918_VBlankON && !(VDPStatus&TMS9918_STAT_VBLANK);
 

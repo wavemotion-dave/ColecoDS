@@ -53,8 +53,6 @@ u16 timingFrames=0;
 /*******************************************************************************/
 volatile u16 vusCptVBL = 0;    // Video Management
 
-extern u8 bFullSpeed;
-
 typedef enum {
   EMUARM7_INIT_SND  = 0x123C,
   EMUARM7_STOP_SND  = 0x123D,
@@ -119,7 +117,7 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
         if (AY_Enable)  // If AY is enabled we mix the normal SN chip with the AY chip sound
         {
           sn76496Mixer(len*4, mixbuf1, &aycol);
-          sn76496Mixer(len*4, mixbuf2, &sncol);
+          sn76496Mixer(len*4, mixbuf2, &snmute);
           s16 *p = (s16*)dest;
           for (int i=0; i<len*2; i++)
           {
@@ -296,6 +294,27 @@ void ResetColecovision(void)
 }
 
 
+void DisplayStatusLine(bool bForce)
+{
+    if ((last_sgm_mode != sgm_enable) || bForce)
+    {
+        last_sgm_mode = sgm_enable;
+        AffChaine(25,0,6, (sgm_enable ? "SGM":"   "));
+    }
+
+    if ((last_ay_mode != AY_Enable) || bForce)
+    {
+        last_ay_mode = AY_Enable;
+        AffChaine(22,0,6, (AY_Enable ? "AY":"  "));
+    }
+
+    if ((last_mc_mode != romBankMask) || bForce)
+    {
+        last_mc_mode = romBankMask;
+        AffChaine(19,0,6, (romBankMask ? "MC":"  "));
+    }
+}
+
 //*****************************************************************************
 // The main emulation loop is here... call into the Z80, VDP and PSG 
 //*****************************************************************************
@@ -351,31 +370,16 @@ ITCM_CODE void colecoDS_main (void)
             emuFps = emuActFrames;
             if (emuFps == 61) emuFps=60;
             
-            if (emuFps/100) szChai[0] = '0' + emuFps/100;
-            else szChai[0] = ' ';
-            szChai[1] = '0' + (emuFps%100) / 10;
-            szChai[2] = '0' + (emuFps%100) % 10;
-            szChai[3] = 0;
-            AffChaine(29,0,6,szChai);
-            
-            if (last_sgm_mode != sgm_enable)
+            if (myConfig.showFPS)
             {
-                last_sgm_mode = sgm_enable;
-                AffChaine(25,0,6, (sgm_enable ? "SGM":"   "));
+                if (emuFps/100) szChai[0] = '0' + emuFps/100;
+                else szChai[0] = ' ';
+                szChai[1] = '0' + (emuFps%100) / 10;
+                szChai[2] = '0' + (emuFps%100) % 10;
+                szChai[3] = 0;
+                AffChaine(29,0,6,szChai);
             }
-            
-            if (last_ay_mode != AY_Enable)
-            {
-                last_ay_mode = AY_Enable;
-                AffChaine(22,0,6, (AY_Enable ? "AY":"  "));
-            }
-            
-            if (last_mc_mode != romBankMask)
-            {
-                last_mc_mode = romBankMask;
-                AffChaine(19,0,6, (romBankMask ? "MC":"  "));
-            }
-            
+            DisplayStatusLine(false);
             emuActFrames = 0;
         }
         emuActFrames++;
@@ -395,7 +399,7 @@ ITCM_CODE void colecoDS_main (void)
         // --------------------------------------------
         while(TIMER2_DATA < (546*(timingFrames+1)))
         {
-            if (bFullSpeed) break;
+            if (myConfig.fullSpeed) break;
         }
 
       //  gere touches
@@ -440,7 +444,7 @@ ITCM_CODE void colecoDS_main (void)
               return;
           }
           showMainMenu();
-            
+          DisplayStatusLine(true);            
           SoundUnPause();
         }
 
@@ -450,6 +454,7 @@ ITCM_CODE void colecoDS_main (void)
           //  Stop sound
           SoundPause();
           highscore_display(file_crc);
+          DisplayStatusLine(true);
           SoundUnPause();
         }
           
@@ -510,8 +515,8 @@ ITCM_CODE void colecoDS_main (void)
       if  (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
         if (keys_pressed & KEY_UP)      ucDEUX  |= keyCoresp[myConfig.keymap[0]];
-        if (keys_pressed & KEY_DOWN)    ucDEUX |= keyCoresp[myConfig.keymap[1]];
-        if (keys_pressed & KEY_LEFT)    ucDEUX |= keyCoresp[myConfig.keymap[2]];
+        if (keys_pressed & KEY_DOWN)    ucDEUX  |= keyCoresp[myConfig.keymap[1]];
+        if (keys_pressed & KEY_LEFT)    ucDEUX  |= keyCoresp[myConfig.keymap[2]];
         if (keys_pressed & KEY_RIGHT)   ucDEUX  |= keyCoresp[myConfig.keymap[3]];
         if (keys_pressed & KEY_A)       ucDEUX  |= keyCoresp[myConfig.keymap[4]];
         if (keys_pressed & KEY_B)       ucDEUX  |= keyCoresp[myConfig.keymap[5]];
@@ -525,9 +530,22 @@ ITCM_CODE void colecoDS_main (void)
 
       JoyStat[0]= ucUN  | ucDEUX;
 
+      // --------------------------------------------------
+      // Handle Auto-Fire if enabled in configuration...
+      // --------------------------------------------------
+      static u8 autoFireTimer[2]={0,0};
+      if (myConfig.autoFire1 && (JoyStat[0] & 0x0040))  // Fire Button 1
+      {
+         if ((++autoFireTimer[0] & 7) > 4)  JoyStat[0] &= ~0x0040;
+      }
+      if (myConfig.autoFire2 && (JoyStat[0] & 0x4000))  // Fire Button 2
+      {
+          if ((++autoFireTimer[1] & 7) > 4)  JoyStat[0] &= ~0x4000;
+      }
+
       JoyStat[0]=~JoyStat[0];        // Logic if flipped
-      JoyStat[0]  &= ~0x3000;          // Reset spinner bits
-      JoyStat[1]  &= ~0x3000;          // Reset spinner bits
+      JoyStat[0]  &= ~0x3000;        // Reset spinner bits
+      JoyStat[1]  &= ~0x3000;        // Reset spinner bits
     }
   }
 }
