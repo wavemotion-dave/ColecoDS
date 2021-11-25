@@ -426,7 +426,7 @@ ITCM_CODE void colecoUpdateScreen(void)
     // pick up. This takes CPU speed, however, and will not be
     // supported for older DS-LITE/PHAT units with slower processors.
     // ----------------------------------------------------------------   
-    if (bBlendMode)
+    if (myConfig.frameBlend)
     {
       if (XBuf == XBuf_A)
       {

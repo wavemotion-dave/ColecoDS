@@ -25,11 +25,12 @@ struct Config_t
     u16 config_ver;
     u32 game_crc;
     u8  keymap[12];
-    u8  reserved1;
-    u8  reserved2;
-    u8  reserved3;
-    u8  reserved4;
-    u16 reserved5;
+    u8  showFPS;
+    u8  frameSkip;
+    u8  frameBlend;
+    u8  fullSpeed;
+    u8  autoFire1;
+    u8  autoFire2;
     u16 reserved6;
     u16 reserved7;
     u16 reserved8;

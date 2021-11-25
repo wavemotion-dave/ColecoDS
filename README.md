@@ -9,8 +9,6 @@ Emulator for the Colecovision plus the
 Super Game Module (SGM) and the MegaCart
 for games larger than 32K.
 
-This is a work-in-progress... more readme 
-coming soon.
 
 Copyright :
 -----------------------
@@ -27,6 +25,11 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V3.6: 25-Nov-2021 by wavemotion-dave
+* New game options for frame skip, frame blend, auto fire, etc.
+* Fixed pop noise on some of the SGM-AY games.
+* Minor menu cleanup for better visual presentation.
+
 V3.5: 24-Nov-2021 by wavemotion-dave
 * Sound finally fixed with use of maxmod library!
 * Updated CRC computation to match real crc32.

@@ -336,8 +336,6 @@ void colecoDSFindFiles(void)
     
 }
 
-u8 bFullSpeed = false;
-extern u8 bBlendMode;
 
 //*****************************************************************************
 // charge une rom
@@ -355,7 +353,7 @@ u8 colecoDSLoadFile(void)
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);// ecranBas_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-  AffChaine(15-strlen("A=SELECT, Y=BLEND, B=EXIT")/2,5,0,"A=SELECT, Y=BLEND, B=EXIT");
+  AffChaine(15-strlen("A=SELECT,  B=EXIT")/2,5,0,"A=SELECT,  B=EXIT");
 
   colecoDSFindFiles();
     
@@ -507,8 +505,6 @@ u8 colecoDSLoadFile(void)
     {
       if (gpFic[ucGameAct].uType != DIRECT)
       {
-        if (keysCurrent() & KEY_X) bFullSpeed = true; else bFullSpeed = false;
-        if (keysCurrent() & KEY_Y) bBlendMode = true; else bBlendMode = false;          
         bDone=true;
         ucGameChoice = ucGameAct;
         WAITVBL;
@@ -647,6 +643,20 @@ void SetDefaultGameConfig(void)
     myConfig.keymap[9]  = 11;
     myConfig.keymap[10] = 6;
     myConfig.keymap[11] = 7;
+    
+    myConfig.showFPS    = 0;
+    myConfig.frameSkip  = 0;
+    myConfig.frameBlend = 0;
+    myConfig.fullSpeed  = 0;        
+    myConfig.autoFire1  = 0;
+    myConfig.autoFire2  = 0;
+    myConfig.reserved6  = 0;
+    myConfig.reserved7  = 0;    
+    myConfig.reserved8  = 0;    
+    myConfig.reserved9  = 0;    
+    myConfig.reservedA  = 0;    
+    myConfig.reservedB  = 0;    
+    myConfig.reservedC  = 0;    
 }
 
 // -------------------------------------------------------------------------
@@ -695,8 +705,141 @@ void FindAndLoadConfig(void)
     }
 }
 
+
+// ------------------------------------------------------------------------------
+// Options are handled here... we have a number of things the user can tweak
+// and these options are applied immediately. The user can also save off 
+// their option choices for the currently running game into the NINTV-DS.DAT
+// configuration database. When games are loaded back up, NINTV-DS.DAT is read
+// to see if we have a match and the user settings can be restored for the game.
+// ------------------------------------------------------------------------------
+struct options_t
+{
+    const char  *label;
+    const char  *option[25];
+    u8          *option_val;
+    u8           option_max;
+};
+const struct options_t Option_Table[] =
+{
+    {"FPS",             {"OFF", "ON"},                                      &myConfig.showFPS,    2},
+    {"FULL SPEED",      {"OFF", "ON"},                                      &myConfig.fullSpeed,  2},
+    {"FRAME SKIP",      {"OFF", "ON"},                                      &myConfig.frameSkip,  2},
+    {"FRAME BLEND",     {"OFF", "ON"},                                      &myConfig.frameBlend, 2},
+    {"AUTO FIRE B1",    {"OFF", "ON"},                                      &myConfig.autoFire1,  2},
+    {"AUTO FIRE B2",    {"OFF", "ON"},                                      &myConfig.autoFire2,  2},
+    {NULL,              {"",      ""},                                      NULL,                 1},
+};
+
+
+// ------------------------------------------------------------------
+// Display the current list of options for the user.
+// ------------------------------------------------------------------
+u8 display_options_list(bool bFullDisplay)
+{
+    char strBuf[35];
+    int len=0;
+    
+    if (bFullDisplay)
+    {
+        while (true)
+        {
+            sprintf(strBuf, " %-12s : %-14s", Option_Table[len].label, Option_Table[len].option[*(Option_Table[len].option_val)]);
+            dsPrintValue(1,7+len, (len==0 ? 2:0), strBuf); len++;
+            if (Option_Table[len].label == NULL) break;
+        }
+
+        // Blank out rest of the screen... option menus are of different lengths...
+        for (int i=len; i<15; i++) 
+        {
+            dsPrintValue(1,7+i, 0, (char *)"                               ");
+        }
+    }
+
+    dsPrintValue(2,21, 0, (char *)"USE DPAD. A=EXIT, START=SAVE");
+    return len;    
+}
+
+
 //*****************************************************************************
-// Affiche l'ecran CPC et change les touches
+// Change Game Options for the current game
+//*****************************************************************************
+void colecoDSGameOptions(void)
+{
+    u8 optionHighlighted;
+    u8 idx;
+    bool bDone=false;
+    int keys_pressed;
+    int last_keys_pressed = 999;
+    char strBuf[35];
+
+    idx=display_options_list(true);
+    optionHighlighted = 0;
+    while (keysCurrent() != 0)
+    {
+        WAITVBL;
+    }
+    while (!bDone)
+    {
+        keys_pressed = keysCurrent();
+        if (keys_pressed != last_keys_pressed)
+        {
+            last_keys_pressed = keys_pressed;
+            if (keysCurrent() & KEY_UP) // Previous option
+            {
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                dsPrintValue(1,7+optionHighlighted,0, strBuf);
+                if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+            }
+            if (keysCurrent() & KEY_DOWN) // Next option
+            {
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                dsPrintValue(1,7+optionHighlighted,0, strBuf);
+                if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+            }
+
+            if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
+            {
+                *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) + 1) % Option_Table[optionHighlighted].option_max;
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+            }
+            if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
+            {
+                if ((*(Option_Table[optionHighlighted].option_val)) == 0)
+                    *(Option_Table[optionHighlighted].option_val) = Option_Table[optionHighlighted].option_max -1;
+                else
+                    *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) - 1) % Option_Table[optionHighlighted].option_max;
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+            }
+            if (keysCurrent() & KEY_START)  // Save Options
+            {
+                SaveConfig(TRUE);
+            }
+            if ((keysCurrent() & KEY_B) || (keysCurrent() & KEY_A))  // Exit options
+            {
+                break;
+            }
+        }
+        swiWaitForVBlank();
+    }
+
+    // Give a third of a second time delay...
+    for (int i=0; i<20; i++)
+    {
+        swiWaitForVBlank();
+    }
+    
+    return;
+}
+
+//*****************************************************************************
+// Change Keymap Options for the current game
 //*****************************************************************************
 void DisplayKeymapName(u32 uY) 
 {
@@ -727,6 +870,7 @@ void DisplayKeymapName(u32 uY)
   sprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
   AffChaine(1,18,(uY== 18 ? 2 : 0),szCha);
 }
+
 void colecoDSChangeKeymap(void) 
 {
   u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucA=0x00,ucY= 7, bOK=0, bTch, bIndTch;
@@ -845,11 +989,6 @@ void colecoDSChangeKeymap(void)
 }
 
 
-u32 affInfoReport(void) 
-{
-  return 0;
-}
-
 void DisplayFileName(void)
 {
     char szName[64];
@@ -859,22 +998,41 @@ void DisplayFileName(void)
     AffChaine((16 - (strlen(szName)/2)),22,0,szName);
 #if 1
     sprintf(szName, "[%08X]", (int)file_crc);
-    AffChaine(10,21,0,szName);
+    AffChaine(11,21,0,szName);
 #endif    
 }
-
 
 //*****************************************************************************
 // Affiche l'ecran de colecoDSlus et change les options 
 //*****************************************************************************
-void affInfoOptions(u32 uY) {
-  AffChaine(2, 9,(uY== 9 ? 2 : 0),("         LOAD  GAME         "));
-  AffChaine(2,11,(uY==11 ? 2 : 0),("    EXECUTE ACTUAL GAME     "));
-  AffChaine(2,13,(uY==13 ? 2 : 0),("      REDEFINE   KEYS       "));
-  AffChaine(5,18,0,("START : PLAY GAME     "));
-  AffChaine(5,19,0,("    A : CHOOSE OPTION "));
+void affInfoOptions(u32 uY) 
+{
+    AffChaine(2, 9,(uY== 9 ? 2 : 0),("         LOAD  GAME         "));
+    AffChaine(2,11,(uY==11 ? 2 : 0),("         PLAY  GAME         "));
+    AffChaine(2,13,(uY==13 ? 2 : 0),("     REDEFINE  KEYS         "));
+    AffChaine(2,15,(uY==15 ? 2 : 0),("        GAME   OPTIONS      "));
+    AffChaine(5,18,0,("START : PLAY GAME     "));
+    AffChaine(5,19,0,("    A : CHOOSE OPTION "));
 }
-void colecoDSChangeOptions(void) {
+
+void NoGameSelected(u32 ucY)
+{
+    unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32); 
+    while (keysCurrent()  & (KEY_START | KEY_A));
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
+    AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
+    AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
+    AffChaine(5,14,0,("      LOAD  GAME      "));
+    while (!(keysCurrent()  & (KEY_START | KEY_A)));
+    while (keysCurrent()  & (KEY_START | KEY_A));
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
+    AffChaine(9,5,0,"=* OPTIONS *=");
+    affInfoOptions(ucY);
+}
+
+
+void colecoDSChangeOptions(void) 
+{
   u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 9, bOK=0, bBcl;
   
   // Affiche l'ecran en haut
@@ -927,7 +1085,7 @@ void colecoDSChangeOptions(void) {
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
         affInfoOptions(32);
-        ucY = (ucY == 9 ? 13 : ucY -2);
+        ucY = (ucY == 9 ? 15 : ucY -2);
         ucHaut=0x01;
         affInfoOptions(ucY);
       }
@@ -942,7 +1100,7 @@ void colecoDSChangeOptions(void) {
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         affInfoOptions(32);
-        ucY = (ucY == 13 ? 9 : ucY +2);
+        ucY = (ucY == 15 ? 9 : ucY +2);
         ucBas=0x01;
         affInfoOptions(ucY);
       }
@@ -978,16 +1136,7 @@ void colecoDSChangeOptions(void) {
             }
             else 
             {    
-              while (keysCurrent()  & (KEY_START | KEY_A));
-              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-              AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
-              AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
-              AffChaine(5,14,0,("      LOAD  GAME      "));
-              while (!(keysCurrent()  & (KEY_START | KEY_A)));
-              while (keysCurrent()  & (KEY_START | KEY_A));
-              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-              AffChaine(9,5,0,"=* OPTIONS *=");
-              affInfoOptions(ucY);
+                NoGameSelected(ucY);
             }
             break;
           case 13 : 
@@ -999,39 +1148,37 @@ void colecoDSChangeOptions(void) {
                 affInfoOptions(ucY);
             }
             else 
-            {    
-              while (keysCurrent()  & (KEY_START | KEY_A));
-              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-              AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
-              AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
-              AffChaine(5,14,0,("      LOAD  GAME      "));
-              while (!(keysCurrent()  & (KEY_START | KEY_A)));
-              while (keysCurrent()  & (KEY_START | KEY_A));
-              dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-              AffChaine(9,5,0,"=* OPTIONS *=");
-              affInfoOptions(ucY);
+            { 
+                NoGameSelected(ucY);
             }
             break;
+          case 15 : 
+            if (ucGameChoice != -1) 
+            { 
+                colecoDSGameOptions();
+                dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
+                AffChaine(9,5,0,"=* OPTIONS *=");
+                affInfoOptions(ucY);
+                DisplayFileName();
+            }
+            else 
+            {    
+               NoGameSelected(ucY);
+            }
+            break;                
         }
       }
     }
     else
       ucA = 0x00;
     if (keysCurrent()  & KEY_START) {
-      if (ucGameChoice != -1) { 
+      if (ucGameChoice != -1) 
+      {
         bOK = 1;
       }
-      else {    
-        while (keysCurrent()  & (KEY_START | KEY_A));
-        dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-        AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
-        AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
-        AffChaine(5,14,0,("      LOAD  GAME      "));
-        while (!(keysCurrent()  & (KEY_START | KEY_A)));
-        while (keysCurrent()  & (KEY_START | KEY_A));
-        dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-        AffChaine(9,5,0,"=* OPTIONS *=");
-        affInfoOptions(ucY);
+      else 
+      {
+        NoGameSelected(ucY);
       }
     }
     affMario();
