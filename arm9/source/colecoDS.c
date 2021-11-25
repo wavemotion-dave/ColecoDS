@@ -299,19 +299,19 @@ void DisplayStatusLine(bool bForce)
     if ((last_sgm_mode != sgm_enable) || bForce)
     {
         last_sgm_mode = sgm_enable;
-        AffChaine(25,0,6, (sgm_enable ? "SGM":"   "));
+        AffChaine(28,0,6, (sgm_enable ? "SGM":"   "));
     }
 
     if ((last_ay_mode != AY_Enable) || bForce)
     {
         last_ay_mode = AY_Enable;
-        AffChaine(22,0,6, (AY_Enable ? "AY":"  "));
+        AffChaine(25,0,6, (AY_Enable ? "AY":"  "));
     }
 
     if ((last_mc_mode != romBankMask) || bForce)
     {
         last_mc_mode = romBankMask;
-        AffChaine(19,0,6, (romBankMask ? "MC":"  "));
+        AffChaine(22,0,6, (romBankMask ? "MC":"  "));
     }
 }
 
@@ -377,7 +377,7 @@ ITCM_CODE void colecoDS_main (void)
                 szChai[1] = '0' + (emuFps%100) / 10;
                 szChai[2] = '0' + (emuFps%100) % 10;
                 szChai[3] = 0;
-                AffChaine(29,0,6,szChai);
+                AffChaine(0,0,6,szChai);
             }
             DisplayStatusLine(false);
             emuActFrames = 0;
