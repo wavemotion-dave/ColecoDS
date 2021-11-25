@@ -117,7 +117,7 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
         if (AY_Enable)  // If AY is enabled we mix the normal SN chip with the AY chip sound
         {
           sn76496Mixer(len*4, mixbuf1, &aycol);
-          sn76496Mixer(len*4, mixbuf2, &snmute);
+          sn76496Mixer(len*4, mixbuf2, &sncol);
           s16 *p = (s16*)dest;
           for (int i=0; i<len*2; i++)
           {
