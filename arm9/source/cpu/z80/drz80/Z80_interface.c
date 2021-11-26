@@ -244,12 +244,3 @@ ITCM_CODE int DrZ80_execute(u32 cycles) {
   return (cycles-drz80.cycles);
 }
 
-ITCM_CODE u32 DrZ80_GetElapsedTicks(u32 dwClear) {
-  u32 dwTemp = dwElapsedTicks;
-  
-  if (dwClear) {
-    dwElapsedTicks = 0;
-  }
-  
-  return(dwTemp);
-}
