@@ -651,5 +651,4 @@ void highscore_display(u32 crc)
     InitBottomScreen();
 }
 
-
 // End of file

@@ -23,7 +23,9 @@ void vblankIntro() {
   vusCptVBL++;
 }
 
-// Intro with portabledev logo
+// --------------------------------------------------------------
+// Intro with portabledev logo and new PHEONIX-EDITION version
+// --------------------------------------------------------------
 void intro_logo(void) {
   int soundId=-1; 
   bool bOK;
@@ -67,3 +69,5 @@ void intro_logo(void) {
   FadeToColor(1,BLEND_FADE_WHITE | BLEND_SRC_BG0 | BLEND_DST_BG0,3,16,3);
   if (soundId!=-1) soundKill(soundId);
 }
+
+// End of file

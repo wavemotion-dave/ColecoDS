@@ -34,6 +34,7 @@ int countCV=0;
 int ucGameAct=0;
 int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
+char szName[256];
 
 /*********************************************************************************
  * Show A message with YES / NO
@@ -140,9 +141,6 @@ u8 showMessage(char *szCh1, char *szCh2) {
 }
 
 void colecoDSModeNormal(void) {
-#ifdef NOCASH
-  nocashMessage("colecoDSModeNormal");
-#endif
 #ifdef JMG16B
   REG_BG3CNT = BG_BMP16_256x256;
 #else  
@@ -157,18 +155,18 @@ void colecoDSModeNormal(void) {
 }
 
 //*****************************************************************************
-// Met l'ecran du haut en mode bitmap recentré
+// Put the top screen in refocused bitmap mode
 //*****************************************************************************
 void colecoDSInitScreenUp(void) {
-#ifdef NOCASH
-  nocashMessage("colecoDSInitScreenUp");
-#endif
-  videoSetMode(MODE_5_2D | DISPLAY_BG3_ACTIVE);// | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE );
+  videoSetMode(MODE_5_2D | DISPLAY_BG3_ACTIVE);
   vramSetBankA(VRAM_A_MAIN_BG_0x06000000);
   vramSetBankB(VRAM_B_MAIN_SPRITE);
   colecoDSModeNormal();
 }
 
+// ----------------------------------------------------------------------------
+// This stuff handles the 'random' Mario sprite walk around the top screen...
+// ----------------------------------------------------------------------------
 u8 uFlp=0;
 signed char iDirAlex=2;
 signed short iXAlex=0;
@@ -222,17 +220,15 @@ void affMario(void) {
 }
 
 /*********************************************************************************
- * Show The 14 games on the list
+ * Show The 14 games on the list to allow the user to choose a new game.
  ********************************************************************************/
-void dsDisplayFiles(u16 NoDebGame, u8 ucSel) {
-//  u16 *pusEcran;
+void dsDisplayFiles(u16 NoDebGame, u8 ucSel) 
+{
   u16 ucBcl,ucGame;
   u8 maxLen;
   char szName[80];
   char szName2[80];
   
-  // Affichage des 14 jeux possibles
-//  pusEcran=(u16*) SCREEN_BASE_BLOCK_SUB(31);
   AffChaine(30,8,0,(NoDebGame>0 ? "<" : " "));
   AffChaine(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
   sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
@@ -263,9 +259,10 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel) {
 }
 
 
-/*********************************************************************************
- * Find files (COL / ROM) available
- ********************************************************************************/
+// -------------------------------------------------------------------------
+// Standard qsort routine for the coleco games - we sort all directory
+// listings first and then a case-insenstive sort of all games.
+// -------------------------------------------------------------------------
 int colecoFilescmp (const void *c1, const void *c2) 
 {
   FICcoleco *p1 = (FICcoleco *) c1;
@@ -282,6 +279,9 @@ int colecoFilescmp (const void *c1, const void *c2)
   return strcasecmp (p1->szName, p2->szName);        
 }
 
+/*********************************************************************************
+ * Find files (COL / ROM) available - sort them for display.
+ ********************************************************************************/
 void colecoDSFindFiles(void) 
 {
   u32 uNbFile;
@@ -337,12 +337,9 @@ void colecoDSFindFiles(void)
 }
 
 
-//*****************************************************************************
-// charge une rom
-//*****************************************************************************
-char szName[256];
-
-
+// ----------------------------------------------------------------
+// Let the user select a new game (rom) file and load it up!
+// ----------------------------------------------------------------
 u8 colecoDSLoadFile(void) 
 {
   bool bDone=false;
@@ -871,6 +868,10 @@ void DisplayKeymapName(u32 uY)
   AffChaine(1,18,(uY== 18 ? 2 : 0),szCha);
 }
 
+// ------------------------------------------------------------------------------
+// Allow the user to change the key map for the current game and give them
+// the option of writing that keymap out to a configuration file for the game.
+// ------------------------------------------------------------------------------
 void colecoDSChangeKeymap(void) 
 {
   u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucA=0x00,ucY= 7, bOK=0, bTch, bIndTch;
@@ -989,6 +990,9 @@ void colecoDSChangeKeymap(void)
 }
 
 
+// ----------------------------------------------------------------------------------
+// At the bottom of the main screen we show the currently selected filename and CRC
+// ----------------------------------------------------------------------------------
 void DisplayFileName(void)
 {
     char szName[64];
@@ -996,14 +1000,14 @@ void DisplayFileName(void)
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
     AffChaine((16 - (strlen(szName)/2)),22,0,szName);
-#if 1
+#if 1 // Display CRC... for now 
     sprintf(szName, "[%08X]", (int)file_crc);
     AffChaine(11,21,0,szName);
 #endif    
 }
 
 //*****************************************************************************
-// Affiche l'ecran de colecoDSlus et change les options 
+// Display colecoDSlus screen and change options
 //*****************************************************************************
 void affInfoOptions(u32 uY) 
 {
@@ -1015,6 +1019,9 @@ void affInfoOptions(u32 uY)
     AffChaine(5,19,0,("    A : CHOOSE OPTION "));
 }
 
+// --------------------------------------------------------------------
+// Some main menu selections don't make sense without a game loaded.
+// --------------------------------------------------------------------
 void NoGameSelected(u32 ucY)
 {
     unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32); 
@@ -1030,7 +1037,9 @@ void NoGameSelected(u32 ucY)
     affInfoOptions(ucY);
 }
 
-
+// --------------------------------------------------------------------
+// Let the user select new options for the currently loaded game...
+// --------------------------------------------------------------------
 void colecoDSChangeOptions(void) 
 {
   u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 9, bOK=0, bBcl;
@@ -1188,7 +1197,7 @@ void colecoDSChangeOptions(void)
 }
 
 //*****************************************************************************
-// Affiche un message sur l'ecran
+// Displays a message on the screen
 //*****************************************************************************
 
 void dsPrintValue(int iX,int iY,int iScr,char *szMessage)
@@ -1225,8 +1234,7 @@ void AffChaine(int iX,int iY,int iScr,char *szMessage) {
 }
 
 /******************************************************************************
-* Routine FadeToColor :
-*  Fondu du fond vers le noir ou blanc
+* Routine FadeToColor :  Fade from background to black or white
 ******************************************************************************/
 void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr, unsigned char valEnd, unsigned char uWait) {
   unsigned short ucFade;
@@ -1255,3 +1263,4 @@ void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr,
   }
 }
 
+// End of file
