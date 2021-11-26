@@ -110,7 +110,6 @@ Known Issues :
 * Ghostblaster starts but controls don't work.
 * Pitfall II Arcade port (from SG1000) shows title screen but button press isn't recognized to start.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
-* Super DK and Super DK Jr prototypes are designed for the Adam which is not emulated (but they kinda play... somewhat)
 
 Controllers :
 -----------------------

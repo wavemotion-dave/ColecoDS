@@ -58,6 +58,7 @@ static u8 Port60  __attribute__((section(".dtcm"))) = 0x0F;
 u8 bFirstTimeAY   __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable      __attribute__((section(".dtcm"))) = false;
 u8 AY_NeverEnable __attribute__((section(".dtcm"))) = false;
+u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
 
 u8 pad0[32];
 u16 JoyMode=0;                   // Joystick / Paddle management
@@ -493,8 +494,9 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of the rom
         
         AY_NeverEnable = false; // Default to allow AY sound
-        //if (file_crc == 0xd9207f30) AY_NeverEnable = true;      // Except for Wizard of Wor which pops due to speech attempts
-        //if (file_crc == 0x146FAD7F) AY_NeverEnable = true;      // Except for Wizard of Wor which pops due to speech attempts
+        SGM_NeverEnable = false;
+        if (file_crc == 0xef25af90) SGM_NeverEnable = true;         // Super DK Prototype - ignore any SGM/Adam Writes
+        if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true;         // Super DK JR Prototype - ignore any SGM/Adam Writes
         
         if (iSSize <= (32*1024))
         {
@@ -549,6 +551,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 // --------------------------------------------------------------------------
 void SetupSGM(void)
 {
+    if (SGM_NeverEnable) return;
+    
     sgm_enable = (Port53 & 0x01) ? true:false;
     
     if (Port60 & 0x02)
