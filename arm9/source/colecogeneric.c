@@ -756,7 +756,7 @@ u8 display_options_list(bool bFullDisplay)
         }
     }
 
-    dsPrintValue(2,21, 0, (char *)"USE DPAD. A=EXIT, START=SAVE");
+    dsPrintValue(2,21, 0, (char *)"USE DPAD. B=EXIT, START=SAVE");
     return len;    
 }
 
