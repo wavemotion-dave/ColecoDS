@@ -38,7 +38,6 @@ extern void DrZ80_GetContext(void *pData);
 extern void DrZ80_SetContext(void *pData);
 extern unsigned short DrZ80_GetPC (void);
 extern int DrZ80_execute(u32 cycles);
-extern u32 DrZ80_GetElapsedTicks(u32 dwClear);
 
 extern void cpu_writeport16(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport16(register unsigned short Port);
