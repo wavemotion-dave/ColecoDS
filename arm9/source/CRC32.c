@@ -3,12 +3,11 @@
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
-// royalty provided the this copyright notice is used and wavemotion-dave (NINTV-DS)
-// and Kyle Davis (BLISS) are thanked profusely. 
+// royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
+// Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
 //
-// The NINTV-DS emulator is offered as-is, without any warranty.
+// The ColecoDS emulator is offered as-is, without any warranty.
 // =====================================================================================
-
 #include <stdio.h>
 #include <string.h>
 #include "CRC32.h"
@@ -51,6 +50,9 @@ const u32 crc32_table[256] = {
 };
 
 
+// ------------------------------------------------------------------------------------
+// Read the file in and compute CRC... it's a bit slow but good enough and accurate!
+// ------------------------------------------------------------------------------------
 u32 getFileCrc(const char* filename)
 {
     u32 crc = 0xFFFFFFFF;
