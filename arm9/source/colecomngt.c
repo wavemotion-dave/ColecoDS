@@ -591,7 +591,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
       return(Port&0x7F);
 
     case 0xA0: /* VDP Status/Data */
-      return(Port&0x01? RdCtrl9918():RdData9918());
+      return(Port&0x01 ? RdCtrl9918():RdData9918());
   }
 
   // No such port
@@ -643,7 +643,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       return;
     case 0xA0:
       if(!(Port&0x01)) WrData9918(Value);
-      else if(WrCtrl9918(Value)) { cpuirequest=Z80_NMI_INT; }
+      else if (WrCtrl9918(Value)) { cpuirequest=Z80_NMI_INT; }
       return;
     case 0x40:
     case 0x20:

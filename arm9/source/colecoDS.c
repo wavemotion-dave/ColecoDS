@@ -255,7 +255,7 @@ static u8 last_mc_mode = 0;
 void ResetColecovision(void)
 {
   JoyMode=JOYMODE_JOYSTICK;           // Joystick mode key
-  JoyStat[0]=JoyStat[1]=0xCFFF;       // Joystick states
+  JoyStat[0]=JoyStat[1]=0xCFFF;         // Joystick states
     
   Reset9918();                          // Reset video chip
 

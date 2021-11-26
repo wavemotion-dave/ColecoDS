@@ -84,6 +84,15 @@ I think the original port was circa ColEM 2.1
 with some fixes incorproated from ColEM 2.9
 and updated Sprite/Line handling from ColEM 5.6
 
+Features :
+-----------------------
+* Super Game Module support.
+* Megacart Bankswitching support (up to 512K).
+* Controller button mapping.
+* High-Score support.
+* Save/Load Game State (one slot).
+* Blend Mode (see below).
+
 Known Issues :
 -----------------------
 * Fathom won't render screen properly. Unknown cause.
@@ -99,6 +108,7 @@ Known Issues :
 * Astrostorm crashes about 10-15 seconds into the gameplay.
 * Arno Dash and Diamond Dash 2 glitch out soon after loading.
 * Ghostblaster starts but controls don't work.
+* Pitfall II Arcade port (from SG1000) shows title screen but button press isn't recognized to start.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
 * Super DK and Super DK Jr prototypes are designed for the Adam which is not emulated (but they kinda play... somewhat)
 
@@ -109,15 +119,8 @@ For games that require other special controllers (Turbo, Slither, etc)
 you can seek out "SCE" (Standard Controller Editions) which are fan-made
 hacks that work with the standard controller. 
 
-Features :
+Blend Mode (DSi) :
 -----------------------
-* Super Game Module support.
-* Megacart Bankswitching support (up to 512K).
-* Controller button mapping.
-* High-Score support.
-* Save/Load Game State (one slot).
-* Blend Mode (see below).
-
 A huge change is the new "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
 two frames are blended together - this is really useful when playing games like Space Fury or Galaxian 
 where the bullets on screen are only 1 pixel wide and the DSi LCD just doesn't hold onto the pixels 

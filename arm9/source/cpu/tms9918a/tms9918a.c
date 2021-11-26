@@ -595,21 +595,17 @@ ITCM_CODE byte RdData9918(void)
 /*************************************************************/
 ITCM_CODE byte WrCtrl9918(byte value) 
 {
-  if(VKey) { VKey=0; VAddr=(VAddr&0xFF00)|value; }
+  if(VKey) 
+  { 
+      VKey=0; 
+      VAddr=(VAddr&0xFF00)|value; 
+  }
   else 
   {
     VKey=1;
-    VAddr = ((VAddr&0x00FF)|((int)value<<8))&0x3FFF;
-    switch(value&0xC0) 
-    {
-      case 0x00:
-        VDPDlatch = pVDPVidMem[VAddr];
-        VAddr     = (VAddr+1)&0x3FFF;
-        break;
-      case 0x80:
-        /* Enabling IRQs may cause an IRQ here */ 
-        return(Write9918(value&0x0F,VAddr&0x00FF));
-    }
+    VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;
+    if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));
+    if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;}
   }
 
   /* No interrupts */
@@ -635,7 +631,7 @@ ITCM_CODE byte RdCtrl9918(void)
 /** screen buffer. Loop9918() returns 1 if an interrupt is  **/
 /** to be generated, 0 otherwise.                           **/
 /*************************************************************/
-u8 frameSkip = 0;
+u8 frameSkip __attribute__((section(".dtcm"))) = 0;
 ITCM_CODE byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
