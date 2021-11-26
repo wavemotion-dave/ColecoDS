@@ -9,41 +9,43 @@
 // The ColecoDS emulator is offered as-is, without any warranty.
 // =====================================================================================
 #include <nds.h>
-#include <nds/arm9/console.h> //basic print funcionality
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <unistd.h>
 #include <fat.h>
 
 #include "colecoDS.h"
 #include "CRC32.h"
-
 #include "cpu/z80/drz80/Z80_interface.h"
-
 #include "colecomngt.h"
 #include "colecogeneric.h"
-
-extern byte Loop9918(void);
-extern void DrZ80_InitFonct(void);
-extern u8 lastBank;
-
 #include "cpu/tms9918a/tms9918a.h"
-
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/ay38910/AY38910.h"
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0009
+#define COLECODS_SAVE_VER 0x0009        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
+extern byte Loop9918(void);
+extern void DrZ80_InitFonct(void);
+extern u8 lastBank;
+
+// Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 extern u32* lutTablehh;
 
+// ----------------------------------------------------------------------
+// Our "massive" ROM buffer - we support MegaCarts up to 512k but 
+// we could bump this to 1MB as the MC standard supports up to 1MB
+// but there are currently no games that take advantage of that 
+// much... only Wizard of Wor is 512K as the largest I've seen...
+// ----------------------------------------------------------------------
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
+
 u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
 u8 bBlendMode     __attribute__((section(".dtcm"))) = false;
 
@@ -61,17 +63,18 @@ u8 AY_NeverEnable __attribute__((section(".dtcm"))) = false;
 u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
 
 u8 pad0[32];
-u16 JoyMode=0;                   // Joystick / Paddle management
-u16 JoyStat[2];                  // Joystick / Paddle management
+u16 JoyMode=0;          // Joystick / Paddle management
+u16 JoyStat[2];         // Joystick / Paddle management
 
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
 // ------------------------------------------------------------
-u8 bMagicMegaCart = 0;
-u8 bActivisionPCB = 0;
-u8 sRamAtE000_OK = 0;
-u32 file_crc = 0x00000000;
-u8 pad1[32];
+u8 bMagicMegaCart = 0;      // Mega Carts support > 32K 
+u8 bActivisionPCB = 0;      // Activision PCB is 64K with EEPROM
+u8 sRamAtE000_OK  = 0;      // Lord of the Dungeon is the only game that needs this
+u32 file_crc = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
+u8 pad1[32];                // Pad out space... at one time was concerned about 
+                            // crc corruption but the pads been in long enough to stay.
 
 // -----------------------------------------------------------
 // The two master sound chips... both are mapped to SN sound.
@@ -79,7 +82,10 @@ u8 pad1[32];
 SN76496 sncol   __attribute__((section(".dtcm")));
 SN76496 aycol   __attribute__((section(".dtcm")));
 
-// Reset the Super Game Module vars...
+// ---------------------------------------------------------
+// Reset the Super Game Module vars... we reset back to 
+// SGM disabled and no AY sound chip use
+// ---------------------------------------------------------
 void sgm_reset(void)
 {
     //make sure Super Game Module registers for AY chip are clear...
@@ -200,7 +206,7 @@ void colecoSetPal(void) {
 
 
 /*********************************************************************************
- * Save the current state
+ * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
 u8  spare[512] = {0x00};
 void colecoSaveState() 
@@ -298,7 +304,7 @@ void colecoSaveState()
 
 
 /*********************************************************************************
- * Load the current state
+ * Load the current state - read everything back from the .sav file.
  ********************************************************************************/
 void colecoLoadState() 
 {
@@ -459,19 +465,24 @@ ITCM_CODE void colecoUpdateScreen(void)
  ********************************************************************************/
 u8 colecoCartVerify(const u8 *cartData) 
 {
-  //Who are we to argue? Some SGM roms shift this up to bank 0 and it's not worth the hassle. The game either runs or it won't.
+  // Who are we to argue? Some SGM roms shift the magic numbers (5AA5, A55A) up to 
+  // bank 0 and it's not worth the hassle. The game either runs or it won't.
   return IMAGE_VERIFY_PASS;
 }
 
 
-/** loadrom() ******************************************************************/
-/* Open a rom file from file system                                            */
-/*******************************************************************************/
+/*******************************************************************************
+ * Compute the file CRC - this will be our unique identifier for the game
+ * for saving HI SCORES and Configuration / Key Mapping data.
+ *******************************************************************************/
 void getfile_crc(const char *path)
 {
     file_crc = getFileCrc(path);        // The CRC is used as a unique ID to save out High Scores and Configuration...
 }
 
+/** loadrom() ******************************************************************/
+/* Open a rom file from file system                                            */
+/*******************************************************************************/
 u8 loadrom(const char *path,u8 * ptr, int nmemb) 
 {
   u8 bOK = 0;
@@ -551,11 +562,15 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 // --------------------------------------------------------------------------
 void SetupSGM(void)
 {
-    if (SGM_NeverEnable) return;
+    if (SGM_NeverEnable) return;        // There are a couple of games were we don't want ot enable the SGM. Most notably Super DK won't play with SGM emulation.
     
-    sgm_enable = (Port53 & 0x01) ? true:false;
+    sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates full SGM memory support.
     
-    if (Port60 & 0x02)
+    // ------------------------------------------------------
+    // And Port 6 will tell us if we want to swap out the 
+    // lower 8K bios for more RAM (total of 32K RAM for SGM)
+    // ------------------------------------------------------
+    if (Port60 & 0x02)  
     {
       extern u8 ColecoBios[];
       sgm_low_addr = 0x2000;
@@ -563,7 +578,7 @@ void SetupSGM(void)
     }
     else 
     {
-      sgm_enable = true; /// Force this if someone disabled the BIOS....
+      sgm_enable = true; /// Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
       sgm_low_addr = 0x0000; 
       memset(pColecoMem, 0x00, 0x2000);
     }
@@ -573,7 +588,8 @@ void SetupSGM(void)
 /** Z80 emulation calls this function to read a byte from   **/
 /** a given I/O port.                                       **/
 /*************************************************************/
-ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) {
+ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
+{
   static byte KeyCodes[16] = { 0x0A,0x0D,0x07,0x0C,0x02,0x03,0x0E,0x05, 0x01,0x0B,0x06,0x09,0x08,0x04,0x0F,0x0F };
 
   // Colecovision ports are 8-bit
@@ -671,24 +687,8 @@ ITCM_CODE u32 LoopZ80()
   // Execute 1 scanline worth of CPU
   DrZ80_execute(TMS9918_LINE);
     
-  // Just in case there are AY audio envelopes...
+  // Just in case there are AY audio envelopes... this is very rough timing.
   if (AY_Enable) FakeAY_Loop();
-    
-#if 0
-  char str[33];
-  sprintf(str, "PC:   %08X ", drz80.Z80PC);
-  AffChaine(1,6,2,str);
-  sprintf(str, "SP:   %08X ", drz80.Z80SP);
-  AffChaine(1,7,2,str);
-  sprintf(str, "PCB:  %08X ", drz80.Z80PC_BASE);
-  AffChaine(1,8,2,str);
-  sprintf(str, "SPB:  %08X ", drz80.Z80SP_BASE);
-  AffChaine(1,9,2,str);
-  sprintf(str, "Bank: %-7d ", lastBank);
-  AffChaine(1,10,2,str);
-  sprintf(str, "LowM: %04X  ", sgm_low_addr);
-  AffChaine(1,11,2,str);
-#endif    
     
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
@@ -702,3 +702,5 @@ ITCM_CODE u32 LoopZ80()
   // Drop out unless end of screen is reached 
   return (CurLine == TMS9918_END_LINE) ? 0:1;
 }
+
+// End of file

@@ -14,7 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fat.h>
@@ -34,24 +33,29 @@
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 
-
-u8 pColecoMem[0x10000] ALIGN(32) = {0};             // Coleco Memory... 64K addressable
-u8 ColecoBios[8192] = {0};
+// --------------------------------------------------------------------------
+// This is the full 64K coleco memory map.
+// The memory is generally used as follows:
+//    0x0000-0x1FFF  coleco.rom BIOS - Super Game Module can map RAM here
+//    0x2000-0x5FFF  Usually unused - but Super Game Module maps RAM here
+//    0x6000-0x7FFF  SRAM - there is only 1K repeated with 8 mirrors
+//    0x8000-0xFFFF  32K Cartridge Space
+// --------------------------------------------------------------------------
+u8 pColecoMem[0x10000] ALIGN(32) = {0};             
+u8 ColecoBios[8192] = {0};  // We keep the BIOS around to swap in/out
 
 // Various sound chips in the system
-extern SN76496 sncol;
-extern SN76496 aycol;
-extern AY38910 ay_chip;
+extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
+extern SN76496 aycol;       // The AY sound chip is for the Super Game Moudle
 
-SN76496 snmute;
+SN76496 snmute;             // We keep this handy as a simple way to mute the sound
 
+// Some timing and frame rate comutations
 u16 emuFps=0;
 u16 emuActFrames=0;
 u16 timingFrames=0;
 
-
-/*******************************************************************************/
-volatile u16 vusCptVBL = 0;    // Video Management
+volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
 typedef enum {
   EMUARM7_INIT_SND  = 0x123C,
@@ -59,12 +63,11 @@ typedef enum {
   EMUARM7_PLAY_SND  = 0x123E,
 } FifoMesType;
 
+u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
-u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;
+u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
-u8 bStartSoundEngine = false;
-
-int bg0, bg1, bg0b,bg1b;
+int bg0, bg1, bg0b,bg1b;    // Some vars for NDS background screen handling
 
 char szKeyName[18][15] = {
   "INPUT_UP",   "INPUT_DOWN",   "INPUT_LEFT",   "INPUT_RIGHT",
@@ -79,33 +82,50 @@ u16 keyCoresp[18] = {
   0x000B, 0x000A  , 0x0009, 0x0008, 0x0007, 0x0006, 0x0004,0x000F, 0x0005
 };
 
+// ------------------------------------------------------------
+// Utility function to show the background for the main menu
+// ------------------------------------------------------------
 void showMainMenu(void) 
 {
   dmaCopy((void*) bgGetMapPtr(bg0b),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
 
+// ------------------------------------------------------------
+// Utility function to pause the sound... 
+// ------------------------------------------------------------
 void SoundPause(void)
 {
     soundEmuPause = 1;
 }
 
+// ------------------------------------------------------------
+// Utility function to un pause the sound... 
+// ------------------------------------------------------------
 void SoundUnPause(void)
 {
     soundEmuPause = 0;
 }
 
-
-// ------------------------------------------
+// --------------------------------------------
 // MAXMOD streaming setup and handling...
-// ------------------------------------------
+// We were using the normal ARM7 sound core but
+// it sounded "scratchy" and so with the help
+// of FluBBa, we've swiched over to the maxmod
+// sound core which seems to perform better.
+// --------------------------------------------
 #define sample_rate  55930
 #define buffer_size  (512+12)
 
 mm_ds_system sys;
 mm_stream myStream;
-s16 mixbuf1[2048];
-s16 mixbuf2[2048];
+s16 mixbuf1[2048];      // When we have SN and AY sound we have to mix 3+3 channels
+s16 mixbuf2[2048];      // into a single output so we render to mix buffers first.
 
+// -------------------------------------------------------------------------------------------
+// maxmod will call this routine when the buffer is half-empty and requests that
+// we fill the sound buffer with more samples. They will request 'len' samples and
+// we will fill exactly that many. If the sound is paused, we fill with 'mute' samples.
+// -------------------------------------------------------------------------------------------
 mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 {
     if (soundEmuPause)  // If paused, just "mix" in mute sound chip... all channels are OFF
@@ -133,6 +153,10 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 }
 
 
+// -------------------------------------------------------------------------------------------
+// Setup the maxmod audio stream - this will be a 16-bit Stereo PCM output at 55KHz which
+// sounds about right for the Colecovision.
+// -------------------------------------------------------------------------------------------
 void setupStream(void) 
 {
   //----------------------------------------------------------------
@@ -170,12 +194,13 @@ void setupStream(void)
 }
 
 
-//---------------------------------------------------------------------------------
+// -----------------------------------------------------------------------
+// We setup the sound chips - disabling all volumes to start.
+// -----------------------------------------------------------------------
 void dsInstallSoundEmuFIFO(void) 
 {
   SoundPause();
-
-  
+    
   // ---------------------------------------------------------------------
   // We setup a mute channel to cut sound for pause
   // ---------------------------------------------------------------------
@@ -242,7 +267,7 @@ void dsInstallSoundEmuFIFO(void)
   
   setupStream();    // Setup maxmod stream...
 
-  bStartSoundEngine = true;
+  bStartSoundEngine = true; // Volume will 'unpause' after 1 frame in the main loop.
 }
 
 //*****************************************************************************
@@ -254,7 +279,7 @@ static u8 last_mc_mode = 0;
 
 void ResetColecovision(void)
 {
-  JoyMode=JOYMODE_JOYSTICK;           // Joystick mode key
+  JoyMode=JOYMODE_JOYSTICK;             // Joystick mode key
   JoyStat[0]=JoyStat[1]=0xCFFF;         // Joystick states
     
   Reset9918();                          // Reset video chip
@@ -273,27 +298,38 @@ void ResetColecovision(void)
     
   DrZ80_Reset();                        //  Reset the Z80 CPU Core
 
-  //  Clear Main RAM memory...
-  memset(pColecoMem+0x2000, 0x00, 0x6000);
+  memset(pColecoMem+0x2000, 0x00, 0x6000);  // Clear Main RAM memory...
     
-  //  Restore Coleco BIOS
-  memcpy(pColecoMem,ColecoBios,0x2000);
-    
+  memcpy(pColecoMem,ColecoBios,0x2000);     // Restore Coleco BIOS
+  
+  // -----------------------------------------------------------
+  // Timer 1 is used to time frame-to-frame of actual emulation
+  // -----------------------------------------------------------
   TIMER1_CR = 0;
   TIMER1_DATA=0;
   TIMER1_CR=TIMER_ENABLE  | TIMER_DIV_1024;
     
+  // -----------------------------------------------------------
+  // Timer 2 is used to time once per second events
+  // -----------------------------------------------------------
   TIMER2_CR=0;
   TIMER2_DATA=0;
   TIMER2_CR=TIMER_ENABLE  | TIMER_DIV_1024;
   timingFrames  = 0;
   emuFps=0;
+  
+  // Some utility flags for various expansion peripherals
   last_sgm_mode = false;
   last_ay_mode  = false;
   last_mc_mode  = 0;
 }
 
 
+// ------------------------------------------------------------
+// The status line shows the status of the Super Game Moudle,
+// AY sound chip support and MegaCart support.  Game players
+// probably don't care, but it's really helpful for devs.
+// ------------------------------------------------------------
 void DisplayStatusLine(bool bForce)
 {
     if ((last_sgm_mode != sgm_enable) || bForce)
@@ -315,9 +351,9 @@ void DisplayStatusLine(bool bForce)
     }
 }
 
-//*****************************************************************************
+// ------------------------------------------------------------------------
 // The main emulation loop is here... call into the Z80, VDP and PSG 
-//*****************************************************************************
+// ------------------------------------------------------------------------
 ITCM_CODE void colecoDS_main (void) 
 {
   u32 keys_pressed;
@@ -331,21 +367,27 @@ ITCM_CODE void colecoDS_main (void)
   colecoSetPal();
   colecoRun();
   
+  // Frame-to-frame timing...
   TIMER1_CR = 0;
   TIMER1_DATA=0;
   TIMER1_CR=TIMER_ENABLE  | TIMER_DIV_1024;
-    
+
+  // Once/second timing...
   TIMER2_CR=0;
   TIMER2_DATA=0;
   TIMER2_CR=TIMER_ENABLE  | TIMER_DIV_1024;
   timingFrames  = 0;
   emuFps=0;
+    
   last_sgm_mode = false;
   last_ay_mode  = false;
   last_mc_mode  = 0;
   
   bStartSoundEngine = true;
     
+  // -------------------------------------------------------------------
+  // Stay in this loop running the Coleco game until the user exits...
+  // -------------------------------------------------------------------
   while(1)  
   {
     // Take a tour of the Z80 counter and display the screen if necessary
@@ -384,6 +426,10 @@ ITCM_CODE void colecoDS_main (void)
         }
         emuActFrames++;
 
+        // -------------------------------------------------------------------
+        // We only support NTSC 60 frams... there are PAL colecovisions
+        // but the games really don't adjust well and so we stick to basics.
+        // -------------------------------------------------------------------
         if (++timingFrames == 60)
         {
             TIMER2_CR=0;
@@ -402,7 +448,9 @@ ITCM_CODE void colecoDS_main (void)
             if (myConfig.fullSpeed) break;
         }
 
-      //  gere touches
+      // ------------------------------------------
+      // Handle any screen touch events
+      // ------------------------------------------
       ucUN  = 0;
       if  (keysCurrent() & KEY_TOUCH) {
         touchPosition touch;
@@ -415,7 +463,6 @@ ITCM_CODE void colecoDS_main (void)
         {
           if  (!ResetNow) {
             ResetNow = 1;
-            // Stop sound
             SoundPause();
             
             // Ask for verification
@@ -488,7 +535,9 @@ ITCM_CODE void colecoDS_main (void)
         else
           LoadNow = 0;
   
-        // Test KEYPAD
+        // --------------------------------------------------------------------------
+        // Test the touchscreen rendering of the Coleco KEYPAD
+        // --------------------------------------------------------------------------
         ucUN = ( ((iTx>=160) && (iTy>=80) && (iTx<=183) && (iTy<=100)) ? 0x0E: 0x00);
         ucUN = ( ((iTx>=183) && (iTy>=80) && (iTx<=210) && (iTy<=100)) ? 0x0D: ucUN);
         ucUN = ( ((iTx>=210) && (iTy>=80) && (iTx<=234) && (iTy<=100)) ? 0x0C: ucUN);
@@ -505,11 +554,14 @@ ITCM_CODE void colecoDS_main (void)
         ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x0F: ucUN);
         ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x05: ucUN);
       } //  SCR_TOUCH
-      else  {
+      else  
+      {
         ResetNow=SaveNow=LoadNow = 0;
       }
     
-      //  Test DS keypresses and map to corresponding Coleco keys
+      // ------------------------------------------------------------------------
+      //  Test DS keypresses (ABXY, L/R) and map to corresponding Coleco keys
+      // ------------------------------------------------------------------------
       ucDEUX  = 0;  
       keys_pressed  = keysCurrent();
       if  (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
@@ -528,6 +580,9 @@ ITCM_CODE void colecoDS_main (void)
         if (keys_pressed & KEY_SELECT)  ucDEUX  |= keyCoresp[myConfig.keymap[11]];
       }
 
+      // ---------------------------------------------------------
+      // Accumulate all bits above into the Joystick State var... 
+      // ---------------------------------------------------------
       JoyStat[0]= ucUN  | ucDEUX;
 
       // --------------------------------------------------
@@ -551,7 +606,7 @@ ITCM_CODE void colecoDS_main (void)
 }
 
 /*********************************************************************************
- * Init EMul
+ * Init DS Emulator - setup VRAM banks and background screen rendering banks
  ********************************************************************************/
 void colecoDSInit(void) 
 {
@@ -600,6 +655,9 @@ void colecoDSInit(void)
   colecoDSFindFiles();
 }
 
+// ---------------------------------------------------------------------------
+// Setup the bottom screen - mostly for menu, high scores, options, etc.
+// ---------------------------------------------------------------------------
 void InitBottomScreen(void)
 {
   //  Init bottom screen
@@ -642,6 +700,9 @@ u16 colecoDSInitCPU(void)
   return  (RetFct);
 }
 
+// -------------------------------------------------------------
+// Only used for basic timing of moving the Mario sprite...
+// -------------------------------------------------------------
 void irqVBlank(void) 
 { 
  // Manage time
@@ -668,7 +729,7 @@ bool ColecoBIOSFound(void)
 }
 
 /*********************************************************************************
- * Program entry point
+ * Program entry point - check if an argument has been passed in probably from TWL++
  ********************************************************************************/
 char initial_file[256];
 int main(int argc, char **argv) 
@@ -769,4 +830,5 @@ int main(int argc, char **argv)
   return(0);
 }
 
-/* END OF FILE */
+// End of file
+
