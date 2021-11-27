@@ -20,8 +20,6 @@
 **
 ******************************************************************************/
 #include <nds.h>
-#include <nds/arm9/console.h> //basic print functionality
-
 #include <stdio.h>
 #include <string.h>
 
@@ -42,7 +40,7 @@ u8 *XBuf __attribute__((section(".dtcm"))) = XBuf_A;
 u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
 
 // Screen handlers and masks for VDP table address registers
-tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
+tScrMode SCR[MAXSCREEN+1] = {
                 // R2,  R3,  R4,  R5,  R6,  M2,  M3,  M4,  M5
   { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 0:TEXT 40x24    */
   { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 1:TEXT 32x24    */
@@ -731,3 +729,4 @@ void Reset9918(void)
   }
 }
 
+// End of file

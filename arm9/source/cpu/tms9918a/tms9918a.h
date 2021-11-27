@@ -3,7 +3,7 @@
 
 #include <nds.h>
 
-#define MAXSCREEN 3                   // Highest screen mode supported
+#define MAXSCREEN           3   // Highest screen mode supported
 
 #define TMS9918_BASE        10738635
 
