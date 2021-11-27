@@ -18,6 +18,12 @@
 **       but heavily modified for specific NDS use. If you want to use this
 **       code, you are advised to seek out the latest ColEM core online.
 **
+**
+** WARNING:  The use of VKey as an address latch here is not to specifications.
+**           This latch should be reset on all data and control reads - but 
+**           the original ColEM sources said this caused problems - and so it
+**           does cause problems (via experimentation - some games run much 
+**           worse). This should be fixed someday... but good enough for now.
 ******************************************************************************/
 #include <nds.h>
 #include <stdio.h>
