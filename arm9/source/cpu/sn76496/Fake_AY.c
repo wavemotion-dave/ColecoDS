@@ -1,3 +1,14 @@
+// =====================================================================================
+// Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+//
+// Copying and distribution of this emulator, it's source code and associated 
+// readme files, with or without modification, are permitted in any medium without 
+// royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
+// Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
+//
+// The ColecoDS emulator is offered as-is, without any warranty.
+// =====================================================================================
+
 // ------------------------------------------------------------------------------------
 // The 'Fake' AY handler simply turns AY sound register access into corresponding
 // SN sound chip calls. There is some loss of fidelity and we have to handle the
@@ -14,8 +25,6 @@
 #include "../../colecogeneric.h"
 
 #include "SN76496.h"
-
-#define NORAM 0xFF
 
 u8 channel_a_enable = 0;
 u8 channel_b_enable = 0;
@@ -56,6 +65,11 @@ u16 noise_period = 0;
 u8 a_idx=0;
 u8 b_idx=0;
 u8 c_idx=0;
+
+// ---------------------------------------------------------------------------------------------
+// We handle envelopes here... the timing is nowhere near exact but so few games utilize this 
+// and so accuracy isn't all that critical. The sound will be a little off - but it will be ok.
+// ---------------------------------------------------------------------------------------------
 ITCM_CODE void FakeAY_Loop(void)
 {
     static u16 delay=0;
@@ -101,17 +115,27 @@ ITCM_CODE void FakeAY_Loop(void)
     }
 }
 
+// -----------------------------------
+// Write the AY register index...
+// -----------------------------------
 void FakeAY_WriteIndex(u8 Value)
 {
     sgm_idx = Value;
 }
 
+// -----------------------------------
+// Read an AY data value...
+// -----------------------------------
 u8 FakeAY_ReadData(void)
 {
     return sgm_reg[sgm_idx];   
 }
 
 
+// ------------------------------------------------------------------
+// Noise is a bit more complicated on the AY chip as we have to
+// check each A,B,C channel to see if we should be mixing in noise. 
+// ------------------------------------------------------------------
 void UpdateNoiseAY(void)
 {
       // Noise Channel - we turn it on if the noise channel is enable along with the channel's volume not zero...
@@ -136,6 +160,11 @@ void UpdateNoiseAY(void)
       }
 }
 
+// ------------------------------------------------------------------------------------------------------------------
+// Writing AY data is where the magic mapping happens between the AY chip and the standard SN colecovision chip.
+// This is a bit of a hack... and it reduces the sound quality a bit on the AY chip but it allows us to use just
+// one sound driver for the SN audio chip for everythign in the system. On a retro-handheld, this is good enough.
+// ------------------------------------------------------------------------------------------------------------------
 u8 AY_RegisterMasks[] = {0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0x1F, 0xFF, 0x1F, 0x1F, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF};
 void FakeAY_WriteData(u8 Value)
 {
