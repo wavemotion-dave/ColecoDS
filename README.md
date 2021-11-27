@@ -25,6 +25,13 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V3.7: 27-Nov-2021 by wavemotion-dave
+* Super DK and Super DK Jr prototypes work now.
+* Max Game ROM filename extended to 128 bytes.
+* Tries to start in /roms or /roms/coleco if possible.
+* Slight tweaks to main menu graphics to clean them up.
+* Code cleanup and commenting of source files.
+
 V3.6: 25-Nov-2021 by wavemotion-dave
 * New game options for frame skip, frame blend, auto fire, etc.
 * Fixed pop noise on some of the SGM-AY games.

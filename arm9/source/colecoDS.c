@@ -57,12 +57,6 @@ u16 timingFrames=0;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
-typedef enum {
-  EMUARM7_INIT_SND  = 0x123C,
-  EMUARM7_STOP_SND  = 0x123D,
-  EMUARM7_PLAY_SND  = 0x123E,
-} FifoMesType;
-
 u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
@@ -354,7 +348,7 @@ void DisplayStatusLine(bool bForce)
 // ------------------------------------------------------------------------
 // The main emulation loop is here... call into the Z80, VDP and PSG 
 // ------------------------------------------------------------------------
-ITCM_CODE void colecoDS_main (void) 
+ITCM_CODE void colecoDS_main(void) 
 {
   u32 keys_pressed;
   u16 iTx,  iTy;
@@ -778,7 +772,13 @@ int main(int argc, char **argv)
       {
           strcpy(initial_file,  argv[1]);
       }
-  } else  initial_file[0]=0; // No file passed on command line...
+  }
+  else
+  {
+      initial_file[0]=0; // No file passed on command line...
+      chdir("/roms");    // Try to start in roms area... doesn't matter if it fails
+      chdir("coleco");   // And try to start in the subdir /coleco... doesn't matter if it fails.
+  }
     
   SoundPause();
   
