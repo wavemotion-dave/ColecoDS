@@ -558,6 +558,12 @@ ITCM_CODE void colecoDS_main(void)
       // ------------------------------------------------------------------------
       ucDEUX  = 0;  
       keys_pressed  = keysCurrent();
+      if ((keys_pressed & KEY_L) && (keys_pressed & KEY_R) && (keys_pressed & KEY_X)) 
+      {
+            lcdSwap();
+            WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+      }
+      else        
       if  (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
         if (keys_pressed & KEY_UP)      ucDEUX  |= keyCoresp[myConfig.keymap[0]];
@@ -573,7 +579,7 @@ ITCM_CODE void colecoDS_main(void)
         if (keys_pressed & KEY_START)   ucDEUX  |= keyCoresp[myConfig.keymap[10]];
         if (keys_pressed & KEY_SELECT)  ucDEUX  |= keyCoresp[myConfig.keymap[11]];
       }
-
+        
       // ---------------------------------------------------------
       // Accumulate all bits above into the Joystick State var... 
       // ---------------------------------------------------------
