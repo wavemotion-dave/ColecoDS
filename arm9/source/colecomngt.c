@@ -601,8 +601,13 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
       return FakeAY_ReadData();
   }
 
-  switch(Port&0xE0) {
+  switch(Port&0xE0) 
+  {
     case 0x40: // Printer Status - not used
+      break;
+   
+    case 0x60:
+      return Port60;
       break;
 
     case 0xE0: // Joysticks Data

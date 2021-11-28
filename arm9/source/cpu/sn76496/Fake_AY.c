@@ -146,9 +146,9 @@ void UpdateNoiseAY(void)
           if (!noise_enable)
           {
               noise_enable=1;
-              if (noise_period > 16) sn76496W(0xE2|0x04, &aycol);       // E2 is the lowest frequency (highest period)
-              else if (noise_period > 8) sn76496W(0xE1|0x04, &aycol);   // E1 is the middle frequency (middle period)
-              else sn76496W(0xE0|0x04, &aycol);                         // E0 is the highest frequency (lowest period)
+              if (noise_period > 16) sn76496W(0xE2, &aycol);       // E2 is the lowest frequency (highest period)
+              else if (noise_period > 8) sn76496W(0xE1, &aycol);   // E1 is the middle frequency (middle period)
+              else sn76496W(0xE0, &aycol);                         // E0 is the highest frequency (lowest period)
               if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &aycol);
               if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &aycol);
               if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &aycol);
