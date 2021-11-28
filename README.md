@@ -99,6 +99,7 @@ Features :
 * High-Score support.
 * Save/Load Game State (one slot).
 * Blend Mode (see below).
+* LCD Screen Swap (press and hold L+R+X during gameplay)
 
 Known Issues :
 -----------------------
