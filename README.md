@@ -25,6 +25,11 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V3.8: 04-Dec-2021 by wavemotion-dave
+* L+R+X to swap LCD Screens
+* New light keyclick for feedback of touch controller.
+* Other minor cleanups and improvements under the hood.
+
 V3.7: 27-Nov-2021 by wavemotion-dave
 * Super DK and Super DK Jr prototypes work now.
 * Max Game ROM filename extended to 128 bytes.
