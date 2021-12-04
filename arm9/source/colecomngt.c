@@ -50,8 +50,8 @@ u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
 u8 bBlendMode     __attribute__((section(".dtcm"))) = false;
 
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
-u8 sgm_idx        __attribute__((section(".dtcm"))) = 0;
-u8 sgm_reg[256]   __attribute__((section(".dtcm"))) = {0};
+u8 ay_reg_idx     __attribute__((section(".dtcm"))) = 0;
+u8 ay_reg[256]    __attribute__((section(".dtcm"))) = {0};
 u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 
 static u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
@@ -89,22 +89,22 @@ SN76496 aycol   __attribute__((section(".dtcm")));
 void sgm_reset(void)
 {
     //make sure Super Game Module registers for AY chip are clear...
-    memset(sgm_reg, 0x00, 256);
-    sgm_reg[0x07] = 0xFF; // Everything turned off to start...
-    sgm_reg[0x0E] = 0xFF;
-    sgm_reg[0x0F] = 0xFF;
-    channel_a_enable = 0;
-    channel_b_enable = 0;
-    channel_c_enable = 0;
-    noise_enable = 0;      
+    memset(ay_reg, 0x00, 256);
+    ay_reg[0x07] = 0xFF;         // Everything turned off to start...
+    ay_reg[0x0E] = 0xFF;         // These are "max attenuation" volumes
+    ay_reg[0x0F] = 0xFF;         // to keep the volume disabled
+    channel_a_enable = 0;        // All "AY" channels off
+    channel_b_enable = 0;        // ..
+    channel_c_enable = 0;        // ..
+    noise_enable = 0;            // "AY" noise generator off
     
     bFirstTimeAY = false;        // We are using FAKE AY for now...
     sgm_enable = false;          // Default to no SGM until enabled
     sgm_low_addr = 0x2000;       // And the first 8K is BIOS
     AY_Enable = false;           // Default to no AY use until accessed
     
-    Port53 = 0x00;
-    Port60 = 0x0F;    
+    Port53 = 0x00;               // Init the SGM Port 53
+    Port60 = 0x0F;               // And the Adam/Memory Port 60
 }
 
 
@@ -116,13 +116,13 @@ u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
   
-  // Wipe area between BIOS and RAM
-  memset(pColecoMem+0x2000, 0xFF, 0x4000);
+  // Wipe area between BIOS and RAM (often SGM RAM mapped here)
+  memset(pColecoMem+0x2000, 0x00, 0x4000);
     
   // Wipe RAM
   memset(pColecoMem+0x6000, 0x00, 0x2000);
   
-  // Set ROM area to 0xFF before load
+  // Set upper 32K ROM area to 0xFF before load
   memset(pColecoMem+0x8000, 0xFF, 0x8000);
 
   // Load coleco cartridge
@@ -153,17 +153,17 @@ u8 colecoInit(char *szGame) {
     // Make sure the super game module is disabled to start
     sgm_reset();
 
-    JoyMode=JOYMODE_JOYSTICK;            // Joystick mode key
-    JoyStat[0]=JoyStat[1]=0xCFFF;        // Joystick states
+    JoyMode=JOYMODE_JOYSTICK;          // Joystick mode key
+    JoyStat[0]=JoyStat[1]=0xCFFF;      // Joystick states
 
-    sn76496Reset(1, &sncol);             // Reset the SN sound chip
+    sn76496Reset(1, &sncol);           // Reset the SN sound chip
     sn76496W(0x90 | 0x0F ,&sncol);     // Write new Volume for Channel A  
     sn76496W(0xB0 | 0x0F ,&sncol);     // Write new Volume for Channel B
     sn76496W(0xD0 | 0x0F ,&sncol);     // Write new Volume for Channel C  
     u16 tmp_samples[32];
     sn76496Mixer(32, tmp_samples, &sncol);
 
-    sn76496Reset(1, &aycol);             // Reset the SN sound chip
+    sn76496Reset(1, &aycol);           // Reset the SN sound chip
     sn76496W(0x90 | 0x0F ,&aycol);     // Write new Volume for Channel A  
     sn76496W(0xB0 | 0x0F ,&aycol);     // Write new Volume for Channel B
     sn76496W(0xD0 | 0x0F ,&aycol);     // Write new Volume for Channel C  
@@ -182,16 +182,17 @@ u8 colecoInit(char *szGame) {
 /*********************************************************************************
  * Run the emul
  ********************************************************************************/
-void colecoRun(void) {
+void colecoRun(void) 
+{
   DrZ80_Reset();
-
   showMainMenu();
 }
 
 /*********************************************************************************
  * Set coleco Palette
  ********************************************************************************/
-void colecoSetPal(void) {
+void colecoSetPal(void) 
+{
   u8 uBcl,r,g,b;
   
   for (uBcl=0;uBcl<16;uBcl++) {
@@ -208,7 +209,7 @@ void colecoSetPal(void) {
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
-u8  spare[512] = {0x00};
+u8  spare[512] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
 void colecoSaveState() 
 {
   u32 uNbO;
@@ -244,9 +245,9 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(lutTablehh, 16*1024,1, handle);      
 
     // Write the Super Game Module stuff
-    if (uNbO) uNbO = fwrite(sgm_reg, 256, 1, handle);      
+    if (uNbO) uNbO = fwrite(ay_reg, 256, 1, handle);      
     if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-    if (uNbO) uNbO = fwrite(&sgm_idx, sizeof(sgm_idx), 1, handle); 
+    if (uNbO) uNbO = fwrite(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
     if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
     if (uNbO) uNbO = fwrite(&channel_a_enable, sizeof(channel_a_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
@@ -344,9 +345,9 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(lutTablehh, 16*1024,1, handle);         
             
             // Load the Super Game Module stuff
-            if (uNbO) uNbO = fread(sgm_reg, 256, 1, handle);      
+            if (uNbO) uNbO = fread(ay_reg, 256, 1, handle);      
             if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-            if (uNbO) uNbO = fread(&sgm_idx, sizeof(sgm_idx), 1, handle); 
+            if (uNbO) uNbO = fread(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
             if (uNbO) uNbO = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
             if (uNbO) uNbO = fread(&channel_a_enable, sizeof(channel_a_enable), 1, handle); 
             if (uNbO) uNbO = fread(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
@@ -578,7 +579,7 @@ void SetupSGM(void)
     }
     else 
     {
-      sgm_enable = true; /// Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
+      sgm_enable = true;    // Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
       sgm_low_addr = 0x0000; 
       memset(pColecoMem, 0x00, 0x2000);
     }
