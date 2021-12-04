@@ -1,7 +1,10 @@
-;@ ASM header for the AY-3-8910 / YM2149 sound chip emulator
 ;@
-
-	ayptr			.req r12
+;@  AY38910.i
+;@  ASM header for the AY-3-8910 / YM2149 sound chip emulator for arm32.
+;@
+;@  Created by Fredrik Ahlström on 2006-03-07.
+;@  Copyright © 2006-2021 Fredrik Ahlström. All rights reserved.
+;@
 
 							;@ AY38910.s
 	.struct 0

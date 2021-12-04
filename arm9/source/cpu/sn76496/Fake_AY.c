@@ -32,8 +32,8 @@ u8 channel_c_enable = 0;
 u8 noise_enable = 0;
 
 extern u8 sgm_enable;
-extern u8 sgm_idx;
-extern u8 sgm_reg[256];
+extern u8 ay_reg_idx;
+extern u8 ay_reg[256];
 extern u16 sgm_low_addr;
 extern SN76496 aycol;
 
@@ -74,7 +74,7 @@ ITCM_CODE void FakeAY_Loop(void)
 {
     static u16 delay=0;
     
-    if (sgm_reg[0x07] == 0xFF) return;  // Nothing enabled - nobody using the AY chip.
+    if (ay_reg[0x07] == 0xFF) return;  // Nothing enabled - nobody using the AY chip.
     
     if (envelope_period == 0) return;
 
@@ -82,8 +82,8 @@ ITCM_CODE void FakeAY_Loop(void)
     {
         delay = 0;
         u8 shape=0;
-        shape = sgm_reg[0x0D] & 0x0F;
-        if ((sgm_reg[0x08] & 0x20) && (!(sgm_reg[0x07] & 0x01)))
+        shape = ay_reg[0x0D] & 0x0F;
+        if ((ay_reg[0x08] & 0x20) && (!(ay_reg[0x07] & 0x01)))
         {
             u8 vol = Envelopes[shape][a_idx]; 
             if (++a_idx > 31)
@@ -93,7 +93,7 @@ ITCM_CODE void FakeAY_Loop(void)
             sn76496W(0x90 | vol, &aycol);
         }
         
-        if ((sgm_reg[0x09] & 0x20) && (!(sgm_reg[0x07] & 0x02)))
+        if ((ay_reg[0x09] & 0x20) && (!(ay_reg[0x07] & 0x02)))
         {
             u8 vol = Envelopes[shape][b_idx]; 
             if (++b_idx > 31)
@@ -103,7 +103,7 @@ ITCM_CODE void FakeAY_Loop(void)
             sn76496W(0xB0 | vol, &aycol);
         }
 
-        if ((sgm_reg[0x0A] & 0x20) && (!(sgm_reg[0x07] & 0x04)))
+        if ((ay_reg[0x0A] & 0x20) && (!(ay_reg[0x07] & 0x04)))
         {
             u8 vol = Envelopes[shape][c_idx]; 
             if (++c_idx > 31)
@@ -120,7 +120,7 @@ ITCM_CODE void FakeAY_Loop(void)
 // -----------------------------------
 void FakeAY_WriteIndex(u8 Value)
 {
-    sgm_idx = Value;
+    ay_reg_idx = Value;
 }
 
 // -----------------------------------
@@ -128,7 +128,7 @@ void FakeAY_WriteIndex(u8 Value)
 // -----------------------------------
 u8 FakeAY_ReadData(void)
 {
-    return sgm_reg[sgm_idx];   
+    return ay_reg[ay_reg_idx];   
 }
 
 
@@ -139,9 +139,9 @@ u8 FakeAY_ReadData(void)
 void UpdateNoiseAY(void)
 {
       // Noise Channel - we turn it on if the noise channel is enable along with the channel's volume not zero...
-      if ( (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) || 
-           (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) || 
-           (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) )
+      if ( (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) || 
+           (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) || 
+           (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) )
       {
           if (!noise_enable)
           {
@@ -149,9 +149,9 @@ void UpdateNoiseAY(void)
               if (noise_period > 16) sn76496W(0xE2, &aycol);       // E2 is the lowest frequency (highest period)
               else if (noise_period > 8) sn76496W(0xE1, &aycol);   // E1 is the middle frequency (middle period)
               else sn76496W(0xE0, &aycol);                         // E0 is the highest frequency (lowest period)
-              if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &aycol);
-              if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &aycol);
-              if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &aycol);
+              if (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[ay_reg[0x08]], &aycol);
+              if (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[ay_reg[0x09]], &aycol);
+              if (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[ay_reg[0x0A]], &aycol);
           }
       }
       else
@@ -172,17 +172,17 @@ void FakeAY_WriteData(u8 Value)
       // This is the AY sound chip support... we're cheating here and just mapping those sounds
       // onto the original Colecovision SN sound chip. Not perfect but good enough for now...
       // ----------------------------------------------------------------------------------------
-      Value &= AY_RegisterMasks[sgm_idx & 0x0F];
-      sgm_reg[sgm_idx]=Value;
+      Value &= AY_RegisterMasks[ay_reg_idx & 0x0F];
+      ay_reg[ay_reg_idx]=Value;
       u16 freq=0;
-      switch (sgm_idx)
+      switch (ay_reg_idx)
       {
           // Channel A frequency (period) - low and high
           case 0x00:
           case 0x01:
-              if (!(sgm_reg[0x07] & 0x01))
+              if (!(ay_reg[0x07] & 0x01))
               {
-                  freq = (sgm_reg[0x01] << 8) | sgm_reg[0x00];
+                  freq = (ay_reg[0x01] << 8) | ay_reg[0x00];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
                   sn76496W(0x80 | (freq & 0xF), &aycol);
                   sn76496W((freq >> 4) & 0x3F, &aycol);
@@ -193,9 +193,9 @@ void FakeAY_WriteData(u8 Value)
           // Channel B frequency (period) - low and high
           case 0x02:
           case 0x03:
-              if (!(sgm_reg[0x07] & 0x02))
+              if (!(ay_reg[0x07] & 0x02))
               {
-                  freq = (sgm_reg[0x03] << 8) | sgm_reg[0x02];
+                  freq = (ay_reg[0x03] << 8) | ay_reg[0x02];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
                   sn76496W(0xA0 | (freq & 0xF), &aycol);
                   sn76496W((freq >> 4) & 0x3F, &aycol);
@@ -205,9 +205,9 @@ void FakeAY_WriteData(u8 Value)
            // Channel C frequency (period) - low and high
           case 0x04:
           case 0x05:
-              if (!(sgm_reg[0x07] & 0x04))
+              if (!(ay_reg[0x07] & 0x04))
               {
-                  freq = (sgm_reg[0x05] << 8) | sgm_reg[0x04];
+                  freq = (ay_reg[0x05] << 8) | ay_reg[0x04];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
                   sn76496W(0xC0 | (freq & 0xF), &aycol);
                   sn76496W((freq >> 4) & 0x3F, &aycol);
@@ -222,26 +222,26 @@ void FakeAY_WriteData(u8 Value)
                   if (noise_period > 16) sn76496W(0xE2|0x04, &aycol);       // E2 is the lowest frequency (highest period)
                   else if (noise_period > 8) sn76496W(0xE1|0x04, &aycol);   // E1 is the middle frequency (middle period)
                   else sn76496W(0xE0|0x04, &aycol);                         // E0 is the highest frequency (lowest period)
-                  if (!(sgm_reg[0x07] & 0x08) && (sgm_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x08]], &aycol);
-                  if (!(sgm_reg[0x07] & 0x10) && (sgm_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x09]], &aycol);
-                  if (!(sgm_reg[0x07] & 0x20) && (sgm_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[sgm_reg[0x0A]], &aycol);
+                  if (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[ay_reg[0x08]], &aycol);
+                  if (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[ay_reg[0x09]], &aycol);
+                  if (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[ay_reg[0x0A]], &aycol);
                }
               break;
               
           // Global Sound Enable/Disable Register
           case 0x07:
               // Channel A Enable/Disable
-              if (!(sgm_reg[0x07] & 0x01))
+              if (!(ay_reg[0x07] & 0x01))
               {
                   if (!channel_a_enable)
                   {
                       channel_a_enable=1;
                       a_idx=0;
-                      freq = (sgm_reg[0x01] << 8) | sgm_reg[0x00];
+                      freq = (ay_reg[0x01] << 8) | ay_reg[0x00];
                       freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
                       sn76496W(0x80 | (freq & 0xF), &aycol);
                       sn76496W((freq >> 4) & 0x3F, &aycol);
-                      sn76496W(0x90 | Volumes[(sgm_reg[0x08] & 0x1F)], &aycol);
+                      sn76496W(0x90 | Volumes[(ay_reg[0x08] & 0x1F)], &aycol);
                   }
               }
               else
@@ -254,17 +254,17 @@ void FakeAY_WriteData(u8 Value)
               }
               
               // Channel B Enable/Disable
-              if (!(sgm_reg[0x07] & 0x02))
+              if (!(ay_reg[0x07] & 0x02))
               {
                   if (!channel_b_enable)
                   {
                       channel_b_enable=1;
                       b_idx=0;
-                      freq = (sgm_reg[0x03] << 8) | sgm_reg[0x02];
+                      freq = (ay_reg[0x03] << 8) | ay_reg[0x02];
                       freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
                       sn76496W(0xA0 | (freq & 0xF), &aycol);
                       sn76496W((freq >> 4) & 0x3F, &aycol);
-                      sn76496W(0xB0 | Volumes[(sgm_reg[0x09] & 0x1F)], &aycol);
+                      sn76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x1F)], &aycol);
                   }
               }
               else
@@ -278,17 +278,17 @@ void FakeAY_WriteData(u8 Value)
               
               
               // Channel C Enable/Disable
-              if (!(sgm_reg[0x07] & 0x04))
+              if (!(ay_reg[0x07] & 0x04))
               {
                   if (!channel_c_enable)
                   {
                       channel_c_enable=1;
                       c_idx=0;
-                      freq = (sgm_reg[0x05] << 8) | sgm_reg[0x04];
+                      freq = (ay_reg[0x05] << 8) | ay_reg[0x04];
                       freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
                       sn76496W(0xC0 | (freq & 0xF), &aycol);
                       sn76496W((freq >> 4) & 0x3F, &aycol);
-                      sn76496W(0xD0 | Volumes[(sgm_reg[0x0A] & 0x1F)], &aycol);
+                      sn76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x1F)], &aycol);
                   }
               }
               else
@@ -305,21 +305,21 @@ void FakeAY_WriteData(u8 Value)
           // Volume Registers for all channels...
           case 0x08:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
-              if (sgm_reg[0x07] & 0x01) Value = 0x0;              // If Channel A is disabled, volume OFF
+              if (ay_reg[0x07] & 0x01) Value = 0x0;              // If Channel A is disabled, volume OFF
               sn76496W(0x90 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel A
               UpdateNoiseAY();
               a_idx=0;
               break;
           case 0x09:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
-              if (sgm_reg[0x07] & 0x02) Value = 0x0;              // If Channel B is disabled, volume OFF
+              if (ay_reg[0x07] & 0x02) Value = 0x0;              // If Channel B is disabled, volume OFF
               sn76496W(0xB0 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel B
               UpdateNoiseAY();
               b_idx=0;
               break;
           case 0x0A:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
-              if (sgm_reg[0x07] & 0x04) Value = 0x0;              // If Channel C is disabled, volume OFF
+              if (ay_reg[0x07] & 0x04) Value = 0x0;              // If Channel C is disabled, volume OFF
               sn76496W(0xD0 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel C
               UpdateNoiseAY();
               c_idx=0;
@@ -328,7 +328,7 @@ void FakeAY_WriteData(u8 Value)
           // Envelope Period
           case 0x0B:
           case 0x0C:
-              envelope_period = ((sgm_reg[0x0C] << 8) | sgm_reg[0x0B]) & 0x3FFF;
+              envelope_period = ((ay_reg[0x0C] << 8) | ay_reg[0x0B]) & 0x3FFF;
               break;
       }
 }

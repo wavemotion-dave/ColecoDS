@@ -1,6 +1,13 @@
-AY38910 revision history
--=-=-=-=-=-=-=-=-=-=-=-=-
+AY-3-8910 revision history
+-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+
+V0.6.0 - 2021-12-01 (FluBBa)
+	Rewrote envelope handling to actually work.
+
+V0.5.0 - 2021-11-28 (FluBBa)
+	Refactored all functions to work directly from C.
+	Fixed noise frequency.
 
 V0.4.0 - 2021-02-21 (FluBBa)
 	Rewrote mixer to not use self modifying code.
