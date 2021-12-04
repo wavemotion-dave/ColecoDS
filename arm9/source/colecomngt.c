@@ -30,7 +30,7 @@
 #define COLECODS_SAVE_VER 0x0009        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 extern byte Loop9918(void);
-extern void DrZ80_InitFonct(void);
+extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
 
 // Some sprite data arrays for the Mario character that walks around the upper screen..
@@ -150,8 +150,7 @@ u8 colecoInit(char *szGame) {
       dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
     }
     
-    // Make sure the super game module is disabled to start
-    sgm_reset();
+    sgm_reset();                       // Make sure the super game module is disabled to start
 
     JoyMode=JOYMODE_JOYSTICK;          // Joystick mode key
     JoyStat[0]=JoyStat[1]=0xCFFF;      // Joystick states
@@ -169,10 +168,10 @@ u8 colecoInit(char *szGame) {
     sn76496W(0xD0 | 0x0F ,&aycol);     // Write new Volume for Channel C  
     sn76496Mixer(32, tmp_samples, &aycol);
       
-    DrZ80_Reset();
-    Reset9918();
+    DrZ80_Reset();                      // Reset the CPU
+    Reset9918();                        // Reset the VDP
       
-    XBuf = XBuf_A;
+    XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
   }
   
   // Return with result
@@ -184,8 +183,8 @@ u8 colecoInit(char *szGame) {
  ********************************************************************************/
 void colecoRun(void) 
 {
-  DrZ80_Reset();
-  showMainMenu();
+  DrZ80_Reset();                        // Reset the CPU
+  showMainMenu();                       // Show the game-related screen
 }
 
 /*********************************************************************************
@@ -195,6 +194,7 @@ void colecoSetPal(void)
 {
   u8 uBcl,r,g,b;
   
+  // The Colecovision has a 16 color pallette... we set that up here.
   for (uBcl=0;uBcl<16;uBcl++) {
     r = (u8) ((float) TMS9918A_palette[uBcl*3+0]*0.121568f);
     g = (u8) ((float) TMS9918A_palette[uBcl*3+1]*0.121568f);
@@ -333,7 +333,7 @@ void colecoLoadState()
         {
             // Load Z80 CPU
             uNbO = fread(&drz80, sizeof(struct DrZ80), 1, handle);
-            DrZ80_InitFonct(); //DRZ80 saves a lot of binary code dependent stuff, regenerate it
+            DrZ80_InitHandlers(); //DRZ80 saves a lot of binary code dependent stuff, reset the handlers
 
             // Load Coleco Memory (yes, all of it!)
             if (uNbO) uNbO = fread(pColecoMem, 0x10000,1, handle); 
@@ -426,14 +426,14 @@ void colecoLoadState()
  ********************************************************************************/
 ITCM_CODE void colecoUpdateScreen(void) 
 {
-    // ----------------------------------------------------------------   
+    // ------------------------------------------------------------   
     // If we are in 'blendMode' we will OR the last two frames. 
     // This helps on some games where things are just 1 pixel 
     // wide and the non XL/LL DSi will just not hold onto the
     // image long enough to render it properly for the eye to 
     // pick up. This takes CPU speed, however, and will not be
-    // supported for older DS-LITE/PHAT units with slower processors.
-    // ----------------------------------------------------------------   
+    // supported for older DS-LITE/PHAT units with slower CPU.
+    // ------------------------------------------------------------   
     if (myConfig.frameBlend)
     {
       if (XBuf == XBuf_A)
@@ -527,6 +527,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             }
                 
             bMagicMegaCart = ((romBuffer[0xC000] == 0x55 && romBuffer[0xC001] == 0xAA) ? 1:0);
+            lastBank = 199;                                 // Force load of the first bank when asked to bankswitch
             if ((iSSize == (64 * 1024)) && !bMagicMegaCart)
             {
                 bActivisionPCB = 1;
@@ -538,8 +539,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             else
             {
                 bMagicMegaCart = 1;
-                memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest bank into fixed ROM
-                lastBank = 199;                                 // Force load of the first bank...
+                memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
                 BankSwitch(0);                                  // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
                 
                 if (iSSize == (64  * 1024)) romBankMask = 0x03;
@@ -568,7 +568,7 @@ void SetupSGM(void)
     sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates full SGM memory support.
     
     // ------------------------------------------------------
-    // And Port 6 will tell us if we want to swap out the 
+    // And Port 60 will tell us if we want to swap out the 
     // lower 8K bios for more RAM (total of 32K RAM for SGM)
     // ------------------------------------------------------
     if (Port60 & 0x02)  
@@ -607,7 +607,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
     case 0x40: // Printer Status - not used
       break;
    
-    case 0x60:
+    case 0x60:  // Adam/Memory Port
       return Port60;
       break;
 
@@ -658,23 +658,23 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
     
   switch(Port&0xE0) 
   {
-    case 0x80: 
+    case 0x80:  // Set Joystick Read Mode
       JoyMode=JOYMODE_JOYSTICK;
       return;
-    case 0xC0: 
+    case 0xC0:  // Set Keypad Read Mode 
       JoyMode=JOYMODE_KEYPAD;
       return;
-    case 0xE0: 
+    case 0xE0:  // The SN Sound port
       sn76496W(Value, &sncol);
       return;
-    case 0xA0:
+    case 0xA0:  // The VDP graphics port
       if(!(Port&0x01)) WrData9918(Value);
       else if (WrCtrl9918(Value)) { cpuirequest=Z80_NMI_INT; }
       return;
-    case 0x40:
+    case 0x40:  // Printer status and ADAM related stuff...not used
     case 0x20:
       return;
-    case 0x60:
+    case 0x60:  // Adam/Memory port
       Port60 = Value;
       SetupSGM();
       return;   
