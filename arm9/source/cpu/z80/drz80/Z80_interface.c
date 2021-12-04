@@ -1,5 +1,8 @@
+// ---------------------------------------------------------------------------------
+// Most of this is related to the Dr Z80 code and interfaced to the ColecoDS code.
+// It was ported by Alekmaul with some updates by wavemotion-dave.
+// ---------------------------------------------------------------------------------
 #include <nds.h>
-#include <nds/arm9/console.h> //basic print funcionality
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +15,9 @@
 #define INT_IRQ 0x01
 #define NMI_IRQ 0x02
 
+// ----------------------------------------------------------------------------
+// Put the whole Z80 register set into fast memory for better performance...
+// ----------------------------------------------------------------------------
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
 u16 cpuirequest     __attribute__((section(".dtcm"))) = 0;
@@ -59,7 +65,7 @@ ITCM_CODE u16 drz80MemReadW(u16 addr)
 // ------------------------------------------------
 ITCM_CODE void BankSwitch(u8 bank)
 {
-    if (lastBank != bank)
+    if (lastBank != bank)   // Only if the bank was changed...
     {
         u32 *src;
         if (bank < 8)   // If bank area under 128 - grab from VRAM - it's faster
@@ -69,7 +75,7 @@ ITCM_CODE void BankSwitch(u8 bank)
         u32 *dest = (u32*)(pColecoMem+0xC000);
         for (int i=0; i<0x1000; i++)
         {
-            *dest++ = *src++;
+            *dest++ = *src++;       // Copy 4 bytes at a time for best speed...
         }
         lastBank = bank;
     }
@@ -134,28 +140,28 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         if (sRamAtE000_OK) pColecoMem[address+0x800]=value;
     }
 
-    // ---------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     // Check for writing hotspots in Activision PCB carts and MegaCarts...
-    // ---------------------------------------------------------------------
+    // I'm really not sure if this ever happens or is supported by the MC
+    // specifications - but other emulators seem to do it so we'll follow suit.
+    // -------------------------------------------------------------------------
     if (romBankMask != 0)
     {
-      {
-          /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
-          if(bActivisionPCB)
+        /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
+        if (bActivisionPCB)
+        {
+          if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
           {
-              if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
-              {
-                  BankSwitch((address>>4) & romBankMask);
-              }
+              BankSwitch((address>>4) & romBankMask);
           }
-          else if (bMagicMegaCart)
-          { 
-              if (address >= 0xFFC0)   // Otherwise check if we are hitting one of the MegaCart hotspots...
-              {
-                  BankSwitch(address & romBankMask);
-              }
+        }
+        else if (bMagicMegaCart)
+        { 
+          if (address >= 0xFFC0)   // Otherwise check if we are hitting one of the MegaCart hotspots...
+          {
+              BankSwitch(address & romBankMask);
           }
-      }
+        }
     }
 }
 
@@ -191,7 +197,7 @@ ITCM_CODE void Interrupt(void) {
 	}
 }
 
-void DrZ80_InitFonct() {
+void DrZ80_InitHandlers() {
   extern u8 romBankMask;
   drz80.z80_write8=cpu_writemem16;
   drz80.z80_write16=drz80MemWriteW;
@@ -206,7 +212,7 @@ void DrZ80_InitFonct() {
 
 void DrZ80_Reset(void) {
   memset (&drz80, 0, sizeof(struct DrZ80));
-  DrZ80_InitFonct();
+  DrZ80_InitHandlers();
 
   drz80.Z80A = 0x00 <<24;
   drz80.Z80F = (1<<2); // set ZFlag 

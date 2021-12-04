@@ -27,7 +27,6 @@ void vblankIntro() {
 // Intro with portabledev logo and new PHEONIX-EDITION version
 // --------------------------------------------------------------
 void intro_logo(void) {
-  int soundId=-1; 
   bool bOK;
 
   // Init graphics
@@ -57,7 +56,7 @@ void intro_logo(void) {
 
   FadeToColor(0,BLEND_FADE_BLACK | BLEND_SRC_BG0 | BLEND_DST_BG0,3,0,3);
 
-  soundId = soundPlaySample((const void *) mus_intro_wav, SoundFormat_ADPCM, mus_intro_wav_size, 22050, 127, 64, false, 0);
+  soundPlaySample((const void *) mus_intro_wav, SoundFormat_ADPCM, mus_intro_wav_size, 22050, 127, 64, false, 0);
 
   bOK=false;
   while (!bOK) { if ( !(keysCurrent() & 0x1FFF) ) bOK=true; } // 0x1FFF = key or pen
@@ -67,7 +66,6 @@ void intro_logo(void) {
   while (!bOK) { if ( !(keysCurrent() & 0x1FFF) ) bOK=true; }
 
   FadeToColor(1,BLEND_FADE_WHITE | BLEND_SRC_BG0 | BLEND_DST_BG0,3,16,3);
-  if (soundId!=-1) soundKill(soundId);
 }
 
 // End of file

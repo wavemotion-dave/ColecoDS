@@ -30,6 +30,9 @@
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
 
+#include "soundbank.h"
+#include "soundbank_bin.h"
+
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 
@@ -154,13 +157,12 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 void setupStream(void) 
 {
   //----------------------------------------------------------------
-  //  initialize maxmod without any soundbank (unusual setup)
+  //  initialize maxmod with our small 2-effect soundbank
   //----------------------------------------------------------------
-  sys.mod_count       = 0;
-  sys.samp_count      = 0;
-  sys.mem_bank        = 0;
-  sys.fifo_channel    = FIFO_MAXMOD;
-  mmInit( &sys );
+  mmInitDefaultMem((mm_addr)soundbank_bin);
+
+  mmLoadEffect(SFX_CLICKNOQUIT);
+  mmLoadEffect(SFX_KEYCLICK);
 
   //----------------------------------------------------------------
   //  open stream
@@ -353,7 +355,8 @@ ITCM_CODE void colecoDS_main(void)
   u32 keys_pressed;
   u16 iTx,  iTy;
   u16 ucUN, ucDEUX, ResetNow  = 0, SaveNow = 0, LoadNow = 0;
-  
+  static u8 lastUN = 0;
+
   showMainMenu();      // Returns when  user has asked for a game to run...
 
   colecoInit(gpFic[ucGameAct].szName);
@@ -547,10 +550,17 @@ ITCM_CODE void colecoDS_main(void)
         ucUN = ( ((iTx>=160) && (iTy>=144) && (iTx<=183) && (iTy<=164)) ? 0x04: ucUN);
         ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x0F: ucUN);
         ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x05: ucUN);
+          
+        if ((ucUN != 0) && (ucUN != lastUN))
+        {
+            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+        }
+        lastUN = ucUN;                
       } //  SCR_TOUCH
       else  
       {
         ResetNow=SaveNow=LoadNow = 0;
+        lastUN = 0;
       }
     
       // ------------------------------------------------------------------------
