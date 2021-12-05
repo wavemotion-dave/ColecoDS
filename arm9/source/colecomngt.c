@@ -63,8 +63,8 @@ u8 AY_NeverEnable __attribute__((section(".dtcm"))) = false;
 u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
 
 u8 pad0[32];
-u16 JoyMode=0;          // Joystick / Paddle management
-u16 JoyStat[2];         // Joystick / Paddle management
+u8  JoyMode=0;        // Joystick Mode
+u32 JoyState=0;       // Joystick States
 
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
@@ -153,7 +153,7 @@ u8 colecoInit(char *szGame) {
     sgm_reset();                       // Make sure the super game module is disabled to start
 
     JoyMode=JOYMODE_JOYSTICK;          // Joystick mode key
-    JoyStat[0]=JoyStat[1]=0xCFFF;      // Joystick states
+    JoyState = 0x0000;                 // Nothing pressed to start
 
     sn76496Reset(1, &sncol);           // Reset the SN sound chip
     sn76496W(0x90 | 0x0F ,&sncol);     // Write new Volume for Channel A  
@@ -591,8 +591,6 @@ void SetupSGM(void)
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
 {
-  static byte KeyCodes[16] = { 0x0A,0x0D,0x07,0x0C,0x02,0x03,0x0E,0x05, 0x01,0x0B,0x06,0x09,0x08,0x04,0x0F,0x0F };
-
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
   
@@ -600,7 +598,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
   if (Port == 0x52)
   {
       return FakeAY_ReadData();
-  }
+  } 
 
   switch(Port&0xE0) 
   {
@@ -612,9 +610,9 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
       break;
 
     case 0xE0: // Joysticks Data
-      Port=(Port>>1)&0x01;
-      Port=JoyMode ? (JoyStat[Port]>>8): (JoyStat[Port]&0xF0)|KeyCodes[JoyStat[Port]&0x0F];
-      return(Port&0x7F);
+      Port = Port&0x02? (JoyState>>16):JoyState;
+      Port = JoyMode?   (Port>>8):Port;
+      return(~Port&0x7F);
 
     case 0xA0: /* VDP Status/Data */
       return(Port&0x01 ? RdCtrl9918():RdData9918());

@@ -74,10 +74,33 @@ char szKeyName[18][15] = {
   "KEYPAD #0",  "KEYPAD #*"
 };
 
+#define JST_UP        0x0100
+#define JST_RIGHT     0x0200
+#define JST_DOWN      0x0400
+#define JST_LEFT      0x0800
+#define JST_FIRER     0x0040
+#define JST_FIREL     0x4000
+#define JST_0         0x0005
+#define JST_1         0x0002
+#define JST_2         0x0008
+#define JST_3         0x0003
+#define JST_4         0x000D
+#define JST_5         0x000C
+#define JST_6         0x0001
+#define JST_7         0x000A
+#define JST_8         0x000E
+#define JST_9         0x0004
+#define JST_STAR      0x0006
+#define JST_POUND     0x0009
+#define JST_PURPLE    0x0007
+#define JST_BLUE      0x000B
+
+
 u16 keyCoresp[18] = {
-  0x0100  ,0x0400, 0x0800, 0x0200, 0x4000, 0x0040, 0x000E, 0x000D, 0x000C, 
-  0x000B, 0x000A  , 0x0009, 0x0008, 0x0007, 0x0006, 0x0004,0x000F, 0x0005
+    JST_UP, JST_DOWN, JST_LEFT, JST_RIGHT, JST_FIREL, JST_FIRER,
+    JST_1, JST_2, JST_3, JST_4, JST_5, JST_6, JST_7, JST_8, JST_9, JST_POUND, JST_0, JST_STAR
 };
+
 
 // ------------------------------------------------------------
 // Utility function to show the background for the main menu
@@ -276,7 +299,7 @@ static u8 last_mc_mode = 0;
 void ResetColecovision(void)
 {
   JoyMode=JOYMODE_JOYSTICK;             // Joystick mode key
-  JoyStat[0]=JoyStat[1]=0xCFFF;         // Joystick states
+  JoyState = 0x0000;                    // Nothing pressed to start
     
   Reset9918();                          // Reset video chip
 
@@ -535,21 +558,21 @@ ITCM_CODE void colecoDS_main(void)
         // --------------------------------------------------------------------------
         // Test the touchscreen rendering of the Coleco KEYPAD
         // --------------------------------------------------------------------------
-        ucUN = ( ((iTx>=160) && (iTy>=80) && (iTx<=183) && (iTy<=100)) ? 0x0E: 0x00);
-        ucUN = ( ((iTx>=183) && (iTy>=80) && (iTx<=210) && (iTy<=100)) ? 0x0D: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=80) && (iTx<=234) && (iTy<=100)) ? 0x0C: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=80) && (iTx<=183) && (iTy<=100)) ? 0x02: 0x00);
+        ucUN = ( ((iTx>=183) && (iTy>=80) && (iTx<=210) && (iTy<=100)) ? 0x08: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=80) && (iTx<=234) && (iTy<=100)) ? 0x03: ucUN);
         
-        ucUN = ( ((iTx>=160) && (iTy>=101) && (iTx<=183) && (iTy<=122)) ? 0x0B: ucUN);
-        ucUN = ( ((iTx>=183) && (iTy>=101) && (iTx<=210) && (iTy<=122)) ? 0x0A: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=101) && (iTx<=234) && (iTy<=122)) ? 0x09: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=101) && (iTx<=183) && (iTy<=122)) ? 0x0D: ucUN);
+        ucUN = ( ((iTx>=183) && (iTy>=101) && (iTx<=210) && (iTy<=122)) ? 0x0C: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=101) && (iTx<=234) && (iTy<=122)) ? 0x01: ucUN);
         
-        ucUN = ( ((iTx>=160) && (iTy>=123) && (iTx<=183) && (iTy<=143)) ? 0x08: ucUN);
-        ucUN = ( ((iTx>=183) && (iTy>=123) && (iTx<=210) && (iTy<=143)) ? 0x07: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=123) && (iTx<=234) && (iTy<=143)) ? 0x06: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=123) && (iTx<=183) && (iTy<=143)) ? 0x0A: ucUN);
+        ucUN = ( ((iTx>=183) && (iTy>=123) && (iTx<=210) && (iTy<=143)) ? 0x0E: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=123) && (iTx<=234) && (iTy<=143)) ? 0x04: ucUN);
         
-        ucUN = ( ((iTx>=160) && (iTy>=144) && (iTx<=183) && (iTy<=164)) ? 0x04: ucUN);
-        ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x0F: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x05: ucUN);
+        ucUN = ( ((iTx>=160) && (iTy>=144) && (iTx<=183) && (iTy<=164)) ? 0x06: ucUN);
+        ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x05: ucUN);
+        ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x09: ucUN);
           
         if ((ucUN != 0) && (ucUN != lastUN))
         {
@@ -562,7 +585,7 @@ ITCM_CODE void colecoDS_main(void)
         ResetNow=SaveNow=LoadNow = 0;
         lastUN = 0;
       }
-    
+
       // ------------------------------------------------------------------------
       //  Test DS keypresses (ABXY, L/R) and map to corresponding Coleco keys
       // ------------------------------------------------------------------------
@@ -593,24 +616,20 @@ ITCM_CODE void colecoDS_main(void)
       // ---------------------------------------------------------
       // Accumulate all bits above into the Joystick State var... 
       // ---------------------------------------------------------
-      JoyStat[0]= ucUN  | ucDEUX;
+      JoyState = ucUN | ucDEUX;
 
       // --------------------------------------------------
       // Handle Auto-Fire if enabled in configuration...
       // --------------------------------------------------
       static u8 autoFireTimer[2]={0,0};
-      if (myConfig.autoFire1 && (JoyStat[0] & 0x0040))  // Fire Button 1
+      if (myConfig.autoFire1 && (JoyState & JST_FIRER))  // Fire Button 1
       {
-         if ((++autoFireTimer[0] & 7) > 4)  JoyStat[0] &= ~0x0040;
+         if ((++autoFireTimer[0] & 7) > 4)  JoyState &= ~JST_FIRER;
       }
-      if (myConfig.autoFire2 && (JoyStat[0] & 0x4000))  // Fire Button 2
+      if (myConfig.autoFire2 && (JoyState & JST_FIREL))  // Fire Button 2
       {
-          if ((++autoFireTimer[1] & 7) > 4)  JoyStat[0] &= ~0x4000;
+          if ((++autoFireTimer[1] & 7) > 4) JoyState &= ~JST_FIREL;
       }
-
-      JoyStat[0]=~JoyStat[0];        // Logic if flipped
-      JoyStat[0]  &= ~0x3000;        // Reset spinner bits
-      JoyStat[1]  &= ~0x3000;        // Reset spinner bits
     }
   }
 }
