@@ -111,8 +111,8 @@ Known Issues :
 * Fathom won't render screen properly. Unknown cause.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * Deep Dungeon Adventures won't run.
-* Sudoku has graphical issues (still playable).
 * Uridium won't run.
+* Sudoku has graphical issues (still playable).
 * Super Pac Man has major graphical issues.
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
@@ -121,7 +121,6 @@ Known Issues :
 * Astrostorm crashes about 10-15 seconds into the gameplay.
 * Arno Dash and Diamond Dash 2 glitch out soon after loading.
 * Ghostblaster starts but controls don't work.
-* Pitfall II Arcade port (from SG1000) shows title screen but button press isn't recognized to start.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
 
 Controllers :
