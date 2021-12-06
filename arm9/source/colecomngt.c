@@ -57,7 +57,7 @@ u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 static u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
 static u8 Port60  __attribute__((section(".dtcm"))) = 0x0F;
 
-u8 bFirstTimeAY   __attribute__((section(".dtcm"))) = true;
+u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable      __attribute__((section(".dtcm"))) = false;
 u8 AY_NeverEnable __attribute__((section(".dtcm"))) = false;
 u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
@@ -75,6 +75,8 @@ u8 sRamAtE000_OK  = 0;      // Lord of the Dungeon is the only game that needs t
 u32 file_crc = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
 u8 pad1[32];                // Pad out space... at one time was concerned about 
                             // crc corruption but the pads been in long enough to stay.
+
+u8 sgm_low_mem[8192] = {0}; // The 8K of SGM RAM that can be mapped into the BIOS area
 
 // -----------------------------------------------------------
 // The two master sound chips... both are mapped to SN sound.
@@ -98,10 +100,10 @@ void sgm_reset(void)
     channel_c_enable = 0;        // ..
     noise_enable = 0;            // "AY" noise generator off
     
-    bFirstTimeAY = false;        // We are using FAKE AY for now...
     sgm_enable = false;          // Default to no SGM until enabled
     sgm_low_addr = 0x2000;       // And the first 8K is BIOS
     AY_Enable = false;           // Default to no AY use until accessed
+    bFirstSGMEnable = true;      // First time SGM enable we clear ram
     
     Port53 = 0x00;               // Init the SGM Port 53
     Port60 = 0x0F;               // And the Adam/Memory Port 60
@@ -289,6 +291,9 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
     if (uNbO) uNbO = fwrite(&aycol, sizeof(aycol),1, handle);       
       
+    // Write the SGM low memory
+    if (uNbO) fwrite(sgm_low_mem, 0x2000,1, handle);      
+      
     if (uNbO) 
       strcpy(szCh2,"OK ");
     else
@@ -388,7 +393,10 @@ void colecoLoadState()
             
             // Load PSG
             if (uNbO) uNbO = fread(&sncol, sizeof(sncol),1, handle); 
-            if (uNbO) uNbO = fread(&aycol, sizeof(aycol),1, handle); 
+            if (uNbO) uNbO = fread(&aycol, sizeof(aycol),1, handle);
+            
+            // Load the SGM low memory (don't care if this one fails)
+            (void)fread(sgm_low_mem, 0x2000,1, handle);
             
             if (BGColor)
             {
@@ -556,7 +564,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   return bOK;
 }
 
-
 // --------------------------------------------------------------------------
 // Based on writes to Port53 and Port60 we configure the SGM handling of 
 // memory... this includes 24K vs 32K of RAM (the latter is BIOS disabled).
@@ -567,21 +574,40 @@ void SetupSGM(void)
     
     sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates full SGM memory support.
     
+    // ----------------------------------------------------------------
+    // The first time we enable the SGM expansion RAM, we clear it out
+    // ----------------------------------------------------------------
+    if (sgm_enable && bFirstSGMEnable)
+    {
+        memset(pColecoMem+0x2000, 0x00, 0x6000);
+        bFirstSGMEnable = false;
+    }
+    
     // ------------------------------------------------------
     // And Port 60 will tell us if we want to swap out the 
     // lower 8K bios for more RAM (total of 32K RAM for SGM)
+    // Since this can swap back and forth (not sure if any
+    // game really does this), we need to preserve that 8K
+    // when we switch back and forth...
     // ------------------------------------------------------
     if (Port60 & 0x02)  
     {
       extern u8 ColecoBios[];
+      if (sgm_low_addr != 0x2000)
+      {
+          memcpy(sgm_low_mem,pColecoMem,0x2000);
+      }
       sgm_low_addr = 0x2000;
       memcpy(pColecoMem,ColecoBios,0x2000);
     }
     else 
     {
       sgm_enable = true;    // Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
+      if (sgm_low_addr != 0x0000)
+      {
+          memcpy(pColecoMem,sgm_low_mem,0x2000);
+      }
       sgm_low_addr = 0x0000; 
-      memset(pColecoMem, 0x00, 0x2000);
     }
 }
 
