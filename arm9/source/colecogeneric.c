@@ -145,11 +145,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
 }
 
 void colecoDSModeNormal(void) {
-#ifdef JMG16B
-  REG_BG3CNT = BG_BMP16_256x256;
-#else  
   REG_BG3CNT = BG_BMP8_256x256;
-#endif
   REG_BG3PA = (1<<8); 
   REG_BG3PB = 0;
   REG_BG3PC = 0;
@@ -235,7 +231,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
   
   AffChaine(30,8,0,(NoDebGame>0 ? "<" : " "));
   AffChaine(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
-  sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
+  siprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
   AffChaine(2,6,0, szName);
   for (ucBcl=0;ucBcl<14; ucBcl++) {
     ucGame= ucBcl+NoDebGame;
@@ -245,13 +241,13 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
       strcpy(szName,gpFic[ucGame].szName);
       if (maxLen>28) szName[28]='\0';
       if (gpFic[ucGame].uType == DIRECT) {
-        sprintf(szName2, " %s]",szName);
+        siprintf(szName2, " %s]",szName);
         szName2[0]='[';
-        sprintf(szName,"%-28s",szName2);
+        siprintf(szName,"%-28s",szName2);
         AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
       }
       else {
-        sprintf(szName,"%-28s",strupr(szName));
+        siprintf(szName,"%-28s",strupr(szName));
         AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
       }
     }
@@ -745,7 +741,7 @@ u8 display_options_list(bool bFullDisplay)
     {
         while (true)
         {
-            sprintf(strBuf, " %-12s : %-14s", Option_Table[len].label, Option_Table[len].option[*(Option_Table[len].option_val)]);
+            siprintf(strBuf, " %-12s : %-14s", Option_Table[len].label, Option_Table[len].option[*(Option_Table[len].option_val)]);
             dsPrintValue(1,7+len, (len==0 ? 2:0), strBuf); len++;
             if (Option_Table[len].label == NULL) break;
         }
@@ -788,25 +784,25 @@ void colecoDSGameOptions(void)
             last_keys_pressed = keys_pressed;
             if (keysCurrent() & KEY_UP) // Previous option
             {
-                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
                 dsPrintValue(1,7+optionHighlighted,0, strBuf);
                 if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
-                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
                 dsPrintValue(1,7+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_DOWN) // Next option
             {
-                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
                 dsPrintValue(1,7+optionHighlighted,0, strBuf);
                 if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
-                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
                 dsPrintValue(1,7+optionHighlighted,2, strBuf);
             }
 
             if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
             {
                 *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) + 1) % Option_Table[optionHighlighted].option_max;
-                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
                 dsPrintValue(1,7+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
@@ -815,7 +811,7 @@ void colecoDSGameOptions(void)
                     *(Option_Table[optionHighlighted].option_val) = Option_Table[optionHighlighted].option_max -1;
                 else
                     *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) - 1) % Option_Table[optionHighlighted].option_max;
-                sprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
                 dsPrintValue(1,7+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_START)  // Save Options
@@ -846,29 +842,29 @@ void DisplayKeymapName(u32 uY)
 {
   char szCha[34];
 
-  sprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
+  siprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
   AffChaine(1, 7,(uY==  7 ? 2 : 0),szCha);
-  sprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
+  siprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
   AffChaine(1, 8,(uY==  8 ? 2 : 0),szCha);
-  sprintf(szCha," PAD LEFT  : %-17s",szKeyName[myConfig.keymap[2]]);
+  siprintf(szCha," PAD LEFT  : %-17s",szKeyName[myConfig.keymap[2]]);
   AffChaine(1, 9,(uY==  9 ? 2 : 0),szCha);
-  sprintf(szCha," PAD RIGHT : %-17s",szKeyName[myConfig.keymap[3]]);
+  siprintf(szCha," PAD RIGHT : %-17s",szKeyName[myConfig.keymap[3]]);
   AffChaine(1,10,(uY== 10 ? 2 : 0),szCha);
-  sprintf(szCha," KEY A     : %-17s",szKeyName[myConfig.keymap[4]]);
+  siprintf(szCha," KEY A     : %-17s",szKeyName[myConfig.keymap[4]]);
   AffChaine(1,11,(uY== 11 ? 2 : 0),szCha);
-  sprintf(szCha," KEY B     : %-17s",szKeyName[myConfig.keymap[5]]);
+  siprintf(szCha," KEY B     : %-17s",szKeyName[myConfig.keymap[5]]);
   AffChaine(1,12,(uY== 12 ? 2 : 0),szCha);
-  sprintf(szCha," KEY X     : %-17s",szKeyName[myConfig.keymap[6]]);
+  siprintf(szCha," KEY X     : %-17s",szKeyName[myConfig.keymap[6]]);
   AffChaine(1,13,(uY== 13 ? 2 : 0),szCha);
-  sprintf(szCha," KEY Y     : %-17s",szKeyName[myConfig.keymap[7]]);
+  siprintf(szCha," KEY Y     : %-17s",szKeyName[myConfig.keymap[7]]);
   AffChaine(1,14,(uY== 14 ? 2 : 0),szCha);
-  sprintf(szCha," KEY R     : %-17s",szKeyName[myConfig.keymap[8]]);
+  siprintf(szCha," KEY R     : %-17s",szKeyName[myConfig.keymap[8]]);
   AffChaine(1,15,(uY== 15 ? 2 : 0),szCha);
-  sprintf(szCha," KEY L     : %-17s",szKeyName[myConfig.keymap[9]]);
+  siprintf(szCha," KEY L     : %-17s",szKeyName[myConfig.keymap[9]]);
   AffChaine(1,16,(uY== 16 ? 2 : 0),szCha);
-  sprintf(szCha," START     : %-17s",szKeyName[myConfig.keymap[10]]);
+  siprintf(szCha," START     : %-17s",szKeyName[myConfig.keymap[10]]);
   AffChaine(1,17,(uY== 17 ? 2 : 0),szCha);
-  sprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
+  siprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
   AffChaine(1,18,(uY== 18 ? 2 : 0),szCha);
 }
 
@@ -1000,12 +996,12 @@ void colecoDSChangeKeymap(void)
 void DisplayFileName(void)
 {
     char szName[64];
-    sprintf(szName,"%s",gpFic[ucGameChoice].szName);
+    siprintf(szName,"%s",gpFic[ucGameChoice].szName);
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
     AffChaine((16 - (strlen(szName)/2)),22,0,szName);
 #if 1 // Display CRC... for now 
-    sprintf(szName, "[%08X]", (int)file_crc);
+    siprintf(szName, "[%08X]", (int)file_crc);
     AffChaine(11,21,0,szName);
 #endif    
 }
