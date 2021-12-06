@@ -239,7 +239,7 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496W(0xFF,  &snmute);         // Disable Noise Channel
     
-  sn76496Mixer(8, mixbuf1, &snmute);     // Do  an initial mix conversion to clear the output
+  sn76496Mixer(8, mixbuf1, &snmute);  // Do  an initial mix conversion to clear the output
       
   //  ------------------------------------------------------------------
   //  The SN sound chip is for normal colecovision sound handling
@@ -260,7 +260,7 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496W(0xFF,  &sncol);         // Disable Noise Channel
     
-  sn76496Mixer(8, mixbuf1, &sncol);     // Do  an initial mix conversion to clear the output
+  sn76496Mixer(8, mixbuf1, &sncol);  // Do  an initial mix conversion to clear the output
 
     
   //  ------------------------------------------------------------------
@@ -282,7 +282,7 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496W(0xFF,  &aycol);         // Disable Noise Channel
     
-  sn76496Mixer(8, mixbuf2, &aycol);     // Do  an initial mix conversion to clear the output
+  sn76496Mixer(8, mixbuf2, &aycol);  // Do  an initial mix conversion to clear the output
   
   setupStream();    // Setup maxmod stream...
 
@@ -306,14 +306,14 @@ void ResetColecovision(void)
   sgm_reset();                          // Reset Super Game Module
     
   sn76496Reset(1, &sncol);              // Reset the SN sound chip
-  sn76496W(0x90 | 0x0F  ,&sncol);       //  Write new Volume for Channel A  
-  sn76496W(0xB0 | 0x0F  ,&sncol);       //  Write new Volume for Channel B
-  sn76496W(0xD0 | 0x0F  ,&sncol);       //  Write new Volume for Channel C      
+  sn76496W(0x90 | 0x0F  ,&sncol);       //  Write new Volume for Channel A (off) 
+  sn76496W(0xB0 | 0x0F  ,&sncol);       //  Write new Volume for Channel B (off)
+  sn76496W(0xD0 | 0x0F  ,&sncol);       //  Write new Volume for Channel C (off)
 
   sn76496Reset(1, &aycol);              // Reset the SN sound chip
-  sn76496W(0x90 | 0x0F  ,&aycol);       //  Write new Volume for Channel A  
-  sn76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B
-  sn76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C      
+  sn76496W(0x90 | 0x0F  ,&aycol);       //  Write new Volume for Channel A (off)
+  sn76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
+  sn76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
     
   DrZ80_Reset();                        //  Reset the Z80 CPU Core
 
@@ -647,7 +647,7 @@ void colecoDSInit(void)
   vramSetBankC(VRAM_C_SUB_BG);
   vramSetBankD(VRAM_D_SUB_SPRITE);
     
-  vramSetBankE(VRAM_E_LCD );                 // Not using this  for video but 64K of faster RAM always useful!  Mapped  at 0x06880000 - Unused at this time - 128K available
+  vramSetBankE(VRAM_E_LCD );                 // Not using this  for video but 64K of faster RAM always useful!  Mapped  at 0x06880000 - This block of 128K of faster RAM used for the first eight 16K bankswitching banks
   vramSetBankF(VRAM_F_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06890000 -   ..
   vramSetBankG(VRAM_G_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06894000 -   ..
   vramSetBankH(VRAM_H_LCD );                 // Not using this  for video but 32K of faster RAM always useful!  Mapped  at 0x06898000 -   ..
