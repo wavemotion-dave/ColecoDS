@@ -25,6 +25,13 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V3.9: 06-Dec-2021 by wavemotion-dave
+* Fix for Pitfall II Arcade Homebrew
+* Improved memory management
+* Shorter keyclick for more responsive keypad touches
+* Improved UI key handling
+* Other cleanups and improvements under the hood
+
 V3.8: 04-Dec-2021 by wavemotion-dave
 * L+R+X to swap LCD Screens
 * New light keyclick for feedback of touch controller.

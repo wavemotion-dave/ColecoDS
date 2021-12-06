@@ -49,7 +49,6 @@ extern int uNbRoms;
 extern int ucGameAct;
 extern int ucGameChoice;
 
-extern void forceDMA(u16 *source,void* dest,uint32 size);
 extern u8 showMessage(char *szCh1, char *szCh2);
 extern void colecoDSModeNormal(void);
 extern void colecoDSInitScreenUp(void);
