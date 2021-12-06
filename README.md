@@ -31,6 +31,7 @@ V3.9: 06-Dec-2021 by wavemotion-dave
 * Shorter keyclick for more responsive keypad touches
 * Improved UI key handling
 * Other cleanups and improvements under the hood
+* Saved states changed again ... sorry!
 
 V3.8: 04-Dec-2021 by wavemotion-dave
 * L+R+X to swap LCD Screens
