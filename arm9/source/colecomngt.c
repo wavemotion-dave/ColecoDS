@@ -118,8 +118,8 @@ u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
   
-  // Wipe area between BIOS and RAM (often SGM RAM mapped here)
-  memset(pColecoMem+0x2000, 0x00, 0x4000);
+  // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
+  memset(pColecoMem+0x2000, 0xFF, 0x4000);
     
   // Wipe RAM
   memset(pColecoMem+0x6000, 0x00, 0x2000);

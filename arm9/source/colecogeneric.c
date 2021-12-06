@@ -53,7 +53,9 @@ u8 showMessage(char *szCh1, char *szCh2) {
   AffChaine(20,14,6,("  NO   "));
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
 
-  while (uRet == ID_SHM_CANCEL) {
+  while (uRet == ID_SHM_CANCEL) 
+  {
+    WAITVBL;WAITVBL;
     if (keysCurrent() & KEY_TOUCH) {
       touchPosition touch;
       touchRead(&touch);
@@ -108,6 +110,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
           AffChaine(8,14,6,("> YES <"));
           AffChaine(20,14,6,("  NO   "));
         }
+        WAITVBL;
       } 
     }
     else {
@@ -126,6 +129,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
           AffChaine(8,14,6,("> YES <"));
           AffChaine(20,14,6,("  NO   "));
         }
+        WAITVBL;
       } 
     }
     else {
