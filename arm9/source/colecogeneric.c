@@ -55,7 +55,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
 
   while (uRet == ID_SHM_CANCEL) 
   {
-    WAITVBL;WAITVBL;
+    WAITVBL;
     if (keysCurrent() & KEY_TOUCH) {
       touchPosition touch;
       touchRead(&touch);
