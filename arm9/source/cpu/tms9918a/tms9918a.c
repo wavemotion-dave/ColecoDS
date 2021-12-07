@@ -624,7 +624,7 @@ ITCM_CODE byte RdCtrl9918(void)
   if (bResetVLatch) VDPCtrlLatch = 0;
     
   J = VDPStatus;
-  VDPStatus = 0; //&= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
+  VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
   return(J);
 }
 
