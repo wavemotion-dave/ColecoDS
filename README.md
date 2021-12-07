@@ -128,8 +128,7 @@ Known Issues :
 * Missile-Strike crashes about 10-15 seconds into the gameplay.
 * Astrostorm crashes about 10-15 seconds into the gameplay.
 * Arno Dash and Diamond Dash 2 glitch out soon after loading.
-* Ghostblaster starts but controls don't work.
-* The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of StarForce on Atariage.
+* The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 
 Controllers :
 -----------------------
