@@ -18,12 +18,6 @@
 **       but heavily modified for specific NDS use. If you want to use this
 **       code, you are advised to seek out the latest ColEM core online.
 **
-**
-** WARNING:  The use of VKey as an address latch here is not to specifications.
-**           This latch should be reset on all data and control reads - but 
-**           the original ColEM sources said this caused problems - and so it
-**           does cause problems (via experimentation - some games run much 
-**           worse). This should be fixed someday... but good enough for now.
 ******************************************************************************/
 #include <nds.h>
 #include <stdio.h>
@@ -71,7 +65,7 @@ u8 VDP[16]      __attribute__((section(".dtcm")));      // VDP Registers
 u8 VDPStatus    __attribute__((section(".dtcm")));      // VDP Status
 u8 VDPDlatch    __attribute__((section(".dtcm")));      // VDP register D Latch
 u16 VAddr       __attribute__((section(".dtcm")));      // Storage for VIDRAM addresses
-u8 VKey         __attribute__((section(".dtcm")));      // VDP address latch key
+u8 VDPCtrlLatch __attribute__((section(".dtcm")));      // VDP control latch key
 u8 *ChrGen      __attribute__((section(".dtcm")));      // VDP tables (screens)
 u8 *ChrTab      __attribute__((section(".dtcm")));      // VDP tables (screens)
 u8 *ColTab      __attribute__((section(".dtcm")));      // VDP tables (screens)
@@ -86,6 +80,8 @@ u16 ChrTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 ColTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 ChrGenM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
+
+extern u8 bResetVLatch;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -574,6 +570,7 @@ ITCM_CODE void WrData9918(byte V)
 {
     VDPDlatch = pVDPVidMem[VAddr] = V;
     VAddr     = (VAddr+1)&0x3FFF;
+    if (bResetVLatch) VDPCtrlLatch = 0;
 }
 
 
@@ -587,7 +584,7 @@ ITCM_CODE byte RdData9918(void)
   J         = VDPDlatch;
   VDPDlatch = pVDPVidMem[VAddr];
   VAddr     = (VAddr+1)&0x3FFF;
-    
+  if (bResetVLatch) VDPCtrlLatch = 0;  
   return(J);
 }
 
@@ -599,14 +596,14 @@ ITCM_CODE byte RdData9918(void)
 /*************************************************************/
 ITCM_CODE byte WrCtrl9918(byte value) 
 {
-  if(VKey) 
+  if(VDPCtrlLatch==0) 
   { 
-      VKey=0; 
+      VDPCtrlLatch=1; 
       VAddr=(VAddr&0xFF00)|value; 
   }
   else 
   {
-    VKey=1;
+    VDPCtrlLatch=0;
     VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;
     if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));
     if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;}
@@ -624,8 +621,10 @@ ITCM_CODE byte RdCtrl9918(void)
 {
   register byte J;
 
+  if (bResetVLatch) VDPCtrlLatch = 0;
+    
   J = VDPStatus;
-  VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
+  VDPStatus = 0; //&= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
   return(J);
 }
 
@@ -691,7 +690,7 @@ void Reset9918(void)
 {
     memset(VDP,0x00,sizeof(VDP));       // Initialize VDP registers
     memset(pVDPVidMem, 0x00, 0x4000);   // Reset Video memory 
-    VKey=1;                             // VDP address latch key
+    VDPCtrlLatch=0;                     // VDP control latch
     VDPStatus=0x00;                     // VDP status register
     VAddr = 0x0000;                     // VDP address register
     FGColor=BGColor=0;                  // Fore/Background color
@@ -707,7 +706,7 @@ void Reset9918(void)
     SprTabM = 0x3FFF;                   // Full mask
     
     BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
-
+    
     // -------------------------------------------------------------
     // Our background/foreground table makes computations FAST!
     // -------------------------------------------------------------
