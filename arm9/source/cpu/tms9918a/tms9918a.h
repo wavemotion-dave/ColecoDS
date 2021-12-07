@@ -65,7 +65,7 @@ extern u16 CurLine;
 extern u8 pVDPVidMem[0x10000];                 // VDP video memory
 extern u8 VDP[16],VDPStatus,VDPDlatch;         // VDP registers
 extern u16 VAddr;                              // Storage for VIDRAM addresses
-extern u8 VKey;                                // VDP address latch key
+extern u8 VDPCtrlLatch;                        // VDP control latch
 extern u8 *ChrGen,*ChrTab,*ColTab;             // VDP tables (screens)
 extern u8 *SprGen,*SprTab;                     // VDP tables (sprites)
 extern u8 ScrMode;                             // Current screen mode

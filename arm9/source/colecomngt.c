@@ -27,7 +27,7 @@
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x000A        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x000B        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
@@ -72,6 +72,8 @@ u32 JoyState=0;       // Joystick States
 u8 bMagicMegaCart = 0;      // Mega Carts support > 32K 
 u8 bActivisionPCB = 0;      // Activision PCB is 64K with EEPROM
 u8 sRamAtE000_OK  = 0;      // Lord of the Dungeon is the only game that needs this
+u8 bResetVLatch   = 0;      // if '1' we reset the VDP Control latch. A few games need this.
+
 u32 file_crc = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
 u8 pad1[32];                // Pad out space... at one time was concerned about 
                             // crc corruption but the pads been in long enough to stay.
@@ -265,7 +267,7 @@ void colecoSaveState()
       
     // Write VDP
     if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
-    if (uNbO) uNbO = fwrite(&VKey, sizeof(VKey),1, handle); 
+    if (uNbO) uNbO = fwrite(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
     if (uNbO) uNbO = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle); 
     if (uNbO) uNbO = fwrite(&FGColor, sizeof(FGColor),1, handle); 
     if (uNbO) uNbO = fwrite(&BGColor, sizeof(BGColor),1, handle); 
@@ -368,7 +370,7 @@ void colecoLoadState()
 
             // Load VDP
             if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 
-            if (uNbO) uNbO = fread(&VKey, sizeof(VKey),1, handle); 
+            if (uNbO) uNbO = fread(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
             if (uNbO) uNbO = fread(&VDPStatus, sizeof(VDPStatus),1, handle); 
             if (uNbO) uNbO = fread(&FGColor, sizeof(FGColor),1, handle); 
             if (uNbO) uNbO = fread(&BGColor, sizeof(BGColor),1, handle); 
@@ -512,6 +514,13 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         sRamAtE000_OK = 0;  
         if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      //32K version of the rom
         if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of the rom
+        
+        // -------------------------------------------------------------------------
+        // Check for a few games that need to have special VDPCtrlLatch handling...
+        // -------------------------------------------------------------------------
+        bResetVLatch = 0;
+        if (file_crc == 0x312980d5) bResetVLatch = 1;       // Ghost Blaster (Homebrew)
+        if (file_crc == 0x6a162c7d) bResetVLatch = 1;       // Meteoric Shower (Bitcorp)      
         
         AY_NeverEnable = false; // Default to allow AY sound
         SGM_NeverEnable = false;
