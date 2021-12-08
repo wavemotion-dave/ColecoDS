@@ -240,13 +240,14 @@ void DrZ80_Reset(void) {
 }
 
 
-ITCM_CODE int DrZ80_execute(u32 cycles) {
+ITCM_CODE int DrZ80_execute(u32 cycles) 
+{
   drz80.cycles = cycles;
-//	if (drz80.pending_irq)
-//		Interrupt();
+    
   DrZ80Run(&drz80, cycles);
 
   dwElapsedTicks += cycles;
   return (cycles-drz80.cycles);
 }
 
+// End of file
