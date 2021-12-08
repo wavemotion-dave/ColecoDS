@@ -117,7 +117,6 @@ Features :
 Known Issues :
 -----------------------
 * Fathom won't render screen properly. Unknown cause.
-* 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * Deep Dungeon Adventures won't run.
 * Uridium won't run.
 * Sudoku has graphical issues (still playable).
@@ -128,6 +127,7 @@ Known Issues :
 * Missile-Strike crashes about 10-15 seconds into the gameplay.
 * Astrostorm crashes about 10-15 seconds into the gameplay.
 * Arno Dash and Diamond Dash 2 glitch out soon after loading.
+* 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 
 Controllers :
@@ -156,6 +156,5 @@ So my recommendation is as follows:
 * DSi XL/LL - don't bother... the XL/LL screen decay is slower and games look great on it.
 * DS-LITE/PHAT - sorry, just not enough CPU to handle blending mode. Games will still play fine as-is.
 
-To enable this new blend mode, when you pick your game use Y instead of A to select the game. I
-I've added it to the game loading instructions to remind you.
+To enable this new blend mode, pick your game and go into the "Game Options" sub-menu and turn it on.
 
