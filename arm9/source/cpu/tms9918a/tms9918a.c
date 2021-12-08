@@ -6,8 +6,7 @@
 *       http://www.portabledev.com
 *
 ** File: tms9928a.c -- software implementation of the Texas Instruments
-**                     TMS9918(A), TMS9928(A) and TMS9929(A), used by the Coleco, MSX and
-**                     TI99/4(A).
+**                     TMS9918A used by the Colecovision.
 **
 ** All undocumented features as described in the following file
 ** should be emulated.
@@ -18,6 +17,13 @@
 **       but heavily modified for specific NDS use. If you want to use this
 **       code, you are advised to seek out the latest ColEM core online.
 **
+** WARNING:  The use of control latch here is not to specifications.
+**           This latch should be reset on all data and control reads - but 
+**           the original ColEM sources said this caused problems - and so it
+**           does cause problems (via experimentation - some games run much 
+**           worse). This should be fixed someday... but good enough for now.
+**           Edit:  For a few games that really want this handling, it can be
+**           enabled on a per-game basis. See colecomngt.c for this flag.
 ******************************************************************************/
 #include <nds.h>
 #include <stdio.h>
@@ -596,17 +602,18 @@ ITCM_CODE byte RdData9918(void)
 /*************************************************************/
 ITCM_CODE byte WrCtrl9918(byte value) 
 {
-  if(VDPCtrlLatch==0) 
+  if(VDPCtrlLatch)  // Write the high byte of the video address
   { 
+    VDPCtrlLatch=0;
+      
+    VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;
+    if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));   // Might generate an IRQ
+    if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;} // If read request, read-ahead
+  }
+  else  // Write the low byte of the video address / control register
+  {
       VDPCtrlLatch=1; 
       VAddr=(VAddr&0xFF00)|value; 
-  }
-  else 
-  {
-    VDPCtrlLatch=0;
-    VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;
-    if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));
-    if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;}
   }
 
   /* No interrupts */
