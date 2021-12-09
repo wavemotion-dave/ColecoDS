@@ -89,6 +89,7 @@ u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 
 extern u8 bResetVLatch;
 
+
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
 /** sprite collisions and 5th sprite, and set appropriate   **/
@@ -626,13 +627,14 @@ ITCM_CODE byte WrCtrl9918(byte value)
 /*************************************************************/
 ITCM_CODE byte RdCtrl9918(void) 
 {
-  register byte J;
+  byte data;
 
   if (bResetVLatch) VDPCtrlLatch = 0;
     
-  J = VDPStatus;
+  data = VDPStatus;
   VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
-  return(J);
+    
+  return(data);
 }
 
 

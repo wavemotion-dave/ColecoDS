@@ -27,16 +27,10 @@ extern u16 cpuirequest;
 
 extern struct DrZ80 drz80;
 
-#define DrZ80_nmi Z80_Cause_Interrupt(Z80_NMI_INT)
-#define DrZ80_int(value) Z80_Cause_Interrupt(value)
-
 extern void Z80_Cause_Interrupt(int type);
 extern void Interrupt(void);
 extern void Z80_Clear_Pending_Interrupts(void);
 extern void DrZ80_Reset(void);
-extern void DrZ80_GetContext(void *pData);
-extern void DrZ80_SetContext(void *pData);
-extern unsigned short DrZ80_GetPC (void);
 extern int DrZ80_execute(u32 cycles);
 
 extern void cpu_writeport16(register unsigned short Port,register unsigned char Value);
