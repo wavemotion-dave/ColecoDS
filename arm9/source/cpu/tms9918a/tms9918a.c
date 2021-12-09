@@ -606,9 +606,9 @@ ITCM_CODE byte WrCtrl9918(byte value)
   { 
     VDPCtrlLatch=0;
       
-    VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;
-    if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));   // Might generate an IRQ
-    if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;} // If read request, read-ahead
+    VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;                                // Set the high byte of the video address always
+    if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));                   // Might generate an IRQ if we end up enabling interrupts and VBlank set
+    if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;} // As long as we're not inhibited (either uppper 2 bits set), read ahead
   }
   else  // Write the low byte of the video address / control register
   {
