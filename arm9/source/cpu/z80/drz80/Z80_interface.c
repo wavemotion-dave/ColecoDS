@@ -168,33 +168,42 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 // -----------------------------------------------------------------
 // The 16-bit write simply makes 2 calls into the 8-bit writes...
 // -----------------------------------------------------------------
-ITCM_CODE void drz80MemWriteW(u16 data,u16 addr) {
-  cpu_writemem16(data & 0xff , addr);
-  cpu_writemem16(data>>8,addr+1);
+ITCM_CODE void drz80MemWriteW(u16 data,u16 addr) 
+{
+    cpu_writemem16(data & 0xff , addr);
+    cpu_writemem16(data>>8,addr+1);
 }
 
-ITCM_CODE void Z80_Cause_Interrupt(int type) {
-  if (type == Z80_NMI_INT) {
-    drz80.pending_irq |= NMI_IRQ;
-	} else if (type != Z80_IGNORE_INT) {
-		drz80.z80irqvector = type & 0xff;
-    drz80.pending_irq |= INT_IRQ;
-  }
+ITCM_CODE void Z80_Cause_Interrupt(int type) 
+{
+    if (type == Z80_NMI_INT) 
+    {
+        drz80.pending_irq |= NMI_IRQ;
+    }
+    else if (type != Z80_IGNORE_INT) 
+    {
+        drz80.z80irqvector = type & 0xff;
+        drz80.pending_irq |= INT_IRQ;
+    }
 }
 
-ITCM_CODE void Z80_Clear_Pending_Interrupts(void) {
-  drz80.pending_irq = 0;
-  drz80.Z80_IRQ = 0;
+ITCM_CODE void Z80_Clear_Pending_Interrupts(void) 
+{
+    drz80.pending_irq = 0;
+    drz80.Z80_IRQ = 0;
 }
 
-ITCM_CODE void Interrupt(void) {
-	if (drz80.pending_irq & NMI_IRQ) { /* NMI IRQ */
-		drz80.Z80_IRQ = NMI_IRQ;
-		drz80.pending_irq &= ~NMI_IRQ;
-	} else if (drz80.Z80IF & 1) { /* INT IRQ and Interrupts enabled */
-		drz80.Z80_IRQ = INT_IRQ;
-		drz80.pending_irq &= ~INT_IRQ;
-	}
+ITCM_CODE void Interrupt(void) 
+{
+    if (drz80.pending_irq & NMI_IRQ)  /* NMI IRQ */
+    {
+        drz80.Z80_IRQ = NMI_IRQ;
+        drz80.pending_irq &= ~NMI_IRQ;
+    } else if (drz80.Z80IF & 1)  /* INT IRQ and Interrupts enabled */
+    {
+        drz80.Z80_IRQ = INT_IRQ;
+        drz80.pending_irq &= ~INT_IRQ;
+    }
 }
 
 void DrZ80_InitHandlers() {

@@ -502,7 +502,9 @@ u8 colecoDSLoadFile(void)
     {
       if (gpFic[ucGameAct].uType != DIRECT)
       {
+        extern u8 bForceResetVLatch;
         bDone=true;
+        if (keysCurrent() & KEY_X) bForceResetVLatch = 1; else bForceResetVLatch=0;
         ucGameChoice = ucGameAct;
         WAITVBL;
       }

@@ -494,6 +494,7 @@ void getfile_crc(const char *path)
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
+u8 bForceResetVLatch=0;
 u8 loadrom(const char *path,u8 * ptr, int nmemb) 
 {
   u8 bOK = 0;
@@ -518,7 +519,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // -------------------------------------------------------------------------
         // Check for a few games that need to have special VDPCtrlLatch handling...
         // -------------------------------------------------------------------------
-        bResetVLatch = 0;
+        bResetVLatch = (bForceResetVLatch ? 1:0);
         if (file_crc == 0x312980d5) bResetVLatch = 1;       // Ghost Blaster (Homebrew)
         if (file_crc == 0x6a162c7d) bResetVLatch = 1;       // Meteoric Shower (Bitcorp)      
         
@@ -733,7 +734,7 @@ ITCM_CODE u32 LoopZ80()
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
     
   // Generate VDP interrupt
-  if (cpuirequest==Z80_NMI_INT ) 
+  if (cpuirequest==Z80_NMI_INT) 
     Z80_Cause_Interrupt(Z80_NMI_INT);
   else
     Z80_Clear_Pending_Interrupts();
