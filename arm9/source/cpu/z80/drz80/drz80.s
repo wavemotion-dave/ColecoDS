@@ -1099,16 +1099,14 @@ DrZ80Run:
 	mov z80_icount,r1						;@ setup number of Tstates to execute
 	ldmia cpucontext,{z80pc-z80sp}			;@ load Z80 registers
 
-
-	ldr opcodes,MAIN_opcodes_POINTER2
-
 	;@ check ints
 	bl DoInterrupt
+    
+    ldr opcodes,MAIN_opcodes_POINTER2
 
-	cmp z80_icount,#0     ;@ irq might have used all cycles
-	ldrplb r0,[z80pc],#1    ;@ get first op code
-	ldrpl pc,[opcodes,r0, lsl #2]  ;@ execute op code
-
+    cmp z80_icount,#0                       ;@ irq might have used all cycles
+    ldrplb r0,[z80pc],#1                    ;@ get first op code
+    ldrpl pc,[opcodes,r0, lsl #2]           ;@ execute op code
 
 z80_execute_end:
 	str z80_icount,[cpucontext,#cycles_pointer]
@@ -1227,7 +1225,7 @@ DoInterrupt_mode0:
 	mov r0,r2,lsr#16
 	;@ rebase new pc
 	rebasepc
-
+    eatcycles 13
 	b DoInterrupt_end
 
 1:
@@ -1259,7 +1257,7 @@ DoInterrupt_mode1:
 	;@ mov r0,#0x38
   ldr r0,[cpucontext,#z80intadr]
 	rebasepc
-
+    eatcycles 13
 	b DoInterrupt_end
 
 DoInterrupt_mode2:
@@ -1291,11 +1289,13 @@ DoInterrupt_mode2:
 	ldr pc,[cpucontext,#z80_rebasePC] ;@ r0=new pc - external function sets z80pc_base and returns new z80pc in r0
 	ldmfd sp!,{r3,r12}
 	mov z80pc,r0	
+    eatcycles 17
 
 DoInterrupt_end:
 	;@ interupt accepted so callback irq interface
 	ldr r0,[cpucontext, #z80irqcallback]
 	tst r0,r0
+    streqb r0,[cpucontext,#z80irq]       ;@ default handling
 	ldmeqfd sp!,{pc}
 	stmfd sp!,{r3,r12}
 	mov lr,pc
@@ -5397,13 +5397,12 @@ EI_DUMMY_opcodes_POINTER: .word EI_DUMMY_opcodes
 ;@EI
 opcode_F_B:
 	ldrb r1,[cpucontext,#z80if]
-	tst r1,#Z80_IF1
-	bne ei_return_exit
-
+	mov r2,opcodes
 	orr r1,r1,#(Z80_IF1)|(Z80_IF2)
 	strb r1,[cpucontext,#z80if]
 
-	mov r2,opcodes
+	ldrb r0,[z80pc],#1
+	eatcycles 4
 	ldr opcodes,EI_DUMMY_opcodes_POINTER
 	ldr pc,[r2,r0, lsl #2]
 
@@ -5411,13 +5410,18 @@ ei_return:
 	;@point that program returns from EI to check interupts
 	;@an interupt can not be taken directly after a EI opcode
 	;@ reset z80pc and opcode pointer
+    ldrh r0,[cpucontext,#z80irq] @ 0x4C, irq and IFF bits
 	sub z80pc,z80pc,#1
 	ldr opcodes,MAIN_opcodes_POINTER
 	;@ check ints
-	bl DoInterrupt
+	tst r0,#0xff
+	movne r0,r0,lsr #8
+	tstne r0,#Z80_IF1
+	blne DoInterrupt
+    
 	;@ continue
 ei_return_exit:
-	fetch 4
+	fetch 0
 
 ;@CALL M,NN
 opcode_F_C:

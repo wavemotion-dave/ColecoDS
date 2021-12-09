@@ -25,6 +25,13 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Versions :
 -----------------------
+V4.0: 09-Dec-2021 by wavemotion-dave
+* Fix GhostBlaster homebrew.
+* Fix for graphical issues in Meteoric Shower
+* Improved DrZ80 core from various web sources
+* Improved VDP handling to more closely mimic real TMS9918a
+* Many small touch-ups and improvements under the hood
+
 V3.9: 06-Dec-2021 by wavemotion-dave
 * Fix for Pitfall II Arcade Homebrew
 * Improved memory management

@@ -574,7 +574,7 @@ ITCM_CODE void colecoDS_main(void)
         ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x05: ucUN);
         ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x09: ucUN);
           
-        if ((ucUN != 0) && (ucUN != lastUN))
+        if ((ucUN != 0) && (lastUN == 0))
         {
             mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
         }

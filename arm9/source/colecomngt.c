@@ -400,6 +400,7 @@ void colecoLoadState()
             // Load the SGM low memory (don't care if this one fails)
             if (uNbO) uNbO = fread(sgm_low_mem, 0x2000,1, handle);
             
+            // Fix up transparency
             if (BGColor)
             {
               u8 r = (u8) ((float) TMS9918A_palette[BGColor*3+0]*0.121568f);

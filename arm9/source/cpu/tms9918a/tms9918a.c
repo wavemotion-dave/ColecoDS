@@ -553,6 +553,7 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
       BGColor=value&0x0F;
       if (BGColor)
       {
+         // Handle "transparency"
          u8 r = (u8) ((float) TMS9918A_palette[BGColor*3+0]*0.121568f);
          u8 g = (u8) ((float) TMS9918A_palette[BGColor*3+1]*0.121568f);
          u8 b = (u8) ((float) TMS9918A_palette[BGColor*3+2]*0.121568f);
