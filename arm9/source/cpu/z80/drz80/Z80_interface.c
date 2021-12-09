@@ -199,7 +199,8 @@ ITCM_CODE void Interrupt(void)
     {
         drz80.Z80_IRQ = NMI_IRQ;
         drz80.pending_irq &= ~NMI_IRQ;
-    } else if (drz80.Z80IF & 1)  /* INT IRQ and Interrupts enabled */
+    } 
+    else if (drz80.Z80IF & 1)  /* INT IRQ and Interrupts enabled */
     {
         drz80.Z80_IRQ = INT_IRQ;
         drz80.pending_irq &= ~INT_IRQ;
