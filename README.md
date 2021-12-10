@@ -5,10 +5,15 @@ To run requires a coleco.rom bios to
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
 
-Emulator for the Colecovision plus the
-Super Game Module (SGM) and the MegaCart
-for games larger than 32K.
-
+Features :
+-----------------------
+* Super Game Module support with AY sound chip.
+* Megacart Bankswitching support (up to 512K).
+* Full Controller button mapping.
+* High-Score support - 10 scores per game.
+* Save/Load Game State (one slot).
+* Video Blend Mode (see below).
+* LCD Screen Swap (press and hold L+R+X during gameplay)
 
 Copyright :
 -----------------------
@@ -111,16 +116,6 @@ I think the original port was circa ColEM 2.1
 with some fixes incorproated from ColEM 2.9
 and updated Sprite/Line handling from ColEM 5.6
 
-Features :
------------------------
-* Super Game Module support.
-* Megacart Bankswitching support (up to 512K).
-* Controller button mapping.
-* High-Score support.
-* Save/Load Game State (one slot).
-* Blend Mode (see below).
-* LCD Screen Swap (press and hold L+R+X during gameplay)
-
 Known Issues :
 -----------------------
 * Fathom won't render screen properly. Unknown cause.
@@ -156,12 +151,13 @@ On the DSi using this new mode renders those games really bright and visible.
 The DSi XL/LL has a slower refresh on the LCD and it more closely approximates the old tube TVs... 
 so blend mode is not needed for the XL/LL models.
 
-However! Using blend mode comes at at 25% CPU cost!! The DSi can handle it... the DS-LITE/PHAT cannot.
+However! Using blend mode comes at at 25% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
+struggle a bit on more complicated games. 
 
 So my recommendation is as follows:
 * DSi non XL/LL - use Blend Mode for the games that benefit from it (Space Fury, Galaxian, etc).
-* DSi XL/LL - don't bother... the XL/LL screen decay is slower and games look great on it.
-* DS-LITE/PHAT - sorry, just not enough CPU to handle blending mode. Games will still play fine as-is.
+* DSi XL/LL - don't bother... the XL/LL screen decay is slower and games look great as-is.
+* DS-LITE/PHAT - you can try it but the framerate might drop below 60 on some games.
 
 To enable this new blend mode, pick your game and go into the "Game Options" sub-menu and turn it on.
 
