@@ -72,7 +72,6 @@ u32 JoyState=0;       // Joystick States
 u8 bMagicMegaCart = 0;      // Mega Carts support > 32K 
 u8 bActivisionPCB = 0;      // Activision PCB is 64K with EEPROM
 u8 sRamAtE000_OK  = 0;      // Lord of the Dungeon is the only game that needs this
-u8 bResetVLatch   = 0;      // if '1' we reset the VDP Control latch. A few games need this.
 
 u32 file_crc = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
 u8 pad1[32];                // Pad out space... at one time was concerned about 
@@ -525,17 +524,20 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         if (file_crc == 0x6a162c7d) bResetVLatch = 1;       // Meteoric Shower (Bitcorp)
         if (file_crc == 0x4491a35b) bResetVLatch = 1;       // Nova Blast (Imagic)
         
-        AY_NeverEnable = false; // Default to allow AY sound
-        SGM_NeverEnable = false;
-        if (file_crc == 0xef25af90) SGM_NeverEnable = true;         // Super DK Prototype - ignore any SGM/Adam Writes
-        if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true;         // Super DK JR Prototype - ignore any SGM/Adam Writes
+        AY_NeverEnable = false;                             // Default to allow AY sound
+        SGM_NeverEnable = false;                            // And allow SGM by default unless Super DK or Super DK-Jr (directly below)
+        if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
+        if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
         
+        // ----------------------------------------------------------------------
+        // Do we fit within the standard 32K Colecovision Cart ROM memory space?
+        // ----------------------------------------------------------------------
         if (iSSize <= (32*1024))
         {
             memcpy(ptr, romBuffer, nmemb);
             romBankMask = 0x00;
         }
-        else    // Bankswitched Cart!!
+        else    // No - must be Bankswitched Cart!!
         {
             // Copy 128K worth up to the VRAM for faster bank switching on the first 8 banks
             u32 copySize = ((iSSize <= 128*1024) ? iSSize : (128*1024));
@@ -546,6 +548,12 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 *dest++ = *src++;
             }
                 
+            // --------------------------------------------------------------
+            // Mega Carts have a special byte pattern in the upper block... 
+            // but we need to distinguish between 64k Activision PCB and
+            // possible 64K Megacart (theoretically MC should be 128K+ but
+            // there are examples of 64K MegaCarts). This code does that...
+            // --------------------------------------------------------------
             bMagicMegaCart = ((romBuffer[0xC000] == 0x55 && romBuffer[0xC001] == 0xAA) ? 1:0);
             lastBank = 199;                                 // Force load of the first bank when asked to bankswitch
             if ((iSSize == (64 * 1024)) && !bMagicMegaCart)
@@ -556,7 +564,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 romBankMask = 0x03;
                 // TODO: Eventually handle EEPROM for these PCBs...
             }
-            else
+            else    // We will assume Megacart then...
             {
                 bMagicMegaCart = 1;
                 memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM

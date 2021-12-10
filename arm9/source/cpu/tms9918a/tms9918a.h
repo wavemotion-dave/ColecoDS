@@ -47,6 +47,8 @@ extern u8 *XBuf;
 extern u8 XBuf_A[];
 extern u8 XBuf_B[];
 
+extern u8 bResetVLatch;
+
 extern u8 TMS9918A_palette[16*3];
 extern tScrMode SCR[MAXSCREEN+1];
 
