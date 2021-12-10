@@ -522,7 +522,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // -------------------------------------------------------------------------
         bResetVLatch = (bForceResetVLatch ? 1:0);
         if (file_crc == 0x312980d5) bResetVLatch = 1;       // Ghost Blaster (Homebrew)
-        if (file_crc == 0x6a162c7d) bResetVLatch = 1;       // Meteoric Shower (Bitcorp)      
+        if (file_crc == 0x6a162c7d) bResetVLatch = 1;       // Meteoric Shower (Bitcorp)
+        if (file_crc == 0x4491a35b) bResetVLatch = 1;       // Nova Blast (Imagic)
         
         AY_NeverEnable = false; // Default to allow AY sound
         SGM_NeverEnable = false;
