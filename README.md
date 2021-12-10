@@ -13,7 +13,8 @@ Features :
 * High-Score support - 10 scores per game.
 * Save/Load Game State (one slot).
 * Video Blend Mode (see below).
-* LCD Screen Swap (press and hold L+R+X during gameplay)
+* LCD Screen Swap (press and hold L+R+X during gameplay).
+* Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
 -----------------------
