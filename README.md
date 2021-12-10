@@ -28,6 +28,69 @@ thanked profusely.
 
 The ColecoDS emulator is offered as-is, without any warranty.
 
+Credits :
+-----------------------
+Thanks to Alekmaul who provided the 
+baseline code to work with and to lobo
+for the menu graphical design.
+
+Thanks to Reesy for the DrZ80 core.
+
+Thanks to Flubba for the SN76496 sound core.
+
+Special thanks to  Marat Fayzullin, as the 
+author of ColEM which is the code for the 
+core emulation (specifically TMS9918 VDP).
+I think the original port was circa ColEM 2.1
+with some fixes incorproated from ColEM 2.9
+and updated Sprite/Line handling from ColEM 5.6
+
+Known Issues :
+-----------------------
+* Fathom won't render screen properly. Unknown cause.
+* Deep Dungeon Adventures won't run.
+* Uridium won't run.
+* Sudoku has graphical issues (still playable).
+* Super Pac Man has major graphical issues.
+* Super Space Acer crashes after a few seconds of play.
+* Pillars won't run.
+* Vexxed won't run.
+* Missile-Strike crashes about 10-15 seconds into the gameplay.
+* Astrostorm crashes about 10-15 seconds into the gameplay.
+* Arno Dash and Diamond Dash 2 glitch out soon after loading.
+* 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
+* The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
+
+Controllers :
+-----------------------
+Right now only the Player 1 (left) controller is emulated. 
+For games that require other special controllers (Turbo, Slither, etc)
+you can seek out "SCE" (Standard Controller Editions) which are fan-made
+hacks that work with the standard controller. 
+
+Blend Mode (DSi) :
+-----------------------
+A huge change is the new "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
+two frames are blended together - this is really useful when playing games like Space Fury or Galaxian 
+where the bullets on screen are only 1 pixel wide and the DSi LCD just doesn't hold onto the pixels 
+long enough to be visible. These games were designed to run on an old tube TV with phosphor which 
+decays slowly so your eye will see slight traces as the image fades. This emulates that (crudely).
+On the DSi using this new mode renders those games really bright and visible.
+
+The DSi XL/LL has a slower refresh on the LCD and it more closely approximates the old tube TVs... 
+so blend mode is not needed for the XL/LL models.
+
+However! Using blend mode comes at at 25% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
+struggle a bit on more complicated games. 
+
+So my recommendation is as follows:
+* DSi non XL/LL - use Blend Mode for the games that benefit from it (Space Fury, Galaxian, etc).
+* DSi XL/LL - don't bother... the XL/LL screen decay is slower and games look great as-is.
+* DS-LITE/PHAT - you can try it but the framerate might drop below 60 on some games.
+
+To enable this new blend mode, pick your game and go into the "Game Options" sub-menu and turn it on.
+
+
 Versions :
 -----------------------
 V4.0: 09-Dec-2021 by wavemotion-dave
@@ -98,66 +161,3 @@ V3.0: 18-Nov-2021 by wavemotion-dave
 * Added Super Game Module support with AY sound handling.
 * Added MegaCart and Activision PCB cart support for larger games.
 * Speed improvements and optmizations across the board.
-
-Credits :
------------------------
-Thanks to Alekmaul who provided the 
-baseline code to work with and to lobo
-for the menu graphical design.
-
-Thanks to Reesy for the DrZ80 core.
-
-Thanks to Flubba for the SN76496 sound core.
-
-Special thanks to  Marat Fayzullin, as the 
-author of ColEM which is the code for the 
-core emulation (specifically TMS9918 VDP).
-I think the original port was circa ColEM 2.1
-with some fixes incorproated from ColEM 2.9
-and updated Sprite/Line handling from ColEM 5.6
-
-Known Issues :
------------------------
-* Fathom won't render screen properly. Unknown cause.
-* Deep Dungeon Adventures won't run.
-* Uridium won't run.
-* Sudoku has graphical issues (still playable).
-* Super Pac Man has major graphical issues.
-* Super Space Acer crashes after a few seconds of play.
-* Pillars won't run.
-* Vexxed won't run.
-* Missile-Strike crashes about 10-15 seconds into the gameplay.
-* Astrostorm crashes about 10-15 seconds into the gameplay.
-* Arno Dash and Diamond Dash 2 glitch out soon after loading.
-* 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
-* The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
-
-Controllers :
------------------------
-Right now only the Player 1 (left) controller is emulated. 
-For games that require other special controllers (Turbo, Slither, etc)
-you can seek out "SCE" (Standard Controller Editions) which are fan-made
-hacks that work with the standard controller. 
-
-Blend Mode (DSi) :
------------------------
-A huge change is the new "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
-two frames are blended together - this is really useful when playing games like Space Fury or Galaxian 
-where the bullets on screen are only 1 pixel wide and the DSi LCD just doesn't hold onto the pixels 
-long enough to be visible. These games were designed to run on an old tube TV with phosphor which 
-decays slowly so your eye will see slight traces as the image fades. This emulates that (crudely).
-On the DSi using this new mode renders those games really bright and visible.
-
-The DSi XL/LL has a slower refresh on the LCD and it more closely approximates the old tube TVs... 
-so blend mode is not needed for the XL/LL models.
-
-However! Using blend mode comes at at 25% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
-struggle a bit on more complicated games. 
-
-So my recommendation is as follows:
-* DSi non XL/LL - use Blend Mode for the games that benefit from it (Space Fury, Galaxian, etc).
-* DSi XL/LL - don't bother... the XL/LL screen decay is slower and games look great as-is.
-* DS-LITE/PHAT - you can try it but the framerate might drop below 60 on some games.
-
-To enable this new blend mode, pick your game and go into the "Game Options" sub-menu and turn it on.
-
