@@ -7,9 +7,9 @@ or else in /roms/bios or /data/bios
 
 Features :
 -----------------------
-* Super Game Module support with AY sound chip.
+* Super Game Module support including AY sound chip.
 * Megacart Bankswitching support (up to 512K).
-* Full Controller button mapping.
+* Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
 * Save/Load Game State (one slot).
 * Video Blend Mode (see below).
