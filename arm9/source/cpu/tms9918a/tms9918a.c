@@ -87,8 +87,13 @@ u16 ColTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 ChrGenM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 
-extern u8 bResetVLatch;
-
+// --------------------------------------------------------------------
+// This is set to '1' if we should reset the VDP Address Latch on data 
+// read/write or control reads (this is standard VDP behvaior but 
+// I'm not ready to make it standard yet as some games don't like it)
+// See loadrom() which will set or clear this based on the game.
+// --------------------------------------------------------------------
+u8 bResetVLatch = 0;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -587,13 +592,14 @@ ITCM_CODE void WrData9918(byte V)
 /*************************************************************/
 ITCM_CODE byte RdData9918(void) 
 {
-  register byte J;
-    
-  J         = VDPDlatch;
+  byte data;
+
+  data      = VDPDlatch;
   VDPDlatch = pVDPVidMem[VAddr];
   VAddr     = (VAddr+1)&0x3FFF;
-  if (bResetVLatch) VDPCtrlLatch = 0;  
-  return(J);
+  if (bResetVLatch) VDPCtrlLatch = 0;
+
+  return(data);
 }
 
 
@@ -630,10 +636,9 @@ ITCM_CODE byte RdCtrl9918(void)
 {
   byte data;
 
-  if (bResetVLatch) VDPCtrlLatch = 0;
-    
   data = VDPStatus;
   VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
+  if (bResetVLatch) VDPCtrlLatch = 0;
     
   return(data);
 }
