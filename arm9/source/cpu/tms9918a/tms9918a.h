@@ -10,7 +10,7 @@
 #define TMS9918_FRAMES      60
 #define TMS9918_CLOCK       (TMS9918_BASE/3)
 #define TMS9918_FRAME       (TMS9918_BASE/(3*60))
-#define TMS9918_LINE        (TMS9918_BASE/(3*60*262))
+#define TMS9918_LINE        (TMS9918_BASE/(3*60*263))   // Really 262.5 but we round up
 
 #define TMS9918_REG1_RAM16K 0x80 /* 1: 16kB VRAM (0=4kB)     */
 #define TMS9918_REG1_SCREEN 0x40 /* 1: Enable display        */
@@ -23,7 +23,7 @@
 #define TMS9918_STAT_OVRLAP 0x20 /* 1: Sprites overlap       */
 #define TMS9918_STAT_5THNUM 0x1F /* Number of the 5th sprite */
 
-#define TMS9918_LINES       262
+#define TMS9918_LINES       263  /* Really 262.5 */
 #define TMS9918_START_LINE  (3+13+27)
 #define TMS9918_END_LINE    (TMS9918_START_LINE+192)
 

@@ -46,7 +46,7 @@ struct score_t
     char    initials[4];        // With NULL this is only 3 ascii characters
     char    score[7];           // Six digits of score 
     char    reserved[5];        // For the future...
-    u16  year;               // Date score was achieved. We'll auto-fill this from DS time
+    u16  year;                  // Date score was achieved. We'll auto-fill this from DS time
     u8   month;
     u8   day;
 };

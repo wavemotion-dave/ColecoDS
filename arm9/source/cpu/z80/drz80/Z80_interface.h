@@ -17,7 +17,7 @@
 
 #define Z80_VECTOR(device,state) (((device)<<8)|(state))
 
-struct Z80_Regs {
+struct __attribute__((__packed__)) Z80_Regs {
   struct DrZ80 regs;
   u8 *z80Base;
   u32 port16bits;

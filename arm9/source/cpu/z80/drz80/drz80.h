@@ -30,7 +30,7 @@ extern "C" {
 
 extern int DrZ80Ver; /* Version number of library */
 
-struct DrZ80
+struct __attribute__((__packed__))  DrZ80
 { 
   unsigned int Z80PC;           /*0x00 - PC Program Counter (Memory Base + PC) */
   unsigned int Z80A;            /*0x04 - A Register:   0xAA------ */
@@ -49,14 +49,14 @@ struct DrZ80
   unsigned int Z80BC2;          /*0x38 - B'C' Registers: 0xBBCC---- */
   unsigned int Z80DE2;          /*0x3C - D'E' Registers: 0xDDEE---- */
   unsigned int Z80HL2;          /*0x40 - H'L' Registers: 0xHHLL---- */    
-  int cycles;		/* Cycles pending to be executed yet */
-  unsigned char Z80_IRQ;        /*0x44 - Set IRQ Number */   
-  unsigned char Z80IF;          /*0x48 - Interrupt Flags:  bit1=_IFF1, bit2=_IFF2, bit3=_HALT */
-  unsigned char Z80IM;          /*0x4C - Set IRQ Mode */
-  unsigned char spare;          /*0x4C - N/A */
-  unsigned int z80irqvector;    /*0x38 - Set IRQ Vector i.e. 0xFF=RST */
-  int pending_irq;	/* MAME Pending Interrupts */
-  int z80intadr;
+  int cycles;                   /*0x44 - Cycles pending to be executed yet */
+  unsigned char Z80_IRQ;        /*0x48 - Set IRQ Number */   
+  unsigned char Z80IF;          /*0x4C - Interrupt Flags:  bit1=_IFF1, bit2=_IFF2, bit3=_HALT */
+  unsigned char Z80IM;          /*0x50 - Set IRQ Mode */
+  unsigned char spare;          /*0x54 - N/A */
+  unsigned int z80irqvector;    /*0x58 - Set IRQ Vector i.e. 0xFF=RST */
+  int pending_irq;              /*0x5C - External Handler Pending Interrupts */
+  int z80intadr;                /*0x60 - Interrupt Address */
   void (*z80_irq_callback )(void);
   void (*z80_write8 )(unsigned char d,unsigned short a); 
   void (*z80_write16 )(unsigned short d,unsigned short a); 
