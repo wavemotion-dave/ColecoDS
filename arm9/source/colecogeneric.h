@@ -20,7 +20,7 @@ typedef struct {
 #define MAX_CONFIGS 400
 #define CONFIG_VER  0x0001
 
-struct Config_t
+struct __attribute__((__packed__)) Config_t
 {
     u16 config_ver;
     u32 game_crc;

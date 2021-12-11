@@ -27,7 +27,7 @@
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x000B        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x000C        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
@@ -92,7 +92,7 @@ SN76496 aycol   __attribute__((section(".dtcm")));
 void sgm_reset(void)
 {
     //make sure Super Game Module registers for AY chip are clear...
-    memset(ay_reg, 0x00, 256);
+    memset(ay_reg, 0x00, 256);   // Clear the AY registers...
     ay_reg[0x07] = 0xFF;         // Everything turned off to start...
     ay_reg[0x0E] = 0xFF;         // These are "max attenuation" volumes
     ay_reg[0x0F] = 0xFF;         // to keep the volume disabled
@@ -392,11 +392,11 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
             SprTab = pSvg + pVDPVidMem;
             
-            // Load PSG
+            // Load PSG Sound Stuff
             if (uNbO) uNbO = fread(&sncol, sizeof(sncol),1, handle); 
             if (uNbO) uNbO = fread(&aycol, sizeof(aycol),1, handle);
             
-            // Load the SGM low memory (don't care if this one fails)
+            // Load the SGM low memory
             if (uNbO) uNbO = fread(sgm_low_mem, 0x2000,1, handle);
             
             // Fix up transparency
@@ -494,7 +494,6 @@ void getfile_crc(const char *path)
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
-u8 bForceResetVLatch=0;
 u8 loadrom(const char *path,u8 * ptr, int nmemb) 
 {
   u8 bOK = 0;
@@ -513,17 +512,12 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // Only Lord of the Dungeon allows SRAM writting in this area... 
         // -----------------------------------------------------------------
         sRamAtE000_OK = 0;  
-        if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      //32K version of the rom
-        if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of the rom
-        
-        // -------------------------------------------------------------------------
-        // Check for a few games that need to have special VDPCtrlLatch handling...
-        // -------------------------------------------------------------------------
-        bResetVLatch = (bForceResetVLatch ? 1:0);
-        if (file_crc == 0x312980d5) bResetVLatch = 1;       // Ghost Blaster (Homebrew)
-        if (file_crc == 0x6a162c7d) bResetVLatch = 1;       // Meteoric Shower (Bitcorp)
-        if (file_crc == 0x4491a35b) bResetVLatch = 1;       // Nova Blast (Imagic)
-        
+        if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      //32K version of Lord of the Dungeon
+        if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of Lord of the Dungeon
+
+        // --------------------------------------------------------------------------
+        // There are a few games that don't want the SGM module... Check those now.
+        // --------------------------------------------------------------------------
         AY_NeverEnable = false;                             // Default to allow AY sound
         SGM_NeverEnable = false;                            // And allow SGM by default unless Super DK or Super DK-Jr (directly below)
         if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes

@@ -2,9 +2,6 @@
 *  ColecoDS TMS9918A (video) file
 *  Ver 1.0
 *
-*  Copyright (C) 2006 AlekMaul . All rights reserved.
-*       http://www.portabledev.com
-*
 ** File: tms9928a.c -- software implementation of the Texas Instruments
 **                     TMS9918A used by the Colecovision.
 **
@@ -16,14 +13,10 @@
 ** Note: much of this file is from the ColEM emulator core by Marat Fayzullin
 **       but heavily modified for specific NDS use. If you want to use this
 **       code, you are advised to seek out the latest ColEM core online.
+**       We've added the VDP Control Latch reset on data read/write and
+**       on control reads - this was missing from the ColEM handlers. 
+*        We've also patched in a lutTablehh[] for very fast color handling.
 **
-** WARNING:  The use of control latch here is not to specifications.
-**           This latch should be reset on all data and control reads - but 
-**           the original ColEM sources said this caused problems - and so it
-**           does cause problems (via experimentation - some games run much 
-**           worse). This should be fixed someday... but good enough for now.
-**           Edit:  For a few games that really want this handling, it can be
-**           enabled on a per-game basis. See colecomngt.c for this flag.
 ******************************************************************************/
 #include <nds.h>
 #include <stdio.h>
@@ -87,13 +80,6 @@ u16 ColTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 ChrGenM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 
-// --------------------------------------------------------------------
-// This is set to '1' if we should reset the VDP Address Latch on data 
-// read/write or control reads (this is standard VDP behvaior but 
-// I'm not ready to make it standard yet as some games don't like it)
-// See loadrom() which will set or clear this based on the game.
-// --------------------------------------------------------------------
-u8 bResetVLatch = 0;
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -483,7 +469,7 @@ void ITCM_CODE RefreshLine3(u8 uY) {
 
 
 /*********************************************************************************
- * Emulator calls this function to write byte V into a VDP register R
+ * Emulator calls this function to write byte 'value' into a VDP register 'iReg'
  ********************************************************************************/
 ITCM_CODE byte Write9918(u8 iReg, u8 value) 
 { 
@@ -493,7 +479,7 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
   static u8 VDP_RegisterMasks[] = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };    
     
   iReg &= 0x07;
-  value &= VDP_RegisterMasks[iReg & 0x07];
+  value &= VDP_RegisterMasks[iReg];
     
   /* Enabling IRQs may cause an IRQ here */
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
@@ -583,7 +569,7 @@ ITCM_CODE void WrData9918(byte V)
 {
     VDPDlatch = pVDPVidMem[VAddr] = V;
     VAddr     = (VAddr+1)&0x3FFF;
-    if (bResetVLatch) VDPCtrlLatch = 0;
+    VDPCtrlLatch = 0;
 }
 
 
@@ -597,7 +583,7 @@ ITCM_CODE byte RdData9918(void)
   data      = VDPDlatch;
   VDPDlatch = pVDPVidMem[VAddr];
   VAddr     = (VAddr+1)&0x3FFF;
-  if (bResetVLatch) VDPCtrlLatch = 0;
+  VDPCtrlLatch = 0;
 
   return(data);
 }
@@ -612,7 +598,7 @@ ITCM_CODE byte WrCtrl9918(byte value)
 {
   if(VDPCtrlLatch)  // Write the high byte of the video address
   { 
-    VDPCtrlLatch=0;
+    VDPCtrlLatch=0; // Set the VDP flip-flop so we do the low byte next
       
     VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;                                // Set the high byte of the video address always
     if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));                   // Might generate an IRQ if we end up enabling interrupts and VBlank set
@@ -620,7 +606,7 @@ ITCM_CODE byte WrCtrl9918(byte value)
   }
   else  // Write the low byte of the video address / control register
   {
-      VDPCtrlLatch=1; 
+      VDPCtrlLatch=1;   // Set the VDP flip-flow so we do the high byte next
       VAddr=(VAddr&0xFF00)|value; 
   }
 
@@ -638,7 +624,7 @@ ITCM_CODE byte RdCtrl9918(void)
 
   data = VDPStatus;
   VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
-  if (bResetVLatch) VDPCtrlLatch = 0;
+  VDPCtrlLatch = 0;
     
   return(data);
 }
@@ -705,7 +691,7 @@ void Reset9918(void)
 {
     memset(VDP,0x00,sizeof(VDP));       // Initialize VDP registers
     memset(pVDPVidMem, 0x00, 0x4000);   // Reset Video memory 
-    VDPCtrlLatch=0;                     // VDP control latch
+    VDPCtrlLatch=0;                     // VDP control latch (flip-flop)
     VDPStatus=0x00;                     // VDP status register
     VAddr = 0x0000;                     // VDP address register
     FGColor=BGColor=0;                  // Fore/Background color
@@ -725,28 +711,28 @@ void Reset9918(void)
     // -------------------------------------------------------------
     // Our background/foreground table makes computations FAST!
     // -------------------------------------------------------------
-  int colfg,colbg;
-  for (colfg=0;colfg<16;colfg++) {
-    for (colbg=0;colbg<16;colbg++) {
-      lutTablehh[colfg][colbg][ 0] = (colbg<<0) | (colbg<<8) | (colbg<<16) | (colbg<<24); // 0 0 0 0
-      lutTablehh[colfg][colbg][ 1] = (colbg<<0) | (colbg<<8) | (colbg<<16) | (colfg<<24); // 0 0 0 1
-      lutTablehh[colfg][colbg][ 2] = (colbg<<0) | (colbg<<8) | (colfg<<16) | (colbg<<24); // 0 0 1 0
-      lutTablehh[colfg][colbg][ 3] = (colbg<<0) | (colbg<<8) | (colfg<<16) | (colfg<<24); // 0 0 1 1
-      lutTablehh[colfg][colbg][ 4] = (colbg<<0) | (colfg<<8) | (colbg<<16) | (colbg<<24); // 0 1 0 0
-      lutTablehh[colfg][colbg][ 5] = (colbg<<0) | (colfg<<8) | (colbg<<16) | (colfg<<24); // 0 1 0 1
-      lutTablehh[colfg][colbg][ 6] = (colbg<<0) | (colfg<<8) | (colfg<<16) | (colbg<<24); // 0 1 1 0
-      lutTablehh[colfg][colbg][ 7] = (colbg<<0) | (colfg<<8) | (colfg<<16) | (colfg<<24); // 0 1 1 1
+    int colfg,colbg;
+    for (colfg=0;colfg<16;colfg++) {
+        for (colbg=0;colbg<16;colbg++) {
+          lutTablehh[colfg][colbg][ 0] = (colbg<<0) | (colbg<<8) | (colbg<<16) | (colbg<<24); // 0 0 0 0
+          lutTablehh[colfg][colbg][ 1] = (colbg<<0) | (colbg<<8) | (colbg<<16) | (colfg<<24); // 0 0 0 1
+          lutTablehh[colfg][colbg][ 2] = (colbg<<0) | (colbg<<8) | (colfg<<16) | (colbg<<24); // 0 0 1 0
+          lutTablehh[colfg][colbg][ 3] = (colbg<<0) | (colbg<<8) | (colfg<<16) | (colfg<<24); // 0 0 1 1
+          lutTablehh[colfg][colbg][ 4] = (colbg<<0) | (colfg<<8) | (colbg<<16) | (colbg<<24); // 0 1 0 0
+          lutTablehh[colfg][colbg][ 5] = (colbg<<0) | (colfg<<8) | (colbg<<16) | (colfg<<24); // 0 1 0 1
+          lutTablehh[colfg][colbg][ 6] = (colbg<<0) | (colfg<<8) | (colfg<<16) | (colbg<<24); // 0 1 1 0
+          lutTablehh[colfg][colbg][ 7] = (colbg<<0) | (colfg<<8) | (colfg<<16) | (colfg<<24); // 0 1 1 1
 
-      lutTablehh[colfg][colbg][ 8] = (colfg<<0) | (colbg<<8) | (colbg<<16) | (colbg<<24); // 1 0 0 0
-      lutTablehh[colfg][colbg][ 9] = (colfg<<0) | (colbg<<8) | (colbg<<16) | (colfg<<24); // 1 0 0 1
-      lutTablehh[colfg][colbg][10] = (colfg<<0) | (colbg<<8) | (colfg<<16) | (colbg<<24); // 1 0 1 0
-      lutTablehh[colfg][colbg][11] = (colfg<<0) | (colbg<<8) | (colfg<<16) | (colfg<<24); // 1 0 1 1
-      lutTablehh[colfg][colbg][12] = (colfg<<0) | (colfg<<8) | (colbg<<16) | (colbg<<24); // 1 1 0 0
-      lutTablehh[colfg][colbg][13] = (colfg<<0) | (colfg<<8) | (colbg<<16) | (colfg<<24); // 1 1 0 1
-      lutTablehh[colfg][colbg][14] = (colfg<<0) | (colfg<<8) | (colfg<<16) | (colbg<<24); // 1 1 1 0
-      lutTablehh[colfg][colbg][15] = (colfg<<0) | (colfg<<8) | (colfg<<16) | (colfg<<24); // 1 1 1 1
+          lutTablehh[colfg][colbg][ 8] = (colfg<<0) | (colbg<<8) | (colbg<<16) | (colbg<<24); // 1 0 0 0
+          lutTablehh[colfg][colbg][ 9] = (colfg<<0) | (colbg<<8) | (colbg<<16) | (colfg<<24); // 1 0 0 1
+          lutTablehh[colfg][colbg][10] = (colfg<<0) | (colbg<<8) | (colfg<<16) | (colbg<<24); // 1 0 1 0
+          lutTablehh[colfg][colbg][11] = (colfg<<0) | (colbg<<8) | (colfg<<16) | (colfg<<24); // 1 0 1 1
+          lutTablehh[colfg][colbg][12] = (colfg<<0) | (colfg<<8) | (colbg<<16) | (colbg<<24); // 1 1 0 0
+          lutTablehh[colfg][colbg][13] = (colfg<<0) | (colfg<<8) | (colbg<<16) | (colfg<<24); // 1 1 0 1
+          lutTablehh[colfg][colbg][14] = (colfg<<0) | (colfg<<8) | (colfg<<16) | (colbg<<24); // 1 1 1 0
+          lutTablehh[colfg][colbg][15] = (colfg<<0) | (colfg<<8) | (colfg<<16) | (colfg<<24); // 1 1 1 1
+        }
     }
-  }
 }
 
 // End of file

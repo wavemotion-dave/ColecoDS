@@ -8,7 +8,8 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct __attribute__((__packed__))  
+{
 	u16 ch0Frq;
 	u16 ch0Cnt;
 	u16 ch1Frq;

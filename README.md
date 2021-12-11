@@ -48,17 +48,17 @@ and updated Sprite/Line handling from ColEM 5.6
 
 Known Issues :
 -----------------------
-* Fathom won't render screen properly. Unknown cause.
 * Deep Dungeon Adventures won't run.
 * Uridium won't run.
 * Sudoku has graphical issues (still playable).
 * Super Pac Man has major graphical issues.
+* Dungeon and Trolls crashes after 10-15 seconds of play.
 * Super Space Acer crashes after a few seconds of play.
 * Pillars won't run.
 * Vexxed won't run.
 * Missile-Strike crashes about 10-15 seconds into the gameplay.
 * Astrostorm crashes about 10-15 seconds into the gameplay.
-* Arno Dash and Diamond Dash 2 glitch out soon after loading.
+* Arno Dash and Diamond Dash 2 won't run.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 
