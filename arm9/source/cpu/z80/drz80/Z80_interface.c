@@ -21,7 +21,6 @@
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
 u16 cpuirequest     __attribute__((section(".dtcm"))) = 0;
-u32 dwElapsedTicks  __attribute__((section(".dtcm"))) = 0;
 u8 lastBank         __attribute__((section(".dtcm"))) = 199;
 
 extern u8 romBankMask;
@@ -55,9 +54,9 @@ ITCM_CODE u8 cpu_readmem16 (u16 address) {
 // -----------------------------
 // Normal 16-bit Read... fast!
 // -----------------------------
-ITCM_CODE u16 drz80MemReadW(u16 addr) 
+ITCM_CODE u16 drz80MemReadW(u16 address) 
 {
-    return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
+    return (pColecoMem[address]  |  (pColecoMem[address+1] << 8));
 }
 
 // ------------------------------------------------
@@ -142,7 +141,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 
     // -------------------------------------------------------------------------
     // Check for writing hotspots in Activision PCB carts and MegaCarts...
-    // I'm really not sure if this ever happens or is supported by the MC
+    // I'm really not sure if this ever happens or is even supported by the MC
     // specifications - but other emulators seem to do it so we'll follow suit.
     // -------------------------------------------------------------------------
     if (romBankMask != 0)
@@ -256,7 +255,6 @@ ITCM_CODE int DrZ80_execute(u32 cycles)
     
   DrZ80Run(&drz80, cycles);
 
-  dwElapsedTicks += cycles;
   return (cycles-drz80.cycles);
 }
 

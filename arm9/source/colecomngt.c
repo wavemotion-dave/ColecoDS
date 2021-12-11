@@ -62,9 +62,8 @@ u8 AY_Enable      __attribute__((section(".dtcm"))) = false;
 u8 AY_NeverEnable __attribute__((section(".dtcm"))) = false;
 u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
 
-u8 pad0[32];
-u8  JoyMode=0;        // Joystick Mode
-u32 JoyState=0;       // Joystick States
+u8  JoyMode = 0;            // Joystick Mode
+u32 JoyState = 0;           // Joystick States
 
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
@@ -74,8 +73,6 @@ u8 bActivisionPCB = 0;      // Activision PCB is 64K with EEPROM
 u8 sRamAtE000_OK  = 0;      // Lord of the Dungeon is the only game that needs this
 
 u32 file_crc = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
-u8 pad1[32];                // Pad out space... at one time was concerned about 
-                            // crc corruption but the pads been in long enough to stay.
 
 u8 sgm_low_mem[8192] = {0}; // The 8K of SGM RAM that can be mapped into the BIOS area
 
@@ -727,12 +724,12 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 ITCM_CODE u32 LoopZ80() 
 {
   cpuirequest=0;
-  
-  // Execute 1 scanline worth of CPU
-  DrZ80_execute(TMS9918_LINE);
-    
+
   // Just in case there are AY audio envelopes... this is very rough timing.
   if (AY_Enable) FakeAY_Loop();
+    
+  // Execute 1 scanline worth of CPU
+  DrZ80_execute(TMS9918_LINE);
     
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;

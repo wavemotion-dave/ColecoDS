@@ -690,6 +690,7 @@ ITCM_CODE byte Loop9918(void)
 void Reset9918(void) 
 {
     memset(VDP,0x00,sizeof(VDP));       // Initialize VDP registers
+    VDP[1] = 0x80;                      // Force 16K Video Memory
     memset(pVDPVidMem, 0x00, 0x4000);   // Reset Video memory 
     VDPCtrlLatch=0;                     // VDP control latch (flip-flop)
     VDPStatus=0x00;                     // VDP status register
