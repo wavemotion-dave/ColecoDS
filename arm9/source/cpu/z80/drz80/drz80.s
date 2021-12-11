@@ -1225,7 +1225,8 @@ DoInterrupt_mode0:
 	mov r0,r2,lsr#16
 	;@ rebase new pc
 	rebasepc
-    eatcycles 13
+
+	eatcycles 13
 	b DoInterrupt_end
 
 1:
@@ -1240,6 +1241,7 @@ DoInterrupt_mode0:
 	;@ rebase new pc
 	rebasepc
 
+	eatcycles 13
 	b DoInterrupt_end
 
 DoInterrupt_mode1:
@@ -1257,7 +1259,8 @@ DoInterrupt_mode1:
 	;@ mov r0,#0x38
   ldr r0,[cpucontext,#z80intadr]
 	rebasepc
-    eatcycles 13
+
+	eatcycles 13
 	b DoInterrupt_end
 
 DoInterrupt_mode2:
@@ -1289,13 +1292,13 @@ DoInterrupt_mode2:
 	ldr pc,[cpucontext,#z80_rebasePC] ;@ r0=new pc - external function sets z80pc_base and returns new z80pc in r0
 	ldmfd sp!,{r3,r12}
 	mov z80pc,r0	
-    eatcycles 17
+	eatcycles 17
 
 DoInterrupt_end:
 	;@ interupt accepted so callback irq interface
 	ldr r0,[cpucontext, #z80irqcallback]
 	tst r0,r0
-    streqb r0,[cpucontext,#z80irq]       ;@ default handling
+	streqb r0,[cpucontext,#z80irq]       ;@ default handling
 	ldmeqfd sp!,{pc}
 	stmfd sp!,{r3,r12}
 	mov lr,pc
@@ -1304,7 +1307,7 @@ DoInterrupt_end:
 	ldmfd sp!,{pc} ;@ return
 
 .section .text
-
+.align 4
 DAATable: .hword  (0x00<<8)|(1<<ZFlag)|(1<<VFlag)
          .hword  (0x01<<8)                  
          .hword  (0x02<<8)                  
@@ -3354,6 +3357,8 @@ DAATable: .hword  (0x00<<8)|(1<<ZFlag)|(1<<VFlag)
          .hword  (0x98<<8)|(1<<SFlag)            |(1<<NFlag)|(1<<CFlag)
          .hword  (0x99<<8)|(1<<SFlag)         |(1<<VFlag)|(1<<NFlag)|(1<<CFlag)
          
+.align 4
+
 AF_Z80:  .byte (0<<Z80_CFlag)|(0<<Z80_NFlag)|(0<<Z80_VFlag)|(0<<Z80_HFlag)|(0<<Z80_ZFlag)|(0<<Z80_SFlag) ;@ 0
          .byte (0<<Z80_CFlag)|(0<<Z80_NFlag)|(1<<Z80_VFlag)|(0<<Z80_HFlag)|(0<<Z80_ZFlag)|(0<<Z80_SFlag) ;@ 1
          .byte (1<<Z80_CFlag)|(0<<Z80_NFlag)|(0<<Z80_VFlag)|(0<<Z80_HFlag)|(0<<Z80_ZFlag)|(0<<Z80_SFlag) ;@ 2
@@ -3610,6 +3615,8 @@ AF_Z80:  .byte (0<<Z80_CFlag)|(0<<Z80_NFlag)|(0<<Z80_VFlag)|(0<<Z80_HFlag)|(0<<Z
          .byte (0<<Z80_CFlag)|(1<<Z80_NFlag)|(1<<Z80_VFlag)|(1<<Z80_HFlag)|(1<<Z80_ZFlag)|(1<<Z80_SFlag) ;@ 253
          .byte (1<<Z80_CFlag)|(1<<Z80_NFlag)|(0<<Z80_VFlag)|(1<<Z80_HFlag)|(1<<Z80_ZFlag)|(1<<Z80_SFlag) ;@ 254
          .byte (1<<Z80_CFlag)|(1<<Z80_NFlag)|(1<<Z80_VFlag)|(1<<Z80_HFlag)|(1<<Z80_ZFlag)|(1<<Z80_SFlag) ;@ 255
+
+.align 4
 
 AF_ARM:  .byte (0<<CFlag)|(0<<NFlag)|(0<<VFlag)|(0<<HFlag)|(0<<ZFlag)|(0<<SFlag)  ;@ 0
          .byte (1<<CFlag)|(0<<NFlag)|(0<<VFlag)|(0<<HFlag)|(0<<ZFlag)|(0<<SFlag)  ;@ 1
@@ -3868,6 +3875,8 @@ AF_ARM:  .byte (0<<CFlag)|(0<<NFlag)|(0<<VFlag)|(0<<HFlag)|(0<<ZFlag)|(0<<SFlag)
          .byte (0<<CFlag)|(1<<NFlag)|(1<<VFlag)|(1<<HFlag)|(1<<ZFlag)|(1<<SFlag)  ;@ 254
          .byte (1<<CFlag)|(1<<NFlag)|(1<<VFlag)|(1<<HFlag)|(1<<ZFlag)|(1<<SFlag)  ;@ 255
 
+.align 4
+
 PZSTable_data: .byte (1<<ZFlag)|(1<<VFlag),0,0,(1<<VFlag),0,(1<<VFlag),(1<<VFlag),0
 	.byte  0,(1<<VFlag),(1<<VFlag),0,(1<<VFlag),0,0,(1<<VFlag)
 	.byte  0,(1<<VFlag),(1<<VFlag),0,(1<<VFlag),0,0,(1<<VFlag),(1<<VFlag),0,0,(1<<VFlag),0,(1<<VFlag),(1<<VFlag),0
@@ -3909,6 +3918,9 @@ PZSTable_data: .byte (1<<ZFlag)|(1<<VFlag),0,0,(1<<VFlag),0,(1<<VFlag),(1<<VFlag
 	.byte  (1<<SFlag),(1<<SFlag)|(1<<VFlag),(1<<SFlag)|(1<<VFlag),(1<<SFlag)
 	.byte  (1<<SFlag),(1<<SFlag)|(1<<VFlag),(1<<SFlag)|(1<<VFlag),(1<<SFlag)
 	.byte  (1<<SFlag)|(1<<VFlag),(1<<SFlag),(1<<SFlag),(1<<SFlag)|(1<<VFlag)       
+
+.align 4
+
 MAIN_opcodes:	
 	.word opcode_0_0,opcode_0_1,opcode_0_2,opcode_0_3,opcode_0_4,opcode_0_5,opcode_0_6,opcode_0_7
 	.word opcode_0_8,opcode_0_9,opcode_0_A,opcode_0_B,opcode_0_C,opcode_0_D,opcode_0_E,opcode_0_F
@@ -3943,6 +3955,8 @@ MAIN_opcodes:
 	.word opcode_F_0,opcode_F_1,opcode_F_2,opcode_F_3,opcode_F_4,opcode_F_5,opcode_F_6,opcode_F_7
 	.word opcode_F_8,opcode_F_9,opcode_F_A,opcode_F_B,opcode_F_C,opcode_F_D,opcode_F_E,opcode_F_F
 
+.align 4
+
 EI_DUMMY_opcodes:
 	.word ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return ;@0
 	.word ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return ;@0
@@ -3976,6 +3990,8 @@ EI_DUMMY_opcodes:
 	.word ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return ;@E
 	.word ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return ;@F
 	.word ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return,ei_return ;@F
+
+.align 4
 
 ;@NOP
 opcode_0_0:
@@ -5410,7 +5426,7 @@ ei_return:
 	;@point that program returns from EI to check interupts
 	;@an interupt can not be taken directly after a EI opcode
 	;@ reset z80pc and opcode pointer
-    ldrh r0,[cpucontext,#z80irq] @ 0x4C, irq and IFF bits
+	ldrh r0,[cpucontext,#z80irq] @ 0x4C, irq and IFF bits
 	sub z80pc,z80pc,#1
 	ldr opcodes,MAIN_opcodes_POINTER
 	;@ check ints
@@ -7237,8 +7253,8 @@ opcode_DD_E3:
 	fetch 23
 ;@PUSH IX
 opcode_DD_E5:
-	ldr r0,[z80xx]
-	opPUSHreg r0
+	ldr r2,[z80xx]
+	opPUSHreg r2
 	fetch 15
 ;@JP (IX)
 opcode_DD_E9:
@@ -7313,7 +7329,7 @@ opcode_ED_44:
 
 ;@IM 0
 opcode_ED_46:
-	strb z80a,[cpucontext,#z80im]			;@zero IM
+	strb z80a,[cpucontext,#z80im]
 	fetch 8
 ;@LD I,A
 opcode_ED_47:

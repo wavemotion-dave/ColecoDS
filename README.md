@@ -94,6 +94,11 @@ To enable this new blend mode, pick your game and go into the "Game Options" sub
 
 Versions :
 -----------------------
+V4.1: 11-Dec-2021 by wavemotion-dave
+* VDP Timing fixes - Fathom now runs.
+* Fixed loading of coleco.rom bios if in same directory as emulator.
+* Minor Z80 cleanups for more accurate timing.
+
 V4.0: 09-Dec-2021 by wavemotion-dave
 * Fix GhostBlaster homebrew.
 * Fix for graphical issues in Meteoric Shower

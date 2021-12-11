@@ -788,6 +788,11 @@ int main(int argc, char **argv)
   irqSet(IRQ_VBLANK,  irqVBlank);
   irqEnable(IRQ_VBLANK);
     
+  // -----------------------------------------------------------------
+  // Grab the BIOS before we try to switch any directories around...
+  // -----------------------------------------------------------------
+  bool bColecoBiosFound =  ColecoBIOSFound();    
+    
   //  Handle command line argument... mostly for TWL++
   if  (argc > 1) 
   {
@@ -824,7 +829,7 @@ int main(int argc, char **argv)
   {
     colecoDSInit();
 
-    if (ColecoBIOSFound())
+    if (bColecoBiosFound)
     {
         AffChaine(2,9,0,"ALL IS OK ...");
         AffChaine(2,11,0,"coleco.rom BIOS FOUND");
