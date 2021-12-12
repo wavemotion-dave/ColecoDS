@@ -38,13 +38,25 @@ u8 *XBuf __attribute__((section(".dtcm"))) = XBuf_A;
 // Look up table for colors - pre-generated and in VRAM for maximum speed!
 u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
 
-// Screen handlers and masks for VDP table address registers
+// ---------------------------------------------------------------------------------------
+// Screen handlers and masks for VDP table address registers. 
+// Screen modes are confusing as different documentation (MSX, Coleco, VDP manuals, etc)
+// all seem to refer to 'Modes' vs 'Screens' vs more colorful names for the modes
+// plus there are the undocumented modes. So I've done my best to comment using 
+// all of the names you will find out there in the wild world of VDP documentation!
+// ---------------------------------------------------------------------------------------
 tScrMode SCR[MAXSCREEN+1] = {
                 // R2,  R3,  R4,  R5,  R6,  M2,  M3,  M4,  M5
-  { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 0:TEXT 40x24    */
-  { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 1:TEXT 32x24    */
-  { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F,0x00,0x7F,0x03,0x00 },/* SCREEN 2:BLOCK 256x192 */
-  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 3:GFX 64x48x16  */
+  { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 1 aka MSX SCREEN 0 aka "TEXT 1"     */
+  { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 0 aka MSX SCREEN 1 aka "GRAPHIC 1"  */
+  { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F,0x00,0x7F,0x03,0x00 }, /* VDP Mode 3 aka MSX SCREEN 2 aka "GRAPHIC 2"  */
+  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 2 aka MSX SCREEN 3 aka "MULTICOLOR" */
+      
+//  { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 0:TEXT 40x24    */
+//  { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 1:TEXT 32x24    */
+//  { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F,0x00,0x7F,0x03,0x00 },/* SCREEN 2:BLOCK 256x192 */
+//  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 3:GFX 64x48x16  */
+      
 };
 
 /** Palette9918[] ********************************************/
@@ -473,7 +485,7 @@ void ITCM_CODE RefreshLine3(u8 uY) {
  ********************************************************************************/
 ITCM_CODE byte Write9918(u8 iReg, u8 value) 
 { 
-  int J;
+  int newMode;
   int VRAMMask;
   byte bIRQ;
   static u8 VDP_RegisterMasks[] = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };    
@@ -494,20 +506,30 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
   switch (iReg) {
     case 0: /* Mode register 0 */
     case 1: /* Mode register 1 */
-      /* Figure out new screen mode number */
-      switch(TMS9918_Mode) {
-        case 0x00: J=1;break;
-        case 0x01: J=2;break;
-        case 0x02: J=3;break;
-        case 0x04: J=0;break;
-        default:   J=ScrMode;break;
+    // Figure out new screen mode number:
+    //              M1      M2      M3      VDP Mode
+    //      0x00    0       0       0       Mode 0   - Screen1
+    //      0x01    0       0       1       Mode 3   - Screen3
+    //      0x02    0       1       0       Mode 2   - Screen2
+    //      0x04    1       0       0       Mode 1   - Screen0
+    //      0x06    1       1       0       Mode 1+2 - Undocumented. Like Mode 1.
+    //      0x03    0       1       1       Mode 2+3 - Undocumented. Like Mode 3.
+      switch(TMS9918_Mode) 
+      {
+        case 0x00: newMode=1;break;         /* VDP Mode 0 aka MSX SCREEN 1 aka "GRAPHIC 1"     */
+        case 0x01: newMode=2;break;         /* VDP Mode 3 aka MSX SCREEN 2 aka "GRAPHIC 2"     */
+        case 0x02: newMode=3;break;         /* VDP Mode 2 aka MSX SCREEN 3 aka "MULTICOLOR"    */
+        case 0x04: newMode=0;break;         /* VDP Mode 1 aka MSX SCREEN 0 aka "TEXT 1"        */
+        //case 0x06: newMode=0;break;         /* Undocumented Mode 1+2 is like Mode 1 (SCREEN 0) */
+        //case 0x03: newMode=2;break;         /* Undocumented Mode 2+3 is like Mode 3 (SCREEN 2) */
+        default:   newMode=ScrMode;break;   /* Best we can do - just keep screen mode as-is    */
       }
-        
+          
       /* If mode was changed or VRAM size changed: recompute table addresses */
-      if ((J!=ScrMode) || !VRAMMask) 
+      if ((newMode!=ScrMode) || !VRAMMask) 
       {
         VRAMMask    = TMS9918_VRAMMask;
-        ScrMode=J;
+        ScrMode=newMode;
         ChrTab=pVDPVidMem+(((int)(VDP[2]&SCR[ScrMode].R2)<<10)&VRAMMask);
         ColTab=pVDPVidMem+(((int)(VDP[3]&SCR[ScrMode].R3)<<6)&VRAMMask);
         ChrGen=pVDPVidMem+(((int)(VDP[4]&SCR[ScrMode].R4)<<11)&VRAMMask);
