@@ -36,6 +36,15 @@ int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
 char szName[256];
 
+const char szKeyName[20][16] = {
+  "INPUT_UP",         "INPUT_DOWN",       "INPUT_LEFT",       "INPUT_RIGHT",
+  "L BTN 1 (YLW)",    "R BTN 2 (RED)",    "KEYPAD #1",        "KEYPAD #2",
+  "KEYPAD #3",        "KEYPAD #4",        "KEYPAD #5",        "KEYPAD #6",
+  "KEYPAD #7",        "KEYPAD #8",        "KEYPAD #9",        "KEYPAD ##",
+  "KEYPAD #0",        "KEYPAD #*",        "BTN 3 (PURPLE)",   "BTN 4 (BLUE)"
+};
+
+
 /*********************************************************************************
  * Show A message with YES / NO
  ********************************************************************************/
@@ -944,7 +953,7 @@ void colecoDSChangeKeymap(void)
           }
           if (keysCurrent() & KEY_LEFT) {
             if (ucL == 0) {
-              bIndTch = (bIndTch == 0 ? 17 : bIndTch-1);
+              bIndTch = (bIndTch == 0 ? 19 : bIndTch-1);
               ucL=1;
               myConfig.keymap[ucY-7] = bIndTch;
               DisplayKeymapName(ucY);
@@ -959,7 +968,7 @@ void colecoDSChangeKeymap(void)
           }
           if (keysCurrent() & KEY_RIGHT) {
             if (ucR == 0) {
-              bIndTch = (bIndTch == 17 ? 0 : bIndTch+1);
+              bIndTch = (bIndTch == 19 ? 0 : bIndTch+1);
               ucR=1;
               myConfig.keymap[ucY-7] = bIndTch;
               DisplayKeymapName(ucY);

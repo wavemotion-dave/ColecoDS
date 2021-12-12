@@ -23,7 +23,7 @@
 #define TMS9918_STAT_OVRLAP 0x20 /* 1: Sprites overlap       */
 #define TMS9918_STAT_5THNUM 0x1F /* Number of the 5th sprite */
 
-#define TMS9918_LINES       263  // Really 262.5 but timing fares better at 263s
+#define TMS9918_LINES       263  // Really 262.5 but timing fares better at 263
 #define TMS9918_START_LINE  (3+13+27)
 #define TMS9918_END_LINE    (TMS9918_START_LINE+192)
 

@@ -45,8 +45,7 @@ extern u16 timingFrames;
 
 extern volatile u16 vusCptVBL;                   // Video Management
 
-extern char szKeyName[18][15];
-extern u16 keyCoresp[18];
+extern u16 keyCoresp[20];
 
 extern u8 pColecoMem[0x10000];                   // Coleco Memory
 
