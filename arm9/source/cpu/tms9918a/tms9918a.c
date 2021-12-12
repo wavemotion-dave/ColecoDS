@@ -508,10 +508,10 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
     case 1: /* Mode register 1 */
     // Figure out new screen mode number:
     //              M1      M2      M3      VDP Mode
-    //      0x00    0       0       0       Mode 0   - Screen1
-    //      0x01    0       0       1       Mode 3   - Screen3
-    //      0x02    0       1       0       Mode 2   - Screen2
-    //      0x04    1       0       0       Mode 1   - Screen0
+    //      0x00    0       0       0       Mode 0   - MSX SCREEN 1
+    //      0x01    0       0       1       Mode 3   - MSX SCREEN 2
+    //      0x02    0       1       0       Mode 2   - MSX SCREEN 3
+    //      0x04    1       0       0       Mode 1   - MSX SCREEN 0
     //      0x06    1       1       0       Mode 1+2 - Undocumented. Like Mode 1.
     //      0x03    0       1       1       Mode 2+3 - Undocumented. Like Mode 3.
       switch(TMS9918_Mode) 
@@ -520,8 +520,8 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
         case 0x01: newMode=2;break;         /* VDP Mode 3 aka MSX SCREEN 2 aka "GRAPHIC 2"     */
         case 0x02: newMode=3;break;         /* VDP Mode 2 aka MSX SCREEN 3 aka "MULTICOLOR"    */
         case 0x04: newMode=0;break;         /* VDP Mode 1 aka MSX SCREEN 0 aka "TEXT 1"        */
-        //case 0x06: newMode=0;break;         /* Undocumented Mode 1+2 is like Mode 1 (SCREEN 0) */
-        //case 0x03: newMode=2;break;         /* Undocumented Mode 2+3 is like Mode 3 (SCREEN 2) */
+        case 0x06: newMode=0;break;         /* Undocumented Mode 1+2 is like Mode 1 (SCREEN 0) */
+        case 0x03: newMode=2;break;         /* Undocumented Mode 2+3 is like Mode 3 (SCREEN 2) */
         default:   newMode=ScrMode;break;   /* Best we can do - just keep screen mode as-is    */
       }
           

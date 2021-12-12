@@ -51,6 +51,7 @@ Known Issues :
 * Deep Dungeon Adventures won't run.
 * Uridium won't run.
 * Sudoku has graphical issues (still playable).
+* Frantic Homebrew has graphical issues.
 * Super Pac Man has major graphical issues.
 * Dungeon and Trolls crashes after 10-15 seconds of play.
 * Super Space Acer crashes after a few seconds of play.
@@ -94,6 +95,9 @@ To enable this new blend mode, pick your game and go into the "Game Options" sub
 
 Versions :
 -----------------------
+V4.x: Not released yet
+* Allow mapping of Super Action Controller buttons
+
 V4.1: 11-Dec-2021 by wavemotion-dave
 * VDP Timing fixes - Fathom now runs.
 * Fixed loading of coleco.rom bios if in same directory as emulator.

@@ -66,39 +66,11 @@ u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of 
 
 int bg0, bg1, bg0b,bg1b;    // Some vars for NDS background screen handling
 
-char szKeyName[18][15] = {
-  "INPUT_UP",   "INPUT_DOWN",   "INPUT_LEFT",   "INPUT_RIGHT",
-  "BUTTON 1",   "BUTTON 2",     "KEYPAD #1",    "KEYPAD #2",
-  "KEYPAD #3",  "KEYPAD #4",    "KEYPAD #5",    "KEYPAD #6",
-  "KEYPAD #7",  "KEYPAD #8",    "KEYPAD #9",    "KEYPAD ##",
-  "KEYPAD #0",  "KEYPAD #*"
-};
-
-#define JST_UP        0x0100
-#define JST_RIGHT     0x0200
-#define JST_DOWN      0x0400
-#define JST_LEFT      0x0800
-#define JST_FIRER     0x0040
-#define JST_FIREL     0x4000
-#define JST_0         0x0005
-#define JST_1         0x0002
-#define JST_2         0x0008
-#define JST_3         0x0003
-#define JST_4         0x000D
-#define JST_5         0x000C
-#define JST_6         0x0001
-#define JST_7         0x000A
-#define JST_8         0x000E
-#define JST_9         0x0004
-#define JST_STAR      0x0006
-#define JST_POUND     0x0009
-#define JST_PURPLE    0x0007
-#define JST_BLUE      0x000B
-
-
-u16 keyCoresp[18] = {
+// The key map for the Colecovision...
+u16 keyCoresp[20] = {
     JST_UP, JST_DOWN, JST_LEFT, JST_RIGHT, JST_FIREL, JST_FIRER,
-    JST_1, JST_2, JST_3, JST_4, JST_5, JST_6, JST_7, JST_8, JST_9, JST_POUND, JST_0, JST_STAR
+    JST_1, JST_2, JST_3, JST_4, JST_5, JST_6, JST_7, JST_8, JST_9, 
+    JST_POUND, JST_0, JST_STAR, JST_PURPLE, JST_BLUE
 };
 
 
