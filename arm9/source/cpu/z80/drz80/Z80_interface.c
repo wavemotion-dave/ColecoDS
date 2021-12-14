@@ -139,28 +139,13 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         if (sRamAtE000_OK) pColecoMem[address+0x800]=value;
     }
 
-    // -------------------------------------------------------------------------
-    // Check for writing hotspots in Activision PCB carts and MegaCarts...
-    // I'm really not sure if this ever happens or is even supported by the MC
-    // specifications - but other emulators seem to do it so we'll follow suit.
-    // -------------------------------------------------------------------------
-    if (romBankMask != 0)
+    /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
+    if (bActivisionPCB)
     {
-        /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
-        if (bActivisionPCB)
-        {
-          if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
-          {
-              BankSwitch((address>>4) & romBankMask);
-          }
-        }
-        else if (bMagicMegaCart)
-        { 
-          if (address >= 0xFFC0)   // Otherwise check if we are hitting one of the MegaCart hotspots...
-          {
-              BankSwitch(address & romBankMask);
-          }
-        }
+      if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
+      {
+          BankSwitch((address>>4) & romBankMask);
+      }
     }
 }
 
@@ -249,7 +234,7 @@ void DrZ80_Reset(void) {
 }
 
 
-ITCM_CODE int DrZ80_execute(u32 cycles) 
+ITCM_CODE int DrZ80_execute(int cycles) 
 {
   drz80.cycles = cycles;
     

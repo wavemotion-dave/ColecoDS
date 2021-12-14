@@ -29,6 +29,9 @@
 #include "ecranBas.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
+#include "wargames.h"
+#include "mousetrap.h"
+#include "gateway.h"
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -530,21 +533,42 @@ ITCM_CODE void colecoDS_main(void)
         // --------------------------------------------------------------------------
         // Test the touchscreen rendering of the Coleco KEYPAD
         // --------------------------------------------------------------------------
-        ucUN = ( ((iTx>=160) && (iTy>=80) && (iTx<=183) && (iTy<=100)) ? 0x02: 0x00);
-        ucUN = ( ((iTx>=183) && (iTy>=80) && (iTx<=210) && (iTy<=100)) ? 0x08: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=80) && (iTx<=234) && (iTy<=100)) ? 0x03: ucUN);
-        
-        ucUN = ( ((iTx>=160) && (iTy>=101) && (iTx<=183) && (iTy<=122)) ? 0x0D: ucUN);
-        ucUN = ( ((iTx>=183) && (iTy>=101) && (iTx<=210) && (iTy<=122)) ? 0x0C: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=101) && (iTx<=234) && (iTy<=122)) ? 0x01: ucUN);
-        
-        ucUN = ( ((iTx>=160) && (iTy>=123) && (iTx<=183) && (iTy<=143)) ? 0x0A: ucUN);
-        ucUN = ( ((iTx>=183) && (iTy>=123) && (iTx<=210) && (iTy<=143)) ? 0x0E: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=123) && (iTx<=234) && (iTy<=143)) ? 0x04: ucUN);
-        
-        ucUN = ( ((iTx>=160) && (iTy>=144) && (iTx<=183) && (iTy<=164)) ? 0x06: ucUN);
-        ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x05: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x09: ucUN);
+        if (myConfig.overlay == 0) // Generic
+        {
+            ucUN = ( ((iTx>=160) && (iTy>=80) && (iTx<=183) && (iTy<=100)) ? 0x02: 0x00);
+            ucUN = ( ((iTx>=183) && (iTy>=80) && (iTx<=210) && (iTy<=100)) ? 0x08: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=80) && (iTx<=234) && (iTy<=100)) ? 0x03: ucUN);
+
+            ucUN = ( ((iTx>=160) && (iTy>=101) && (iTx<=183) && (iTy<=122)) ? 0x0D: ucUN);
+            ucUN = ( ((iTx>=183) && (iTy>=101) && (iTx<=210) && (iTy<=122)) ? 0x0C: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=101) && (iTx<=234) && (iTy<=122)) ? 0x01: ucUN);
+
+            ucUN = ( ((iTx>=160) && (iTy>=123) && (iTx<=183) && (iTy<=143)) ? 0x0A: ucUN);
+            ucUN = ( ((iTx>=183) && (iTy>=123) && (iTx<=210) && (iTy<=143)) ? 0x0E: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=123) && (iTx<=234) && (iTy<=143)) ? 0x04: ucUN);
+
+            ucUN = ( ((iTx>=160) && (iTy>=144) && (iTx<=183) && (iTy<=164)) ? 0x06: ucUN);
+            ucUN = ( ((iTx>=183) && (iTy>=144) && (iTx<=210) && (iTy<=164)) ? 0x05: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=144) && (iTx<=234) && (iTy<=164)) ? 0x09: ucUN);
+        }
+        else    // Custom Overlay has slightly wider touch field area
+        {
+            ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
+            ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
+
+            ucUN = ( ((iTx>=137) && (iTy>=73) && (iTx<=171) && (iTy<=110)) ? 0x0D: ucUN);
+            ucUN = ( ((iTx>=171) && (iTy>=73) && (iTx<=210) && (iTy<=110)) ? 0x0C: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=73) && (iTx<=248) && (iTy<=110)) ? 0x01: ucUN);
+
+            ucUN = ( ((iTx>=137) && (iTy>=111) && (iTx<=171) && (iTy<=147)) ? 0x0A: ucUN);
+            ucUN = ( ((iTx>=171) && (iTy>=111) && (iTx<=210) && (iTy<=147)) ? 0x0E: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=111) && (iTx<=248) && (iTy<=147)) ? 0x04: ucUN);
+
+            ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
+            ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
+        }
           
         if ((ucUN != 0) && (lastUN == 0))
         {
@@ -606,6 +630,12 @@ ITCM_CODE void colecoDS_main(void)
   }
 }
 
+
+void RestoreBottomScreen(void)
+{
+  //  Render the bottom screen
+}
+
 /*********************************************************************************
  * Init DS Emulator - setup VRAM banks and background screen rendering banks
  ********************************************************************************/
@@ -638,7 +668,7 @@ void colecoDSInit(void)
   unsigned  short dmaVal =*(bgGetMapPtr(bg0)+51*32);//  ecranHaut_map[51][0];           
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1),32*24*2);
 
-  //  Render the bottom screen
+  // Render the bottom screen for "options select" mode
   bg0b  = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
   bg1b  = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x512, 29,0);
   bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
@@ -647,7 +677,7 @@ void colecoDSInit(void)
   dmaCopy((void*) ecranBasSelPal,(void*)  BG_PALETTE_SUB,256*2);
   dmaVal  = *(bgGetMapPtr(bg0b)+24*32);// ecranBasSel_map[24][0];
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
-
+    
   //  Put out the initial messages looking for a file system
   AffChaine(2,6,0,"SEARCH FAT SYSTEM   ...   ");
   AffChaine(2,7,0,"FAT  SYSTEM FOUND   !");
@@ -661,13 +691,41 @@ void colecoDSInit(void)
 // ---------------------------------------------------------------------------
 void InitBottomScreen(void)
 {
-  //  Init bottom screen
-  decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-  decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-  dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-  dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
-  unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
-  dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
+    if (myConfig.overlay == 1)  // Wargames
+    {
+      //  Init bottom screen
+      decompress(wargamesTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(wargamesMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) wargamesPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 2)  // Mousetrap
+    {
+      //  Init bottom screen
+      decompress(mousetrapTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(mousetrapMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) mousetrapPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 3)  // Gateway to Apshi
+    {
+      //  Init bottom screen
+      decompress(gatewayTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(gatewayMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) gatewayPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else // Generic Overlay
+    {
+      //  Init bottom screen
+      decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    
+    unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
 }
 
 /*********************************************************************************
@@ -686,13 +744,8 @@ u16 colecoDSInitCPU(void)
   for (iBcl=0;iBcl<0x04000;iBcl++)
     *(pVDPVidMem+iBcl) = 0xFF;
 
-  //  Init bottom screen
-  decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-  decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-  dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-  dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
-  unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);//ecranBas_map[24][0];
-  dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
+  //  Init bottom screen - might be an overlay
+  InitBottomScreen();
 
   //  Load coleco Bios ROM
   memcpy(pColecoMem,ColecoBios,0x2000);

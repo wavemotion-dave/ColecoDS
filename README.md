@@ -95,8 +95,10 @@ To enable this new blend mode, pick your game and go into the "Game Options" sub
 
 Versions :
 -----------------------
-V4.x: Not released yet
-* Allow mapping of Super Action Controller buttons
+V4.2: Not released yet
+* Allow mapping of Super Action Controller buttons.
+* Overlay support - three games supported (for now) + Generic.
+* Minor cleanups to VDP and better commenting.
 
 V4.1: 11-Dec-2021 by wavemotion-dave
 * VDP Timing fixes - Fathom now runs.
