@@ -14,6 +14,7 @@ Features :
 * Save/Load Game State (one slot).
 * Video Blend Mode (see below).
 * LCD Screen Swap (press and hold L+R+X during gameplay).
+* Overlay support for the few games that need them.
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -97,7 +98,7 @@ Versions :
 -----------------------
 V4.2: 14-Dec-2021
 * Allow mapping of Super Action Controller buttons.
-* Overlay support - three games supported (for now) + Generic.
+* Overlay support - five games supported (for now) + Generic.
 * Minor cleanups to VDP and better commenting.
 
 V4.1: 11-Dec-2021 by wavemotion-dave
