@@ -95,7 +95,7 @@ To enable this new blend mode, pick your game and go into the "Game Options" sub
 
 Versions :
 -----------------------
-V4.2: Not released yet
+V4.2: 14-Dec-2021
 * Allow mapping of Super Action Controller buttons.
 * Overlay support - three games supported (for now) + Generic.
 * Minor cleanups to VDP and better commenting.
