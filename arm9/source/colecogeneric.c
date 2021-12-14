@@ -21,9 +21,9 @@
 #include "colecogeneric.h"
 
 #include "sprMario.h"
-#include "ecranBas.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
+
 #include "CRC32.h"
 
 typedef enum {FT_NONE,FT_FILE,FT_DIR} FILE_TYPE;
@@ -54,7 +54,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
   u8 ucGau=0x00, ucDro=0x00,ucGauS=0x00, ucDroS=0x00, ucCho = ID_SHM_YES;
   
   dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-  unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); //ecranBas_map[24][0];
+  unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); 
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(16-strlen(szCh1)/2,10,6,szCh1);
   AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
@@ -149,7 +149,9 @@ u8 showMessage(char *szCh1, char *szCh2) {
     }
   }
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
-  decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
+  
+  InitBottomScreen();  // Could be generic or overlay...
+  
   return uRet;
 }
 
@@ -357,7 +359,7 @@ u8 colecoDSLoadFile(void)
 
   // Show the menu...
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
-  unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);// ecranBas_map[24][0];
+  unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(15-strlen("A=SELECT,  B=EXIT")/2,5,0,"A=SELECT,  B=EXIT");
 
@@ -656,6 +658,7 @@ void SetDefaultGameConfig(void)
     myConfig.fullSpeed  = 0;        
     myConfig.autoFire1  = 0;
     myConfig.autoFire2  = 0;
+    myConfig.overlay    = 0;
     myConfig.reserved6  = 0;
     myConfig.reserved7  = 0;    
     myConfig.reserved8  = 0;    
@@ -728,6 +731,7 @@ struct options_t
 };
 const struct options_t Option_Table[] =
 {
+    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY"},    &myConfig.overlay,    4},
     {"FPS",             {"OFF", "ON"},                                      &myConfig.showFPS,    2},
     {"FULL SPEED",      {"OFF", "ON"},                                      &myConfig.fullSpeed,  2},
     {"FRAME SKIP",      {"OFF", "ON"},                                      &myConfig.frameSkip,  2},
@@ -1063,7 +1067,7 @@ void colecoDSChangeOptions(void)
   decompress(ecranHautTiles, bgGetGfxPtr(bg0), LZ77Vram);
   decompress(ecranHautMap, (void*) bgGetMapPtr(bg0), LZ77Vram);
   dmaCopy((void*) ecranHautPal,(void*) BG_PALETTE,256*2);
-  unsigned short dmaVal =  *(bgGetMapPtr(bg0) + 51*32);// ecranBas_map[24][0];
+  unsigned short dmaVal =  *(bgGetMapPtr(bg0) + 51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
   AffChaine(28,23,1,"V");AffChaine(29,23,1,VERSIONCLDS);
 

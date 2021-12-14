@@ -49,7 +49,7 @@ struct __attribute__((__packed__))  DrZ80
   unsigned int Z80BC2;          /*0x38 - B'C' Registers: 0xBBCC---- */
   unsigned int Z80DE2;          /*0x3C - D'E' Registers: 0xDDEE---- */
   unsigned int Z80HL2;          /*0x40 - H'L' Registers: 0xHHLL---- */    
-  unsigned int cycles;          /*0x44 - Cycles pending to be executed yet */
+           int cycles;          /*0x44 - Cycles pending to be executed yet */
   unsigned char Z80_IRQ;        /*0x48 - Set IRQ Number */   
   unsigned char Z80IF;          /*0x4C - Interrupt Flags:  bit1=_IFF1, bit2=_IFF2, bit3=_HALT */
   unsigned char Z80IM;          /*0x50 - Set IRQ Mode */
@@ -68,7 +68,7 @@ struct __attribute__((__packed__))  DrZ80
   unsigned int (*z80_rebasePC)(unsigned short new_pc);
 };
 
-extern void DrZ80Run(struct DrZ80 *pcy,unsigned int cyc);
+extern void DrZ80Run(struct DrZ80 *pcy, int cyc);
 
 #endif
 
