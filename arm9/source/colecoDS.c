@@ -32,6 +32,8 @@
 #include "wargames.h"
 #include "mousetrap.h"
 #include "gateway.h"
+#include "spyhunter.h"
+#include "fixupmixup.h"
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -707,13 +709,29 @@ void InitBottomScreen(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) mousetrapPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 3)  // Gateway to Apshi
+    else if (myConfig.overlay == 3)  // Gateway to Apshai
     {
       //  Init bottom screen
       decompress(gatewayTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
       decompress(gatewayMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) gatewayPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 4)  // Spy Hunter
+    {
+      //  Init bottom screen
+      decompress(spyhunterTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(spyhunterMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) spyhunterPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 5)  // Fix Up the Mix Up
+    {
+      //  Init bottom screen
+      decompress(fixupmixupTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(fixupmixupMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) fixupmixupPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay
     {
