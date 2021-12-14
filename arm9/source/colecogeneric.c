@@ -731,15 +731,15 @@ struct options_t
 };
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY"},    &myConfig.overlay,    4},
-    {"FPS",             {"OFF", "ON"},                                      &myConfig.showFPS,    2},
-    {"FULL SPEED",      {"OFF", "ON"},                                      &myConfig.fullSpeed,  2},
-    {"FRAME SKIP",      {"OFF", "ON"},                                      &myConfig.frameSkip,  2},
-    {"FRAME BLEND",     {"OFF", "ON"},                                      &myConfig.frameBlend, 2},
-    {"AUTO FIRE B1",    {"OFF", "ON"},                                      &myConfig.autoFire1,  2},
-    {"AUTO FIRE B2",    {"OFF", "ON"},                                      &myConfig.autoFire2,  2},
-    {NULL,              {"",      ""},                                      NULL,                 1},
-};
+    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP"},   &myConfig.overlay,    6},
+    {"FPS",             {"OFF", "ON"},                                                      &myConfig.showFPS,    2},
+    {"FULL SPEED",      {"OFF", "ON"},                                                      &myConfig.fullSpeed,  2},
+    {"FRAME SKIP",      {"OFF", "ON"},                                                      &myConfig.frameSkip,  2},
+    {"FRAME BLEND",     {"OFF", "ON"},                                                      &myConfig.frameBlend, 2},
+    {"AUTO FIRE B1",    {"OFF", "ON"},                                                      &myConfig.autoFire1,  2},
+    {"AUTO FIRE B2",    {"OFF", "ON"},                                                      &myConfig.autoFire2,  2},
+    {NULL,              {"",      ""},                                                      NULL,                 1},
+};              
 
 
 // ------------------------------------------------------------------
