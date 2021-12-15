@@ -36,6 +36,7 @@
 #include "fixupmixup.h"
 #include "boulder.h"
 #include "quest.h"
+#include "hal2010.h"
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -729,6 +730,14 @@ void InitBottomScreen(void)
       decompress(questMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) questPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 8)  // 2010
+    {
+      //  Init bottom screen
+      decompress(hal2010Tiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(hal2010Map, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) hal2010Pal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay
     {

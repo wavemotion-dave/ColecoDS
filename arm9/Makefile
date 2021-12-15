@@ -72,7 +72,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  ecranBas.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o pdev_bg0.o pdev_tbg0.o sprMario.o
+OSPECIALS :=  ecranBas.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o sprMario.o
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -168,6 +168,9 @@ boulder.s boulder.h : boulder.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 quest.s quest.h : quest.png
+	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
+
+hal2010.s hal2010.h : hal2010.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 pdev_bg0.s pdev_bg0.h : pdev_bg0.png
