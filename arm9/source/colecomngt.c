@@ -27,7 +27,7 @@
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x000D        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x000E        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
@@ -215,7 +215,7 @@ void colecoSaveState()
   u32 uNbO;
   long pSvg;
   char szFile[128];
-  char szCh1[32],szCh2[32];
+  char szCh1[32];
 
   // Init filename = romname and STA in place of ROM
   strcpy(szFile,gpFic[ucGameAct].szName);
@@ -234,6 +234,13 @@ void colecoSaveState()
       
     // Write Z80 CPU
     uNbO = fwrite(&drz80, sizeof(struct DrZ80), 1, handle);
+      
+    // Need to save the DrZ80 SP/PC offsets as memory might shift on next load...
+    u32 z80SPOffset = (u32) (drz80.Z80SP - drz80.Z80SP_BASE);
+    if (uNbO) uNbO = fwrite(&z80SPOffset, sizeof(z80SPOffset),1, handle);
+
+    u32 z80PCOffset = (u32) (drz80.Z80PC - drz80.Z80PC_BASE);
+    if (uNbO) uNbO = fwrite(&z80PCOffset, sizeof(z80PCOffset),1, handle);
 
     // Save Coleco Memory (yes, all of it!)
     if (uNbO) uNbO = fwrite(pColecoMem, 0x10000,1, handle); 
@@ -293,15 +300,15 @@ void colecoSaveState()
     if (uNbO) fwrite(sgm_low_mem, 0x2000,1, handle);      
       
     if (uNbO) 
-      strcpy(szCh2,"OK ");
+      strcpy(szCh1,"OK ");
     else
-      strcpy(szCh2,"ERR");
-     AffChaine(23,0,0,szCh2);
+      strcpy(szCh1,"ERR");
+     AffChaine(23,0,0,szCh1);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
     AffChaine(14,0,0,"              ");  
   }
   else {
-    strcpy(szCh2,"Error opening SAV file ...");
+    strcpy(szCh1,"Error opening SAV file ...");
   }
   fclose(handle);
 }
@@ -315,7 +322,7 @@ void colecoLoadState()
   u32 uNbO;
   long pSvg;
   char szFile[128];
-  char szCh1[32],szCh2[32];
+  char szCh1[32];
 
     // Init filename = romname and .SAV in place of ROM
     strcpy(szFile,gpFic[ucGameAct].szName);
@@ -337,6 +344,13 @@ void colecoLoadState()
             // Load Z80 CPU
             uNbO = fread(&drz80, sizeof(struct DrZ80), 1, handle);
             DrZ80_InitHandlers(); //DRZ80 saves a lot of binary code dependent stuff, reset the handlers
+
+            // Need to load and restore the DrZ80 SP/PC offsets as memory might have shifted ...
+            u32 z80Offset = 0;
+            if (uNbO) uNbO = fread(&z80Offset, sizeof(z80Offset),1, handle);
+            z80_rebaseSP(z80Offset);
+            if (uNbO) uNbO = fread(&z80Offset, sizeof(z80Offset),1, handle);
+            z80_rebasePC(z80Offset);                  
 
             // Load Coleco Memory (yes, all of it!)
             if (uNbO) uNbO = fread(pColecoMem, 0x10000,1, handle); 
@@ -417,10 +431,10 @@ void colecoLoadState()
         else uNbO = 0;
         
         if (uNbO) 
-          strcpy(szCh2,"OK ");
+          strcpy(szCh1,"OK ");
         else
-          strcpy(szCh2,"ERR");
-         AffChaine(23,0,0,szCh2);
+          strcpy(szCh1,"ERR");
+         AffChaine(23,0,0,szCh1);
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         AffChaine(14,0,0,"              ");  
       }
