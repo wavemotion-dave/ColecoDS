@@ -731,7 +731,7 @@ struct options_t
 };
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUEST ROO"},   &myConfig.overlay,    8},
+    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},   &myConfig.overlay,    9},
     {"FPS",             {"OFF", "ON"},                                                      &myConfig.showFPS,    2},
     {"FULL SPEED",      {"OFF", "ON"},                                                      &myConfig.fullSpeed,  2},
     {"FRAME SKIP",      {"OFF", "ON"},                                                      &myConfig.frameSkip,  2},
