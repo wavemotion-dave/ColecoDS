@@ -27,7 +27,7 @@
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x000C        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x000D        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
@@ -225,7 +225,7 @@ void colecoSaveState()
   strcpy(szCh1,"SAVING...");
   AffChaine(14,0,0,szCh1);
   
-  FILE *handle = fopen(szFile, "w+");  
+  FILE *handle = fopen(szFile, "wb+");  
   if (handle != NULL) 
   {
     // Write Version
@@ -322,7 +322,7 @@ void colecoLoadState()
     szFile[strlen(szFile)-3] = 's';
     szFile[strlen(szFile)-2] = 'a';
     szFile[strlen(szFile)-1] = 'v';
-    FILE* handle = fopen(szFile, "r"); 
+    FILE* handle = fopen(szFile, "rb"); 
     if (handle != NULL) 
     {    
          strcpy(szCh1,"LOADING...");
