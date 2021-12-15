@@ -223,7 +223,7 @@ void colecoSaveState()
   szFile[strlen(szFile)-2] = 'a';
   szFile[strlen(szFile)-1] = 'v';
   strcpy(szCh1,"SAVING...");
-  AffChaine(19,5,0,szCh1);
+  AffChaine(14,0,0,szCh1);
   
   FILE *handle = fopen(szFile, "w+");  
   if (handle != NULL) 
@@ -296,9 +296,9 @@ void colecoSaveState()
       strcpy(szCh2,"OK ");
     else
       strcpy(szCh2,"ERR");
-     AffChaine(28,5,0,szCh2);
+     AffChaine(23,0,0,szCh2);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-    AffChaine(18,5,0,"              ");  
+    AffChaine(14,0,0,"              ");  
   }
   else {
     strcpy(szCh2,"Error opening SAV file ...");
@@ -326,7 +326,7 @@ void colecoLoadState()
     if (handle != NULL) 
     {    
          strcpy(szCh1,"LOADING...");
-         AffChaine(19,5,0,szCh1);
+         AffChaine(14,0,0,szCh1);
        
         // Read Version
         u16 save_ver = 0xBEEF;
@@ -420,9 +420,9 @@ void colecoLoadState()
           strcpy(szCh2,"OK ");
         else
           strcpy(szCh2,"ERR");
-         AffChaine(28,5,0,szCh2);
+         AffChaine(23,0,0,szCh2);
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        AffChaine(18,5,0,"              ");  
+        AffChaine(14,0,0,"              ");  
       }
 
     fclose(handle);
