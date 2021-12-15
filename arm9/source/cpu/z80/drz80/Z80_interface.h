@@ -33,6 +33,9 @@ extern void Z80_Clear_Pending_Interrupts(void);
 extern void DrZ80_Reset(void);
 extern int DrZ80_execute(int cycles);
 
+extern u32 z80_rebaseSP(u16 address);
+extern u32 z80_rebasePC(u16 address);
+
 extern void cpu_writeport16(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport16(register unsigned short Port);
 
