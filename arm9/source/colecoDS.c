@@ -34,6 +34,8 @@
 #include "gateway.h"
 #include "spyhunter.h"
 #include "fixupmixup.h"
+#include "boulder.h"
+#include "quest.h"
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -711,6 +713,22 @@ void InitBottomScreen(void)
       decompress(fixupmixupMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) fixupmixupPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 6)  // Boulder Dash
+    {
+      //  Init bottom screen
+      decompress(boulderTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(boulderMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) boulderPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 7)  // Quest for Quinta Roo
+    {
+      //  Init bottom screen
+      decompress(questTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(questMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) questPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay
     {
