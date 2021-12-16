@@ -27,7 +27,7 @@
 
 #include "tms9918a.h"
 
-#define MaxSprites  32      // Normally the CV only shows 4 sprites on a line... for emulation we bump this up
+u8 MaxSprites[2] = {32, 4};     // Normally the CV only shows 4 sprites on a line... for emulation we bump this up if configured
 
 u16 *pVidFlipBuf __attribute__((section(".dtcm"))) = (u16*) (0x06000000);    // Video flipping buffer
 
@@ -192,7 +192,7 @@ ITCM_CODE int ScanSprites(register byte Y,unsigned int *Mask)
   OH = SprHeights[VDP[1]&0x03];
   IH = SprHeights[VDP[1]&0x02];
   AT = SprTab;
-  C1 = MaxSprites+1;
+  C1 = MaxSprites[myConfig.maxSprites]+1;
   C2 = 5;
   M  = 0;
 
