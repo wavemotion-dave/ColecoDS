@@ -96,11 +96,11 @@ To enable this new blend mode, pick your game and go into the "Game Options" sub
 
 Versions :
 -----------------------
-V4.3: 16-Dec-2021
+V4.3: 16-Dec-2021 by wavemotion-dave
 * More overlays added.
 * Adjust CPU timing slightly to fix Spy Hunter (cars now spawn) and Frantic.
 
-V4.2: 14-Dec-2021
+V4.2: 14-Dec-2021 by wavemotion-dave
 * Allow mapping of Super Action Controller buttons.
 * Overlay support - five games supported (for now) + Generic.
 * Minor cleanups to VDP and better commenting.
