@@ -668,10 +668,10 @@ void SetDefaultGameConfig(void)
     myConfig.reservedC  = 0;    
     
     // And a few odd defaults 
-    if (file_crc == 0xee530ad2) myConfig.maxSprites = 1;  // QBibs
+    if (file_crc == 0xee530ad2) myConfig.maxSprites = 1;  // QBiqs
     if (file_crc == 0x275c800e) myConfig.maxSprites = 1;  // Antartic Adventure
-    if (file_crc == 0xa66e5ed1) myConfig.maxSprites = 1;  // Antartic Adventure Prototype   
-    
+    if (file_crc == 0xa66e5ed1) myConfig.maxSprites = 1;  // Antartic Adventure Prototype  
+    if (file_crc == 0x6af19e75) myConfig.maxSprites = 1;  // Adventures in the Park    
 }
 
 // -------------------------------------------------------------------------
