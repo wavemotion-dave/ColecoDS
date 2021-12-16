@@ -31,6 +31,8 @@ extern void getfile_crc(const char *path);
 extern void colecoLoadState();
 extern void colecoSaveState();
 
+extern void colecoWipeRAM(void);
+
 extern u8 colecoCartVerify(const u8 *cartData);
 extern void sgm_reset(void);
 
