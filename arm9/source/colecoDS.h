@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/drz80/Z80_interface.h"
 
-#define VERSIONCLDS "4.2"
+#define VERSIONCLDS "4.3"
 
 #define JST_NONE      0x0000
 #define JST_KEYPAD    0x000F

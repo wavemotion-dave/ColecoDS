@@ -10,7 +10,7 @@
 #define TMS9918_FRAMES      60
 #define TMS9918_CLOCK       (TMS9918_BASE/3)
 #define TMS9918_FRAME       (TMS9918_BASE/(3*60))
-#define TMS9918_LINE        ((TMS9918_BASE/(3*60*263)))   // Fathom and Centipede require this slightly shorter line time probably due to Z80 timing inaccuracies in emulation
+#define TMS9918_LINE        ((TMS9918_BASE/(3*60*262)))
 
 #define TMS9918_REG1_RAM16K 0x80 /* 1: 16kB VRAM (0=4kB)     */
 #define TMS9918_REG1_SCREEN 0x40 /* 1: Enable display        */

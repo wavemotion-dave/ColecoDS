@@ -298,6 +298,8 @@ void ResetColecovision(void)
   DrZ80_Reset();                        //  Reset the Z80 CPU Core
 
   memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
+  
+  colecoWipeRAM();                          // Wipe main RAM area
     
   memcpy(pColecoMem,ColecoBios,0x2000);     // Restore Coleco BIOS
   

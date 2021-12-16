@@ -32,6 +32,7 @@
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
+s16 timingAdjustment = 0;
 
 // Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
@@ -108,6 +109,26 @@ void sgm_reset(void)
 }
 
 
+/*********************************************************************************
+ * Wipe main RAM with random patterns...
+ ********************************************************************************/
+void colecoWipeRAM(void)
+{
+  for (int i=0; i<0x400; i++)
+  {
+      u8 randbyte = rand() & 0xFF;
+      pColecoMem[0x6000 + i] = randbyte;
+      pColecoMem[0x6400 + i] = randbyte;
+      pColecoMem[0x6800 + i] = randbyte;
+      pColecoMem[0x6C00 + i] = randbyte;
+      pColecoMem[0x7000 + i] = randbyte;
+      pColecoMem[0x7400 + i] = randbyte;
+      pColecoMem[0x7800 + i] = randbyte;
+      pColecoMem[0x7C00 + i] = randbyte;
+  }
+}
+    
+
 
 /*********************************************************************************
  * Init coleco Engine for that game
@@ -120,7 +141,7 @@ u8 colecoInit(char *szGame) {
   memset(pColecoMem+0x2000, 0xFF, 0x4000);
     
   // Wipe RAM
-  memset(pColecoMem+0x6000, 0x00, 0x2000);
+  colecoWipeRAM();
   
   // Set upper 32K ROM area to 0xFF before load
   memset(pColecoMem+0x8000, 0xFF, 0x8000);
@@ -534,6 +555,13 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
         if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
         
+        // --------------------------------------------------------------------------------------------------------
+        // A few games need some timing adjustment tweaks to render correctly... probably due to Z80 inaccuracies
+        // --------------------------------------------------------------------------------------------------------
+        timingAdjustment = 0;                               
+        if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
+        if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
+        
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
@@ -743,7 +771,7 @@ ITCM_CODE u32 LoopZ80()
   if (AY_Enable) FakeAY_Loop();
     
   // Execute 1 scanline worth of CPU
-  DrZ80_execute(TMS9918_LINE);
+  DrZ80_execute(TMS9918_LINE + timingAdjustment);
     
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
