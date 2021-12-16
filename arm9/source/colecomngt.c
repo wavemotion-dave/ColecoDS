@@ -558,7 +558,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // --------------------------------------------------------------------------------------------------------
         // A few games need some timing adjustment tweaks to render correctly... probably due to Z80 inaccuracies
         // --------------------------------------------------------------------------------------------------------
-        timingAdjustment = 0;                               
+        timingAdjustment = 0;
         if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
         if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
         

@@ -659,7 +659,7 @@ void SetDefaultGameConfig(void)
     myConfig.autoFire1  = 0;
     myConfig.autoFire2  = 0;
     myConfig.overlay    = 0;
-    myConfig.reserved6  = 0;
+    myConfig.maxSprites = 0;
     myConfig.reserved7  = 0;    
     myConfig.reserved8  = 0;    
     myConfig.reserved9  = 0;    
@@ -736,6 +736,7 @@ const struct options_t Option_Table[] =
     {"FULL SPEED",      {"OFF", "ON"},                                                      &myConfig.fullSpeed,  2},
     {"FRAME SKIP",      {"OFF", "ON"},                                                      &myConfig.frameSkip,  2},
     {"FRAME BLEND",     {"OFF", "ON"},                                                      &myConfig.frameBlend, 2},
+    {"MAX SPRITES",     {"32",  "4"},                                                       &myConfig.maxSprites,  2},
     {"AUTO FIRE B1",    {"OFF", "ON"},                                                      &myConfig.autoFire1,  2},
     {"AUTO FIRE B2",    {"OFF", "ON"},                                                      &myConfig.autoFire2,  2},
     {NULL,              {"",      ""},                                                      NULL,                 1},
