@@ -586,7 +586,7 @@ void SaveConfig(bool bShow)
     FILE *fp;
     int slot = 0;
     
-    if (bShow) dsPrintValue(0,23,0, (char*)"     SAVING CONFIGURATION       ");
+    if (bShow) dsPrintValue(6,0,0, (char*)"SAVING CONFIGURATION");
 
     // Set the global configuration version number...
     myConfig.config_ver = CONFIG_VER;
@@ -628,12 +628,12 @@ void SaveConfig(bool bShow)
     {
         fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);
         fclose(fp);
-    } else dsPrintValue(2,23,0, (char*)"  ERROR SAVING CONFIG FILE  ");
+    } else dsPrintValue(4,0,0, (char*)"ERROR SAVING CONFIG FILE");
 
     if (bShow) 
     {
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        dsPrintValue(0,23,0, (char*)"                                ");        
+        dsPrintValue(4,0,0, (char*)"                        ");
     }
 }
 
@@ -735,6 +735,8 @@ struct options_t
     u8          *option_val;
     u8           option_max;
 };
+
+u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
     {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},   &myConfig.overlay,    9},
@@ -745,6 +747,7 @@ const struct options_t Option_Table[] =
     {"MAX SPRITES",     {"32",  "4"},                                                       &myConfig.maxSprites,  2},
     {"AUTO FIRE B1",    {"OFF", "ON"},                                                      &myConfig.autoFire1,  2},
     {"AUTO FIRE B2",    {"OFF", "ON"},                                                      &myConfig.autoFire2,  2},
+    {"Z80 CYCLES",      {"NORMAL", "LESS 1", "LESS 2", "MORE 1", "MORE 2"},                 &dev_z80_cycles,      5},
     {NULL,              {"",      ""},                                                      NULL,                 1},
 };              
 

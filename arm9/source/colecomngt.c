@@ -39,6 +39,9 @@ extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 extern u32* lutTablehh;
 
+extern u8 dev_z80_cycles;
+s16 dev_z80_array[5] = {0, -1, -2, 1, 2};
+
 // ----------------------------------------------------------------------
 // Our "massive" ROM buffer - we support MegaCarts up to 512k but 
 // we could bump this to 1MB as the MC standard supports up to 1MB
@@ -559,6 +562,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // A few games need some timing adjustment tweaks to render correctly... probably due to Z80 inaccuracies
         // --------------------------------------------------------------------------------------------------------
         timingAdjustment = 0;
+        dev_z80_cycles = 0;
         if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
         if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
         
@@ -771,7 +775,7 @@ ITCM_CODE u32 LoopZ80()
   if (AY_Enable) FakeAY_Loop();
     
   // Execute 1 scanline worth of CPU
-  DrZ80_execute(TMS9918_LINE + timingAdjustment);
+  DrZ80_execute(TMS9918_LINE + timingAdjustment + dev_z80_array[dev_z80_cycles]);
     
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
