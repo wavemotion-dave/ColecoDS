@@ -801,8 +801,8 @@ void colecoDSGameOptions(void)
     // a bit of a "fudge factor" for the few games that
     // need help due to the slightly inaccurate Z80 core.
     // ----------------------------------------------------
-    if (timingAdjustment == -1) dev_z80_cycles = 10;
-    else if (timingAdjustment == -2) dev_z80_cycles = 11;
+    if (timingAdjustment == -1) dev_z80_cycles = 11;
+    else if (timingAdjustment == -2) dev_z80_cycles = 12;
     else  dev_z80_cycles = timingAdjustment;
 
     idx=display_options_list(true);
@@ -867,8 +867,8 @@ void colecoDSGameOptions(void)
         swiWaitForVBlank();
     }
     
-    if (dev_z80_cycles == 10) timingAdjustment = -1;
-    else if (dev_z80_cycles == 11) timingAdjustment = -2;
+    if (dev_z80_cycles == 11) timingAdjustment = -1;
+    else if (dev_z80_cycles == 12) timingAdjustment = -2;
     else  timingAdjustment = dev_z80_cycles;
     
     return;
