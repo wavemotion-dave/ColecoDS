@@ -40,7 +40,6 @@ ITCM_CODE u32 z80_rebasePC(u16 address) {
 }
 
 ITCM_CODE void z80_irq_callback(void) {
-	//drz80.pending_irq &= ~drz80.Z80_IRQ;
 	drz80.Z80_IRQ = 0x00;
 }
 
