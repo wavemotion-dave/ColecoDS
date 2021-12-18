@@ -660,6 +660,7 @@ void SetDefaultGameConfig(void)
     myConfig.autoFire2  = 0;
     myConfig.overlay    = 0;
     myConfig.maxSprites = 0;
+    myConfig.vertSync   = (isDSiMode() ? 1:0);
     myConfig.reserved7  = 0;    
     myConfig.reserved8  = 0;    
     myConfig.reserved9  = 0;    
@@ -744,10 +745,11 @@ const struct options_t Option_Table[] =
     {"FULL SPEED",      {"OFF", "ON"},                                                      &myConfig.fullSpeed,  2},
     {"FRAME SKIP",      {"OFF", "ON"},                                                      &myConfig.frameSkip,  2},
     {"FRAME BLEND",     {"OFF", "ON"},                                                      &myConfig.frameBlend, 2},
-    {"MAX SPRITES",     {"32",  "4"},                                                       &myConfig.maxSprites,  2},
+    {"MAX SPRITES",     {"32",  "4"},                                                       &myConfig.maxSprites, 2},
+    {"VERT SYNC",       {"OFF", "ON"},                                                      &myConfig.vertSync,   2},    
     {"AUTO FIRE B1",    {"OFF", "ON"},                                                      &myConfig.autoFire1,  2},
     {"AUTO FIRE B2",    {"OFF", "ON"},                                                      &myConfig.autoFire2,  2},
-    {"Z80 CYCLES",      {"NORMAL", "LESS 1", "LESS 2", "MORE 1", "MORE 2"},                 &dev_z80_cycles,      5},
+    {"Z80 CYCLES!!",    {"NORMAL", "MORE 1", "MORE 2", "LESS 1", "LESS 2"},                 &dev_z80_cycles,      5},
     {NULL,              {"",      ""},                                                      NULL,                 1},
 };              
 
@@ -786,12 +788,22 @@ u8 display_options_list(bool bFullDisplay)
 //*****************************************************************************
 void colecoDSGameOptions(void)
 {
+    extern s16 timingAdjustment;
     u8 optionHighlighted;
     u8 idx;
     bool bDone=false;
     int keys_pressed;
     int last_keys_pressed = 999;
     char strBuf[35];
+    
+    // ----------------------------------------------------
+    // Load up the timing adjustment for the Z80. This is
+    // a bit of a "fudge factor" for the few games that
+    // need help due to the slightly inaccurate Z80 core.
+    // ----------------------------------------------------
+    if (timingAdjustment == -1) dev_z80_cycles = 3;
+    else if (timingAdjustment == -2) dev_z80_cycles = 4;
+    else  dev_z80_cycles = timingAdjustment;
 
     idx=display_options_list(true);
     optionHighlighted = 0;
@@ -854,6 +866,10 @@ void colecoDSGameOptions(void)
     {
         swiWaitForVBlank();
     }
+    
+    if (dev_z80_cycles == 3) timingAdjustment = -1;
+    else if (dev_z80_cycles == 4) timingAdjustment = -2;
+    else  timingAdjustment = dev_z80_cycles;
     
     return;
 }

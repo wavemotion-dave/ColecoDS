@@ -96,6 +96,12 @@ To enable this new blend mode, pick your game and go into the "Game Options" sub
 
 Versions :
 -----------------------
+V4.4: 18-Dec-2021 by wavemotion-dave
+* Added option for "Max Sprites" to set to original HW limit of 4 vs 32.
+* New Vertical Sync option (default ON for DSi and above) to reduce tearing.
+* Fixed Save/Load state so it doesn't break on every new release.
+* Slight adjustment to Z80 CPU timing for better accuracy.
+
 V4.3: 16-Dec-2021 by wavemotion-dave
 * More overlays added.
 * Adjust CPU timing slightly to fix Spy Hunter (cars now spawn) and Frantic.

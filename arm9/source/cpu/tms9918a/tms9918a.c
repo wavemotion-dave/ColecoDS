@@ -672,16 +672,27 @@ ITCM_CODE byte Loop9918(void)
   /* If refreshing display area, call scanline handler */
   if((CurLine>=TMS9918_START_LINE)&&(CurLine<TMS9918_END_LINE))
   {
-      if (frameSkip & myConfig.showFPS)
+      if (frameSkip & myConfig.frameSkip)
           ScanSprites(CurLine-TMS9918_START_LINE,0);    // Skip rendering - but still scan sprites for collisions
       else
          (SCR[ScrMode].Refresh)(CurLine-TMS9918_START_LINE);
   }
-  /* If time for VBlank... */
+  /* If time for emulated VBlank... */
   else if(CurLine==TMS9918_END_LINE) 
   {
+      // --------------------------------------------------------------------
+      // !!!Into the Vertical Blank!!!
+      // If we are not trying to run full-speed, wait for vBlank to ensure
+      // we get minimal tearing... This is also how we throttle to 60 FPS
+      // by using the DS vertical blank as our way of frame-to-frame timing.
+      // --------------------------------------------------------------------
+      if ((myConfig.fullSpeed == 0) && (myConfig.vertSync)) 
+      {
+          swiWaitForVBlank();
+      }
+      
       /* Refresh screen */
-      if (frameSkip & myConfig.showFPS)
+      if (frameSkip & myConfig.frameSkip)
           asm("nop");   // Skip rendering this frame...
       else
           colecoUpdateScreen();

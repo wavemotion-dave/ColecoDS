@@ -38,9 +38,7 @@ s16 timingAdjustment = 0;
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 extern u32* lutTablehh;
-
-extern u8 dev_z80_cycles;
-s16 dev_z80_array[5] = {0, -1, -2, 1, 2};
+extern int cycle_deficit;
 
 // ----------------------------------------------------------------------
 // Our "massive" ROM buffer - we support MegaCarts up to 512k but 
@@ -233,7 +231,7 @@ void colecoSetPal(void)
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
-u8  spare[512] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
+u8  spare[508] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
 void colecoSaveState() 
 {
   u32 uNbO;
@@ -288,6 +286,9 @@ void colecoSaveState()
     // A few frame counters
     if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
     if (uNbO) uNbO = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
+      
+    // Deficit Z80 CPU Cycle counter
+    if (uNbO) uNbO = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
       
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
@@ -398,6 +399,9 @@ void colecoLoadState()
             // A few frame counters
             if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
             if (uNbO) uNbO = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
+            
+            // Deficit Z80 CPU Cycle counter
+            if (uNbO) uNbO = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
             
             // Load spare memory for future use
             if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 
@@ -524,6 +528,28 @@ u8 colecoCartVerify(const u8 *cartData)
 void getfile_crc(const char *path)
 {
     file_crc = getFileCrc(path);        // The CRC is used as a unique ID to save out High Scores and Configuration...
+    
+    // --------------------------------------------------------------------------------------------------------
+    // A few games need some timing adjustment tweaks to render correctly... probably due to Z80 inaccuracies
+    // --------------------------------------------------------------------------------------------------------
+    timingAdjustment = 0;
+    if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
+    if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
+
+    // -----------------------------------------------------------------
+    // Only Lord of the Dungeon allows SRAM writting in this area... 
+    // -----------------------------------------------------------------
+    sRamAtE000_OK = 0;  
+    if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      //32K version of Lord of the Dungeon
+    if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of Lord of the Dungeon
+
+    // --------------------------------------------------------------------------
+    // There are a few games that don't want the SGM module... Check those now.
+    // --------------------------------------------------------------------------
+    AY_NeverEnable = false;                             // Default to allow AY sound
+    SGM_NeverEnable = false;                            // And allow SGM by default unless Super DK or Super DK-Jr (directly below)
+    if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
+    if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
 }
 
 /** loadrom() ******************************************************************/
@@ -542,29 +568,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
     {
         fread((void*) romBuffer, iSSize, 1, handle); 
-        
-        // -----------------------------------------------------------------
-        // Only Lord of the Dungeon allows SRAM writting in this area... 
-        // -----------------------------------------------------------------
-        sRamAtE000_OK = 0;  
-        if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      //32K version of Lord of the Dungeon
-        if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of Lord of the Dungeon
-
-        // --------------------------------------------------------------------------
-        // There are a few games that don't want the SGM module... Check those now.
-        // --------------------------------------------------------------------------
-        AY_NeverEnable = false;                             // Default to allow AY sound
-        SGM_NeverEnable = false;                            // And allow SGM by default unless Super DK or Super DK-Jr (directly below)
-        if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
-        if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
-        
-        // --------------------------------------------------------------------------------------------------------
-        // A few games need some timing adjustment tweaks to render correctly... probably due to Z80 inaccuracies
-        // --------------------------------------------------------------------------------------------------------
-        timingAdjustment = 0;
-        dev_z80_cycles = 0;
-        if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
-        if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
         
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
@@ -763,10 +766,12 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 }
 
 
-/** LoopZ80() ************************************************/
-/** Z80 emulation calls this function periodically to check **/
-/** if the system hardware requires any interrupts.         **/
-/*************************************************************/
+/** LoopZ80() *************************************************/
+/** Z80 emulation calls this function periodically to run    **/
+/** Z80 code for the loaded ROM. It runs code refreshing the **/
+/** VDP and checking for interrupt requests. This is not     **/
+/** as cycle accurate as we would like - but good enough.    **/
+/**************************************************************/
 ITCM_CODE u32 LoopZ80() 
 {
   cpuirequest=0;
@@ -774,13 +779,13 @@ ITCM_CODE u32 LoopZ80()
   // Just in case there are AY audio envelopes... this is very rough timing.
   if (AY_Enable) FakeAY_Loop();
     
-  // Execute 1 scanline worth of CPU
-  DrZ80_execute(TMS9918_LINE + timingAdjustment + dev_z80_array[dev_z80_cycles]);
+  // Execute 1 scanline worth of CPU instructions
+  DrZ80_execute(TMS9918_LINE + timingAdjustment);
     
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
     
-  // Generate VDP interrupt
+  // Generate VDP interrupt if called for
   if (cpuirequest==Z80_NMI_INT)
   {
       Z80_Cause_Interrupt(Z80_NMI_INT);
