@@ -51,7 +51,6 @@ Known Issues :
 -----------------------
 * Deep Dungeon Adventures won't run.
 * Uridium won't run.
-* Sudoku has graphical issues (still playable).
 * Frantic Homebrew has graphical issues.
 * Super Pac Man has major graphical issues.
 * Dungeon and Trolls crashes after 10-15 seconds of play.

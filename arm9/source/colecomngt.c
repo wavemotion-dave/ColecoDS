@@ -535,6 +535,8 @@ void getfile_crc(const char *path)
     timingAdjustment = 0;
     if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
     if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
+    if (file_crc == 0xb5be3448) timingAdjustment =  10; // Sudoku Homebrew requires more cycles
+    
 
     // -----------------------------------------------------------------
     // Only Lord of the Dungeon allows SRAM writting in this area... 
