@@ -741,16 +741,16 @@ u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
     {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},   &myConfig.overlay,    9},
-    {"FPS",             {"OFF", "ON"},                                                                      &myConfig.showFPS,    2},
-    {"FULL SPEED",      {"OFF", "ON"},                                                                      &myConfig.fullSpeed,  2},
-    {"FRAME SKIP",      {"OFF", "ON"},                                                                      &myConfig.frameSkip,  2},
-    {"FRAME BLEND",     {"OFF", "ON"},                                                                      &myConfig.frameBlend, 2},
-    {"MAX SPRITES",     {"32",  "4"},                                                                       &myConfig.maxSprites, 2},
-    {"VERT SYNC",       {"OFF", "ON"},                                                                      &myConfig.vertSync,   2},    
-    {"AUTO FIRE B1",    {"OFF", "ON"},                                                                      &myConfig.autoFire1,  2},
-    {"AUTO FIRE B2",    {"OFF", "ON"},                                                                      &myConfig.autoFire2,  2},
-    {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2"},&dev_z80_cycles,     12},
-    {NULL,              {"",      ""},                                                                      NULL,                 1},
+    {"FPS",             {"OFF", "ON"},                                                                                                          &myConfig.showFPS,    2},
+    {"FULL SPEED",      {"OFF", "ON"},                                                                                                          &myConfig.fullSpeed,  2},
+    {"FRAME SKIP",      {"OFF", "ON"},                                                                                                          &myConfig.frameSkip,  2},
+    {"FRAME BLEND",     {"OFF", "ON"},                                                                                                          &myConfig.frameBlend, 2},
+    {"MAX SPRITES",     {"32",  "4"},                                                                                                           &myConfig.maxSprites, 2},
+    {"VERT SYNC",       {"OFF", "ON"},                                                                                                          &myConfig.vertSync,   2},    
+    {"AUTO FIRE B1",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire1,  2},
+    {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire2,  2},
+    {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                  &dev_z80_cycles,     16},
+    {NULL,              {"",      ""},                                                                                                          NULL,                 1},
 };              
 
 
@@ -803,6 +803,9 @@ void colecoDSGameOptions(void)
     // ----------------------------------------------------
     if (timingAdjustment == -1) dev_z80_cycles = 11;
     else if (timingAdjustment == -2) dev_z80_cycles = 12;
+    else if (timingAdjustment == -3) dev_z80_cycles = 13;
+    else if (timingAdjustment == -4) dev_z80_cycles = 14;
+    else if (timingAdjustment == -5) dev_z80_cycles = 15;
     else  dev_z80_cycles = timingAdjustment;
 
     idx=display_options_list(true);
@@ -869,6 +872,9 @@ void colecoDSGameOptions(void)
     
     if (dev_z80_cycles == 11) timingAdjustment = -1;
     else if (dev_z80_cycles == 12) timingAdjustment = -2;
+    else if (dev_z80_cycles == 13) timingAdjustment = -3;
+    else if (dev_z80_cycles == 14) timingAdjustment = -4;
+    else if (dev_z80_cycles == 15) timingAdjustment = -5;
     else  timingAdjustment = dev_z80_cycles;
     
     return;

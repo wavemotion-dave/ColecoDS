@@ -612,7 +612,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
                 BankSwitch(0);                                  // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
                 
-                if (iSSize == (64  * 1024)) romBankMask = 0x03;
+                if      (iSSize == (64  * 1024)) romBankMask = 0x03;
                 else if (iSSize == (128 * 1024)) romBankMask = 0x07;
                 else if (iSSize == (256 * 1024)) romBankMask = 0x0F;
                 else if (iSSize == (512 * 1024)) romBankMask = 0x1F;
@@ -634,7 +634,7 @@ void SetupSGM(void)
 {
     if (SGM_NeverEnable) return;        // There are a couple of games were we don't want ot enable the SGM. Most notably Super DK won't play with SGM emulation.
     
-    sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates full SGM memory support.
+    sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
     
     // ----------------------------------------------------------------
     // The first time we enable the SGM expansion RAM, we clear it out
