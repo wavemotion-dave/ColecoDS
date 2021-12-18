@@ -92,6 +92,13 @@ So my recommendation is as follows:
 
 To enable this new blend mode, pick your game and go into the "Game Options" sub-menu and turn it on.
 
+Vertical Sync :
+-----------------------
+Vertical sync will force the update (refresh) of the screen when the DS goes into the vertical blank.
+This reduces tearing and minor graphical artifacts but comes at a cost of speed. The DSi can handle
+it for almost all games (Princess Quest is one game where you might turn it off) but the DS can only
+handle it for the more simple games. So by default it's enabled for DSi and disabled for DS-LITE/PHAT.
+You can toggle this in the "Game Options" (and START=SAVE it out as you wish). 
 
 Versions :
 -----------------------

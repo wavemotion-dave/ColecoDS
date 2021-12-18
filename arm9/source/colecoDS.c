@@ -53,7 +53,7 @@
 //    0x8000-0xFFFF  32K Cartridge Space
 // --------------------------------------------------------------------------
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             
-u8 ColecoBios[8192] = {0};  // We keep the BIOS around to swap in/out
+u8 ColecoBios[0x2000] = {0};  // We keep the 8K BIOS around to swap in/out
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -72,9 +72,9 @@ u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
-int bg0, bg1, bg0b,bg1b;    // Some vars for NDS background screen handling
+int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 
-// The key map for the Colecovision...
+// The key map for the Colecovision... mapped into the NDS controller
 u16 keyCoresp[20] = {
     JST_UP, JST_DOWN, JST_LEFT, JST_RIGHT, JST_FIREL, JST_FIRER,
     JST_1, JST_2, JST_3, JST_4, JST_5, JST_6, JST_7, JST_8, JST_9, 
@@ -820,7 +820,7 @@ bool ColecoBIOSFound(void)
     if (fp == NULL) fp = fopen("/data/bios/coleco.rom", "rb");
     if (fp != NULL)
     {
-        fread(ColecoBios, 8192, 1, fp);
+        fread(ColecoBios, 0x2000, 1, fp);
         fclose(fp);
         return true;   
     }
