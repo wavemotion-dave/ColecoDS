@@ -1195,7 +1195,7 @@ DoInterrupt_NMI:
 	;@ jump to vector
 	mov r0,#0x66
 	rebasepc
-
+	;@ eatcycles 11
 	b DoInterrupt_end
 
 DoInterrupt_mode0:
