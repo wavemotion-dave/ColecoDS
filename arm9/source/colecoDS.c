@@ -361,6 +361,7 @@ ITCM_CODE void colecoDS_main(void)
   u16 iTx,  iTy;
   u16 ucUN, ucDEUX, ResetNow  = 0, SaveNow = 0, LoadNow = 0;
   static u8 lastUN = 0;
+  static u8 dampenClick = 0;
 
   showMainMenu();      // Returns when  user has asked for a game to run...
 
@@ -428,28 +429,43 @@ ITCM_CODE void colecoDS_main(void)
         }
         emuActFrames++;
 
-        // -------------------------------------------------------------------
-        // We only support NTSC 60 frams... there are PAL colecovisions
-        // but the games really don't adjust well and so we stick to basics.
-        // -------------------------------------------------------------------
-        if (++timingFrames == 60)
+        // -------------------------------------------------------------
+        // Vertical Sync reduces tearing but costs CPU time so this
+        // is configurable - default to '1' on DSi and '0' on DS-LITE
+        // -------------------------------------------------------------
+        if (myConfig.vertSync)
         {
-            TIMER2_CR=0;
-            TIMER2_DATA=0;
-            TIMER2_CR=TIMER_ENABLE | TIMER_DIV_1024;
-            timingFrames = 0;
+            // --------------------------------------------
+            // NTSC Frame to Frame timing is handled by 
+            // the swiWaitForVBlank() call in TMS9918a.c
+            // This way we keep tearing to a minimum.
+            // --------------------------------------------            
         }
-
-        // --------------------------------------------
-        // Time 1 frame... 546 ticks of Timer2
-        // This is how we time frame-to frame
-        // to keep the game running at 60FPS
-        // --------------------------------------------
-        while(TIMER2_DATA < (546*(timingFrames+1)))
+        else
         {
-            if (myConfig.fullSpeed) break;
-        }
+            // -------------------------------------------------------------------
+            // We only support NTSC 60 frames... there are PAL colecovisions
+            // but the games really don't adjust well and so we stick to basics.
+            // -------------------------------------------------------------------
+            if (++timingFrames == 60)
+            {
+                TIMER2_CR=0;
+                TIMER2_DATA=0;
+                TIMER2_CR=TIMER_ENABLE | TIMER_DIV_1024;
+                timingFrames = 0;
+            }
 
+            // --------------------------------------------
+            // Time 1 frame... 546 ticks of Timer2
+            // This is how we time frame-to frame
+            // to keep the game running at 60FPS
+            // --------------------------------------------
+            while(TIMER2_DATA < (546*(timingFrames+1)))
+            {
+                if (myConfig.fullSpeed) break;
+            }
+        }
+        
       // ------------------------------------------
       // Handle any screen touch events
       // ------------------------------------------
@@ -556,16 +572,19 @@ ITCM_CODE void colecoDS_main(void)
         ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
         ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
           
-        if ((ucUN != 0) && (lastUN == 0))
+        if (++dampenClick > 3)
         {
-            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+            if ((ucUN != 0) && (lastUN == 0))
+            {
+                mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+            }
+            lastUN = ucUN;                
         }
-        lastUN = ucUN;                
       } //  SCR_TOUCH
       else  
       {
         ResetNow=SaveNow=LoadNow = 0;
-        lastUN = 0;
+        lastUN = 0;  dampenClick = 0;
       }
 
       // ------------------------------------------------------------------------

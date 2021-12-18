@@ -204,6 +204,8 @@ void DrZ80_InitHandlers() {
   drz80.z80_irq_callback=z80_irq_callback;
 }
 
+
+int cycle_deficit = 0;
 void DrZ80_Reset(void) {
   memset (&drz80, 0, sizeof(struct DrZ80));
   DrZ80_InitHandlers();
@@ -231,16 +233,25 @@ void DrZ80_Reset(void) {
   Z80_Clear_Pending_Interrupts();
   cpuirequest=0;
   lastBank = 199;
+  cycle_deficit = 0;
 }
 
 
+// --------------------------------------------------
+// Execute the asked-for cycles and keep track
+// of any deficit so we can apply that to the 
+// next call (since we are very unlikely to 
+// produce exactly an evenly-divisible number of
+// cycles for a given scanline...
+// --------------------------------------------------
 ITCM_CODE int DrZ80_execute(int cycles) 
 {
-  drz80.cycles = cycles;
+  drz80.cycles = cycles + cycle_deficit;
     
   DrZ80Run(&drz80, cycles);
 
-  return (cycles-drz80.cycles);
+  cycle_deficit = drz80.cycles;
+  return (cycle_deficit);
 }
 
 // End of file

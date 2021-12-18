@@ -33,7 +33,8 @@ struct __attribute__((__packed__)) Config_t
     u8  autoFire2;
     u8  overlay;
     u8  maxSprites;
-    u16 reserved7;
+    u8  vertSync;
+    u8  reserved7;
     u16 reserved8;
     u32 reserved9;
     u32 reservedA;
