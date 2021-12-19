@@ -439,7 +439,7 @@ void ITCM_CODE RefreshLine2(u8 uY) {
     {
       I    = (u16)*T<<3;
       K    = ColTab[(J+I)&ColTabM];
-      FC   = (K>>4) & 0x0F;
+      FC   = (K>>4);
       BC   = K & 0x0F;
       K    = ChrGen[(J+I)&ChrGenM];
         
@@ -483,12 +483,12 @@ void ITCM_CODE RefreshLine3(u8 uY) {
 /*********************************************************************************
  * Emulator calls this function to write byte 'value' into a VDP register 'iReg'
  ********************************************************************************/
+static u8 VDP_RegisterMasks[] = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };    
 ITCM_CODE byte Write9918(u8 iReg, u8 value) 
 { 
   int newMode;
   int VRAMMask;
   byte bIRQ;
-  static u8 VDP_RegisterMasks[] = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };    
     
   iReg &= 0x07;
   value &= VDP_RegisterMasks[iReg];
@@ -624,7 +624,7 @@ ITCM_CODE byte WrCtrl9918(byte value)
       
     VAddr = ((VAddr&0x00FF)|((u16)value<<8))&0x3FFF;                                // Set the high byte of the video address always
     if (value & 0x80) return(Write9918(value&0x07,VAddr&0x00FF));                   // Might generate an IRQ if we end up enabling interrupts and VBlank set
-    if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;} // As long as we're not inhibited (either uppper 2 bits set), read ahead
+    if (!(value & 0x40)) {VDPDlatch = pVDPVidMem[VAddr]; VAddr = (VAddr+1)&0x3FFF;} // As long as we're not read inhibited (either uppper 2 bits set), read ahead
   }
   else  // Write the low byte of the video address / control register
   {
@@ -742,9 +742,9 @@ void Reset9918(void)
     
     BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
     
-    // -------------------------------------------------------------
-    // Our background/foreground table makes computations FAST!
-    // -------------------------------------------------------------
+    // ---------------------------------------------------------------
+    // Our background/foreground color table makes computations FAST!
+    // ---------------------------------------------------------------
     int colfg,colbg;
     for (colfg=0;colfg<16;colfg++) {
         for (colbg=0;colbg<16;colbg++) {
