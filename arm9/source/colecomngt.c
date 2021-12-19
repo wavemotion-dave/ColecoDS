@@ -537,13 +537,12 @@ void getfile_crc(const char *path)
     if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
     if (file_crc == 0xb5be3448) timingAdjustment =  10; // Sudoku Homebrew requires more cycles
     
-
     // -----------------------------------------------------------------
     // Only Lord of the Dungeon allows SRAM writting in this area... 
     // -----------------------------------------------------------------
     sRamAtE000_OK = 0;  
-    if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      //32K version of Lord of the Dungeon
-    if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      //24K version of Lord of the Dungeon
+    if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      // 32K version of Lord of the Dungeon
+    if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      // 24K version of Lord of the Dungeon
 
     // --------------------------------------------------------------------------
     // There are a few games that don't want the SGM module... Check those now.
@@ -632,7 +631,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 // --------------------------------------------------------------------------
 void SetupSGM(void)
 {
-    if (SGM_NeverEnable) return;        // There are a couple of games were we don't want ot enable the SGM. Most notably Super DK won't play with SGM emulation.
+    if (SGM_NeverEnable) return;        // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
     
     sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
     
@@ -658,9 +657,9 @@ void SetupSGM(void)
       if (sgm_low_addr != 0x2000)
       {
           memcpy(sgm_low_mem,pColecoMem,0x2000);
+          sgm_low_addr = 0x2000;
+          memcpy(pColecoMem,ColecoBios,0x2000);
       }
-      sgm_low_addr = 0x2000;
-      memcpy(pColecoMem,ColecoBios,0x2000);
     }
     else 
     {
@@ -668,8 +667,8 @@ void SetupSGM(void)
       if (sgm_low_addr != 0x0000)
       {
           memcpy(pColecoMem,sgm_low_mem,0x2000);
+          sgm_low_addr = 0x0000; 
       }
-      sgm_low_addr = 0x0000; 
     }
 }
 

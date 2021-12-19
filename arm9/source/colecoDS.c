@@ -572,7 +572,7 @@ ITCM_CODE void colecoDS_main(void)
         ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
         ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
           
-        if (++dampenClick > 3)
+        if (++dampenClick > 3)  // Make sure the key is pressed for an appreciable amount of time...
         {
             if ((ucUN != 0) && (lastUN == 0))
             {
@@ -636,11 +636,6 @@ ITCM_CODE void colecoDS_main(void)
 }
 
 
-void RestoreBottomScreen(void)
-{
-  //  Render the bottom screen
-}
-
 /*********************************************************************************
  * Init DS Emulator - setup VRAM banks and background screen rendering banks
  ********************************************************************************/
@@ -654,7 +649,7 @@ void colecoDSInit(void)
   vramSetBankC(VRAM_C_SUB_BG);
   vramSetBankD(VRAM_D_SUB_SPRITE);
     
-  vramSetBankE(VRAM_E_LCD );                 // Not using this  for video but 64K of faster RAM always useful!  Mapped  at 0x06880000 - This block of 128K of faster RAM used for the first eight 16K bankswitching banks
+  vramSetBankE(VRAM_E_LCD );                 // Not using this  for video but 64K of faster RAM always useful!  Mapped  at 0x06880000 - This block of faster RAM used for the first eight 16K bankswitching banks
   vramSetBankF(VRAM_F_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06890000 -   ..
   vramSetBankG(VRAM_G_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06894000 -   ..
   vramSetBankH(VRAM_H_LCD );                 // Not using this  for video but 32K of faster RAM always useful!  Mapped  at 0x06898000 -   ..
@@ -670,7 +665,7 @@ void colecoDSInit(void)
   decompress(ecranHautTiles,  bgGetGfxPtr(bg0), LZ77Vram);
   decompress(ecranHautMap,  (void*) bgGetMapPtr(bg0), LZ77Vram);
   dmaCopy((void*) ecranHautPal,(void*)  BG_PALETTE,256*2);
-  unsigned  short dmaVal =*(bgGetMapPtr(bg0)+51*32);//  ecranHaut_map[51][0];           
+  unsigned  short dmaVal =*(bgGetMapPtr(bg0)+51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1),32*24*2);
 
   // Render the bottom screen for "options select" mode
@@ -680,7 +675,7 @@ void colecoDSInit(void)
   decompress(ecranBasSelTiles,  bgGetGfxPtr(bg0b), LZ77Vram);
   decompress(ecranBasSelMap,  (void*) bgGetMapPtr(bg0b), LZ77Vram);
   dmaCopy((void*) ecranBasSelPal,(void*)  BG_PALETTE_SUB,256*2);
-  dmaVal  = *(bgGetMapPtr(bg0b)+24*32);// ecranBasSel_map[24][0];
+  dmaVal  = *(bgGetMapPtr(bg0b)+24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
     
   //  Put out the initial messages looking for a file system
@@ -787,7 +782,7 @@ u16 colecoDSInitCPU(void)
   for (iBcl=0;iBcl<0x10000;iBcl++)
     *(pColecoMem+iBcl) = 0xFF;
   for (iBcl=0;iBcl<0x04000;iBcl++)
-    *(pVDPVidMem+iBcl) = 0xFF;
+    *(pVDPVidMem+iBcl) = 0x00;
 
   //  Init bottom screen - might be an overlay
   InitBottomScreen();
