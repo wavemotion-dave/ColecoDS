@@ -937,7 +937,6 @@ int main(int argc, char **argv)
   TIMER2_CR=TIMER_ENABLE|TIMER_DIV_1024;  
   dsInstallSoundEmuFIFO();
     
-  //SetYtrigger(190); //trigger 2 lines before  vsync
   irqSet(IRQ_VBLANK,  irqVBlank);
   irqEnable(IRQ_VBLANK);
     

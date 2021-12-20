@@ -471,7 +471,10 @@ void colecoLoadState()
 }
 
 /*********************************************************************************
- * Update the screen for the current cycle
+ * Update the screen for the current cycle. On the DSi this will generally
+ * be called right after swiWaitForVBlank() in TMS9918a.c which will help
+ * reduce visual tearing and other artifacts. It's not strictly necessary
+ * and that does slow down the loop a bit... but DSi can handle it.
  ********************************************************************************/
 ITCM_CODE void colecoUpdateScreen(void) 
 {
@@ -504,7 +507,9 @@ ITCM_CODE void colecoUpdateScreen(void)
     }
     else
     {
+        // -----------------------------------------------------------------
         // Not blend mode... just blast it out via DMA as fast as we can...
+        // -----------------------------------------------------------------
         dmaCopyWordsAsynch(2, (u32*)XBuf_A, (u32*)pVidFlipBuf, 256*192);
     }
 }
@@ -789,7 +794,7 @@ ITCM_CODE u32 LoopZ80()
   // Generate VDP interrupt if called for
   if (cpuirequest==Z80_NMI_INT)
   {
-      Z80_Cause_Interrupt(Z80_NMI_INT);
+    Z80_Cause_Interrupt(Z80_NMI_INT);
   }
   else
   {
