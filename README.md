@@ -1,9 +1,12 @@
 # ColecoDS
-ColecoDS - An Emulator for the DS/DSi
+ColecoDS - A Colecovision Emulator for the DS/DSi
 
 To run requires a coleco.rom bios to 
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
+
+Your Vision Is Our Vision... 
+ C O L E C O V I S I O N
 
 Features :
 -----------------------
@@ -12,7 +15,7 @@ Features :
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
 * Save/Load Game State (one slot).
-* Video Blend Mode (see below).
+* Video Blend Mode (see below) and Vertical Sync.
 * LCD Screen Swap (press and hold L+R+X during gameplay).
 * Overlay support for the few games that need them.
 * Full speed, full sound and full frame-rate even on older hardware.
