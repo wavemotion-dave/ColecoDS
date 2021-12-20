@@ -7,7 +7,7 @@
 
 #define VERSIONCLDS "4.4"
 
-// #define DEBUG_Z80   YES
+//#define DEBUG_Z80   YES
 
 #define JST_NONE      0x0000
 #define JST_KEYPAD    0x000F
