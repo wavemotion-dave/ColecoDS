@@ -27,6 +27,7 @@
 #include "cpu/ay38910/AY38910.h"
 #include "intro.h"
 #include "ecranBas.h"
+#include "ecranDebug.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
 #include "wargames.h"
@@ -275,6 +276,7 @@ void dsInstallSoundEmuFIFO(void)
 static u8 last_sgm_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
+u32 num_irqs = 0;
 
 void ResetColecovision(void)
 {
@@ -323,8 +325,81 @@ void ResetColecovision(void)
   last_sgm_mode = false;
   last_ay_mode  = false;
   last_mc_mode  = 0;
+  num_irqs = 0;
 }
 
+//*********************************************************************************
+// A mini Z80 debugger of sorts. Put out some Z80, VDP and SGM/Bank info on
+// screen every frame to help us debug some of the problem games. This is enabled
+// via a compile switch in colecoDS.h - uncomment the define for DEBUG_Z80 line.
+//*********************************************************************************
+const char *VModeNames[] =
+{
+    "VDP 0  ",  
+    "VDP 3  ",  
+    "VDP 2  ",  
+    "VDP 2+3",  
+    "VDP 1  ",  
+    "VDP ?5 ",  
+    "VDP 1+2",  
+    "VDP ?7 ",  
+};
+
+void ShowDebugZ80(void)
+{
+    extern u8 lastBank;
+    extern u8 romBankMask;
+    extern u16 sgm_low_addr;
+    char tmp[33];
+    u8 idx=1;
+    
+    siprintf(tmp, "VDP[] = %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "VDP[] = %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "VStat = %02X Data=%02X", VDPStatus, VDPDlatch);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "IRQS  = %lu", num_irqs);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "VAddr = %04X", VAddr);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "VLatc = %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
+    AffChaine(0,idx++,7, tmp);
+    idx++;
+    siprintf(tmp, "Z80PC = %08X", drz80.Z80PC-drz80.Z80PC_BASE);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80A  = %08X", drz80.Z80A);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80F  = %08X", drz80.Z80F);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80BC = %08X", drz80.Z80BC);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80DE = %08X", drz80.Z80DE);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80HL = %08X", drz80.Z80HL);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80SP = %08X", drz80.Z80SP - drz80.Z80SP_BASE);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80IX = %08X", drz80.Z80IX);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80IY = %08X", drz80.Z80IY);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80I  = %08X", drz80.Z80I);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "IRQ   = %02X", drz80.Z80_IRQ);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "IF/IM = %02X/%02X", drz80.Z80IF, drz80.Z80IM);
+    AffChaine(0,idx++,7, tmp);
+    idx++;
+    siprintf(tmp, "Bank  = %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "SGMem = %04X", sgm_low_addr);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "VMode = %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);
+    AffChaine(0,idx++,7, tmp);    
+}
+    
+    
 
 // ------------------------------------------------------------
 // The status line shows the status of the Super Game Moudle,
@@ -465,6 +540,11 @@ ITCM_CODE void colecoDS_main(void)
                 if (myConfig.fullSpeed) break;
             }
         }
+        
+      // If the Z80 Debugger is enabled, call it
+#ifdef DEBUG_Z80
+      ShowDebugZ80();      
+#endif
         
       // ------------------------------------------
       // Handle any screen touch events
@@ -757,11 +837,19 @@ void InitBottomScreen(void)
     }
     else // Generic Overlay
     {
+#ifdef DEBUG_Z80
+      //  Init bottom screen
+      decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
+#else        
       //  Init bottom screen
       decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
       decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
+#endif        
     }
     
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
