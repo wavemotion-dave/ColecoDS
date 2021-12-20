@@ -72,7 +72,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  ecranBas.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o sprMario.o
+OSPECIALS :=  ecranBas.o ecranDebug.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o sprMario.o 
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -141,6 +141,9 @@ $(ARM9ELF)	:	$(OFILES)
 
 # BG------------------------
 ecranBas.s ecranBas.h : ecranBas.png
+	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
+
+ecranDebug.s ecranDebug.h : ecranDebug.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 ecranBasSel.s ecranBasSel.h : ecranBasSel.png
