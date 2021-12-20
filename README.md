@@ -5,8 +5,8 @@ To run requires a coleco.rom bios to
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
 
-Your Vision Is Our Vision... 
- C O L E C O V I S I O N
+_**Your Vision Is Our Vision...  COLECOVISION**_
+
 
 Features :
 -----------------------
