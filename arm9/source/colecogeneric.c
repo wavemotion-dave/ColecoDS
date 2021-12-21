@@ -752,6 +752,8 @@ void SetDefaultGameConfig(void)
         myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
         myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
         myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
+        myConfig.keymap[6]   = 23;   // NDS X Button mapped to P2 RIGHT for gear shift
+        myConfig.keymap[7]   = 22;   // NDS Y Button mapped to P2 LEFT for gear shift
     }
     
     // -------------------------------------------
