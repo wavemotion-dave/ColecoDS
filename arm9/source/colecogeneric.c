@@ -384,8 +384,7 @@ void colecoDSFindFiles(void)
   if (countCV)
   {
     qsort (gpFic, countCV, sizeof(FICcoleco), colecoFilescmp);
-  }
-    
+  }    
 }
 
 
@@ -402,7 +401,7 @@ u8 colecoDSLoadFile(void)
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-  AffChaine(15-strlen("A=SELECT,  B=EXIT")/2,5,0,"A=SELECT,  B=EXIT");
+  AffChaine(7,5,0,"A=SELECT,  B=EXIT");
 
   colecoDSFindFiles();
     
@@ -912,7 +911,7 @@ void colecoDSGameOptions(void)
     // a bit of a "fudge factor" for the few games that
     // need help due to the slightly inaccurate Z80 core.
     // ----------------------------------------------------
-    if (timingAdjustment == -1) dev_z80_cycles = 11;
+    if      (timingAdjustment == -1) dev_z80_cycles = 11;
     else if (timingAdjustment == -2) dev_z80_cycles = 12;
     else if (timingAdjustment == -3) dev_z80_cycles = 13;
     else if (timingAdjustment == -4) dev_z80_cycles = 14;
@@ -982,7 +981,7 @@ void colecoDSGameOptions(void)
         swiWaitForVBlank();
     }
     
-    if (dev_z80_cycles == 11) timingAdjustment = -1;
+    if      (dev_z80_cycles == 11) timingAdjustment = -1;
     else if (dev_z80_cycles == 12) timingAdjustment = -2;
     else if (dev_z80_cycles == 13) timingAdjustment = -3;
     else if (dev_z80_cycles == 14) timingAdjustment = -4;
@@ -1033,15 +1032,26 @@ void colecoDSChangeKeymap(void)
 {
   u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucY= 7, bOK=0, bIndTch=0;
 
-  // Efface l'ecran pour mettre les touches
+  // ------------------------------------------------------
+  // Clear the screen so we can put up Key Map infomation
+  // ------------------------------------------------------
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
+    
+  // --------------------------------------------------
+  // Give instructions to the user...
+  // --------------------------------------------------
   AffChaine(9,5,0,("=*   KEYS  *="));
   AffChaine(1 ,20,0,("   D-PAD : CHANGE KEY MAP    "));
   AffChaine(1 ,21,0,("       B : RETURN MAIN MENU  "));
   AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
   DisplayKeymapName(ucY);
   
+  // -----------------------------------------------------------------------
+  // Clear out any keys that might be pressed on the way in - make sure
+  // NDS keys are not being pressed. This prevents the inadvertant A key
+  // that enters this menu from also being acted on in the keymap...
+  // -----------------------------------------------------------------------
   while ((keysCurrent() & (KEY_TOUCH | KEY_B | KEY_A | KEY_UP | KEY_DOWN))!=0)
       ;
   WAITVBL;
@@ -1151,7 +1161,7 @@ void DisplayFileName(void)
 }
 
 //*****************************************************************************
-// Display colecoDSlus screen and change options
+// Display colecoDSlus screen and change options "main menu"
 //*****************************************************************************
 void affInfoOptions(u32 uY) 
 {
