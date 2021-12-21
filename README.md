@@ -18,6 +18,7 @@ Features :
 * Video Blend Mode (see below) and Vertical Sync.
 * LCD Screen Swap (press and hold L+R+X during gameplay).
 * Overlay support for the few games that need them.
+* Super Action Controller, Spinner and Trackball mapping.
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -63,15 +64,19 @@ Known Issues :
 * Missile-Strike crashes about 10-15 seconds into the gameplay.
 * Astrostorm crashes about 10-15 seconds into the gameplay.
 * Arno Dash and Diamond Dash 2 won't run.
+* Rip Cord crashes after a few seconds of play.
+* Hang-On won't show sprites or character graphics during gameplay.
+* Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 
 Controllers :
 -----------------------
-Right now only the Player 1 (left) controller is emulated. 
-For games that require other special controllers (Turbo, Slither, etc)
-you can seek out "SCE" (Standard Controller Editions) which are fan-made
-hacks that work with the standard controller. 
+You can map buttons to either P1 or P2 controllers. 
+There is full support for Spinner X (P1) and Spinner Y (P2) or map 
+both of them to get support for trackball games. These also work
+for games like Turbo steering.  You can change the spinner sensitivity
+to one of five different settings (Normal, Fast, Fastest, Slow, Slowest).
 
 Blend Mode (DSi) :
 -----------------------
@@ -105,6 +110,13 @@ You can toggle this in the "Game Options" (and START=SAVE it out as you wish).
 
 Versions :
 -----------------------
+V4.5: 21-Dec-2021 by wavemotion-dave
+* Full support for Spinner/Trackball. Map SpinX, SpinY in key settings.
+* Five different sensitivities for the Spinner/Trackball in Game Options.
+* Added ability to Quit Emulator (will return to TWL++ or power off depending on launcher).
+* Unified handling of UI in Redefine Keys and Game Options so they work the same.
+* Many small fixes and tweaks under the hood - Sudoku fixed.
+
 V4.4: 18-Dec-2021 by wavemotion-dave
 * Added option for "Max Sprites" to set to original HW limit of 4 vs 32.
 * New Vertical Sync option (default ON for DSi and above) to reduce tearing.

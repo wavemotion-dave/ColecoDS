@@ -36,12 +36,53 @@ int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
 char szName[256];
 
-const char szKeyName[20][16] = {
-  "INPUT_UP",         "INPUT_DOWN",       "INPUT_LEFT",       "INPUT_RIGHT",
-  "L BTN 1 (YLW)",    "R BTN 2 (RED)",    "KEYPAD #1",        "KEYPAD #2",
-  "KEYPAD #3",        "KEYPAD #4",        "KEYPAD #5",        "KEYPAD #6",
-  "KEYPAD #7",        "KEYPAD #8",        "KEYPAD #9",        "KEYPAD ##",
-  "KEYPAD #0",        "KEYPAD #*",        "BTN 3 (PURPLE)",   "BTN 4 (BLUE)"
+const char szKeyName[MAX_KEY_OPTIONS][18] = {
+  "P1 JOY UP",
+  "P1 JOY DOWN",
+  "P1 JOY LEFT",
+  "P1 JOY RIGHT",
+  "P1 BTN 1 (L/YLW)",
+  "P1 BTN 2 (R/RED)",
+  "P1 BTN 3 (PURP)",
+  "P1 BTN 4 (BLUE)",
+  "P1 KEYPAD #1",        
+  "P1 KEYPAD #2",
+  "P1 KEYPAD #3",        
+  "P1 KEYPAD #4",
+  "P1 KEYPAD #5",
+  "P1 KEYPAD #6",
+  "P1 KEYPAD #7",
+  "P1 KEYPAD #8",
+  "P1 KEYPAD #9",
+  "P1 KEYPAD ##",
+  "P1 KEYPAD #0",
+  "P1 KEYPAD #*",
+    
+  "P2 JOY UP",
+  "P2 JOY DOWN",
+  "P2 JOY LEFT",
+  "P2 JOY RIGHT",
+  "P2 BTN 1 (L/YLW)",
+  "P2 BTN 2 (R/RED)",
+  "P2 BTN 3 (PURP)",
+  "P2 BTN 4 (BLUE)",
+  "P2 KEYPAD #1",        
+  "P2 KEYPAD #2",
+  "P2 KEYPAD #3",        
+  "P2 KEYPAD #4",
+  "P2 KEYPAD #5",
+  "P2 KEYPAD #6",
+  "P2 KEYPAD #7",
+  "P2 KEYPAD #8",
+  "P2 KEYPAD #9",
+  "P2 KEYPAD ##",
+  "P2 KEYPAD #0",
+  "P2 KEYPAD #*",
+    
+  "SPIN X+",          
+  "SPIN X-",          
+  "SPIN Y+",
+  "SPIN Y-"
 };
 
 
@@ -639,40 +680,94 @@ void SaveConfig(bool bShow)
 
 void SetDefaultGameConfig(void)
 {
-    myConfig.keymap[0]  = 0;
-    myConfig.keymap[1]  = 1;
-    myConfig.keymap[2]  = 2;
-    myConfig.keymap[3]  = 3;
-    myConfig.keymap[4]  = 4;
-    myConfig.keymap[5]  = 5;
-    myConfig.keymap[6]  = 8;
-    myConfig.keymap[7]  = 9;
-    myConfig.keymap[8]  = 10;
-    myConfig.keymap[9]  = 11;
-    myConfig.keymap[10] = 6;
-    myConfig.keymap[11] = 7;
+    myConfig.keymap[0]   = 0;    // NDS D-Pad mapped to CV Joystick UP
+    myConfig.keymap[1]   = 1;    // NDS D-Pad mapped to CV Joystick DOWN
+    myConfig.keymap[2]   = 2;    // NDS D-Pad mapped to CV Joystick LEFT
+    myConfig.keymap[3]   = 3;    // NDS D-Pad mapped to CV Joystick RIGHT
+    myConfig.keymap[4]   = 4;    // NDS A Button mapped to CV Button 1 (Yellow / Left Button)
+    myConfig.keymap[5]   = 5;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
+    myConfig.keymap[6]   = 6;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
+    myConfig.keymap[7]   = 7;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
     
-    myConfig.showFPS    = 0;
-    myConfig.frameSkip  = 0;
-    myConfig.frameBlend = 0;
-    myConfig.fullSpeed  = 0;        
-    myConfig.autoFire1  = 0;
-    myConfig.autoFire2  = 0;
-    myConfig.overlay    = 0;
-    myConfig.maxSprites = 0;
-    myConfig.vertSync   = (isDSiMode() ? 1:0);
-    myConfig.reserved7  = 0;    
-    myConfig.reserved8  = 0;    
-    myConfig.reserved9  = 0;    
-    myConfig.reservedA  = 0;    
-    myConfig.reservedB  = 0;    
-    myConfig.reservedC  = 0;    
+    myConfig.keymap[8]   = 10;   // NDS L      mapped to Keypad #3
+    myConfig.keymap[9]   = 11;   // NDS R      mapped to Keypad #4
+    myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
+    myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
+    
+    myConfig.showFPS     = 0;
+    myConfig.frameSkip   = 0;
+    myConfig.frameBlend  = 0;
+    myConfig.fullSpeed   = 0;        
+    myConfig.autoFire1   = 0;
+    myConfig.autoFire2   = 0;
+    myConfig.overlay     = 0;
+    myConfig.maxSprites  = 0;
+    myConfig.vertSync    = (isDSiMode() ? 1:0);
+    myConfig.spinSpeed   = 0;    
+    myConfig.touchPad    = 0;
+    myConfig.reserved8   = 0;    
+    myConfig.reserved9   = 0;    
+    myConfig.reservedA   = 0;    
+    myConfig.reservedB   = 0;    
+    myConfig.reservedC   = 0;    
     
     // And a few odd defaults 
-    if (file_crc == 0xee530ad2) myConfig.maxSprites = 1;  // QBiqs
-    if (file_crc == 0x275c800e) myConfig.maxSprites = 1;  // Antartic Adventure
-    if (file_crc == 0xa66e5ed1) myConfig.maxSprites = 1;  // Antartic Adventure Prototype  
-    if (file_crc == 0x6af19e75) myConfig.maxSprites = 1;  // Adventures in the Park    
+    if (file_crc == 0xee530ad2) myConfig.maxSprites  = 1;  // QBiqs
+    if (file_crc == 0x275c800e) myConfig.maxSprites  = 1;  // Antartic Adventure
+    if (file_crc == 0xa66e5ed1) myConfig.maxSprites  = 1;  // Antartic Adventure Prototype  
+    if (file_crc == 0x6af19e75) myConfig.maxSprites  = 1;  // Adventures in the Park    
+    
+    // -------------------------------------------
+    // Turbo needs a very special map to work...
+    // -------------------------------------------
+    if (file_crc == 0xbd6ab02a)      // Turbo (Sega)
+    {
+        myConfig.touchPad    = 1;    // Map the on-screen touch Keypad to P2 for Turbo
+        myConfig.keymap[0]   = 20;   // NDS D-Pad mapped to P2 UP
+        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
+        myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
+        myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
+    }
+    
+    
+    // -------------------------------------------
+    // Destructor needs a very special map to work...
+    // -------------------------------------------
+    if (file_crc == 0x56c358a6)      // Destructor (Coleco)
+    {
+        myConfig.touchPad    = 1;    // Map the on-screen touch Keypad to P2 for Destructor
+        myConfig.keymap[0]   = 20;   // NDS D-Pad mapped to P2 UP
+        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
+        myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
+        myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
+    }
+    
+    // -------------------------------------------
+    // Slither needs Trackball Support (SpinX/Y)
+    // -------------------------------------------
+    if (file_crc == 0x53d2651c)      // Slither (Century)
+    {
+        myConfig.keymap[0]   = 42;   // NDS D-Pad mapped to Spinner Y
+        myConfig.keymap[1]   = 43;   // NDS D-Pad mapped to Spinner Y
+        myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
+        myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
+    }
+    
+    // ---------------------------------------------------------
+    // Victory needs Trackball Support (SpinX/Y) plus Buttons
+    // ---------------------------------------------------------
+    if (file_crc == 0x70142655)      // Victory (Exidy)
+    {
+        myConfig.keymap[0]   = 42;   // NDS D-Pad mapped to Spinner Y
+        myConfig.keymap[1]   = 43;   // NDS D-Pad mapped to Spinner Y
+        myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
+        myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
+        
+        myConfig.keymap[4]   = 4;    // NDS A Button mapped to P1 Button 1
+        myConfig.keymap[5]   = 5;    // NDS B Button mapped to P1 Button 2 
+        myConfig.keymap[6]   = 24;   // NDS X Button mapped to P2 Button 1
+        myConfig.keymap[7]   = 25;   // NDS Y Button mapped to P2 Button 2         
+    }
 }
 
 // -------------------------------------------------------------------------
@@ -749,6 +844,8 @@ const struct options_t Option_Table[] =
     {"VERT SYNC",       {"OFF", "ON"},                                                                                                          &myConfig.vertSync,   2},    
     {"AUTO FIRE B1",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire1,  2},
     {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire2,  2},
+    {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                               &myConfig.touchPad,   2},    
+    {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                       &myConfig.spinSpeed,  5},
     {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                  &dev_z80_cycles,     16},
     {NULL,              {"",      ""},                                                                                                          NULL,                 1},
 };              
@@ -919,14 +1016,14 @@ void DisplayKeymapName(u32 uY)
 // ------------------------------------------------------------------------------
 void colecoDSChangeKeymap(void) 
 {
-  u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucA=0x00,ucY= 7, bOK=0, bTch, bIndTch;
+  u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucY= 7, bOK=0, bIndTch=0;
 
   // Efface l'ecran pour mettre les touches
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(9,5,0,("=*   KEYS  *="));
-  AffChaine(1 ,20,0,("       B : RETURN TO OPTIONS "));
-  AffChaine(1 ,21,0,("       A : CHOOSE KEY        "));
+  AffChaine(1 ,20,0,("   D-PAD : CHANGE KEY MAP    "));
+  AffChaine(1 ,21,0,("       B : RETURN MAIN MENU  "));
   AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
   DisplayKeymapName(ucY);
   
@@ -939,6 +1036,7 @@ void colecoDSChangeKeymap(void)
       if (!ucHaut) {
         DisplayKeymapName(32);
         ucY = (ucY == 7 ? 18 : ucY -1);
+        bIndTch = myConfig.keymap[ucY-7];
         ucHaut=0x01;
         DisplayKeymapName(ucY);
       }
@@ -954,6 +1052,7 @@ void colecoDSChangeKeymap(void)
       if (!ucBas) {
         DisplayKeymapName(32);
         ucY = (ucY == 18 ? 7 : ucY +1);
+        bIndTch = myConfig.keymap[ucY-7];
         ucBas=0x01;
         DisplayKeymapName(ucY);
       }
@@ -968,65 +1067,50 @@ void colecoDSChangeKeymap(void)
       
     if (keysCurrent() & KEY_START) 
     {
-        SaveConfig(true);
+        SaveConfig(true); // Save options
     }
       
-    if (keysCurrent() & KEY_A) 
+    if (keysCurrent() & KEY_B) 
     {
-      if (!ucA) {
-        ucA = 0x01;
-        AffChaine(4 ,20,0,("   DPAD : CHANGE KEY   "));
-        AffChaine(4 ,21,0,("      A : CONFIRM ENTRY  "));
-        AffChaine(1 ,22,0,("                          "));
-        while (keysCurrent() & KEY_A);
-        bTch = 0x00;
-        bIndTch = myConfig.keymap[ucY-7];
-        while(!bTch) {
-          affMario();
-          swiWaitForVBlank();
-          if (keysCurrent() & KEY_A) {
-            bTch=1;
-          }
-          if (keysCurrent() & KEY_LEFT) {
-            if (ucL == 0) {
-              bIndTch = (bIndTch == 0 ? 19 : bIndTch-1);
-              ucL=1;
-              myConfig.keymap[ucY-7] = bIndTch;
-              DisplayKeymapName(ucY);
-            }
-            else {
-              ucL++;
-              if (ucL > 10) ucL = 0;
-            }
-          }
-          else {
-            ucL = 0;
-          }
-          if (keysCurrent() & KEY_RIGHT) {
-            if (ucR == 0) {
-              bIndTch = (bIndTch == 19 ? 0 : bIndTch+1);
-              ucR=1;
-              myConfig.keymap[ucY-7] = bIndTch;
-              DisplayKeymapName(ucY);
-            }
-            else {
-              ucR++;
-              if (ucR > 10) ucR = 0;
-            }
-          }
-          else
-            ucR  = 0;
+      bOK = 1;  // Exit menu
+    }
+      
+    if (keysCurrent() & KEY_LEFT) 
+    {
+        if (ucL == 0) {
+          bIndTch = (bIndTch == 0 ? (MAX_KEY_OPTIONS-1) : bIndTch-1);
+          ucL=1;
+          myConfig.keymap[ucY-7] = bIndTch;
+          DisplayKeymapName(ucY);
         }
-        AffChaine(1 ,20,0,("       B : RETURN TO OPTIONS "));
-        AffChaine(1 ,21,0,("       A : CHOOSE KEY        "));
-        AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
-        while (keysCurrent()  & KEY_A);
-      }
+        else {
+          ucL++;
+          if (ucL > 10) ucL = 0;
+        }
+    }
+    else 
+    {
+        ucL = 0;
+    }
+      
+    if (keysCurrent() & KEY_RIGHT) 
+    {
+        if (ucR == 0) 
+        {
+          bIndTch = (bIndTch == (MAX_KEY_OPTIONS-1) ? 0 : bIndTch+1);
+          ucR=1;
+          myConfig.keymap[ucY-7] = bIndTch;
+          DisplayKeymapName(ucY);
+        }
+        else 
+        {
+          ucR++;
+          if (ucR > 10) ucR = 0;
+        }
     }
     else
-      ucA = 0x00;
-    if (keysCurrent() & KEY_B) {
-      bOK = 1;
+    {
+        ucR=0;
     }
     affMario();
     swiWaitForVBlank();
@@ -1060,8 +1144,9 @@ void affInfoOptions(u32 uY)
     AffChaine(2,11,(uY==11 ? 2 : 0),("         PLAY  GAME         "));
     AffChaine(2,13,(uY==13 ? 2 : 0),("     REDEFINE  KEYS         "));
     AffChaine(2,15,(uY==15 ? 2 : 0),("        GAME   OPTIONS      "));
-    AffChaine(5,18,0,("START : PLAY GAME     "));
-    AffChaine(5,19,0,("    A : CHOOSE OPTION "));
+    AffChaine(2,17,(uY==17 ? 2 : 0),("        QUIT   EMULATOR     "));
+    AffChaine(5,20,0,("START : PLAY GAME     "));
+    AffChaine(5,21,0,("    A : CHOOSE OPTION "));
 }
 
 // --------------------------------------------------------------------
@@ -1139,7 +1224,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
         affInfoOptions(32);
-        ucY = (ucY == 9 ? 15 : ucY -2);
+        ucY = (ucY == 9 ? 17 : ucY -2);
         ucHaut=0x01;
         affInfoOptions(ucY);
       }
@@ -1154,7 +1239,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         affInfoOptions(32);
-        ucY = (ucY == 15 ? 9 : ucY +2);
+        ucY = (ucY == 17 ? 9 : ucY +2);
         ucBas=0x01;
         affInfoOptions(ucY);
       }
@@ -1170,7 +1255,7 @@ void colecoDSChangeOptions(void)
       if (!ucA) {
         ucA = 0x01;
         switch (ucY) {
-          case 9 :
+          case 9 :      // LOAD GAME
             colecoDSLoadFile();
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
             if (ucGameChoice != -1) 
@@ -1183,7 +1268,7 @@ void colecoDSChangeOptions(void)
             AffChaine(9,5,0,"=* OPTIONS *=");
             affInfoOptions(ucY);
             break;
-          case 11 :
+          case 11 :     // PLAY GAME
             if (ucGameChoice != -1) 
             { 
               bOK = 1;
@@ -1193,20 +1278,21 @@ void colecoDSChangeOptions(void)
                 NoGameSelected(ucY);
             }
             break;
-          case 13 : 
+          case 13 :     // REDEFINE KEYS
             if (ucGameChoice != -1) 
             { 
                 colecoDSChangeKeymap();
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
                 AffChaine(9,5,0,"=* OPTIONS *=");
                 affInfoOptions(ucY);
+                DisplayFileName();
             }
             else 
             { 
                 NoGameSelected(ucY);
             }
             break;
-          case 15 : 
+          case 15 :     // GAME OPTIONS
             if (ucGameChoice != -1) 
             { 
                 colecoDSGameOptions();
@@ -1220,6 +1306,11 @@ void colecoDSChangeOptions(void)
                NoGameSelected(ucY);
             }
             break;                
+                
+          case 17 :     // QUIT EMULATOR
+            exit(1);
+            break;
+                
         }
       }
     }

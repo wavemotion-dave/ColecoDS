@@ -18,7 +18,7 @@ typedef struct {
 } FICcoleco;
 
 #define MAX_CONFIGS 400
-#define CONFIG_VER  0x0001
+#define CONFIG_VER  0x0004
 
 struct __attribute__((__packed__)) Config_t
 {
@@ -34,8 +34,9 @@ struct __attribute__((__packed__)) Config_t
     u8  overlay;
     u8  maxSprites;
     u8  vertSync;
-    u8  reserved7;
-    u16 reserved8;
+    u8  spinSpeed;
+    u8  touchPad;
+    u8  reserved8;
     u32 reserved9;
     u32 reservedA;
     u32 reservedB;

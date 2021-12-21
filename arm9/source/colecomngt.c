@@ -60,12 +60,18 @@ static u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
 static u8 Port60  __attribute__((section(".dtcm"))) = 0x0F;
 
 u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
-u8 AY_Enable      __attribute__((section(".dtcm"))) = false;
-u8 AY_NeverEnable __attribute__((section(".dtcm"))) = false;
+u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
+u8 AY_NeverEnable  __attribute__((section(".dtcm"))) = false;
 u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
 
-u8  JoyMode = 0;            // Joystick Mode
-u32 JoyState = 0;           // Joystick States
+u8  JoyMode        __attribute__((section(".dtcm"))) = 0;           // Joystick Mode (1=Keypad, 0=Joystick)
+u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick State for P1 and P2
+
+// ---------------------------------------------------------------
+// We provide 5 "Sensitivity" settings for the X/Y spinner
+// ---------------------------------------------------------------
+// Hand Tweaked Speeds:      Norm   Fast   Fastest  Slow   Slowest
+const u16 SPINNER_SPEED[] = {120,   75,    50,      200,   300};    
 
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
@@ -540,6 +546,7 @@ void getfile_crc(const char *path)
     timingAdjustment = 0;
     if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
     if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
+    if (file_crc == 0x56c358a6) timingAdjustment =  2;  // Destructor (Coleco) requires more cycles
     if (file_crc == 0xb5be3448) timingAdjustment =  10; // Sudoku Homebrew requires more cycles
     
     // -----------------------------------------------------------------
@@ -780,10 +787,46 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 /**************************************************************/
 ITCM_CODE u32 LoopZ80() 
 {
-  cpuirequest=0;
+    static u16 spinnerDampen = 0;
+    cpuirequest=0;
 
   // Just in case there are AY audio envelopes... this is very rough timing.
   if (AY_Enable) FakeAY_Loop();
+    
+  // ------------------------------------------------------------------
+  // Before we execute Z80 or Loop the 9918 (both of which can cause 
+  // NMI interrupt to occur), we check and adjust the spinners which 
+  // can generate a lower priority interrupt to the running Z80 code.
+  // ------------------------------------------------------------------
+  if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
+  {
+      if (spinX_left)
+      {
+          cpuirequest = Z80_IRQ_INT;
+          JoyState   &= 0xFFFFCFFF;
+          JoyState   |= 0x00003000;
+      }
+      else if (spinX_right)
+      {
+          cpuirequest = Z80_IRQ_INT;
+          JoyState   &= 0xFFFFCFFF;
+          JoyState   |= 0x00001000;
+      }
+      
+      if (spinY_left)
+      {
+          cpuirequest = Z80_IRQ_INT;
+          JoyState   &= 0xCFFFFFFF;
+          JoyState   |= 0x30000000;
+      }
+      else if (spinY_right)
+      {
+          cpuirequest = Z80_IRQ_INT;
+          JoyState   &= 0xCFFFFFFF;
+          JoyState   |= 0x10000000;
+      }
+      
+  }
     
   // Execute 1 scanline worth of CPU instructions
   DrZ80_execute(TMS9918_LINE + timingAdjustment);
@@ -791,15 +834,11 @@ ITCM_CODE u32 LoopZ80()
   // Refresh VDP 
   if(Loop9918()) cpuirequest=Z80_NMI_INT;
     
-  // Generate VDP interrupt if called for
-  if (cpuirequest==Z80_NMI_INT)
-  {
-    Z80_Cause_Interrupt(Z80_NMI_INT);
-  }
+  // Generate interrupt if called for
+  if (cpuirequest)
+    Z80_Cause_Interrupt(cpuirequest);
   else
-  {
     Z80_Clear_Pending_Interrupts();
-  }
     
   // Drop out unless end of screen is reached 
   return (CurLine == TMS9918_END_LINE) ? 0:1;
