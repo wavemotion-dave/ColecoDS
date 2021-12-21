@@ -486,7 +486,7 @@ ITCM_CODE void colecoDS_main(void)
   u16 iTx,  iTy;
   u16 ResetNow  = 0, SaveNow = 0, LoadNow = 0;
   u32 ucUN, ucDEUX;
-  static u8 lastUN = 0;
+  static u32 lastUN = 0;
   static u8 dampenClick = 0;
 
   showMainMenu();      // Returns when  user has asked for a game to run...

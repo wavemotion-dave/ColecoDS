@@ -718,7 +718,7 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x6af19e75) myConfig.maxSprites  = 1;  // Adventures in the Park    
     
     // -------------------------------------------
-    // Turbo needs a very special map to work...
+    // Turbo needs the Driving Module
     // -------------------------------------------
     if (file_crc == 0xbd6ab02a)      // Turbo (Sega)
     {
@@ -731,11 +731,23 @@ void SetDefaultGameConfig(void)
     
     
     // -------------------------------------------
-    // Destructor needs a very special map to work...
+    // Destructor needs the Driving Module...
     // -------------------------------------------
     if (file_crc == 0x56c358a6)      // Destructor (Coleco)
     {
         myConfig.touchPad    = 1;    // Map the on-screen touch Keypad to P2 for Destructor
+        myConfig.keymap[0]   = 20;   // NDS D-Pad mapped to P2 UP
+        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
+        myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
+        myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
+    }
+    
+    // -------------------------------------------
+    // Dukes of Hazzard needs the Driving Module
+    // -------------------------------------------
+    if (file_crc == 0x4025ac94)      // Dukes of Hazzard (Coleco)
+    {
+        myConfig.touchPad    = 1;    // Map the on-screen touch Keypad to P2 for Dukes of Hazzard
         myConfig.keymap[0]   = 20;   // NDS D-Pad mapped to P2 UP
         myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
         myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
