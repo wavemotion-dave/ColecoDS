@@ -972,6 +972,7 @@ void colecoDSGameOptions(void)
                 break;
             }
         }
+        affMario();
         swiWaitForVBlank();
     }
 
@@ -1143,7 +1144,7 @@ void DisplayFileName(void)
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
     AffChaine((16 - (strlen(szName)/2)),22,0,szName);
-#if 1 // Display CRC... for now 
+#if 0 // Display CRC... for now 
     siprintf(szName, "[%08X]", (int)file_crc);
     AffChaine(11,21,0,szName);
 #endif    
