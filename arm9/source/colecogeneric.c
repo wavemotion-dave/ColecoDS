@@ -1144,9 +1144,9 @@ void DisplayFileName(void)
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
     AffChaine((16 - (strlen(szName)/2)),22,0,szName);
-#if 0 // Display CRC... for now 
-    siprintf(szName, "[%08X]", (int)file_crc);
-    AffChaine(11,21,0,szName);
+#if 1 // Display CRC... for now 
+    siprintf(szName, "      [%08X]      ", (int)file_crc);
+    AffChaine(5,21,0,szName);
 #endif    
 }
 
@@ -1155,13 +1155,12 @@ void DisplayFileName(void)
 //*****************************************************************************
 void affInfoOptions(u32 uY) 
 {
-    AffChaine(2, 9,(uY== 9 ? 2 : 0),("         LOAD  GAME         "));
-    AffChaine(2,11,(uY==11 ? 2 : 0),("         PLAY  GAME         "));
-    AffChaine(2,13,(uY==13 ? 2 : 0),("     REDEFINE  KEYS         "));
-    AffChaine(2,15,(uY==15 ? 2 : 0),("        GAME   OPTIONS      "));
-    AffChaine(2,17,(uY==17 ? 2 : 0),("        QUIT   EMULATOR     "));
-    AffChaine(5,20,0,("START : PLAY GAME     "));
-    AffChaine(5,21,0,("    A : CHOOSE OPTION "));
+    AffChaine(2, 8,(uY== 8 ? 2 : 0),("         LOAD  GAME         "));
+    AffChaine(2,10,(uY==10 ? 2 : 0),("         PLAY  GAME         "));
+    AffChaine(2,12,(uY==12 ? 2 : 0),("     REDEFINE  KEYS         "));
+    AffChaine(2,14,(uY==14 ? 2 : 0),("        GAME   OPTIONS      "));
+    AffChaine(2,16,(uY==16 ? 2 : 0),("        QUIT   EMULATOR     "));
+    AffChaine(6,19,0,("USE D-PAD  A=SELECT"));
 }
 
 // --------------------------------------------------------------------
@@ -1187,7 +1186,7 @@ void NoGameSelected(u32 ucY)
 // --------------------------------------------------------------------
 void colecoDSChangeOptions(void) 
 {
-  u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 9, bOK=0, bBcl;
+  u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 8, bOK=0, bBcl;
   
   // Affiche l'ecran en haut
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -1239,7 +1238,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
         affInfoOptions(32);
-        ucY = (ucY == 9 ? 17 : ucY -2);
+        ucY = (ucY == 8 ? 16 : ucY -2);
         ucHaut=0x01;
         affInfoOptions(ucY);
       }
@@ -1254,7 +1253,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         affInfoOptions(32);
-        ucY = (ucY == 17 ? 9 : ucY +2);
+        ucY = (ucY == 16 ? 8 : ucY +2);
         ucBas=0x01;
         affInfoOptions(ucY);
       }
@@ -1270,7 +1269,7 @@ void colecoDSChangeOptions(void)
       if (!ucA) {
         ucA = 0x01;
         switch (ucY) {
-          case 9 :      // LOAD GAME
+          case 8 :      // LOAD GAME
             colecoDSLoadFile();
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
             if (ucGameChoice != -1) 
@@ -1279,11 +1278,11 @@ void colecoDSChangeOptions(void)
                 FindAndLoadConfig();    // Try to find keymap for this file...
                 DisplayFileName();
             }
-            ucY = 11;
+            ucY = 10;
             AffChaine(9,5,0,"=* OPTIONS *=");
             affInfoOptions(ucY);
             break;
-          case 11 :     // PLAY GAME
+          case 10 :     // PLAY GAME
             if (ucGameChoice != -1) 
             { 
               bOK = 1;
@@ -1293,7 +1292,7 @@ void colecoDSChangeOptions(void)
                 NoGameSelected(ucY);
             }
             break;
-          case 13 :     // REDEFINE KEYS
+          case 12 :     // REDEFINE KEYS
             if (ucGameChoice != -1) 
             { 
                 colecoDSChangeKeymap();
@@ -1307,7 +1306,7 @@ void colecoDSChangeOptions(void)
                 NoGameSelected(ucY);
             }
             break;
-          case 15 :     // GAME OPTIONS
+          case 14 :     // GAME OPTIONS
             if (ucGameChoice != -1) 
             { 
                 colecoDSGameOptions();
@@ -1322,7 +1321,7 @@ void colecoDSChangeOptions(void)
             }
             break;                
                 
-          case 17 :     // QUIT EMULATOR
+          case 16 :     // QUIT EMULATOR
             exit(1);
             break;
                 
