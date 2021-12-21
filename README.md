@@ -18,7 +18,7 @@ Features :
 * Video Blend Mode (see below) and Vertical Sync.
 * LCD Screen Swap (press and hold L+R+X during gameplay).
 * Overlay support for the few games that need them.
-* Super Action Controller, Spinner and Trackball mapping.
+* Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
