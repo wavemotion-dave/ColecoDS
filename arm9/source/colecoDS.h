@@ -5,49 +5,60 @@
 #include <string.h>
 #include "cpu/z80/drz80/Z80_interface.h"
 
-#define VERSIONCLDS "4.4"
+#define VERSIONCLDS "4.5"
 
 //#define DEBUG_Z80   YES
 
-#define JST_NONE      0x0000
-#define JST_KEYPAD    0x000F
-#define JST_UP        0x0100
-#define JST_RIGHT     0x0200
-#define JST_DOWN      0x0400
-#define JST_LEFT      0x0800
-#define JST_FIRER     0x0040
-#define JST_FIREL     0x4000
-#define JST_0         0x0005
-#define JST_1         0x0002
-#define JST_2         0x0008
-#define JST_3         0x0003
-#define JST_4         0x000D
-#define JST_5         0x000C
-#define JST_6         0x0001
-#define JST_7         0x000A
-#define JST_8         0x000E
-#define JST_9         0x0004
-#define JST_STAR      0x0006
-#define JST_POUND     0x0009
-#define JST_PURPLE    0x0007
-#define JST_BLUE      0x000B
-#define JST_RED       JST_FIRER
-#define JST_YELLOW    JST_FIREL
+#define JST_NONE            0x0000
+#define JST_KEYPAD          0x000F
+#define JST_UP              0x0100
+#define JST_RIGHT           0x0200
+#define JST_DOWN            0x0400
+#define JST_LEFT            0x0800
+#define JST_FIRER           0x0040
+#define JST_FIREL           0x4000
+#define JST_0               0x0005
+#define JST_1               0x0002
+#define JST_2               0x0008
+#define JST_3               0x0003
+#define JST_4               0x000D
+#define JST_5               0x000C
+#define JST_6               0x0001
+#define JST_7               0x000A
+#define JST_8               0x000E
+#define JST_9               0x0004
+#define JST_STAR            0x0006
+#define JST_POUND           0x0009
+#define JST_PURPLE          0x0007
+#define JST_BLUE            0x000B
+#define JST_RED             JST_FIRER
+#define JST_YELLOW          JST_FIREL
 
+// These 4 are now actual Colecovision key maps... they trigger the spinners.
+#define META_SPINX_LEFT     0xFFFF0001
+#define META_SPINX_RIGHT    0xFFFF0002
+#define META_SPINY_LEFT     0xFFFF0003
+#define META_SPINY_RIGHT    0xFFFF0004
 
-#define JOYMODE_JOYSTICK  0
-#define JOYMODE_KEYPAD    1
+#define JOYMODE_JOYSTICK    0
+#define JOYMODE_KEYPAD      1
 
 extern u16 emuFps;
 extern u16 emuActFrames;
 extern u16 timingFrames;
 
+extern u8 spinX_left;
+extern u8 spinX_right;
+extern u8 spinY_left;
+extern u8 spinY_right;
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
+#define MAX_KEY_OPTIONS  44
+
 extern volatile u16 vusCptVBL;                   // Video Management
 
-extern u16 keyCoresp[20];
+extern u32 keyCoresp[MAX_KEY_OPTIONS];
 
 extern u8 pColecoMem[0x10000];                   // Coleco Memory
 

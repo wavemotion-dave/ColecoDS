@@ -75,13 +75,63 @@ u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of 
 
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 
+u32 NDS_keyMap[12] = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
+
 // The key map for the Colecovision... mapped into the NDS controller
-u16 keyCoresp[20] = {
-    JST_UP, JST_DOWN, JST_LEFT, JST_RIGHT, JST_FIREL, JST_FIRER,
-    JST_1, JST_2, JST_3, JST_4, JST_5, JST_6, JST_7, JST_8, JST_9, 
-    JST_POUND, JST_0, JST_STAR, JST_PURPLE, JST_BLUE
+u32 keyCoresp[MAX_KEY_OPTIONS] = {
+    JST_UP, 
+    JST_DOWN, 
+    JST_LEFT, 
+    JST_RIGHT, 
+    JST_FIREL, 
+    JST_FIRER,  
+    JST_PURPLE, 
+    JST_BLUE,
+    JST_1, 
+    JST_2, 
+    JST_3, 
+    JST_4, 
+    JST_5, 
+    JST_6, 
+    JST_7, 
+    JST_8, 
+    JST_9, 
+    JST_POUND, 
+    JST_0, 
+    JST_STAR, 
+    
+    JST_UP      << 16,      // P2 versions of the above...
+    JST_DOWN    << 16, 
+    JST_LEFT    << 16, 
+    JST_RIGHT   << 16, 
+    JST_FIREL   << 16, 
+    JST_FIRER   << 16,  
+    JST_PURPLE  << 16, 
+    JST_BLUE    << 16,
+    JST_1       << 16, 
+    JST_2       << 16, 
+    JST_3       << 16, 
+    JST_4       << 16, 
+    JST_5       << 16, 
+    JST_6       << 16, 
+    JST_7       << 16, 
+    JST_8       << 16, 
+    JST_9       << 16, 
+    JST_POUND   << 16, 
+    JST_0       << 16, 
+    JST_STAR    << 16, 
+    
+    META_SPINX_LEFT, META_SPINX_RIGHT, META_SPINY_LEFT, META_SPINY_RIGHT
 };
 
+
+// --------------------------------------------------------------------------------
+// Spinners! X and Y taken together will actually replicate the roller controller.
+// --------------------------------------------------------------------------------
+u8 spinX_left   = 0;
+u8 spinX_right  = 0;
+u8 spinY_left   = 0;
+u8 spinY_right  = 0;
 
 // ------------------------------------------------------------
 // Utility function to show the background for the main menu
@@ -281,7 +331,7 @@ u32 num_irqs = 0;
 void ResetColecovision(void)
 {
   JoyMode=JOYMODE_JOYSTICK;             // Joystick mode key
-  JoyState = 0x0000;                    // Nothing pressed to start
+  JoyState = 0x00000000;                // Nothing pressed to start
     
   Reset9918();                          // Reset video chip
 
@@ -434,7 +484,8 @@ ITCM_CODE void colecoDS_main(void)
 {
   u32 keys_pressed;
   u16 iTx,  iTy;
-  u16 ucUN, ucDEUX, ResetNow  = 0, SaveNow = 0, LoadNow = 0;
+  u16 ResetNow  = 0, SaveNow = 0, LoadNow = 0;
+  u32 ucUN, ucDEUX;
   static u8 lastUN = 0;
   static u8 dampenClick = 0;
 
@@ -651,6 +702,11 @@ ITCM_CODE void colecoDS_main(void)
         ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
         ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
         ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
+
+        // ---------------------------------------------------------------------
+        // If we are mapping the touch-screen keypad to P2, we shift these up.
+        // ---------------------------------------------------------------------
+        if (myConfig.touchPad) ucUN = ucUN << 16;
           
         if (++dampenClick > 3)  // Make sure the key is pressed for an appreciable amount of time...
         {
@@ -667,6 +723,14 @@ ITCM_CODE void colecoDS_main(void)
         lastUN = 0;  dampenClick = 0;
       }
 
+      // ---------------------------------------------------
+      // Assume no spinner action until we see it below...
+      // ---------------------------------------------------
+      spinX_left  = 0;
+      spinX_right = 0;
+      spinY_left  = 0;
+      spinY_right = 0;
+        
       // ------------------------------------------------------------------------
       //  Test DS keypresses (ABXY, L/R) and map to corresponding Coleco keys
       // ------------------------------------------------------------------------
@@ -680,18 +744,26 @@ ITCM_CODE void colecoDS_main(void)
       else        
       if  (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
-        if (keys_pressed & KEY_UP)      ucDEUX  |= keyCoresp[myConfig.keymap[0]];
-        if (keys_pressed & KEY_DOWN)    ucDEUX  |= keyCoresp[myConfig.keymap[1]];
-        if (keys_pressed & KEY_LEFT)    ucDEUX  |= keyCoresp[myConfig.keymap[2]];
-        if (keys_pressed & KEY_RIGHT)   ucDEUX  |= keyCoresp[myConfig.keymap[3]];
-        if (keys_pressed & KEY_A)       ucDEUX  |= keyCoresp[myConfig.keymap[4]];
-        if (keys_pressed & KEY_B)       ucDEUX  |= keyCoresp[myConfig.keymap[5]];
-        if (keys_pressed & KEY_X)       ucDEUX  |= keyCoresp[myConfig.keymap[6]];
-        if (keys_pressed & KEY_Y)       ucDEUX  |= keyCoresp[myConfig.keymap[7]];
-        if (keys_pressed & KEY_R)       ucDEUX  |= keyCoresp[myConfig.keymap[8]];
-        if (keys_pressed & KEY_L)       ucDEUX  |= keyCoresp[myConfig.keymap[9]];
-        if (keys_pressed & KEY_START)   ucDEUX  |= keyCoresp[myConfig.keymap[10]];
-        if (keys_pressed & KEY_SELECT)  ucDEUX  |= keyCoresp[myConfig.keymap[11]];
+          // --------------------------------------------------------------------------------------------------
+          // There are 12 NDS buttons (D-Pad, XYAB, L/R and Start+Select) - we allow mapping of any of these.
+          // --------------------------------------------------------------------------------------------------
+          for (u8 i=0; i<12; i++)
+          {
+              if (keys_pressed & NDS_keyMap[i])
+              {
+                  if (keyCoresp[myConfig.keymap[i]] < 0xFFFF0000)   // Normal key map
+                  {
+                    ucDEUX  |= keyCoresp[myConfig.keymap[i]];
+                  }
+                  else // Special Spinner Handling
+                  {
+                      if      (keyCoresp[myConfig.keymap[i]] == META_SPINX_LEFT)  spinX_left  = 1;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_SPINX_RIGHT) spinX_right = 1;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_LEFT)  spinY_left  = 1;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_RIGHT) spinY_right = 1;
+                  }
+              }
+          }
       }
         
       // ---------------------------------------------------------
