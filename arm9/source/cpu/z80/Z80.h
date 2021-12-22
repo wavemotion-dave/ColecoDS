@@ -19,7 +19,7 @@ extern "C" {
 
                                /* Compilation options:       */
 /* #define DEBUG */            /* Compile debugging version  */
-#define LSB_FIRST         /* Compile for low-endian CPU */
+#define LSB_FIRST              /* Compile for low-endian CPU */
 /* #define MSB_FIRST */        /* Compile for hi-endian CPU  */
 #define EXECZ80                /* Call Z80 each scanline     */
 
