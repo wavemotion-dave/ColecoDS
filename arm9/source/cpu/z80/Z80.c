@@ -17,6 +17,8 @@
 #include "Tables.h"
 #include <stdio.h>
 
+extern Z80 CPU;
+
 /** INLINE ***************************************************/
 /** C99 standard has "inline", but older compilers used     **/
 /** __inline for the same purpose.                          **/
@@ -34,162 +36,6 @@
 #define FAST_RDOP
 extern byte pColecoMem[];
 INLINE byte OpZ80(word A) { return pColecoMem[A]; }
-
-#define S(Fl)        R->AF.B.l|=Fl
-#define R(Fl)        R->AF.B.l&=~(Fl)
-#define FLAGS(Rg,Fl) R->AF.B.l=Fl|ZSTable[Rg]
-#define INCR(N)      R->R=((R->R+(N))&0x7F)|(R->R&0x80)
-
-#define M_RLC(Rg)      \
-  R->AF.B.l=Rg>>7;Rg=(Rg<<1)|R->AF.B.l;R->AF.B.l|=PZSTable[Rg]
-#define M_RRC(Rg)      \
-  R->AF.B.l=Rg&0x01;Rg=(Rg>>1)|(R->AF.B.l<<7);R->AF.B.l|=PZSTable[Rg]
-#define M_RL(Rg)       \
-  if(Rg&0x80)          \
-  {                    \
-    Rg=(Rg<<1)|(R->AF.B.l&C_FLAG); \
-    R->AF.B.l=PZSTable[Rg]|C_FLAG; \
-  }                    \
-  else                 \
-  {                    \
-    Rg=(Rg<<1)|(R->AF.B.l&C_FLAG); \
-    R->AF.B.l=PZSTable[Rg];        \
-  }
-#define M_RR(Rg)       \
-  if(Rg&0x01)          \
-  {                    \
-    Rg=(Rg>>1)|(R->AF.B.l<<7);     \
-    R->AF.B.l=PZSTable[Rg]|C_FLAG; \
-  }                    \
-  else                 \
-  {                    \
-    Rg=(Rg>>1)|(R->AF.B.l<<7);     \
-    R->AF.B.l=PZSTable[Rg];        \
-  }
-  
-#define M_SLA(Rg)      \
-  R->AF.B.l=Rg>>7;Rg<<=1;R->AF.B.l|=PZSTable[Rg]
-#define M_SRA(Rg)      \
-  R->AF.B.l=Rg&C_FLAG;Rg=(Rg>>1)|(Rg&0x80);R->AF.B.l|=PZSTable[Rg]
-
-#define M_SLL(Rg)      \
-  R->AF.B.l=Rg>>7;Rg=(Rg<<1)|0x01;R->AF.B.l|=PZSTable[Rg]
-#define M_SRL(Rg)      \
-  R->AF.B.l=Rg&0x01;Rg>>=1;R->AF.B.l|=PZSTable[Rg]
-
-#define M_BIT(Bit,Rg)  \
-  R->AF.B.l=(R->AF.B.l&C_FLAG)|H_FLAG|PZSTable[Rg&(1<<Bit)]
-
-#define M_SET(Bit,Rg) Rg|=1<<Bit
-#define M_RES(Bit,Rg) Rg&=~(1<<Bit)
-
-#define M_POP(Rg)      \
-  R->Rg.B.l=OpZ80(R->SP.W++);R->Rg.B.h=OpZ80(R->SP.W++)
-#define M_PUSH(Rg)     \
-  WrZ80(--R->SP.W,R->Rg.B.h);WrZ80(--R->SP.W,R->Rg.B.l)
-
-#define M_CALL         \
-  J.B.l=OpZ80(R->PC.W++);J.B.h=OpZ80(R->PC.W++);         \
-  WrZ80(--R->SP.W,R->PC.B.h);WrZ80(--R->SP.W,R->PC.B.l); \
-  R->PC.W=J.W; \
-  JumpZ80(J.W)
-
-#define M_JP  J.B.l=OpZ80(R->PC.W++);J.B.h=OpZ80(R->PC.W);R->PC.W=J.W;JumpZ80(J.W)
-#define M_JR  R->PC.W+=(offset)OpZ80(R->PC.W)+1;JumpZ80(R->PC.W)
-#define M_RET R->PC.B.l=OpZ80(R->SP.W++);R->PC.B.h=OpZ80(R->SP.W++);JumpZ80(R->PC.W)
-
-#define M_RST(Ad)      \
-  WrZ80(--R->SP.W,R->PC.B.h);WrZ80(--R->SP.W,R->PC.B.l);R->PC.W=Ad;JumpZ80(Ad)
-
-#define M_LDWORD(Rg)   \
-  R->Rg.B.l=OpZ80(R->PC.W++);R->Rg.B.h=OpZ80(R->PC.W++)
-
-#define M_ADD(Rg)      \
-  J.W=R->AF.B.h+Rg;    \
-  R->AF.B.l=           \
-    (~(R->AF.B.h^Rg)&(Rg^J.B.l)&0x80? V_FLAG:0)| \
-    J.B.h|ZSTable[J.B.l]|                        \
-    ((R->AF.B.h^Rg^J.B.l)&H_FLAG);               \
-  R->AF.B.h=J.B.l       
-
-#define M_SUB(Rg)      \
-  J.W=R->AF.B.h-Rg;    \
-  R->AF.B.l=           \
-    ((R->AF.B.h^Rg)&(R->AF.B.h^J.B.l)&0x80? V_FLAG:0)| \
-    N_FLAG|-J.B.h|ZSTable[J.B.l]|                      \
-    ((R->AF.B.h^Rg^J.B.l)&H_FLAG);                     \
-  R->AF.B.h=J.B.l
-
-#define M_ADC(Rg)      \
-  J.W=R->AF.B.h+Rg+(R->AF.B.l&C_FLAG); \
-  R->AF.B.l=                           \
-    (~(R->AF.B.h^Rg)&(Rg^J.B.l)&0x80? V_FLAG:0)| \
-    J.B.h|ZSTable[J.B.l]|              \
-    ((R->AF.B.h^Rg^J.B.l)&H_FLAG);     \
-  R->AF.B.h=J.B.l
-
-#define M_SBC(Rg)      \
-  J.W=R->AF.B.h-Rg-(R->AF.B.l&C_FLAG); \
-  R->AF.B.l=                           \
-    ((R->AF.B.h^Rg)&(R->AF.B.h^J.B.l)&0x80? V_FLAG:0)| \
-    N_FLAG|-J.B.h|ZSTable[J.B.l]|      \
-    ((R->AF.B.h^Rg^J.B.l)&H_FLAG);     \
-  R->AF.B.h=J.B.l
-
-#define M_CP(Rg)       \
-  J.W=R->AF.B.h-Rg;    \
-  R->AF.B.l=           \
-    ((R->AF.B.h^Rg)&(R->AF.B.h^J.B.l)&0x80? V_FLAG:0)| \
-    N_FLAG|-J.B.h|ZSTable[J.B.l]|                      \
-    ((R->AF.B.h^Rg^J.B.l)&H_FLAG)
-
-#define M_AND(Rg) R->AF.B.h&=Rg;R->AF.B.l=H_FLAG|PZSTable[R->AF.B.h]
-#define M_OR(Rg)  R->AF.B.h|=Rg;R->AF.B.l=PZSTable[R->AF.B.h]
-#define M_XOR(Rg) R->AF.B.h^=Rg;R->AF.B.l=PZSTable[R->AF.B.h]
-
-#define M_IN(Rg)        \
-  Rg=InZ80(R->BC.W);  \
-  R->AF.B.l=PZSTable[Rg]|(R->AF.B.l&C_FLAG)
-
-#define M_INC(Rg)       \
-  Rg++;                 \
-  R->AF.B.l=            \
-    (R->AF.B.l&C_FLAG)|ZSTable[Rg]|           \
-    (Rg==0x80? V_FLAG:0)|(Rg&0x0F? 0:H_FLAG)
-
-#define M_DEC(Rg)       \
-  Rg--;                 \
-  R->AF.B.l=            \
-    N_FLAG|(R->AF.B.l&C_FLAG)|ZSTable[Rg]| \
-    (Rg==0x7F? V_FLAG:0)|((Rg&0x0F)==0x0F? H_FLAG:0)
-
-#define M_ADDW(Rg1,Rg2) \
-  J.W=(R->Rg1.W+R->Rg2.W)&0xFFFF;                        \
-  R->AF.B.l=                                             \
-    (R->AF.B.l&~(H_FLAG|N_FLAG|C_FLAG))|                 \
-    ((R->Rg1.W^R->Rg2.W^J.W)&0x1000? H_FLAG:0)|          \
-    (((long)R->Rg1.W+(long)R->Rg2.W)&0x10000? C_FLAG:0); \
-  R->Rg1.W=J.W
-
-#define M_ADCW(Rg)      \
-  I=R->AF.B.l&C_FLAG;J.W=(R->HL.W+R->Rg.W+I)&0xFFFF;           \
-  R->AF.B.l=                                                   \
-    (((long)R->HL.W+(long)R->Rg.W+(long)I)&0x10000? C_FLAG:0)| \
-    (~(R->HL.W^R->Rg.W)&(R->Rg.W^J.W)&0x8000? V_FLAG:0)|       \
-    ((R->HL.W^R->Rg.W^J.W)&0x1000? H_FLAG:0)|                  \
-    (J.W? 0:Z_FLAG)|(J.B.h&S_FLAG);                            \
-  R->HL.W=J.W
-   
-#define M_SBCW(Rg)      \
-  I=R->AF.B.l&C_FLAG;J.W=(R->HL.W-R->Rg.W-I)&0xFFFF;           \
-  R->AF.B.l=                                                   \
-    N_FLAG|                                                    \
-    (((long)R->HL.W-(long)R->Rg.W-(long)I)&0x10000? C_FLAG:0)| \
-    ((R->HL.W^R->Rg.W)&(R->HL.W^J.W)&0x8000? V_FLAG:0)|        \
-    ((R->HL.W^R->Rg.W^J.W)&0x1000? H_FLAG:0)|                  \
-    (J.W? 0:Z_FLAG)|(J.B.h&S_FLAG);                            \
-  R->HL.W=J.W
-
 
 // -----------------------------------------------
 // These two functions are for the CZ80 core...
@@ -210,6 +56,161 @@ INLINE byte RdZ80(register word address)
   }    
   return (pColecoMem[address]);
 }
+
+#define S(Fl)        CPU.AF.B.l|=Fl
+#define R(Fl)        CPU.AF.B.l&=~(Fl)
+#define FLAGS(Rg,Fl) CPU.AF.B.l=Fl|ZSTable[Rg]
+#define INCR(N)      CPU.R=((CPU.R+(N))&0x7F)|(CPU.R&0x80)
+
+#define M_RLC(Rg)      \
+  CPU.AF.B.l=Rg>>7;Rg=(Rg<<1)|CPU.AF.B.l;CPU.AF.B.l|=PZSTable[Rg]
+#define M_RRC(Rg)      \
+  CPU.AF.B.l=Rg&0x01;Rg=(Rg>>1)|(CPU.AF.B.l<<7);CPU.AF.B.l|=PZSTable[Rg]
+#define M_RL(Rg)       \
+  if(Rg&0x80)          \
+  {                    \
+    Rg=(Rg<<1)|(CPU.AF.B.l&C_FLAG); \
+    CPU.AF.B.l=PZSTable[Rg]|C_FLAG; \
+  }                    \
+  else                 \
+  {                    \
+    Rg=(Rg<<1)|(CPU.AF.B.l&C_FLAG); \
+    CPU.AF.B.l=PZSTable[Rg];        \
+  }
+#define M_RR(Rg)       \
+  if(Rg&0x01)          \
+  {                    \
+    Rg=(Rg>>1)|(CPU.AF.B.l<<7);     \
+    CPU.AF.B.l=PZSTable[Rg]|C_FLAG; \
+  }                    \
+  else                 \
+  {                    \
+    Rg=(Rg>>1)|(CPU.AF.B.l<<7);     \
+    CPU.AF.B.l=PZSTable[Rg];        \
+  }
+  
+#define M_SLA(Rg)      \
+  CPU.AF.B.l=Rg>>7;Rg<<=1;CPU.AF.B.l|=PZSTable[Rg]
+#define M_SRA(Rg)      \
+  CPU.AF.B.l=Rg&C_FLAG;Rg=(Rg>>1)|(Rg&0x80);CPU.AF.B.l|=PZSTable[Rg]
+
+#define M_SLL(Rg)      \
+  CPU.AF.B.l=Rg>>7;Rg=(Rg<<1)|0x01;CPU.AF.B.l|=PZSTable[Rg]
+#define M_SRL(Rg)      \
+  CPU.AF.B.l=Rg&0x01;Rg>>=1;CPU.AF.B.l|=PZSTable[Rg]
+
+#define M_BIT(Bit,Rg)  \
+  CPU.AF.B.l=(CPU.AF.B.l&C_FLAG)|H_FLAG|PZSTable[Rg&(1<<Bit)]
+
+#define M_SET(Bit,Rg) Rg|=1<<Bit
+#define M_RES(Bit,Rg) Rg&=~(1<<Bit)
+
+#define M_POP(Rg)      \
+  CPU.Rg.B.l=OpZ80(CPU.SP.W++);CPU.Rg.B.h=OpZ80(CPU.SP.W++)
+#define M_PUSH(Rg)     \
+  WrZ80(--CPU.SP.W,CPU.Rg.B.h);WrZ80(--CPU.SP.W,CPU.Rg.B.l)
+
+#define M_CALL         \
+  J.B.l=OpZ80(CPU.PC.W++);J.B.h=OpZ80(CPU.PC.W++);         \
+  WrZ80(--CPU.SP.W,CPU.PC.B.h);WrZ80(--CPU.SP.W,CPU.PC.B.l); \
+  CPU.PC.W=J.W; \
+  JumpZ80(J.W)
+
+#define M_JP  J.B.l=OpZ80(CPU.PC.W++);J.B.h=OpZ80(CPU.PC.W);CPU.PC.W=J.W;JumpZ80(J.W)
+#define M_JR  CPU.PC.W+=(offset)OpZ80(CPU.PC.W)+1;JumpZ80(CPU.PC.W)
+#define M_RET CPU.PC.B.l=OpZ80(CPU.SP.W++);CPU.PC.B.h=OpZ80(CPU.SP.W++);JumpZ80(CPU.PC.W)
+
+#define M_RST(Ad)      \
+  WrZ80(--CPU.SP.W,CPU.PC.B.h);WrZ80(--CPU.SP.W,CPU.PC.B.l);CPU.PC.W=Ad;JumpZ80(Ad)
+
+#define M_LDWORD(Rg)   \
+  CPU.Rg.B.l=OpZ80(CPU.PC.W++);CPU.Rg.B.h=OpZ80(CPU.PC.W++)
+
+#define M_ADD(Rg)      \
+  J.W=CPU.AF.B.h+Rg;    \
+  CPU.AF.B.l=           \
+    (~(CPU.AF.B.h^Rg)&(Rg^J.B.l)&0x80? V_FLAG:0)| \
+    J.B.h|ZSTable[J.B.l]|                        \
+    ((CPU.AF.B.h^Rg^J.B.l)&H_FLAG);               \
+  CPU.AF.B.h=J.B.l       
+
+#define M_SUB(Rg)      \
+  J.W=CPU.AF.B.h-Rg;    \
+  CPU.AF.B.l=           \
+    ((CPU.AF.B.h^Rg)&(CPU.AF.B.h^J.B.l)&0x80? V_FLAG:0)| \
+    N_FLAG|-J.B.h|ZSTable[J.B.l]|                      \
+    ((CPU.AF.B.h^Rg^J.B.l)&H_FLAG);                     \
+  CPU.AF.B.h=J.B.l
+
+#define M_ADC(Rg)      \
+  J.W=CPU.AF.B.h+Rg+(CPU.AF.B.l&C_FLAG); \
+  CPU.AF.B.l=                           \
+    (~(CPU.AF.B.h^Rg)&(Rg^J.B.l)&0x80? V_FLAG:0)| \
+    J.B.h|ZSTable[J.B.l]|              \
+    ((CPU.AF.B.h^Rg^J.B.l)&H_FLAG);     \
+  CPU.AF.B.h=J.B.l
+
+#define M_SBC(Rg)      \
+  J.W=CPU.AF.B.h-Rg-(CPU.AF.B.l&C_FLAG); \
+  CPU.AF.B.l=                           \
+    ((CPU.AF.B.h^Rg)&(CPU.AF.B.h^J.B.l)&0x80? V_FLAG:0)| \
+    N_FLAG|-J.B.h|ZSTable[J.B.l]|      \
+    ((CPU.AF.B.h^Rg^J.B.l)&H_FLAG);     \
+  CPU.AF.B.h=J.B.l
+
+#define M_CP(Rg)       \
+  J.W=CPU.AF.B.h-Rg;    \
+  CPU.AF.B.l=           \
+    ((CPU.AF.B.h^Rg)&(CPU.AF.B.h^J.B.l)&0x80? V_FLAG:0)| \
+    N_FLAG|-J.B.h|ZSTable[J.B.l]|                      \
+    ((CPU.AF.B.h^Rg^J.B.l)&H_FLAG)
+
+#define M_AND(Rg) CPU.AF.B.h&=Rg;CPU.AF.B.l=H_FLAG|PZSTable[CPU.AF.B.h]
+#define M_OR(Rg)  CPU.AF.B.h|=Rg;CPU.AF.B.l=PZSTable[CPU.AF.B.h]
+#define M_XOR(Rg) CPU.AF.B.h^=Rg;CPU.AF.B.l=PZSTable[CPU.AF.B.h]
+
+#define M_IN(Rg)        \
+  Rg=InZ80(CPU.BC.W);  \
+  CPU.AF.B.l=PZSTable[Rg]|(CPU.AF.B.l&C_FLAG)
+
+#define M_INC(Rg)       \
+  Rg++;                 \
+  CPU.AF.B.l=            \
+    (CPU.AF.B.l&C_FLAG)|ZSTable[Rg]|           \
+    (Rg==0x80? V_FLAG:0)|(Rg&0x0F? 0:H_FLAG)
+
+#define M_DEC(Rg)       \
+  Rg--;                 \
+  CPU.AF.B.l=            \
+    N_FLAG|(CPU.AF.B.l&C_FLAG)|ZSTable[Rg]| \
+    (Rg==0x7F? V_FLAG:0)|((Rg&0x0F)==0x0F? H_FLAG:0)
+
+#define M_ADDW(Rg1,Rg2) \
+  J.W=(CPU.Rg1.W+CPU.Rg2.W)&0xFFFF;                        \
+  CPU.AF.B.l=                                             \
+    (CPU.AF.B.l&~(H_FLAG|N_FLAG|C_FLAG))|                 \
+    ((CPU.Rg1.W^CPU.Rg2.W^J.W)&0x1000? H_FLAG:0)|          \
+    (((long)CPU.Rg1.W+(long)CPU.Rg2.W)&0x10000? C_FLAG:0); \
+  CPU.Rg1.W=J.W
+
+#define M_ADCW(Rg)      \
+  I=CPU.AF.B.l&C_FLAG;J.W=(CPU.HL.W+CPU.Rg.W+I)&0xFFFF;           \
+  CPU.AF.B.l=                                                   \
+    (((long)CPU.HL.W+(long)CPU.Rg.W+(long)I)&0x10000? C_FLAG:0)| \
+    (~(CPU.HL.W^CPU.Rg.W)&(CPU.Rg.W^J.W)&0x8000? V_FLAG:0)|       \
+    ((CPU.HL.W^CPU.Rg.W^J.W)&0x1000? H_FLAG:0)|                  \
+    (J.W? 0:Z_FLAG)|(J.B.h&S_FLAG);                            \
+  CPU.HL.W=J.W
+   
+#define M_SBCW(Rg)      \
+  I=CPU.AF.B.l&C_FLAG;J.W=(CPU.HL.W-CPU.Rg.W-I)&0xFFFF;           \
+  CPU.AF.B.l=                                                   \
+    N_FLAG|                                                    \
+    (((long)CPU.HL.W-(long)CPU.Rg.W-(long)I)&0x10000? C_FLAG:0)| \
+    ((CPU.HL.W^CPU.Rg.W)&(CPU.HL.W^J.W)&0x8000? V_FLAG:0)|        \
+    ((CPU.HL.W^CPU.Rg.W^J.W)&0x1000? H_FLAG:0)|                  \
+    (J.W? 0:Z_FLAG)|(J.B.h&S_FLAG);                            \
+  CPU.HL.W=J.W
 
 
 enum Codes
@@ -325,8 +326,8 @@ static void CodesCB(register Z80 *R)
   register byte I;
 
   /* Read opcode and count cycles */
-  I=OpZ80(R->PC.W++);
-  R->ICount-=CyclesCB[I];
+  I=OpZ80(CPU.PC.W++);
+  CPU.ICount-=CyclesCB[I];
 
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -335,11 +336,11 @@ static void CodesCB(register Z80 *R)
   {
 #include "CodesCB.h"
     default:
-      if(R->TrapBadOps)
+      if(CPU.TrapBadOps)
         printf
         (   
           "[Z80 %lX] Unrecognized instruction: CB %02X at PC=%04X\n",
-          (long)(R->User),OpZ80(R->PC.W-1),R->PC.W-2
+          (long)(CPU.User),OpZ80(CPU.PC.W-1),CPU.PC.W-2
         );
   }
 }
@@ -351,19 +352,19 @@ static void CodesDDCB(register Z80 *R)
 
 #define XX IX    
   /* Get offset, read opcode and count cycles */
-  J.W=R->XX.W+(offset)OpZ80(R->PC.W++);
-  I=OpZ80(R->PC.W++);
-  R->ICount-=CyclesXXCB[I];
+  J.W=CPU.XX.W+(offset)OpZ80(CPU.PC.W++);
+  I=OpZ80(CPU.PC.W++);
+  CPU.ICount-=CyclesXXCB[I];
 
   switch(I)
   {
 #include "CodesXCB.h"
     default:
-      if(R->TrapBadOps)
+      if(CPU.TrapBadOps)
         printf
         (
           "[Z80 %lX] Unrecognized instruction: DD CB %02X %02X at PC=%04X\n",
-          (long)(R->User),OpZ80(R->PC.W-2),OpZ80(R->PC.W-1),R->PC.W-4
+          (long)(CPU.User),OpZ80(CPU.PC.W-2),OpZ80(CPU.PC.W-1),CPU.PC.W-4
         );
   }
 #undef XX
@@ -376,19 +377,19 @@ static void CodesFDCB(register Z80 *R)
 
 #define XX IY
   /* Get offset, read opcode and count cycles */
-  J.W=R->XX.W+(offset)OpZ80(R->PC.W++);
-  I=OpZ80(R->PC.W++);
-  R->ICount-=CyclesXXCB[I];
+  J.W=CPU.XX.W+(offset)OpZ80(CPU.PC.W++);
+  I=OpZ80(CPU.PC.W++);
+  CPU.ICount-=CyclesXXCB[I];
 
   switch(I)
   {
 #include "CodesXCB.h"
     default:
-      if(R->TrapBadOps)
+      if(CPU.TrapBadOps)
         printf
         (
           "[Z80 %lX] Unrecognized instruction: FD CB %02X %02X at PC=%04X\n",
-          (long)R->User,OpZ80(R->PC.W-2),OpZ80(R->PC.W-1),R->PC.W-4
+          (long)CPU.User,OpZ80(CPU.PC.W-2),OpZ80(CPU.PC.W-1),CPU.PC.W-4
         );
   }
 #undef XX
@@ -400,8 +401,8 @@ static void CodesED(register Z80 *R)
   register pair J;
 
   /* Read opcode and count cycles */
-  I=OpZ80(R->PC.W++);
-  R->ICount-=CyclesED[I];
+  I=OpZ80(CPU.PC.W++);
+  CPU.ICount-=CyclesED[I];
 
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -410,13 +411,13 @@ static void CodesED(register Z80 *R)
   {
 #include "CodesED.h"
     case PFX_ED:
-      R->PC.W--;break;
+      CPU.PC.W--;break;
     default:
-      if(R->TrapBadOps)
+      if(CPU.TrapBadOps)
         printf
         (
           "[Z80 %lX] Unrecognized instruction: ED %02X at PC=%04X\n",
-          (long)R->User,OpZ80(R->PC.W-1),R->PC.W-2
+          (long)CPU.User,OpZ80(CPU.PC.W-1),CPU.PC.W-2
         );
   }
 }
@@ -428,8 +429,8 @@ static void CodesDD(register Z80 *R)
 
 #define XX IX
   /* Read opcode and count cycles */
-  I=OpZ80(R->PC.W++);
-  R->ICount-=CyclesXX[I];
+  I=OpZ80(CPU.PC.W++);
+  CPU.ICount-=CyclesXX[I];
 
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -439,15 +440,15 @@ static void CodesDD(register Z80 *R)
 #include "CodesXX.h"
     case PFX_FD:
     case PFX_DD:
-      R->PC.W--;break;
+      CPU.PC.W--;break;
     case PFX_CB:
       CodesDDCB(R);break;
     default:
-      if(R->TrapBadOps)
+      if(CPU.TrapBadOps)
         printf
         (
           "[Z80 %lX] Unrecognized instruction: DD %02X at PC=%04X\n",
-          (long)R->User,OpZ80(R->PC.W-1),R->PC.W-2
+          (long)CPU.User,OpZ80(CPU.PC.W-1),CPU.PC.W-2
         );
   }
 #undef XX
@@ -460,8 +461,8 @@ static void CodesFD(register Z80 *R)
 
 #define XX IY
   /* Read opcode and count cycles */
-  I=OpZ80(R->PC.W++);
-  R->ICount-=CyclesXX[I];
+  I=OpZ80(CPU.PC.W++);
+  CPU.ICount-=CyclesXX[I];
 
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -471,14 +472,14 @@ static void CodesFD(register Z80 *R)
 #include "CodesXX.h"
     case PFX_FD:
     case PFX_DD:
-      R->PC.W--;break;
+      CPU.PC.W--;break;
     case PFX_CB:
       CodesFDCB(R);break;
     default:
         printf
         (
           "Unrecognized instruction: FD %02X at PC=%04X\n",
-          OpZ80(R->PC.W-1),R->PC.W-2
+          OpZ80(CPU.PC.W-1),CPU.PC.W-2
         );
   }
 #undef XX
@@ -491,26 +492,26 @@ static void CodesFD(register Z80 *R)
 /*************************************************************/
 void ResetZ80(Z80 *R)
 {
-  R->PC.W     = 0x0000;
-  R->SP.W     = 0xF000;
-  R->AF.W     = 0x0000;
-  R->BC.W     = 0x0000;
-  R->DE.W     = 0x0000;
-  R->HL.W     = 0x0000;
-  R->AF1.W    = 0x0000;
-  R->BC1.W    = 0x0000;
-  R->DE1.W    = 0x0000;
-  R->HL1.W    = 0x0000;
-  R->IX.W     = 0x0000;
-  R->IY.W     = 0x0000;
-  R->I        = 0x00;
-  R->R        = 0x00;
-  R->IFF      = 0x00;
-  R->ICount   = R->IPeriod;
-  R->IRequest = INT_NONE;
-  R->IBackup  = 0;
+  CPU.PC.W     = 0x0000;
+  CPU.SP.W     = 0xF000;
+  CPU.AF.W     = 0x0000;
+  CPU.BC.W     = 0x0000;
+  CPU.DE.W     = 0x0000;
+  CPU.HL.W     = 0x0000;
+  CPU.AF1.W    = 0x0000;
+  CPU.BC1.W    = 0x0000;
+  CPU.DE1.W    = 0x0000;
+  CPU.HL1.W    = 0x0000;
+  CPU.IX.W     = 0x0000;
+  CPU.IY.W     = 0x0000;
+  CPU.I        = 0x00;
+  CPU.R        = 0x00;
+  CPU.IFF      = 0x00;
+  CPU.ICount   = CPU.IPeriod;
+  CPU.IRequest = INT_NONE;
+  CPU.IBackup  = 0;
 
-  JumpZ80(R->PC.W);
+  JumpZ80(CPU.PC.W);
 }
 
 /** ExecZ80() ************************************************/
@@ -524,21 +525,21 @@ int ExecZ80(register Z80 *R,register int RunCycles)
   register byte I;
   register pair J;
 
-  for(R->ICount=RunCycles;;)
+  for(CPU.ICount=RunCycles;;)
   {
-    while(R->ICount>0)
+    while(CPU.ICount>0)
     {
 #ifdef DEBUG
       /* Turn tracing on when reached trap address */
-      if(R->PC.W==R->Trap) R->Trace=1;
+      if(CPU.PC.W==CPU.Trap) CPU.Trace=1;
       /* Call single-step debugger, exit if requested */
-      if(R->Trace)
-        if(!DebugZ80(R)) return(R->ICount);
+      if(CPU.Trace)
+        if(!DebugZ80(R)) return(CPU.ICount);
 #endif
 
       /* Read opcode and count cycles */
-      I=OpZ80(R->PC.W++);
-      R->ICount-=Cycles[I];
+      I=OpZ80(CPU.PC.W++);
+      CPU.ICount-=Cycles[I];
 
       /* R register incremented on each M1 cycle */
       INCR(1);
@@ -555,15 +556,15 @@ int ExecZ80(register Z80 *R,register int RunCycles)
     }
 
     /* Unless we have come here after EI, exit */
-    if(!(R->IFF&IFF_EI)) return(R->ICount);
+    if(!(CPU.IFF&IFF_EI)) return(CPU.ICount);
     else
     {
       /* Done with AfterEI state */
-      R->IFF=(R->IFF&~IFF_EI)|IFF_1;
+      CPU.IFF=(CPU.IFF&~IFF_EI)|IFF_1;
       /* Restore the ICount */
-      R->ICount+=R->IBackup-1;
+      CPU.ICount+=CPU.IBackup-1;
       /* Interrupt CPU if needed */
-      if((R->IRequest!=INT_NONE)&&(R->IRequest!=INT_QUIT)) IntZ80(R,R->IRequest);
+      if((CPU.IRequest!=INT_NONE)&&(CPU.IRequest!=INT_QUIT)) IntZ80(R,CPU.IRequest);
     }
   }
 }
@@ -575,60 +576,60 @@ int ExecZ80(register Z80 *R,register int RunCycles)
 void IntZ80(Z80 *R,word Vector)
 {
   /* If HALTed, take CPU off HALT instruction */
-  if(R->IFF&IFF_HALT) { R->PC.W++;R->IFF&=~IFF_HALT; }
+  if(CPU.IFF&IFF_HALT) { CPU.PC.W++;CPU.IFF&=~IFF_HALT; }
 
-  if((R->IFF&IFF_1)||(Vector==INT_NMI))
+  if((CPU.IFF&IFF_1)||(Vector==INT_NMI))
   {
     /* Save PC on stack */
     M_PUSH(PC);
 
     /* Automatically reset IRequest if needed */
-    if(R->IAutoReset&&(Vector==R->IRequest)) R->IRequest=INT_NONE;
+    if(CPU.IAutoReset&&(Vector==CPU.IRequest)) CPU.IRequest=INT_NONE;
 
     /* If it is NMI... */
     if(Vector==INT_NMI)
     {
       /* Clear IFF1 */
-      R->IFF&=~(IFF_1|IFF_EI);
+      CPU.IFF&=~(IFF_1|IFF_EI);
       /* Jump to hardwired NMI vector */
-      R->PC.W=0x0066;
+      CPU.PC.W=0x0066;
       JumpZ80(0x0066);
       /* Done */
       return;
     }
 
     /* Further interrupts off */
-    R->IFF&=~(IFF_1|IFF_2|IFF_EI);
+    CPU.IFF&=~(IFF_1|IFF_2|IFF_EI);
 
     /* If in IM2 mode... */
-    if(R->IFF&IFF_IM2)
+    if(CPU.IFF&IFF_IM2)
     {
       /* Make up the vector address */
-      Vector=(Vector&0xFF)|((word)(R->I)<<8);
+      Vector=(Vector&0xFF)|((word)(CPU.I)<<8);
       /* Read the vector */
-      R->PC.B.l=RdZ80(Vector++);
-      R->PC.B.h=RdZ80(Vector);
-      JumpZ80(R->PC.W);
+      CPU.PC.B.l=RdZ80(Vector++);
+      CPU.PC.B.h=RdZ80(Vector);
+      JumpZ80(CPU.PC.W);
       /* Done */
       return;
     }
 
     /* If in IM1 mode, just jump to hardwired IRQ vector */
-    if(R->IFF&IFF_IM1) { R->PC.W=0x0038;JumpZ80(0x0038);return; }
+    if(CPU.IFF&IFF_IM1) { CPU.PC.W=0x0038;JumpZ80(0x0038);return; }
 
     /* If in IM0 mode... */
 
     /* Jump to a vector */
     switch(Vector)
     {
-      case INT_RST00: R->PC.W=0x0000;JumpZ80(0x0000);break;
-      case INT_RST08: R->PC.W=0x0008;JumpZ80(0x0008);break;
-      case INT_RST10: R->PC.W=0x0010;JumpZ80(0x0010);break;
-      case INT_RST18: R->PC.W=0x0018;JumpZ80(0x0018);break;
-      case INT_RST20: R->PC.W=0x0020;JumpZ80(0x0020);break;
-      case INT_RST28: R->PC.W=0x0028;JumpZ80(0x0028);break;
-      case INT_RST30: R->PC.W=0x0030;JumpZ80(0x0030);break;
-      case INT_RST38: R->PC.W=0x0038;JumpZ80(0x0038);break;
+      case INT_RST00: CPU.PC.W=0x0000;JumpZ80(0x0000);break;
+      case INT_RST08: CPU.PC.W=0x0008;JumpZ80(0x0008);break;
+      case INT_RST10: CPU.PC.W=0x0010;JumpZ80(0x0010);break;
+      case INT_RST18: CPU.PC.W=0x0018;JumpZ80(0x0018);break;
+      case INT_RST20: CPU.PC.W=0x0020;JumpZ80(0x0020);break;
+      case INT_RST28: CPU.PC.W=0x0028;JumpZ80(0x0028);break;
+      case INT_RST30: CPU.PC.W=0x0030;JumpZ80(0x0030);break;
+      case INT_RST38: CPU.PC.W=0x0038;JumpZ80(0x0038);break;
     }
   }
 }
@@ -648,16 +649,16 @@ word RunZ80(Z80 *R)
   {
 #ifdef DEBUG
     /* Turn tracing on when reached trap address */
-    if(R->PC.W==R->Trap) R->Trace=1;
+    if(CPU.PC.W==CPU.Trap) CPU.Trace=1;
     /* Call single-step debugger, exit if requested */
-    if(R->Trace){
-      if(!DebugZ80(R)) return(R->PC.W);
+    if(CPU.Trace){
+      if(!DebugZ80(R)) return(CPU.PC.W);
 }
 #endif
 
     /* Read opcode and count cycles */
-    I=OpZ80(R->PC.W++);
-    R->ICount-=Cycles[I];
+    I=OpZ80(CPU.PC.W++);
+    CPU.ICount-=Cycles[I];
 
     /* R register incremented on each M1 cycle */
     INCR(1);
@@ -672,37 +673,37 @@ word RunZ80(Z80 *R)
     }
  
     /* If cycle counter expired... */
-    if(R->ICount<=0)
+    if(CPU.ICount<=0)
     {
       /* If we have come after EI, get address from IRequest */
       /* Otherwise, get it from the loop handler             */
-      if(R->IFF&IFF_EI)
+      if(CPU.IFF&IFF_EI)
       {
-        R->IFF=(R->IFF&~IFF_EI)|IFF_1; /* Done with AfterEI state */
-        R->ICount+=R->IBackup-1;       /* Restore the ICount      */
+        CPU.IFF=(CPU.IFF&~IFF_EI)|IFF_1; /* Done with AfterEI state */
+        CPU.ICount+=CPU.IBackup-1;       /* Restore the ICount      */
 
         /* Call periodic handler or set pending IRQ */
-        if(R->ICount>0) J.W=R->IRequest;
+        if(CPU.ICount>0) J.W=CPU.IRequest;
         else
         {
           J.W=LoopZ80(R);        /* Call periodic handler    */
-          R->ICount+=R->IPeriod; /* Reset the cycle counter  */
-          if(J.W==INT_NONE) J.W=R->IRequest;  /* Pending IRQ */
+          CPU.ICount+=CPU.IPeriod; /* Reset the cycle counter  */
+          if(J.W==INT_NONE) J.W=CPU.IRequest;  /* Pending IRQ */
         }
       }
       else
       {
         J.W=LoopZ80(R);          /* Call periodic handler    */
-        R->ICount+=R->IPeriod;   /* Reset the cycle counter  */
-        if(J.W==INT_NONE) J.W=R->IRequest;    /* Pending IRQ */
+        CPU.ICount+=CPU.IPeriod;   /* Reset the cycle counter  */
+        if(J.W==INT_NONE) J.W=CPU.IRequest;    /* Pending IRQ */
       }
 
-      if(J.W==INT_QUIT) return(R->PC.W); /* Exit if INT_QUIT */
+      if(J.W==INT_QUIT) return(CPU.PC.W); /* Exit if INT_QUIT */
       if(J.W!=INT_NONE) IntZ80(R,J.W);   /* Int-pt if needed */
     }
   }
 
   /* Execution stopped */
-  return(R->PC.W);
+  return(CPU.PC.W);
 }
 #endif /* !EXECZ80 */

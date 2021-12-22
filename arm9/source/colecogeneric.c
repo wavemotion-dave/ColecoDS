@@ -805,6 +805,7 @@ void SetDefaultGameConfig(void)
         (file_crc == 0x260cdf98) ||     // Super Pac-Mans
         (file_crc == 0xae209065) ||     // Super Space Acer
         (file_crc == 0xbc8320a0) ||     // Uridium
+        (file_crc == 0xa7a8d25e) ||     // Vanguard        
         (file_crc == 0x530c586f)        // Vexxed
         )
     {
