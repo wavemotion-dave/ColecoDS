@@ -27,7 +27,10 @@
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x000E        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x000F        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+
+#include "cpu/z80/Z80.h"
+Z80 CPU __attribute__((section(".dtcm")));
 
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
@@ -196,7 +199,9 @@ u8 colecoInit(char *szGame) {
     sn76496W(0xD0 | 0x0F ,&aycol);     // Write new Volume for Channel C  
     sn76496Mixer(32, tmp_samples, &aycol);
       
-    DrZ80_Reset();                      // Reset the CPU
+    DrZ80_Reset();                      // Reset the DrZ80 core CPU
+    CPU.IPeriod = TMS9918_LINE;
+    ResetZ80(&CPU);                     // Reset the CZ80 core CPU
     Reset9918();                        // Reset the VDP
       
     XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
@@ -211,7 +216,9 @@ u8 colecoInit(char *szGame) {
  ********************************************************************************/
 void colecoRun(void) 
 {
-  DrZ80_Reset();                        // Reset the CPU
+  DrZ80_Reset();                        // Reset the DrZ80 core CPU
+  CPU.IPeriod    = TMS9918_LINE;
+  ResetZ80(&CPU);                       // Reset the CZ80 core CPU
   showMainMenu();                       // Show the game-related screen
 }
 
@@ -251,7 +258,7 @@ void colecoSaveState()
   szFile[strlen(szFile)-2] = 'a';
   szFile[strlen(szFile)-1] = 'v';
   strcpy(szCh1,"SAVING...");
-  AffChaine(14,0,0,szCh1);
+  AffChaine(6,0,0,szCh1);
   
   FILE *handle = fopen(szFile, "wb+");  
   if (handle != NULL) 
@@ -260,8 +267,11 @@ void colecoSaveState()
     u16 save_ver = COLECODS_SAVE_VER;
     uNbO = fwrite(&save_ver, sizeof(u16), 1, handle);
       
-    // Write Z80 CPU
+    // Write DrZ80 CPU
     uNbO = fwrite(&drz80, sizeof(struct DrZ80), 1, handle);
+      
+    // Write CZ80 CPU
+    uNbO = fwrite(&CPU, sizeof(CPU), 1, handle);
       
     // Need to save the DrZ80 SP/PC offsets as memory might shift on next load...
     u32 z80SPOffset = (u32) (drz80.Z80SP - drz80.Z80SP_BASE);
@@ -334,9 +344,9 @@ void colecoSaveState()
       strcpy(szCh1,"OK ");
     else
       strcpy(szCh1,"ERR");
-     AffChaine(23,0,0,szCh1);
+     AffChaine(15,0,0,szCh1);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-    AffChaine(14,0,0,"              ");  
+    AffChaine(6,0,0,"             ");  
   }
   else {
     strcpy(szCh1,"Error opening SAV file ...");
@@ -364,7 +374,7 @@ void colecoLoadState()
     if (handle != NULL) 
     {    
          strcpy(szCh1,"LOADING...");
-         AffChaine(14,0,0,szCh1);
+         AffChaine(6,0,0,szCh1);
        
         // Read Version
         u16 save_ver = 0xBEEF;
@@ -372,9 +382,12 @@ void colecoLoadState()
         
         if (save_ver == COLECODS_SAVE_VER)
         {
-            // Load Z80 CPU
+            // Load DrZ80 CPU
             uNbO = fread(&drz80, sizeof(struct DrZ80), 1, handle);
             DrZ80_InitHandlers(); //DRZ80 saves a lot of binary code dependent stuff, reset the handlers
+            
+            // Load CZ80 CPU
+            uNbO = fread(&CPU, sizeof(CPU), 1, handle);
 
             // Need to load and restore the DrZ80 SP/PC offsets as memory might have shifted ...
             u32 z80Offset = 0;
@@ -468,9 +481,9 @@ void colecoLoadState()
           strcpy(szCh1,"OK ");
         else
           strcpy(szCh1,"ERR");
-         AffChaine(23,0,0,szCh1);
+         AffChaine(15,0,0,szCh1);
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        AffChaine(14,0,0,"              ");  
+        AffChaine(6,0,0,"             ");  
       }
 
     fclose(handle);
@@ -541,9 +554,9 @@ void getfile_crc(const char *path)
     file_crc = getFileCrc(path);        // The CRC is used as a unique ID to save out High Scores and Configuration...
     
     // --------------------------------------------------------------------------------------------------------
-    // A few games need some timing adjustment tweaks to render correctly... probably due to Z80 inaccuracies
+    // A few games need some timing adjustment tweaks to render correctly... due to DrZ80 inaccuracies
     // --------------------------------------------------------------------------------------------------------
-    timingAdjustment = 0;
+    timingAdjustment = 0;                               // This timing adjustment is only used for DrZ80 (not CZ80 core)
     if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
     if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
     if (file_crc == 0x56c358a6) timingAdjustment =  2;  // Destructor (Coleco) requires more cycles
@@ -766,7 +779,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       return;
     case 0xA0:  // The VDP graphics port
       if(!(Port&0x01)) WrData9918(Value);
-      else if (WrCtrl9918(Value)) { cpuirequest=Z80_NMI_INT; }
+      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI; cpuirequest=Z80_NMI_INT; }
       return;
     case 0x40:  // Printer status and ADAM related stuff...not used
     case 0x20:
@@ -777,6 +790,19 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       return;   
   }
 }
+
+// -----------------------------------------------
+// These two functions are for the CZ80 core...
+// -----------------------------------------------
+ITCM_CODE void OutZ80(register word Port,register byte Value)
+{
+    cpu_writeport16(Port, Value);
+}
+ITCM_CODE byte InZ80(register word Port)
+{
+    return cpu_readport16(Port);
+}
+
 
 
 /** LoopZ80() *************************************************/
@@ -789,6 +815,8 @@ ITCM_CODE u32 LoopZ80()
 {
     static u16 spinnerDampen = 0;
     cpuirequest=0;
+    
+    CPU.IAutoReset = 1;
 
   // Just in case there are AY audio envelopes... this is very rough timing.
   if (AY_Enable) FakeAY_Loop();
@@ -803,12 +831,14 @@ ITCM_CODE u32 LoopZ80()
       if (spinX_left)
       {
           cpuirequest = Z80_IRQ_INT;
+          CPU.IRequest=INT_RST38;
           JoyState   &= 0xFFFFCFFF;
           JoyState   |= 0x00003000;
       }
       else if (spinX_right)
       {
           cpuirequest = Z80_IRQ_INT;
+          CPU.IRequest=INT_RST38;
           JoyState   &= 0xFFFFCFFF;
           JoyState   |= 0x00001000;
       }
@@ -816,30 +846,56 @@ ITCM_CODE u32 LoopZ80()
       if (spinY_left)
       {
           cpuirequest = Z80_IRQ_INT;
+          CPU.IRequest=INT_RST38;
           JoyState   &= 0xCFFFFFFF;
           JoyState   |= 0x30000000;
       }
       else if (spinY_right)
       {
           cpuirequest = Z80_IRQ_INT;
+          CPU.IRequest=INT_RST38;
           JoyState   &= 0xCFFFFFFF;
           JoyState   |= 0x10000000;
       }
-      
   }
+
+  // -----------------------------------------------------------------
+  // We current support two different Z80 cores... the DrZ80 is
+  // (relatively) blazingly fast on the DS ARM processor but
+  // the compatibilty isn't 100%. The CZ80 core is slower but
+  // has higher compatibilty. For now, the default core is still
+  // DrZ80 but there are a growing number of games that will 
+  // switch (via CRC check in SetDefaultGameConfig() routine).
+  // The DSi has just enough processing power to utilize this
+  // slower but more accurate core - so for the DS-LITE/PHAT
+  // games requiring the new core will simply be too slow to play.
+  // -----------------------------------------------------------------
+  if (myConfig.cpuCore == 0) // DrZ80 Core ... fast but lower accuracy
+  {
+      // Execute 1 scanline worth of CPU instructions
+      DrZ80_execute(TMS9918_LINE + timingAdjustment);
+      
+      // Refresh VDP 
+      if(Loop9918()) cpuirequest=Z80_NMI_INT;
     
-  // Execute 1 scanline worth of CPU instructions
-  DrZ80_execute(TMS9918_LINE + timingAdjustment);
-    
-  // Refresh VDP 
-  if(Loop9918()) cpuirequest=Z80_NMI_INT;
-    
-  // Generate interrupt if called for
-  if (cpuirequest)
-    Z80_Cause_Interrupt(cpuirequest);
-  else
-    Z80_Clear_Pending_Interrupts();
-    
+      // Generate interrupt if called for
+      if (cpuirequest)
+        Z80_Cause_Interrupt(cpuirequest);
+      else
+        Z80_Clear_Pending_Interrupts();
+  }
+  else  // CZ80 core from fMSX()... slow but more accuracy
+  {
+      // Execute 1 scanline worth of CPU instructions
+      cycle_deficit = ExecZ80(&CPU, TMS9918_LINE + cycle_deficit);
+      
+      // Refresh VDP 
+      if(Loop9918()) CPU.IRequest=INT_NMI; //cpuirequest=Z80_NMI_INT;
+      
+      // Generate an interrupt if called for...
+      if(CPU.IRequest!=INT_NONE) IntZ80(&CPU,CPU.IRequest);
+  }
+  
   // Drop out unless end of screen is reached 
   return (CurLine == TMS9918_END_LINE) ? 0:1;
 }

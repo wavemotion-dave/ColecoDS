@@ -704,7 +704,7 @@ void SetDefaultGameConfig(void)
     myConfig.vertSync    = (isDSiMode() ? 1:0);
     myConfig.spinSpeed   = 0;    
     myConfig.touchPad    = 0;
-    myConfig.reserved8   = 0;    
+    myConfig.cpuCore     = 0;    // Default is the faster DrZ80 core
     myConfig.reserved9   = 0;    
     myConfig.reservedA   = 0;    
     myConfig.reservedB   = 0;    
@@ -780,6 +780,35 @@ void SetDefaultGameConfig(void)
         myConfig.keymap[5]   = 5;    // NDS B Button mapped to P1 Button 2 
         myConfig.keymap[6]   = 24;   // NDS X Button mapped to P2 Button 1
         myConfig.keymap[7]   = 25;   // NDS Y Button mapped to P2 Button 2         
+    }
+    
+    // ------------------------------------------------------------------------
+    // These games all need the slower but higher compatibility CZ80 CPU Core
+    // ------------------------------------------------------------------------
+    if (
+        (file_crc == 0xead5e824) ||     // Arno Dash
+        (file_crc == 0x3b27ed05) ||     // Astro Storm
+        (file_crc == 0x77900970) ||     // Deep Dungeon Adventures
+        (file_crc == 0x5576dec3) ||     // Diamond Dash II
+        (file_crc == 0x70d55091) ||     // Dungeon and Trolls
+        (file_crc == 0xb3b767ae) ||     // Fathom (Imagic)        
+        (file_crc == 0xf43b0b28) ||     // Frantic (homebrew)
+        (file_crc == 0x27818d93) ||     // Hang-On 
+        (file_crc == 0x278c5021) ||     // Klondike Solitaire
+        (file_crc == 0x6ed6a2e1) ||     // Mahjong Solitaire
+        (file_crc == 0x5cd9d34a) ||     // Minesweeper
+        (file_crc == 0xdd730dbd) ||     // Missile Strike
+        (file_crc == 0xb47377fd) ||     // Pegged
+        (file_crc == 0x5a49b249) ||     // Pillars
+        (file_crc == 0x50998610) ||     // Pitman
+        (file_crc == 0xd8caac4c) ||     // Rip Cord
+        (file_crc == 0x260cdf98) ||     // Super Pac-Mans
+        (file_crc == 0xae209065) ||     // Super Space Acer
+        (file_crc == 0xbc8320a0) ||     // Uridium
+        (file_crc == 0x530c586f)        // Vexxed
+        )
+    {
+        myConfig.cpuCore = 1;
     }
 }
 
@@ -859,7 +888,10 @@ const struct options_t Option_Table[] =
     {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire2,  2},
     {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                               &myConfig.touchPad,   2},    
     {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                       &myConfig.spinSpeed,  5},
+    {"Z80 CPU CORE",    {"DRZ80 (Fast)", "CZ80 (Slow)"},                                                                                        &myConfig.cpuCore,    2},    
+#if 0   // Developer use only   
     {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                  &dev_z80_cycles,     16},
+#endif    
     {NULL,              {"",      ""},                                                                                                          NULL,                 1},
 };              
 
