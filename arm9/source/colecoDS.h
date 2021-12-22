@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/drz80/Z80_interface.h"
 
-#define VERSIONCLDS "4.5"
+#define VERSIONCLDS "4.6"
 
 //#define DEBUG_Z80   YES
 
@@ -67,11 +67,6 @@ extern u8 soundEmuPause;
 extern int bg0, bg1, bg0b,bg1b;
 
 extern u16 *pVidFlipBuf;                         // Video flipping buffer
-
-typedef union {
-  struct { unsigned char l,h; } B;
-  unsigned short W;
-} pair;
 
 
 extern void showMainMenu(void);

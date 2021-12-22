@@ -79,7 +79,6 @@ ITCM_CODE void BankSwitch(u8 bank)
     }
 }
 
-
 // -------------------------------------------------
 // 8-bit read with bankswitch support... slower...
 // -------------------------------------------------
@@ -147,6 +146,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
       }
     }
 }
+
 
 // -----------------------------------------------------------------
 // The 16-bit write simply makes 2 calls into the 8-bit writes...
@@ -256,5 +256,6 @@ ITCM_CODE int DrZ80_execute(int cycles)
   cycle_deficit = drz80.cycles;
   return (cycle_deficit);
 }
+
 
 // End of file
