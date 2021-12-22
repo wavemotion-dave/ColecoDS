@@ -48,24 +48,12 @@ Special thanks to  Marat Fayzullin, as the
 author of ColEM which is the code for the 
 core emulation (specifically TMS9918 VDP).
 I think the original port was circa ColEM 2.1
-with some fixes incorproated from ColEM 2.9
-and updated Sprite/Line handling from ColEM 5.6
+with some fixes and updated Sprite/Line handling
+from ColEM 5.6
 
 Known Issues :
 -----------------------
-* Deep Dungeon Adventures won't run.
-* Uridium won't run.
-* Frantic Homebrew has graphical issues.
-* Super Pac Man has major graphical issues.
-* Dungeon and Trolls crashes after 10-15 seconds of play.
-* Super Space Acer crashes after a few seconds of play.
-* Pillars won't run.
-* Vexxed won't run.
-* Missile-Strike crashes about 10-15 seconds into the gameplay.
-* Astrostorm crashes about 10-15 seconds into the gameplay.
-* Arno Dash and Diamond Dash 2 won't run.
-* Rip Cord crashes after a few seconds of play.
-* Hang-On won't show sprites or character graphics during gameplay.
+* Borders are not correctly rendered - only a few games utilize them and are still fully playable without this.
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
@@ -110,6 +98,9 @@ You can toggle this in the "Game Options" (and START=SAVE it out as you wish).
 
 Versions :
 -----------------------
+V4.6: 22-Dec-2021 by wavemotion-dave
+* New CZ80 core added to solve compatibility problems with the remaining games.
+
 V4.5: 21-Dec-2021 by wavemotion-dave
 * Full support for Spinner/Trackball. Map SpinX, SpinY in key settings.
 * Five different sensitivities for the Spinner/Trackball in Game Options.
