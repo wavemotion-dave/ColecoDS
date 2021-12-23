@@ -46,10 +46,10 @@ Thanks to Flubba for the SN76496 sound core.
 
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
-core emulation (specifically TMS9918 VDP).
-I think the original port was circa ColEM 2.1
-with some fixes and updated Sprite/Line handling
-from ColEM 5.6
+core emulation (specifically TMS9918 VDP
+and the CZ80 CPU core).  I think the original 
+port was circa ColEM 2.1 with some fixes and 
+updated Sprite/Line handling from ColEM 5.6
 
 Known Issues :
 -----------------------
@@ -96,8 +96,23 @@ it for almost all games (Princess Quest is one game where you might turn it off)
 handle it for the more simple games. So by default it's enabled for DSi and disabled for DS-LITE/PHAT.
 You can toggle this in the "Game Options" (and START=SAVE it out as you wish). 
 
+A Tale of Two Cores :
+-----------------------
+ColecoDS supports 2 different Z80 CPU cores. 
+DrZ80 is very fast but is not 100% accurate so some games don't run right.
+CZ80 is slower but is much closer to 100% accurate and games generally run great.
+For the DSi and above, the CZ80 core is the default.
+For the DS-LITE/PHAT, the DrZ80 core is the default.
+You can toggle this (and save on a per-game basis) in GAME OPTIONS.
+If you want to use the CZ80 core but need a bit more speed to make the
+games playable - you can also play with Vertical Sync and Frame Skip settings.
+
 Versions :
 -----------------------
+V4.7: 23-Dec-2021 by wavemotion-dave
+* Major speed improvements in the new CZ80 core. 
+* Installed new CZ80 core as the default for DSi and above. 
+
 V4.6: 22-Dec-2021 by wavemotion-dave
 * New CZ80 core added to solve compatibility problems with the remaining games.
 

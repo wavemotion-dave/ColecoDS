@@ -70,7 +70,7 @@ u8 c_idx=0;
 // We handle envelopes here... the timing is nowhere near exact but so few games utilize this 
 // and so accuracy isn't all that critical. The sound will be a little off - but it will be ok.
 // ---------------------------------------------------------------------------------------------
-ITCM_CODE void FakeAY_Loop(void)
+void FakeAY_Loop(void)
 {
     static u16 delay=0;
     

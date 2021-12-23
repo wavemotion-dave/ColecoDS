@@ -794,11 +794,11 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 // -----------------------------------------------
 // These two functions are for the CZ80 core...
 // -----------------------------------------------
-ITCM_CODE void OutZ80(register word Port,register byte Value)
+void OutZ80(register word Port,register byte Value)
 {
     cpu_writeport16(Port, Value);
 }
-ITCM_CODE byte InZ80(register word Port)
+byte InZ80(register word Port)
 {
     return cpu_readport16(Port);
 }
