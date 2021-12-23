@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/drz80/Z80_interface.h"
 
-#define VERSIONCLDS "4.6"
+#define VERSIONCLDS "4.7"
 
 //#define DEBUG_Z80   YES
 
@@ -34,7 +34,7 @@
 #define JST_RED             JST_FIRER
 #define JST_YELLOW          JST_FIREL
 
-// These 4 are now actual Colecovision key maps... they trigger the spinners.
+// These 4 are not actual Colecovision key maps... they trigger the spinner logic.
 #define META_SPINX_LEFT     0xFFFF0001
 #define META_SPINX_RIGHT    0xFFFF0002
 #define META_SPINY_LEFT     0xFFFF0003

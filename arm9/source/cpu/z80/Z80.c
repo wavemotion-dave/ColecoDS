@@ -40,22 +40,10 @@ INLINE byte OpZ80(word A) { return pColecoMem[A]; }
 // -----------------------------------------------
 // These two functions are for the CZ80 core...
 // -----------------------------------------------
-extern u8 bMagicMegaCart, romBankMask;
 extern void cpu_writemem16 (u8 value,u16 address);
-extern void BankSwitch(u8 bank);
-INLINE void WrZ80(register word address,register byte Value)
-{
-    cpu_writemem16(Value, address);
-}
-
-INLINE byte RdZ80(register word address)
-{
-  if (bMagicMegaCart && (address >= 0xFFC0)) // Handle Megacart Hot Spots
-  {
-      BankSwitch(address & romBankMask);
-  }    
-  return (pColecoMem[address]);
-}
+extern byte cpu_readmem16_banked (u16 address);
+#define WrZ80(A,V) cpu_writemem16(V,A)
+#define RdZ80(A)   cpu_readmem16_banked(A)
 
 #define S(Fl)        CPU.AF.B.l|=Fl
 #define R(Fl)        CPU.AF.B.l&=~(Fl)
@@ -520,7 +508,7 @@ void ResetZ80(Z80 *R)
 /** negative, and current register values in R.             **/
 /*************************************************************/
 #ifdef EXECZ80
-int ExecZ80(register Z80 *R,register int RunCycles)
+ITCM_CODE int ExecZ80(register Z80 *R,register int RunCycles)
 {
   register byte I;
   register pair J;

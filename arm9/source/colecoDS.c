@@ -485,7 +485,7 @@ void DisplayStatusLine(bool bForce)
 // ------------------------------------------------------------------------
 // The main emulation loop is here... call into the Z80, VDP and PSG 
 // ------------------------------------------------------------------------
-ITCM_CODE void colecoDS_main(void) 
+void colecoDS_main(void) 
 {
   u32 keys_pressed;
   u16 iTx,  iTy;
@@ -494,8 +494,10 @@ ITCM_CODE void colecoDS_main(void)
   static u32 lastUN = 0;
   static u8 dampenClick = 0;
 
-  showMainMenu();      // Returns when  user has asked for a game to run...
+  // Returns when  user has asked for a game to run...
+  showMainMenu();
 
+  // Get the Coleco Machine Emualtor ready
   colecoInit(gpFic[ucGameAct].szName);
 
   colecoSetPal();
@@ -513,10 +515,12 @@ ITCM_CODE void colecoDS_main(void)
   timingFrames  = 0;
   emuFps=0;
     
+  // Default SGM statics back to init state
   last_sgm_mode = false;
   last_ay_mode  = false;
   last_mc_mode  = 0;
   
+  // Force the sound engine to turn on when we start emulation
   bStartSoundEngine = true;
     
   // -------------------------------------------------------------------
@@ -527,6 +531,7 @@ ITCM_CODE void colecoDS_main(void)
     // Take a tour of the Z80 counter and display the screen if necessary
     if (!LoopZ80()) 
     {   
+        // If we've been asked to start the sound engine, rock-and-roll!
         if (bStartSoundEngine)
         {
               bStartSoundEngine = false;

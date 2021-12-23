@@ -701,10 +701,10 @@ void SetDefaultGameConfig(void)
     myConfig.autoFire2   = 0;
     myConfig.overlay     = 0;
     myConfig.maxSprites  = 0;
-    myConfig.vertSync    = (isDSiMode() ? 1:0);
+    myConfig.vertSync    = (isDSiMode() ? 1:0);    // Default is Vertical Sync ON for DSi and OFF for DS-LITE
     myConfig.spinSpeed   = 0;    
     myConfig.touchPad    = 0;
-    myConfig.cpuCore     = 0;    // Default is the faster DrZ80 core
+    myConfig.cpuCore     = (isDSiMode() ? 1:0);    // Default is slower/accurate CZ80 for DSi and faster DrZ80 core for DS-LITE
     myConfig.reserved9   = 0;    
     myConfig.reservedA   = 0;    
     myConfig.reservedB   = 0;    
@@ -784,6 +784,7 @@ void SetDefaultGameConfig(void)
     
     // ------------------------------------------------------------------------
     // These games all need the slower but higher compatibility CZ80 CPU Core
+    // so override the default above for these games in order to play them.
     // ------------------------------------------------------------------------
     if (
         (file_crc == 0xead5e824) ||     // Arno Dash
@@ -889,7 +890,7 @@ const struct options_t Option_Table[] =
     {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire2,  2},
     {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                               &myConfig.touchPad,   2},    
     {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                       &myConfig.spinSpeed,  5},
-    {"Z80 CPU CORE",    {"DRZ80 (Fast)", "CZ80 (Slow)"},                                                                                        &myConfig.cpuCore,    2},    
+    {"Z80 CPU CORE",    {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                    &myConfig.cpuCore,    2},    
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                  &dev_z80_cycles,     16},
 #endif    

@@ -1089,7 +1089,6 @@ DrZ80Ver: .long 0x0001
 	.equ Z80_HALT, 1<<2
 
 ;@ --------------------------- Framework --------------------------
-.section .itcm
 DrZ80Run:
 	;@ r0 = pointer to cpu context
 	;@ r1 = ISTATES to execute  

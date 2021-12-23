@@ -27,33 +27,33 @@ extern u8 romBankMask;
 extern u8 romBuffer[];
 
 
-ITCM_CODE u32 z80_rebaseSP(u16 address) {
+ u32 z80_rebaseSP(u16 address) {
   drz80.Z80SP_BASE = (unsigned int) pColecoMem;
   drz80.Z80SP      = drz80.Z80SP_BASE + address;
   return (drz80.Z80SP);
 }
 
-ITCM_CODE u32 z80_rebasePC(u16 address) {
+ u32 z80_rebasePC(u16 address) {
   drz80.Z80PC_BASE = (unsigned int) pColecoMem;
   drz80.Z80PC      = drz80.Z80PC_BASE + address;
   return (drz80.Z80PC);
 }
 
-ITCM_CODE void z80_irq_callback(void) {
+ void z80_irq_callback(void) {
 	drz80.Z80_IRQ = 0x00;
 }
 
 // -----------------------------
 // Normal 8-bit Read... fast!
 // -----------------------------
-ITCM_CODE u8 cpu_readmem16 (u16 address) {
+ u8 cpu_readmem16 (u16 address) {
   return (pColecoMem[address]);
 }
 
 // -----------------------------
 // Normal 16-bit Read... fast!
 // -----------------------------
-ITCM_CODE u16 drz80MemReadW(u16 address) 
+ u16 drz80MemReadW(u16 address) 
 {
     return (pColecoMem[address]  |  (pColecoMem[address+1] << 8));
 }
@@ -61,7 +61,7 @@ ITCM_CODE u16 drz80MemReadW(u16 address)
 // ------------------------------------------------
 // Switch banks... do this as fast as possible..
 // ------------------------------------------------
-ITCM_CODE void BankSwitch(u8 bank)
+ void BankSwitch(u8 bank)
 {
     if (lastBank != bank)   // Only if the bank was changed...
     {
@@ -82,7 +82,7 @@ ITCM_CODE void BankSwitch(u8 bank)
 // -------------------------------------------------
 // 8-bit read with bankswitch support... slower...
 // -------------------------------------------------
-ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
+ u8 cpu_readmem16_banked (u16 address) 
 {
   if (bMagicMegaCart) // Handle Megacart Hot Spots
   {
@@ -97,7 +97,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 // -------------------------------------------------
 // 16-bit read with bankswitch support... slower...
 // -------------------------------------------------
-ITCM_CODE u16 drz80MemReadW_banked(u16 addr) 
+ u16 drz80MemReadW_banked(u16 addr) 
 {
   if (bMagicMegaCart) // Handle Megacart Hot Spots
   {
@@ -112,7 +112,7 @@ ITCM_CODE u16 drz80MemReadW_banked(u16 addr)
 // Write memory handles both normal writes and bankswitched since
 // write is much less common than reads... 
 // ------------------------------------------------------------------
-ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
+ void cpu_writemem16 (u8 value,u16 address) 
 {
     extern u8 sRamAtE000_OK;
     extern u8 sgm_enable;
@@ -151,13 +151,13 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 // -----------------------------------------------------------------
 // The 16-bit write simply makes 2 calls into the 8-bit writes...
 // -----------------------------------------------------------------
-ITCM_CODE void drz80MemWriteW(u16 data,u16 addr) 
+ void drz80MemWriteW(u16 data,u16 addr) 
 {
     cpu_writemem16(data & 0xff , addr);
     cpu_writemem16(data>>8,addr+1);
 }
 
-ITCM_CODE void Z80_Cause_Interrupt(int type) 
+ void Z80_Cause_Interrupt(int type) 
 {
     if (type == Z80_NMI_INT) 
     {
@@ -174,13 +174,13 @@ ITCM_CODE void Z80_Cause_Interrupt(int type)
     }
 }
 
-ITCM_CODE void Z80_Clear_Pending_Interrupts(void) 
+ void Z80_Clear_Pending_Interrupts(void) 
 {
     drz80.pending_irq = 0;
     drz80.Z80_IRQ = 0;
 }
 
-ITCM_CODE void Interrupt(void) 
+ void Interrupt(void) 
 {
     if (drz80.pending_irq & NMI_IRQ)  /* NMI IRQ */
     {
@@ -247,7 +247,7 @@ void DrZ80_Reset(void) {
 // produce exactly an evenly-divisible number of
 // cycles for a given scanline...
 // --------------------------------------------------
-ITCM_CODE int DrZ80_execute(int cycles) 
+ int DrZ80_execute(int cycles) 
 {
   drz80.cycles = cycles + cycle_deficit;
     
