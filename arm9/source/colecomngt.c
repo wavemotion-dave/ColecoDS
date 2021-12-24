@@ -99,7 +99,7 @@ SN76496 aycol   __attribute__((section(".dtcm")));
 // ---------------------------------------------------------
 void sgm_reset(void)
 {
-    //make sure Super Game Module registers for AY chip are clear...
+    // Make sure Super Game Module registers for AY chip are clear...
     memset(ay_reg, 0x00, 256);   // Clear the AY registers...
     ay_reg[0x07] = 0xFF;         // Everything turned off to start...
     ay_reg[0x0E] = 0xFF;         // These are "max attenuation" volumes
@@ -200,7 +200,6 @@ u8 colecoInit(char *szGame) {
     sn76496Mixer(32, tmp_samples, &aycol);
       
     DrZ80_Reset();                      // Reset the DrZ80 core CPU
-    CPU.IPeriod = TMS9918_LINE;
     ResetZ80(&CPU);                     // Reset the CZ80 core CPU
     Reset9918();                        // Reset the VDP
       
@@ -217,7 +216,6 @@ u8 colecoInit(char *szGame) {
 void colecoRun(void) 
 {
   DrZ80_Reset();                        // Reset the DrZ80 core CPU
-  CPU.IPeriod    = TMS9918_LINE;
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
   showMainMenu();                       // Show the game-related screen
 }
@@ -765,7 +763,11 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
     FakeAY_WriteData(Value);
     return;
   }
-    
+  
+  // ---------------------------------------------------------------------------
+  // Now handle the rest of the CV ports - this handles the mirroring of
+  // port writes - for example, a write to port 0x7F will hit 0x60 Memory Port
+  // ---------------------------------------------------------------------------
   switch(Port&0xE0) 
   {
     case 0x80:  // Set Joystick Read Mode
@@ -791,33 +793,18 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   }
 }
 
-// -----------------------------------------------
-// These two functions are for the CZ80 core...
-// -----------------------------------------------
-void OutZ80(register word Port,register byte Value)
-{
-    cpu_writeport16(Port, Value);
-}
-byte InZ80(register word Port)
-{
-    return cpu_readport16(Port);
-}
-
 
 
 /** LoopZ80() *************************************************/
 /** Z80 emulation calls this function periodically to run    **/
 /** Z80 code for the loaded ROM. It runs code refreshing the **/
-/** VDP and checking for interrupt requests. This is not     **/
-/** as cycle accurate as we would like - but good enough.    **/
+/** VDP and checking for interrupt requests.                 **/
 /**************************************************************/
 ITCM_CODE u32 LoopZ80() 
 {
     static u16 spinnerDampen = 0;
     cpuirequest=0;
     
-    CPU.IAutoReset = 1;
-
   // Just in case there are AY audio envelopes... this is very rough timing.
   if (AY_Enable) FakeAY_Loop();
     
@@ -830,47 +817,45 @@ ITCM_CODE u32 LoopZ80()
   {
       if (spinX_left)
       {
-          cpuirequest = Z80_IRQ_INT;
-          CPU.IRequest=INT_RST38;
+          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
           JoyState   &= 0xFFFFCFFF;
           JoyState   |= 0x00003000;
       }
       else if (spinX_right)
       {
-          cpuirequest = Z80_IRQ_INT;
-          CPU.IRequest=INT_RST38;
+          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
           JoyState   &= 0xFFFFCFFF;
           JoyState   |= 0x00001000;
       }
       
       if (spinY_left)
       {
-          cpuirequest = Z80_IRQ_INT;
-          CPU.IRequest=INT_RST38;
+          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
           JoyState   &= 0xCFFFFFFF;
           JoyState   |= 0x30000000;
       }
       else if (spinY_right)
       {
-          cpuirequest = Z80_IRQ_INT;
-          CPU.IRequest=INT_RST38;
+          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
           JoyState   &= 0xCFFFFFFF;
           JoyState   |= 0x10000000;
       }
   }
 
-  // -----------------------------------------------------------------
+  // ---------------------------------------------------------------
   // We current support two different Z80 cores... the DrZ80 is
   // (relatively) blazingly fast on the DS ARM processor but
   // the compatibilty isn't 100%. The CZ80 core is slower but
-  // has higher compatibilty. For now, the default core is still
-  // DrZ80 but there are a growing number of games that will 
-  // switch (via CRC check in SetDefaultGameConfig() routine).
-  // The DSi has just enough processing power to utilize this
-  // slower but more accurate core - so for the DS-LITE/PHAT
-  // games requiring the new core will simply be too slow to play.
-  // -----------------------------------------------------------------
-  if (myConfig.cpuCore == 0) // DrZ80 Core ... fast but lower accuracy
+  // has higher compatibilty. For now, the default core is 
+  // DrZ80 for the DS-LITE/PHAT and CZ80 for the DSi and above.
+  // The DSi has enough processing power to utilize this slower
+  // but more accurate core. The user can switch cores as they like.
+  // ---------------------------------------------------------------
+  if (myConfig.cpuCore == 0) // DrZ80 Core ... faster but lower accuracy
   {
       // Execute 1 scanline worth of CPU instructions
       DrZ80_execute(TMS9918_LINE + timingAdjustment);
@@ -884,13 +869,13 @@ ITCM_CODE u32 LoopZ80()
       else
         Z80_Clear_Pending_Interrupts();
   }
-  else  // CZ80 core from fMSX()... slow but more accuracy
+  else  // CZ80 core from fMSX()... slower but higher accuracy
   {
       // Execute 1 scanline worth of CPU instructions
-      cycle_deficit = ExecZ80(&CPU, TMS9918_LINE + cycle_deficit);
+      cycle_deficit = ExecZ80(TMS9918_LINE + cycle_deficit);
       
       // Refresh VDP 
-      if(Loop9918()) CPU.IRequest=INT_NMI; //cpuirequest=Z80_NMI_INT;
+      if(Loop9918()) CPU.IRequest=INT_NMI;
       
       // Generate an interrupt if called for...
       if(CPU.IRequest!=INT_NONE) IntZ80(&CPU,CPU.IRequest);

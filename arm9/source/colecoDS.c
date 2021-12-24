@@ -351,7 +351,6 @@ void ResetColecovision(void)
   sn76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
     
   DrZ80_Reset();                        // Reset the Z80 CPU Core
-  CPU.IPeriod = TMS9918_LINE;
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
 
   memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
