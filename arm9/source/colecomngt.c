@@ -79,9 +79,9 @@ const u16 SPINNER_SPEED[] = {120,   75,    50,      200,   300};
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
 // ------------------------------------------------------------
-u8 bMagicMegaCart = 0;      // Mega Carts support > 32K 
-u8 bActivisionPCB = 0;      // Activision PCB is 64K with EEPROM
-u8 sRamAtE000_OK  = 0;      // Lord of the Dungeon is the only game that needs this
+u8 bMagicMegaCart __attribute__((section(".dtcm"))) = 0;      // Mega Carts support > 32K 
+u8 bActivisionPCB __attribute__((section(".dtcm"))) = 0;      // Activision PCB is 64K with EEPROM
+u8 sRamAtE000_OK  __attribute__((section(".dtcm"))) = 0;      // Lord of the Dungeon is the only game that needs this
 
 u32 file_crc = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
 
@@ -358,10 +358,10 @@ void colecoSaveState()
  ********************************************************************************/
 void colecoLoadState() 
 {
-  u32 uNbO;
-  long pSvg;
-  char szFile[128];
-  char szCh1[32];
+    u32 uNbO;
+    long pSvg;
+    char szFile[128];
+    char szCh1[32];
 
     // Init filename = romname and .SAV in place of ROM
     strcpy(szFile,gpFic[ucGameAct].szName);
@@ -552,7 +552,8 @@ void getfile_crc(const char *path)
     file_crc = getFileCrc(path);        // The CRC is used as a unique ID to save out High Scores and Configuration...
     
     // --------------------------------------------------------------------------------------------------------
-    // A few games need some timing adjustment tweaks to render correctly... due to DrZ80 inaccuracies
+    // A few games need some timing adjustment tweaks to render correctly... due to DrZ80 inaccuracies.
+    // These timing adjustments will only be applied to the lower-compatibilty DrZ80 core.
     // --------------------------------------------------------------------------------------------------------
     timingAdjustment = 0;                               // This timing adjustment is only used for DrZ80 (not CZ80 core)
     if (file_crc == 0xb3b767ae) timingAdjustment = -1;  // Fathom (Imagic) won't render right otherwise
@@ -676,7 +677,7 @@ void SetupSGM(void)
     // ------------------------------------------------------
     if (Port60 & 0x02)  
     {
-      extern u8 ColecoBios[];
+      extern u8 ColecoBios[];       // Swap in the Coleco BIOS (save SRAM)
       if (sgm_low_addr != 0x2000)
       {
           memcpy(sgm_low_mem,pColecoMem,0x2000);
