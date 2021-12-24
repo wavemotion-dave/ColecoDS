@@ -22,6 +22,7 @@ struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
 u16 cpuirequest     __attribute__((section(".dtcm"))) = 0;
 u8 lastBank         __attribute__((section(".dtcm"))) = 199;
+s32 cycle_deficit   __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
@@ -213,7 +214,6 @@ void DrZ80_InitHandlers() {
 }
 
 
-int cycle_deficit = 0;
 void DrZ80_Reset(void) {
   memset (&drz80, 0, sizeof(struct DrZ80));
   DrZ80_InitHandlers();
