@@ -34,17 +34,23 @@ extern Z80 CPU;
 /** up. It has to stay inlined to be fast.                  **/
 /*************************************************************/
 #define FAST_RDOP
-extern byte pColecoMem[];
-INLINE byte OpZ80(word A) { return pColecoMem[A]; }
 
-// -----------------------------------------------
-// These two functions are for the CZ80 core...
-// -----------------------------------------------
+// ------------------------------------------------------
+// These defines and inline functions are to map maximum
+// speed/efficiency onto the memory system we have.
+// ------------------------------------------------------
+extern byte pColecoMem[];
 extern void cpu_writemem16 (u8 value,u16 address);
 extern byte cpu_readmem16_banked (u16 address);
-#define WrZ80(A,V) cpu_writemem16(V,A)
-#define RdZ80(A)   cpu_readmem16_banked(A)
+extern void cpu_writeport16(unsigned short Port, unsigned char Value);
+extern byte cpu_readport16(unsigned short Port);
+#define OpZ80(A)            pColecoMem[A]
+#define WrZ80(A,V)          cpu_writemem16(V,A)
+#define OutZ80(P,V)         cpu_writeport16(P,V)
+#define InZ80(P)            cpu_readport16(P)
+INLINE byte RdZ80(word A)   {if (A < 0xFFC0) return pColecoMem[A]; return cpu_readmem16_banked(A);}
 
+/** Macros for use through the CPU subsystem */
 #define S(Fl)        CPU.AF.B.l|=Fl
 #define R(Fl)        CPU.AF.B.l&=~(Fl)
 #define FLAGS(Rg,Fl) CPU.AF.B.l=Fl|ZSTable[Rg]
@@ -495,9 +501,14 @@ void ResetZ80(Z80 *R)
   CPU.I        = 0x00;
   CPU.R        = 0x00;
   CPU.IFF      = 0x00;
-  CPU.ICount   = CPU.IPeriod;
+  CPU.ICount   = CPU.IPeriod = 0;
   CPU.IRequest = INT_NONE;
   CPU.IBackup  = 0;
+  CPU.User     = 0;
+  CPU.Trace    = 0;
+  CPU.Trap     = 0;
+  CPU.TrapBadOps = 0;
+  CPU.IAutoReset = 1;
 
   JumpZ80(CPU.PC.W);
 }
@@ -508,7 +519,7 @@ void ResetZ80(Z80 *R)
 /** negative, and current register values in R.             **/
 /*************************************************************/
 #ifdef EXECZ80
-ITCM_CODE int ExecZ80(register Z80 *R,register int RunCycles)
+ITCM_CODE int ExecZ80(register int RunCycles)
 {
   register byte I;
   register pair J;
@@ -536,10 +547,10 @@ ITCM_CODE int ExecZ80(register Z80 *R,register int RunCycles)
       switch(I)
       {
 #include "Codes.h"
-        case PFX_CB: CodesCB(R);break;
-        case PFX_ED: CodesED(R);break;
-        case PFX_FD: CodesFD(R);break;
-        case PFX_DD: CodesDD(R);break;
+        case PFX_CB: CodesCB(&CPU);break;
+        case PFX_ED: CodesED(&CPU);break;
+        case PFX_FD: CodesFD(&CPU);break;
+        case PFX_DD: CodesDD(&CPU);break;
       }
     }
 
@@ -552,7 +563,7 @@ ITCM_CODE int ExecZ80(register Z80 *R,register int RunCycles)
       /* Restore the ICount */
       CPU.ICount+=CPU.IBackup-1;
       /* Interrupt CPU if needed */
-      if((CPU.IRequest!=INT_NONE)&&(CPU.IRequest!=INT_QUIT)) IntZ80(R,CPU.IRequest);
+      if((CPU.IRequest!=INT_NONE)&&(CPU.IRequest!=INT_QUIT)) IntZ80(&CPU,CPU.IRequest);
     }
   }
 }

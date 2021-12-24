@@ -61,7 +61,7 @@ extern u8 romBuffer[];
 // ------------------------------------------------
 // Switch banks... do this as fast as possible..
 // ------------------------------------------------
- void BankSwitch(u8 bank)
+ ITCM_CODE void BankSwitch(u8 bank)
 {
     if (lastBank != bank)   // Only if the bank was changed...
     {
@@ -82,7 +82,7 @@ extern u8 romBuffer[];
 // -------------------------------------------------
 // 8-bit read with bankswitch support... slower...
 // -------------------------------------------------
- u8 cpu_readmem16_banked (u16 address) 
+ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
 {
   if (bMagicMegaCart) // Handle Megacart Hot Spots
   {
@@ -136,15 +136,20 @@ extern u8 romBuffer[];
     {
         if (sRamAtE000_OK) pColecoMem[address+0x800]=value;
     }
-
+    else if (address >= 0xFFC0)
+    {
+        if (bMagicMegaCart) BankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
+    }
     /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
-    if (bActivisionPCB)
+    else if (bActivisionPCB)
     {
       if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
       {
           BankSwitch((address>>4) & romBankMask);
       }
     }
+     
+     
 }
 
 
