@@ -107,6 +107,16 @@ You can toggle this (and save on a per-game basis) in GAME OPTIONS.
 If you want to use the CZ80 core but need a bit more speed to make the
 games playable - you can also play with Vertical Sync and Frame Skip settings.
 
+The Need For Speed :
+-----------------------
+If a game just isn't running at the right speed or has periods of slowdown (not
+attributed to the actual game), here are the things you can try in the order I 
+would personally try them:
+* Turn off Vertical Sync
+* Turn on Frame Skip
+* Set Max Sprites to 4
+* Switch to the DrZ80 fast CPU core
+
 Versions :
 -----------------------
 V4.7: 23-Dec-2021 by wavemotion-dave
