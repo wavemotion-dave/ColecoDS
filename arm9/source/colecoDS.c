@@ -74,6 +74,8 @@ volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario spr
 
 u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
+u8 sg1000_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
+
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
@@ -329,7 +331,17 @@ void dsInstallSoundEmuFIFO(void)
 static u8 last_sgm_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
+static u8 last_sg1000_mode = 0;
 u32 num_irqs = 0;
+
+void ResetStatusFlags(void)
+{
+  // Some utility flags for various expansion peripherals
+  last_sgm_mode = false;
+  last_ay_mode  = false;
+  last_mc_mode  = 0;
+  last_sg1000_mode = 0;
+}
 
 void ResetColecovision(void)
 {
@@ -353,11 +365,14 @@ void ResetColecovision(void)
   DrZ80_Reset();                        // Reset the Z80 CPU Core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
 
-  memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
-  
-  colecoWipeRAM();                          // Wipe main RAM area
-    
-  memcpy(pColecoMem,ColecoBios,0x2000);     // Restore Coleco BIOS
+  if (!sg1000_mode)
+  {
+      memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
+
+      colecoWipeRAM();                          // Wipe main RAM area
+
+      memcpy(pColecoMem,ColecoBios,0x2000);     // Restore Coleco BIOS
+  }
   
   // -----------------------------------------------------------
   // Timer 1 is used to time frame-to-frame of actual emulation
@@ -374,11 +389,9 @@ void ResetColecovision(void)
   TIMER2_CR=TIMER_ENABLE  | TIMER_DIV_1024;
   timingFrames  = 0;
   emuFps=0;
-  
-  // Some utility flags for various expansion peripherals
-  last_sgm_mode = false;
-  last_ay_mode  = false;
-  last_mc_mode  = 0;
+
+  ResetStatusFlags();   // Some static status flags for the UI mostly
+    
   num_irqs = 0;
 }
 
@@ -462,22 +475,33 @@ void ShowDebugZ80(void)
 // ------------------------------------------------------------
 void DisplayStatusLine(bool bForce)
 {
-    if ((last_sgm_mode != sgm_enable) || bForce)
+    if (sg1000_mode)
     {
-        last_sgm_mode = sgm_enable;
-        AffChaine(28,0,6, (sgm_enable ? "SGM":"   "));
+        if ((last_sg1000_mode != sg1000_mode) || bForce)
+        {
+            last_sg1000_mode = sg1000_mode;
+            AffChaine(23,0,6, "SG-1000");
+        }
     }
+    else
+    {    
+        if ((last_sgm_mode != sgm_enable) || bForce)
+        {
+            last_sgm_mode = sgm_enable;
+            AffChaine(28,0,6, (sgm_enable ? "SGM":"   "));
+        }
 
-    if ((last_ay_mode != AY_Enable) || bForce)
-    {
-        last_ay_mode = AY_Enable;
-        AffChaine(25,0,6, (AY_Enable ? "AY":"  "));
-    }
+        if ((last_ay_mode != AY_Enable) || bForce)
+        {
+            last_ay_mode = AY_Enable;
+            AffChaine(25,0,6, (AY_Enable ? "AY":"  "));
+        }
 
-    if ((last_mc_mode != romBankMask) || bForce)
-    {
-        last_mc_mode = romBankMask;
-        AffChaine(22,0,6, (romBankMask ? "MC":"  "));
+        if ((last_mc_mode != romBankMask) || bForce)
+        {
+            last_mc_mode = romBankMask;
+            AffChaine(22,0,6, (romBankMask ? "MC":"  "));
+        }
     }
 }
 
