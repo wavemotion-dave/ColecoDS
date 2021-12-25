@@ -119,11 +119,27 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
     extern u8 sgm_enable;
     extern u16 sgm_low_addr;
     
+    // ----------------------------------------------------------
+    // If SG-1000 mode, we provide the Dhajee RAM expansion...
+    // ----------------------------------------------------------
+    if (sg1000_mode)
+    {
+        if ((address >= 0x2000) && (address < 0x4000))  // DahJee Type A RAM Expander
+        {
+            pColecoMem[address]=value;
+        }
+        else if (address >= 0xC000)  // Not entirely accurate but good enough - Normal RAM + DahJee Type B RAM Expander
+        {
+            address &= 0x1FFF;
+            pColecoMem[0xC000+address]=value;
+            pColecoMem[0xE000+address]=value;
+        }
+    }
     // -----------------------------------------------------------
     // If the Super Game Module has been enabled, we have a much 
     // wider range of RAM that can be written (and no mirroring)
     // -----------------------------------------------------------
-    if (sgm_enable)
+    else if (sgm_enable)
     {
         if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
     }    
@@ -148,9 +164,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
       {
           BankSwitch((address>>4) & romBankMask);
       }
-    }
-     
-     
+    }     
 }
 
 
@@ -204,8 +218,8 @@ void DrZ80_InitHandlers() {
   extern u8 romBankMask;
   drz80.z80_write8=cpu_writemem16;
   drz80.z80_write16=drz80MemWriteW;
-  drz80.z80_in=cpu_readport16;
-  drz80.z80_out=cpu_writeport16;
+  drz80.z80_in=(sg1000_mode ? cpu_readport_sg:cpu_readport16);
+  drz80.z80_out=(sg1000_mode ? cpu_writeport_sg:cpu_writeport16);    
   drz80.z80_read8= (romBankMask ? cpu_readmem16_banked : cpu_readmem16 );
   drz80.z80_read16= (romBankMask ? drz80MemReadW_banked : drz80MemReadW);
   drz80.z80_rebasePC=(unsigned int (*)(short unsigned int))z80_rebasePC;

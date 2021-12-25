@@ -39,4 +39,8 @@ extern u32 z80_rebasePC(u16 address);
 extern void cpu_writeport16(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport16(register unsigned short Port);
 
+extern void cpu_writeport_sg(register unsigned short Port,register unsigned char Value);
+extern unsigned char cpu_readport_sg(register unsigned short Port);
+
+
 #endif

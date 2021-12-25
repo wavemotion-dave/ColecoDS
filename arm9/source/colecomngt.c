@@ -124,17 +124,24 @@ void sgm_reset(void)
  ********************************************************************************/
 void colecoWipeRAM(void)
 {
-  for (int i=0; i<0x400; i++)
+  if (sg1000_mode)
   {
-      u8 randbyte = rand() & 0xFF;
-      pColecoMem[0x6000 + i] = randbyte;
-      pColecoMem[0x6400 + i] = randbyte;
-      pColecoMem[0x6800 + i] = randbyte;
-      pColecoMem[0x6C00 + i] = randbyte;
-      pColecoMem[0x7000 + i] = randbyte;
-      pColecoMem[0x7400 + i] = randbyte;
-      pColecoMem[0x7800 + i] = randbyte;
-      pColecoMem[0x7C00 + i] = randbyte;
+    memset(pColecoMem+0xC000, 0x00, 0x4000);   
+  }
+  else
+  {
+      for (int i=0; i<0x400; i++)
+      {
+          u8 randbyte = rand() & 0xFF;
+          pColecoMem[0x6000 + i] = randbyte;
+          pColecoMem[0x6400 + i] = randbyte;
+          pColecoMem[0x6800 + i] = randbyte;
+          pColecoMem[0x6C00 + i] = randbyte;
+          pColecoMem[0x7000 + i] = randbyte;
+          pColecoMem[0x7400 + i] = randbyte;
+          pColecoMem[0x7800 + i] = randbyte;
+          pColecoMem[0x7C00 + i] = randbyte;
+      }
   }
 }
     
@@ -146,18 +153,26 @@ void colecoWipeRAM(void)
 u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
-  
-  // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
-  memset(pColecoMem+0x2000, 0xFF, 0x4000);
-    
-  // Wipe RAM
-  colecoWipeRAM();
-  
-  // Set upper 32K ROM area to 0xFF before load
-  memset(pColecoMem+0x8000, 0xFF, 0x8000);
 
-  // Load coleco cartridge
-  RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
+  if (sg1000_mode)  // Load SG-1000 cartridge (wipe memory)
+  {
+      memset(pColecoMem, 0x00, 0x10000);
+      RetFct = loadrom(szGame,pColecoMem,0xC000);
+  }
+  else  // Load coleco cartridge
+  {
+      // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
+      memset(pColecoMem+0x2000, 0xFF, 0x4000);
+
+      // Wipe RAM
+      colecoWipeRAM();
+
+      // Set upper 32K ROM area to 0xFF before load
+      memset(pColecoMem+0x8000, 0xFF, 0x8000);
+
+      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
+  }
+    
   if (RetFct) 
   {
     RetFct = colecoCartVerify(pColecoMem+0x8000);
@@ -204,6 +219,8 @@ u8 colecoInit(char *szGame) {
     Reset9918();                        // Reset the VDP
       
     XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
+      
+    ResetStatusFlags();                 // Some status flags for the UI mostly
   }
   
   // Return with result
@@ -597,7 +614,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
-        if (iSSize <= (32*1024))
+        if (iSSize <= ((sg1000_mode ? 48:32)*1024))
         {
             memcpy(ptr, romBuffer, nmemb);
             romBankMask = 0x00;
@@ -702,6 +719,8 @@ void SetupSGM(void)
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
 {
+  if (sg1000_mode) {return cpu_readport_sg(Port);}    
+    
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
   
@@ -740,6 +759,8 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 /*************************************************************/
 ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 {
+  if (sg1000_mode) {cpu_writeport_sg(Port, Value); return;}
+    
   // Colecovision ports are 8-bit
   Port &= 0x00FF;
 
@@ -794,6 +815,53 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   }
 }
 
+// ------------------------------------------------------------------
+// SG-1000 IO Port Read - just VDP and Joystick to contend with...
+// ------------------------------------------------------------------
+unsigned char cpu_readport_sg(register unsigned short Port) 
+{
+  // SG-1000 ports are 8-bit
+  Port &= 0x00FF; 
+
+  if ((Port & 0xE0) == 0xA0)  // VDP Area
+  {
+      if (Port & 1) return(RdCtrl9918()); 
+      else return(RdData9918());
+  }
+  else if ((Port == 0xDC) || (Port == 0xC0)) // Joystick Port 1 only Joystick Supported
+  {
+      u8 joy1 = 0x00;
+
+      if (JoyState & JST_UP)    joy1 |= 0x01;
+      if (JoyState & JST_DOWN)  joy1 |= 0x02;
+      if (JoyState & JST_LEFT)  joy1 |= 0x04;
+      if (JoyState & JST_RIGHT) joy1 |= 0x08;
+      
+      if (JoyState & JST_FIREL) joy1 |= 0x10;
+      if (JoyState & JST_FIRER) joy1 |= 0x20;
+      return (~joy1);
+  }
+
+  // No such port
+  return(NORAM);
+}
+
+// ----------------------------------------------------------------------
+// SG-1000 IO Port Write - just VDP and SN Sound Chip to contend with...
+// ----------------------------------------------------------------------
+void cpu_writeport_sg(register unsigned short Port,register unsigned char Value) 
+{
+    // SG-1000 ports are 8-bit
+    Port &= 0x00FF;
+
+    if ((Port & 0xE0) == 0xA0)  // VDP Area
+    {
+        if ((Port & 1) == 0) WrData9918(Value);
+        else if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }    // SG-1000 does not use NMI like Colecovision does...
+    }
+    else if (Port == 0x7E) sn76496W(Value, &sncol);
+    else if (Port == 0x7F) sn76496W(Value, &sncol);
+}
 
 
 /** LoopZ80() *************************************************/
@@ -866,7 +934,7 @@ ITCM_CODE u32 LoopZ80()
     
       // Generate interrupt if called for
       if (cpuirequest)
-        Z80_Cause_Interrupt(cpuirequest);
+        Z80_Cause_Interrupt((sg1000_mode ? Z80_IRQ_INT:cpuirequest));
       else
         Z80_Clear_Pending_Interrupts();
   }
@@ -876,7 +944,7 @@ ITCM_CODE u32 LoopZ80()
       cycle_deficit = ExecZ80(TMS9918_LINE + cycle_deficit);
       
       // Refresh VDP 
-      if(Loop9918()) CPU.IRequest=INT_NMI;
+      if(Loop9918()) CPU.IRequest = (sg1000_mode ? INT_RST38 : INT_NMI);
       
       // Generate an interrupt if called for...
       if(CPU.IRequest!=INT_NONE) IntZ80(&CPU,CPU.IRequest);

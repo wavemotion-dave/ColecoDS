@@ -52,6 +52,8 @@ extern u8 spinX_right;
 extern u8 spinY_left;
 extern u8 spinY_right;
 
+extern u8 sg1000_mode;
+
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
 #define MAX_KEY_OPTIONS  44
@@ -73,5 +75,6 @@ extern void showMainMenu(void);
 extern void InitBottomScreen(void);
 extern void PauseSound(void);
 extern void UnPauseSound(void);
+extern void ResetStatusFlags(void);
 
 #endif
