@@ -19,6 +19,7 @@ Features :
 * LCD Screen Swap (press and hold L+R+X during gameplay).
 * Overlay support for the few games that need them.
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
+* Sega SG-1000 game support (.sg roms)
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -119,6 +120,10 @@ would personally try them:
 
 Versions :
 -----------------------
+V4.8: 26-Dec-2021 by wavemotion-dave
+* Preliminary support for SG-1000 games (.sg format)
+* Cleanup across the board - a bit more speed gained.
+
 V4.7: 23-Dec-2021 by wavemotion-dave
 * Major speed improvements in the new CZ80 core. 
 * Installed new CZ80 core as the default for DSi and above. 

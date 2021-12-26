@@ -154,17 +154,17 @@ u8 colecoInit(char *szGame) {
   u8 RetFct,uBcl;
   u16 uVide;
 
-  if (sg1000_mode)  // Load SG-1000 cartridge (wipe memory)
+  if (sg1000_mode)  // Load SG-1000 cartridge
   {
-      memset(pColecoMem, 0x00, 0x10000);
-      RetFct = loadrom(szGame,pColecoMem,0xC000);
+      memset(pColecoMem, 0x00, 0x10000);            // Wipe Memory
+      RetFct = loadrom(szGame,pColecoMem,0xC000);   // Load up to 48K
   }
   else  // Load coleco cartridge
   {
       // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
       memset(pColecoMem+0x2000, 0xFF, 0x4000);
 
-      // Wipe RAM
+      // Wipe RAM to Random Values
       colecoWipeRAM();
 
       // Set upper 32K ROM area to 0xFF before load
@@ -614,7 +614,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
-        if (iSSize <= ((sg1000_mode ? 48:32)*1024))
+        if (iSSize <= ((sg1000_mode ? 48:32)*1024)) // Allow SG ROMs to be up to 48K
         {
             memcpy(ptr, romBuffer, nmemb);
             romBankMask = 0x00;
@@ -930,11 +930,11 @@ ITCM_CODE u32 LoopZ80()
       DrZ80_execute(TMS9918_LINE + timingAdjustment);
       
       // Refresh VDP 
-      if(Loop9918()) cpuirequest=Z80_NMI_INT;
+      if(Loop9918()) cpuirequest = (sg1000_mode ? INT_RST38 : INT_NMI);
     
       // Generate interrupt if called for
       if (cpuirequest)
-        Z80_Cause_Interrupt((sg1000_mode ? Z80_IRQ_INT:cpuirequest));
+        Z80_Cause_Interrupt(cpuirequest);
       else
         Z80_Clear_Pending_Interrupts();
   }
@@ -947,7 +947,7 @@ ITCM_CODE u32 LoopZ80()
       if(Loop9918()) CPU.IRequest = (sg1000_mode ? INT_RST38 : INT_NMI);
       
       // Generate an interrupt if called for...
-      if(CPU.IRequest!=INT_NONE) IntZ80(&CPU,CPU.IRequest);
+      if(CPU.IRequest!=INT_NONE) IntZ80(&CPU, CPU.IRequest);
   }
   
   // Drop out unless end of screen is reached 

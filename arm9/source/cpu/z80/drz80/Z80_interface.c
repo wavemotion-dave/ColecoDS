@@ -119,12 +119,15 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
     extern u8 sgm_enable;
     extern u16 sgm_low_addr;
     
-    // ----------------------------------------------------------
+    // -------------------------------------------------------------
     // If SG-1000 mode, we provide the Dhajee RAM expansion...
-    // ----------------------------------------------------------
+    // We aren't doing a lot of error/bounds checking here - we 
+    // are going to assume well-behaved .sg ROMs as this is 
+    // primarily a Colecovision emu with partial SG-1000 support.
+    // -------------------------------------------------------------
     if (sg1000_mode)
     {
-        if ((address >= 0x2000) && (address < 0x4000))  // DahJee Type A RAM Expander
+        if ((address >= 0x2000) && (address < 0x4000))  // DahJee Type A RAM Expander (these .sg files will have all 0xFF mapped in this area)
         {
             pColecoMem[address]=value;
         }
