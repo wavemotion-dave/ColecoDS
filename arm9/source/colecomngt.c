@@ -930,7 +930,7 @@ ITCM_CODE u32 LoopZ80()
       DrZ80_execute(TMS9918_LINE + timingAdjustment);
       
       // Refresh VDP 
-      if(Loop9918()) cpuirequest = (sg1000_mode ? INT_RST38 : INT_NMI);
+      if(Loop9918()) cpuirequest = (sg1000_mode ? Z80_IRQ_INT : Z80_NMI_INT);
     
       // Generate interrupt if called for
       if (cpuirequest)
