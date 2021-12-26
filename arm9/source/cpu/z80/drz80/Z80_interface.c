@@ -127,16 +127,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
     // -------------------------------------------------------------
     if (sg1000_mode)
     {
-        if ((address >= 0x2000) && (address < 0x4000))  // DahJee Type A RAM Expander (these .sg files will have all 0xFF mapped in this area)
-        {
-            pColecoMem[address]=value;
-        }
-        else if (address >= 0xC000)  // Not entirely accurate but good enough - Normal RAM + DahJee Type B RAM Expander
-        {
-            address &= 0x1FFF;
-            pColecoMem[0xC000+address]=value;
-            pColecoMem[0xE000+address]=value;
-        }
+        pColecoMem[address]=value;
     }
     // -----------------------------------------------------------
     // If the Super Game Module has been enabled, we have a much 
