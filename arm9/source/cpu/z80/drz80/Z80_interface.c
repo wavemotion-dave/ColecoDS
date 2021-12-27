@@ -127,7 +127,18 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
     // -------------------------------------------------------------
     if (sg1000_mode)
     {
-        pColecoMem[address]=value;
+        if (address >= 0x8000)
+        {
+            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+        }
+        else
+        {        
+            if (address >= 0x2000 && address < 0x4000)
+            {
+                pColecoMem[address]=value;  // Allow writes in this 8K range to emulate DahJee RAM expander
+            }
+        }
+        
     }
     // -----------------------------------------------------------
     // If the Super Game Module has been enabled, we have a much 

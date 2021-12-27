@@ -828,7 +828,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
       if (Port & 1) return(RdCtrl9918()); 
       else return(RdData9918());
   }
-  else if ((Port == 0xDC) || (Port == 0xC0)) // Joystick Port 1 only Joystick Supported
+  else if ((Port == 0xDC) || (Port == 0xC0)) // Joystick Port 1
   {
       u8 joy1 = 0x00;
 
@@ -841,7 +841,13 @@ unsigned char cpu_readport_sg(register unsigned short Port)
       if (JoyState & JST_FIRER) joy1 |= 0x20;
       return (~joy1);
   }
-
+  else if ((Port == 0xDD) || (Port == 0xC1)) // Joystick Port 2
+  {
+      u8 joy2 = 0x00;
+      if (JoyState & JST_BLUE) joy2 |= 0x10;    // Reset (not sure this is used)
+      return (~joy2);
+  }
+    
   // No such port
   return(NORAM);
 }
@@ -914,7 +920,7 @@ ITCM_CODE u32 LoopZ80()
           JoyState   |= 0x10000000;
       }
   }
-
+    
   // ---------------------------------------------------------------
   // We current support two different Z80 cores... the DrZ80 is
   // (relatively) blazingly fast on the DS ARM processor but
