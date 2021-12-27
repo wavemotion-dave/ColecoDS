@@ -379,6 +379,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".sc") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
       }
     }
   }
@@ -1327,7 +1333,9 @@ void colecoDSChangeOptions(void)
             if (ucGameChoice != -1) 
             { 
                 getfile_crc(gpFic[ucGameChoice].szName);
-                if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1; else sg1000_mode = 0;
+                sg1000_mode = 0;
+                if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
+                if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
                 FindAndLoadConfig();    // Try to find keymap for this file...
                 DisplayFileName();
             }
