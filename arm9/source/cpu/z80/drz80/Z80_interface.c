@@ -140,6 +140,16 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
         }
         
     }
+    // ----------------------------------------------------------------------------------
+    // For the Sord M5, RAM is at 0x7000 and we emulate the 32K RAM Expander above that
+    // ----------------------------------------------------------------------------------
+    else if (sordm5_mode)
+    {
+        if (address >= 0x7000)
+        {
+            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+        }
+    }
     // -----------------------------------------------------------
     // If the Super Game Module has been enabled, we have a much 
     // wider range of RAM that can be written (and no mirroring)
@@ -194,6 +204,10 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
     }
     else if (type != Z80_IGNORE_INT) 
     {
+#ifdef DEBUG_Z80        
+        extern unsigned int num_irqs;
+        if ((drz80.pending_irq & INT_IRQ) == 0)  num_irqs++;
+#endif        
         drz80.z80irqvector = type & 0xff;
         drz80.pending_irq |= INT_IRQ;
     }

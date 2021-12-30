@@ -385,6 +385,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".m5") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
       }
     }
   }
@@ -825,7 +831,8 @@ void SetDefaultGameConfig(void)
         myConfig.cpuCore = 1;
     }
     
-    if (sg1000_mode) myConfig.cpuCore = 1;  // SG-1000 always uses the DrZ80 core
+    if (sg1000_mode) myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
+    if (sordm5_mode) myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
 }
 
 // -------------------------------------------------------------------------
@@ -1336,6 +1343,8 @@ void colecoDSChangeOptions(void)
                 sg1000_mode = 0;
                 if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
                 if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
+                sordm5_mode = 0;
+                if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
                 FindAndLoadConfig();    // Try to find keymap for this file...
                 DisplayFileName();
             }

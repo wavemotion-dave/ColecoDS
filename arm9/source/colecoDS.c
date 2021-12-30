@@ -58,6 +58,7 @@ extern Z80 CPU;
 // --------------------------------------------------------------------------
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             
 u8 ColecoBios[0x2000] = {0};  // We keep the 8K BIOS around to swap in/out
+u8 SordM5Bios[0x2000] = {0};  // We keep the 8K BIOS around to swap in/out
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -75,6 +76,7 @@ volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario spr
 u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
 u8 sg1000_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
+u8 sordm5_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
@@ -332,6 +334,7 @@ static u8 last_sgm_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
+static u8 last_sordm5_mode = 0;
 u32 num_irqs = 0;
 
 void ResetStatusFlags(void)
@@ -341,6 +344,7 @@ void ResetStatusFlags(void)
   last_ay_mode  = false;
   last_mc_mode  = 0;
   last_sg1000_mode = 0;
+  last_sordm5_mode = 0;
 }
 
 void ResetColecovision(void)
@@ -365,12 +369,19 @@ void ResetColecovision(void)
   DrZ80_Reset();                        // Reset the Z80 CPU Core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
 
-  if (!sg1000_mode)
+  if (sg1000_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+  }
+  else if (sordm5_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+      memcpy(pColecoMem,SordM5Bios,0x2000);     // Restore Sord M5 BIOS
+  }
+  else
   {
       memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
-
       colecoWipeRAM();                          // Wipe main RAM area
-
       memcpy(pColecoMem,ColecoBios,0x2000);     // Restore Coleco BIOS
   }
   
@@ -481,6 +492,14 @@ void DisplayStatusLine(bool bForce)
         {
             last_sg1000_mode = sg1000_mode;
             AffChaine(23,0,6, "SG-1000");
+        }
+    }
+    else if (sordm5_mode)
+    {
+        if ((last_sordm5_mode != sordm5_mode) || bForce)
+        {
+            last_sordm5_mode = sordm5_mode;
+            AffChaine(23,0,6, "SORD M5");
         }
     }
     else
@@ -981,7 +1000,10 @@ u16 colecoDSInitCPU(void)
   InitBottomScreen();
 
   //  Load coleco Bios ROM
-  memcpy(pColecoMem,ColecoBios,0x2000);
+  if (sordm5_mode)
+    memcpy(pColecoMem,SordM5Bios,0x2000);
+  else
+    memcpy(pColecoMem,ColecoBios,0x2000);
   
   //  Return with result
   return  (RetFct);
@@ -1002,7 +1024,22 @@ void irqVBlank(void)
 bool ColecoBIOSFound(void)
 {
     FILE *fp;
-    
+
+    // -----------------------------------------------------------
+    // First load Sord M5 bios - don't really care if this fails
+    // -----------------------------------------------------------
+    fp = fopen("sordm5.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/sordm5.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/sordm5.rom", "rb");
+    if (fp != NULL)
+    {
+        fread(SordM5Bios, 0x2000, 1, fp);
+        fclose(fp);
+    }
+
+    // -----------------------------------------------------------
+    // Coleco ROM BIOS must exist or the show is off!
+    // -----------------------------------------------------------
     fp = fopen("coleco.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/coleco.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/coleco.rom", "rb");
