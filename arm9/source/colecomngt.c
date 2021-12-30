@@ -903,15 +903,21 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   else if (Port == 0x30)    // Y0
   {
       u8 joy1 = 0x00;
-      if ((JoyState & JST_FIREL) == JST_FIREL)  joy1 |= 0x04;   // Left Shift (fire button 1)
-      if ((JoyState & JST_FIRER) == JST_FIRER)  joy1 |= 0x01;   // Ctrl (fire button 2)
       return (joy1);
   }
   else if (Port == 0x31)    // Y1
   {
       u8 joy1 = 0x00;
-      if ((JoyState & JST_1) == JST_1)   joy1 |= 0x01;  // '1'
-      if ((JoyState & JST_2) == JST_2)   joy1 |= 0x02;  // '2'
+      if (JoyState & JST_FIREL) joy1 |= 0x01;  // '1' (joystick button 1)
+      if (JoyState & JST_FIRER) joy1 |= 0x02;  // '2' (joystick button 2)
+      if (JoyState & JST_1)   joy1 |= 0x01;  // '1'
+      if (JoyState & JST_2)   joy1 |= 0x02;  // '2'
+      if (JoyState & JST_3)   joy1 |= 0x04;  // '3'
+      if (JoyState & JST_4)   joy1 |= 0x08;  // '4'
+      if (JoyState & JST_5)   joy1 |= 0x10;  // '5'
+      if (JoyState & JST_6)   joy1 |= 0x20;  // '6'
+      if (JoyState & JST_7)   joy1 |= 0x40;  // '7'
+      if (JoyState & JST_8)   joy1 |= 0x80;  // '8'
       return (joy1);
   }
   else if (Port >= 0x32 && Port < 0x37)
@@ -921,10 +927,10 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   else if (Port == 0x37)    // Joystick Port 1
   {
       u8 joy1 = 0x00;
-      if ((JoyState & JST_UP)   == JST_UP)     joy1 |= 0x02;
-      if ((JoyState & JST_DOWN) == JST_DOWN)   joy1 |= 0x08;
-      if ((JoyState & JST_LEFT) == JST_LEFT)   joy1 |= 0x04;
-      if ((JoyState & JST_RIGHT) == JST_RIGHT) joy1 |= 0x01;      
+      if (JoyState & JST_UP)     joy1 |= 0x02;
+      if (JoyState & JST_DOWN)   joy1 |= 0x08;
+      if (JoyState & JST_LEFT)   joy1 |= 0x04;
+      if (JoyState & JST_RIGHT)  joy1 |= 0x01;      
       return (joy1);
   }
   else if (Port == 0x50)
