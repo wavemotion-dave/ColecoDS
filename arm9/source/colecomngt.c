@@ -128,6 +128,10 @@ void colecoWipeRAM(void)
   {
     memset(pColecoMem+0xC000, 0x00, 0x4000);   
   }
+  else if (sordm5_mode)
+  {
+    memset(pColecoMem+0x7000, 0x00, 0x9000);   
+  }
   else
   {
       for (int i=0; i<0x400; i++)
@@ -158,6 +162,11 @@ u8 colecoInit(char *szGame) {
   {
       memset(pColecoMem, 0x00, 0x10000);            // Wipe Memory
       RetFct = loadrom(szGame,pColecoMem,0xC000);   // Load up to 48K
+  }
+  else if (sordm5_mode)  // Load Sord M5 cartridge
+  {
+      memset(pColecoMem+0x2000, 0x00, 0xC000);            // Wipe Memory above BIOS
+      RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
   }
   else  // Load coleco cartridge
   {
@@ -720,6 +729,7 @@ void SetupSGM(void)
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
 {
   if (sg1000_mode) {return cpu_readport_sg(Port);}    
+  if (sordm5_mode) {return cpu_readport_m5(Port);}    
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
@@ -760,6 +770,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 {
   if (sg1000_mode) {cpu_writeport_sg(Port, Value); return;}
+  if (sordm5_mode) {cpu_writeport_m5(Port, Value); return;}
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF;
@@ -870,6 +881,116 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
 }
 
 
+u8 ctc[4] = {0};
+// ------------------------------------------------------------------
+// SORD M5 IO Port Read - just VDP and Joystick to contend with...
+// ------------------------------------------------------------------
+unsigned char cpu_readport_m5(register unsigned short Port) 
+{
+  // M5 ports are 8-bit
+  Port &= 0x00FF; 
+
+  if (Port >= 0x00 && Port <= 0x03)      // Z80-CTC Area
+  {
+      // TODO: fill in Z80-CTC
+      //return ctc[Port];
+      return 0xFF;
+  }
+  else if ((Port == 0x10) || (Port == 0x11))  // VDP Area
+  {
+      return(Port&0x01 ? RdCtrl9918():RdData9918());      
+  }
+  else if (Port == 0x30)    // Y0
+  {
+      u8 joy1 = 0x00;
+      if ((JoyState & JST_FIREL) == JST_FIREL)  joy1 |= 0x04;   // Left Shift (fire button 1)
+      if ((JoyState & JST_FIRER) == JST_FIRER)  joy1 |= 0x01;   // Ctrl (fire button 2)
+      return (joy1);
+  }
+  else if (Port == 0x31)    // Y1
+  {
+      u8 joy1 = 0x00;
+      if ((JoyState & JST_1) == JST_1)   joy1 |= 0x01;  // '1'
+      if ((JoyState & JST_2) == JST_2)   joy1 |= 0x02;  // '2'
+      return (joy1);
+  }
+  else if (Port >= 0x32 && Port < 0x37)
+  {
+      return 0x00;
+  }
+  else if (Port == 0x37)    // Joystick Port 1
+  {
+      u8 joy1 = 0x00;
+      if ((JoyState & JST_UP)   == JST_UP)     joy1 |= 0x02;
+      if ((JoyState & JST_DOWN) == JST_DOWN)   joy1 |= 0x08;
+      if ((JoyState & JST_LEFT) == JST_LEFT)   joy1 |= 0x04;
+      if ((JoyState & JST_RIGHT) == JST_RIGHT) joy1 |= 0x01;      
+      return (joy1);
+  }
+  else if (Port == 0x50)
+  {
+      return 0x00;
+  }
+    
+  // No such port
+  return(NORAM);
+}
+
+u8 sordm5_irq = 0xFF;
+u8 vector[4] = {0};
+// ----------------------------------------------------------------------
+// SG-1000 IO Port Write - just VDP and SN Sound Chip to contend with...
+// ----------------------------------------------------------------------
+void cpu_writeport_m5(register unsigned short Port,register unsigned char Value) 
+{
+    // SG-1000 ports are 8-bit
+    Port &= 0x00FF;
+
+    if (Port >= 0x00 && Port <= 0x03)      // Z80-CTC Area
+    {
+        ctc[Port] = Value;
+        if (Value & 1) // Control Word
+        {
+        }
+        else
+        {
+            if (Port == 0x00) // Channel 0 is special 
+            {
+                vector[0] = (Value & 0xf8) | 0;
+                vector[1] = (Value & 0xf8) | 2;
+                vector[2] = (Value & 0xf8) | 4;
+                vector[3] = (Value & 0xf8) | 6;
+                sordm5_irq = vector[3];
+            }
+        }
+    }
+    else if ((Port == 0x10) || (Port == 0x11))  // VDP Area
+    {
+        if ((Port & 1) == 0) WrData9918(Value);
+        else if (WrCtrl9918(Value)) CPU.IRequest=sordm5_irq;    // Sord M5 must get vector from the Z80-CTC. Only the CZ80 core works with this.
+    }
+    else if (Port == 0x20) sn76496W(Value, &sncol);
+}
+
+// ----------------------------------------------------------------
+// Fires every scanline if we are in Sord M5 mode - this provides
+// some rough timing for the Z80-CTC chip. It's not perfectly
+// accurate but it's good enough for our purposes.  Many of the
+// M5 games use the CTC timers to generate sound/music.
+// ----------------------------------------------------------------
+void Z80CTC_Timer(void)
+{
+    static u16 ctc_timer=0;
+    if (CPU.IRequest == INT_NONE)
+    {
+        if ((ctc_timer % 11) == 0) CPU.IRequest = vector[0];
+        if ((ctc_timer % 12) == 0) CPU.IRequest = vector[1];
+        if ((ctc_timer % 13) == 0) CPU.IRequest = vector[2];
+        ctc_timer++;
+    }
+}
+
+
 /** LoopZ80() *************************************************/
 /** Z80 emulation calls this function periodically to run    **/
 /** Z80 code for the loaded ROM. It runs code refreshing the **/
@@ -937,7 +1058,7 @@ ITCM_CODE u32 LoopZ80()
       
       // Refresh VDP 
       if(Loop9918()) cpuirequest = (sg1000_mode ? Z80_IRQ_INT : Z80_NMI_INT);
-    
+      
       // Generate interrupt if called for
       if (cpuirequest)
         Z80_Cause_Interrupt(cpuirequest);
@@ -950,8 +1071,18 @@ ITCM_CODE u32 LoopZ80()
       cycle_deficit = ExecZ80(TMS9918_LINE + cycle_deficit);
       
       // Refresh VDP 
-      if(Loop9918()) CPU.IRequest = (sg1000_mode ? INT_RST38 : INT_NMI);
+      if(Loop9918()) 
+      {
+          if (sordm5_mode) CPU.IRequest = sordm5_irq;   // Sord M5 only works with the CZ80 core
+          else CPU.IRequest = (sg1000_mode ? INT_RST38 : INT_NMI);
+      }
       
+      // -------------------------------------------------------------------------
+      // The Sord M5 has a CTC timer circuit that needs attention - this isnt 
+      // timing accurate but it's good enough to allow those timers to trigger.
+      // -------------------------------------------------------------------------
+      if (sordm5_mode) Z80CTC_Timer();
+
       // Generate an interrupt if called for...
       if(CPU.IRequest!=INT_NONE) IntZ80(&CPU, CPU.IRequest);
   }
