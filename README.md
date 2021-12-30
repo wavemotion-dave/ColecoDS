@@ -7,6 +7,8 @@ or else in /roms/bios or /data/bios
 
 _**Your Vision Is Our Vision...  COLECOVISION**_
 
+If you want to play Sord M5 games, you will
+also need an 8k sordm5.rom bios.
 
 Features :
 -----------------------
@@ -20,6 +22,7 @@ Features :
 * Overlay support for the few games that need them.
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
 * Sega SG-1000 game support (.sg roms)
+* Sord M5 game support (.m5 roms)
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -58,6 +61,7 @@ Known Issues :
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
+* Sord M5 games are not sound accurate due to CTC emulation issues.
 
 Controllers :
 -----------------------
@@ -120,6 +124,10 @@ would personally try them:
 
 Versions :
 -----------------------
+V4.9: 30-Dec-2021 by wavemotion-dave
+* Improved SG-1000 game support.
+* Preliminary support for Sord M5 games (.m5 format)
+
 V4.8: 26-Dec-2021 by wavemotion-dave
 * Preliminary support for SG-1000 games (.sg format)
 * Cleanup across the board - a bit more speed gained.
