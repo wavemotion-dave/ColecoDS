@@ -132,10 +132,13 @@ void sgm_reset(void)
     Port60 = 0x0F;               // And the Adam/Memory Port 60
 }
 
+// ---------------------------------------------------------
+// The Sord M5 has Z80-CTC vars that need to be reset.
+// ---------------------------------------------------------
 void sordm5_reset(void)
 {
     // Reset the Z80-CTC stuff...
-    memset(ctc_control, 0x02, 4);       // Set Software Reset Bit (freeze)
+    memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
     memset(ctc_time, 0x00, 4);          // No time value set
     memset(ctc_vector, 0x00, 4);        // No vectors set
     memset(ctc_latch, 0x00, 4);         // No latch set
@@ -143,7 +146,7 @@ void sordm5_reset(void)
 }
 
 /*********************************************************************************
- * Wipe main RAM with random patterns...
+ * Wipe main RAM with random patterns... or fill with 0x00 for some emulations.
  ********************************************************************************/
 void colecoWipeRAM(void)
 {
@@ -907,9 +910,9 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
 
 
 // ------------------------------------------------------------------
-// SORD M5 IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
+// Sord M5 IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
 // ------------------------------------------------------------------
-unsigned char cpu_readport_m5(register unsigned short Port) 
+ITCM_CODE unsigned char cpu_readport_m5(register unsigned short Port) 
 {
   // M5 ports are 8-bit
   Port &= 0x00FF; 
@@ -968,35 +971,42 @@ unsigned char cpu_readport_m5(register unsigned short Port)
 // Sord M5 IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
 // --------------------------------------------------------------------------
 #define CTC_SOUND_DIV 280
-void cpu_writeport_m5(register unsigned short Port,register unsigned char Value) 
+ITCM_CODE void cpu_writeport_m5(register unsigned short Port,register unsigned char Value) 
 {
-    // SG-1000 ports are 8-bit
+    // M5 ports are 8-bit
     Port &= 0x00FF;
 
-    if (Port >= 0x00 && Port <= 0x03)      // Z80-CTC Area
+    // ----------------------------------------------------------------------
+    // Z80-CTC Area
+    // This is only a partial implementation of the CTC logic - just enough
+    // to handle the VDP and Sound Generation and very little else. This is
+    // NOT accurate emulation - but it's good enough to render the Sord M5
+    // games as playable in this emulator.
+    // ----------------------------------------------------------------------
+    if (Port >= 0x00 && Port <= 0x03)      
     {
         if (ctc_latch[Port])    // If latched, we now have the countdown timer value
         {
-            ctc_time[Port] = Value;
+            ctc_time[Port] = Value;     // Latch the time constant and compute the countdown timer directly below.
             ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / CTC_SOUND_DIV) + 1;
-            ctc_latch[Port] = 0x00;
+            ctc_latch[Port] = 0x00;     // Reset the latch - we're back to looking for control words
         }
         else
         {
             if (Value & 1) // Control Word
             {
-                ctc_control[Port] = Value;
-                ctc_latch[Port] = Value & 0x04;
+                ctc_control[Port] = Value;      // Keep track of the control port 
+                ctc_latch[Port] = Value & 0x04; // If the caller wants to set a countdown timer, the next value read will latch the timer
             }
             else
             {
-                if (Port == 0x00) // Channel 0 is special 
+                if (Port == 0x00) // Channel 0, bit0 clear is special - this is where the 4 CTC vector addresses are setup
                 {
-                    ctc_vector[0] = (Value & 0xf8) | 0;
-                    ctc_vector[1] = (Value & 0xf8) | 2;
-                    ctc_vector[2] = (Value & 0xf8) | 4;
-                    ctc_vector[3] = (Value & 0xf8) | 6;
-                    sordm5_irq = ctc_vector[3];
+                    ctc_vector[0] = (Value & 0xf8) | 0;     // Usually used for SIO which is not emulated here
+                    ctc_vector[1] = (Value & 0xf8) | 2;     // Usually used for PSG sound generation which we must deal with
+                    ctc_vector[2] = (Value & 0xf8) | 4;     // Usually used for SIO which is not emulated here
+                    ctc_vector[3] = (Value & 0xf8) | 6;     // Used for the VDP interrupt - this one is crucial!
+                    sordm5_irq = ctc_vector[3];             // When the VDP interrupts the CPU, it's channel 3 on the CTC
                 }
             }
         }
@@ -1015,17 +1025,20 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
 // accurate but it's good enough for our purposes.  Many of the
 // M5 games use the CTC timers to generate sound/music.
 // ----------------------------------------------------------------
-void Z80CTC_Timer(void)
+ITCM_CODE void Z80CTC_Timer(void)
 {
     if (CPU.IRequest == INT_NONE)
     {
-        for (u8 Port=0; Port<3; Port++)
+        // -----------------------------------------------------------------------------------------
+        // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
+        // Originally we were handling channels 0, 1 and 2 but there was never any program usage
+        // of channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which 
+        // are not supported by ColecoDS.  So we save time and effort here and only deal with Port1.
+        // -----------------------------------------------------------------------------------------
+        if (--ctc_timer[1] <= 0)
         {
-            if (--ctc_timer[Port] <= 0)
-            {
-                ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / CTC_SOUND_DIV) + 1;
-                if (ctc_control[Port] & 0x80)  CPU.IRequest = ctc_vector[Port];
-            }
+            ctc_timer[1] = ((((ctc_control[1] & 0x20) ? 256 : 16) * (ctc_time[1] ? ctc_time[1]:256)) / CTC_SOUND_DIV) + 1;
+            if (ctc_control[1] & 0x80)  CPU.IRequest = ctc_vector[1];
         }
     }
 }

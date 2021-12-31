@@ -2006,4 +2006,26 @@ HEAP                                - 36 -
 
 
                 02-SEP-91
-
+
+
+Additional CTC Channel 0-3 Vector Usage:
+
+address value name attribute
+------- | ------- | ------- | -------------------------- ----------------------------
+7000      186C      IVCTC0  Address for interrupt from channel 0 of the Z80 CTC circuit.
+                    It is used for the Z80 SIO circuit when the module is connected
+                    SI-5. Otherwise it is free and can be used
+
+7002      1861      IVCTC1  Address for interrupt from channel 1 of the Z80 CTC circuit
+                    the most frequent use of sound generator (SML interpreter and BG
+                    at PLAY). It is often used for timing peripherals
+
+7004      186C      IVCTC2  Z80 CTC circuit breakout address 2.
+                    It is used as the CLOCK for the Z80 SIO circuit, if module SI-5 is
+                    connected. Otherwise it is free and can be used
+
+7006      01DF      IVCTC3  Address for interrupts from channel 3 of the Z80 CTC.Used for 
+                    contact with the VDP video-processor, user-
+                    interrupts, keyboards, joypads, ... It is always used
+
+                

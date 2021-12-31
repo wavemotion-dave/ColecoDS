@@ -903,7 +903,7 @@ const struct options_t Option_Table[] =
     {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},   &myConfig.overlay,    9},
     {"FPS",             {"OFF", "ON"},                                                                                                          &myConfig.showFPS,    2},
     {"FULL SPEED",      {"OFF", "ON"},                                                                                                          &myConfig.fullSpeed,  2},
-    {"FRAME SKIP",      {"OFF", "ON"},                                                                                                          &myConfig.frameSkip,  2},
+    {"FRAME SKIP",      {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                        &myConfig.frameSkip,  3},
     {"FRAME BLEND",     {"OFF", "ON"},                                                                                                          &myConfig.frameBlend, 2},
     {"MAX SPRITES",     {"32",  "4"},                                                                                                           &myConfig.maxSprites, 2},
     {"VERT SYNC",       {"OFF", "ON"},                                                                                                          &myConfig.vertSync,   2},    
