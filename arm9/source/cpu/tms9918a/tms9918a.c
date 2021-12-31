@@ -657,7 +657,8 @@ ITCM_CODE byte RdCtrl9918(void)
 /** screen buffer. Loop9918() returns 1 if an interrupt is  **/
 /** to be generated, 0 otherwise.                           **/
 /*************************************************************/
-u8 frameSkip __attribute__((section(".dtcm"))) = 0;
+u8 frameSkipIdx __attribute__((section(".dtcm"))) = 0;
+u8 frameSkip[3] = {0xFF, 0x03, 0x01};   // Frameskip OFF, Light, Agressive
 ITCM_CODE byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
@@ -672,7 +673,7 @@ ITCM_CODE byte Loop9918(void)
   /* If refreshing display area, call scanline handler */
   if((CurLine>=TMS9918_START_LINE)&&(CurLine<TMS9918_END_LINE))
   {
-      if (frameSkip & myConfig.frameSkip)
+      if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
           ScanSprites(CurLine-TMS9918_START_LINE,0);    // Skip rendering - but still scan sprites for collisions
       else
          (SCR[ScrMode].Refresh)(CurLine-TMS9918_START_LINE);
@@ -692,12 +693,12 @@ ITCM_CODE byte Loop9918(void)
       }
       
       /* Refresh screen */
-      if (frameSkip & myConfig.frameSkip)
-          asm("nop");   // Skip rendering this frame...
-      else
+      if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) != 0)
+      {
           colecoUpdateScreen();
+      }
 
-      frameSkip++;
+      frameSkipIdx++;
       
       /* Generate IRQ when enabled and when VBlank flag goes up */
       bIRQ=TMS9918_VBlankON && !(VDPStatus&TMS9918_STAT_VBLANK);
