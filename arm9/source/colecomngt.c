@@ -43,6 +43,20 @@ extern const unsigned char sprPause_Bitmap[2560];
 extern u32* lutTablehh;
 extern int cycle_deficit;
 
+// ----------------------------------------------------------------------------
+// Some vars for the Z80-CTC timer/counter chip which is only partially 
+// emulated - enough that we can do rough timing and generate VDP 
+// interrupts. This chip is only used on the Sord M5 (not the Colecovision
+// nor the SG-1000 which just ties interrupts directly between VDP and CPU).
+// ----------------------------------------------------------------------------
+u8 ctc_control[4] __attribute__((section(".dtcm"))) = {0x02, 0x02, 0x02, 0x02};
+u8 ctc_time[4]    __attribute__((section(".dtcm"))) = {0};
+u16 ctc_timer[4]  __attribute__((section(".dtcm"))) = {0};
+u8 ctc_vector[4]  __attribute__((section(".dtcm"))) = {0};
+u8 ctc_latch[4]   __attribute__((section(".dtcm"))) = {0};
+u8 sordm5_irq     __attribute__((section(".dtcm"))) = 0xFF;
+
+
 // ----------------------------------------------------------------------
 // Our "massive" ROM buffer - we support MegaCarts up to 512k but 
 // we could bump this to 1MB as the MC standard supports up to 1MB
@@ -118,6 +132,15 @@ void sgm_reset(void)
     Port60 = 0x0F;               // And the Adam/Memory Port 60
 }
 
+void sordm5_reset(void)
+{
+    // Reset the Z80-CTC stuff...
+    memset(ctc_control, 0x02, 4);       // Set Software Reset Bit (freeze)
+    memset(ctc_time, 0x00, 4);          // No time value set
+    memset(ctc_vector, 0x00, 4);        // No vectors set
+    memset(ctc_latch, 0x00, 4);         // No latch set
+    sordm5_irq = 0xFF;                  // No IRQ set
+}
 
 /*********************************************************************************
  * Wipe main RAM with random patterns...
@@ -226,6 +249,8 @@ u8 colecoInit(char *szGame) {
     DrZ80_Reset();                      // Reset the DrZ80 core CPU
     ResetZ80(&CPU);                     // Reset the CZ80 core CPU
     Reset9918();                        // Reset the VDP
+      
+    sordm5_reset();                     // Reset the Sord M5 CTC stuff
       
     XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
       
@@ -881,9 +906,8 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
 }
 
 
-u8 ctc[4] = {0};
 // ------------------------------------------------------------------
-// SORD M5 IO Port Read - just VDP and Joystick to contend with...
+// SORD M5 IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
 // ------------------------------------------------------------------
 unsigned char cpu_readport_m5(register unsigned short Port) 
 {
@@ -892,9 +916,7 @@ unsigned char cpu_readport_m5(register unsigned short Port)
 
   if (Port >= 0x00 && Port <= 0x03)      // Z80-CTC Area
   {
-      // TODO: fill in Z80-CTC
-      //return ctc[Port];
-      return 0xFF;
+      return ctc_timer[Port];
   }
   else if ((Port == 0x10) || (Port == 0x11))  // VDP Area
   {
@@ -942,11 +964,10 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   return(NORAM);
 }
 
-u8 sordm5_irq = 0xFF;
-u8 vector[4] = {0};
-// ----------------------------------------------------------------------
-// SG-1000 IO Port Write - just VDP and SN Sound Chip to contend with...
-// ----------------------------------------------------------------------
+// --------------------------------------------------------------------------
+// Sord M5 IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
+// --------------------------------------------------------------------------
+#define CTC_SOUND_DIV 280
 void cpu_writeport_m5(register unsigned short Port,register unsigned char Value) 
 {
     // SG-1000 ports are 8-bit
@@ -954,19 +975,29 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
 
     if (Port >= 0x00 && Port <= 0x03)      // Z80-CTC Area
     {
-        ctc[Port] = Value;
-        if (Value & 1) // Control Word
+        if (ctc_latch[Port])    // If latched, we now have the countdown timer value
         {
+            ctc_time[Port] = Value;
+            ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / CTC_SOUND_DIV) + 1;
+            ctc_latch[Port] = 0x00;
         }
         else
         {
-            if (Port == 0x00) // Channel 0 is special 
+            if (Value & 1) // Control Word
             {
-                vector[0] = (Value & 0xf8) | 0;
-                vector[1] = (Value & 0xf8) | 2;
-                vector[2] = (Value & 0xf8) | 4;
-                vector[3] = (Value & 0xf8) | 6;
-                sordm5_irq = vector[3];
+                ctc_control[Port] = Value;
+                ctc_latch[Port] = Value & 0x04;
+            }
+            else
+            {
+                if (Port == 0x00) // Channel 0 is special 
+                {
+                    ctc_vector[0] = (Value & 0xf8) | 0;
+                    ctc_vector[1] = (Value & 0xf8) | 2;
+                    ctc_vector[2] = (Value & 0xf8) | 4;
+                    ctc_vector[3] = (Value & 0xf8) | 6;
+                    sordm5_irq = ctc_vector[3];
+                }
             }
         }
     }
@@ -986,13 +1017,16 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
 // ----------------------------------------------------------------
 void Z80CTC_Timer(void)
 {
-    static u16 ctc_timer=0;
     if (CPU.IRequest == INT_NONE)
     {
-        if ((ctc_timer % 11) == 0) CPU.IRequest = vector[0];
-        if ((ctc_timer % 12) == 0) CPU.IRequest = vector[1];
-        if ((ctc_timer % 13) == 0) CPU.IRequest = vector[2];
-        ctc_timer++;
+        for (u8 Port=0; Port<3; Port++)
+        {
+            if (--ctc_timer[Port] <= 0)
+            {
+                ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / CTC_SOUND_DIV) + 1;
+                if (ctc_control[Port] & 0x80)  CPU.IRequest = ctc_vector[Port];
+            }
+        }
     }
 }
 

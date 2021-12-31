@@ -1,14 +1,17 @@
 # ColecoDS
 ColecoDS - A Colecovision Emulator for the DS/DSi
 
-To run requires a coleco.rom bios to 
+_**Your Vision Is Our Vision...  COLECOVISION**_
+
+To run requires a coleco.rom BIOS to 
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
 
-_**Your Vision Is Our Vision...  COLECOVISION**_
-
 If you want to play Sord M5 games, you will
-also need an 8k sordm5.rom bios.
+also need an 8k sordm5.rom bios in the same
+directory as the coleco.rom BIOS.
+
+The SG-1000 emulation does not need a BIOS.
 
 Features :
 -----------------------
@@ -22,7 +25,7 @@ Features :
 * Overlay support for the few games that need them.
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
 * Sega SG-1000 game support (.sg roms)
-* Sord M5 game support (.m5 roms)
+* Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS.
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :

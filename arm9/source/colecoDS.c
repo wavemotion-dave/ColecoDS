@@ -368,6 +368,8 @@ void ResetColecovision(void)
     
   DrZ80_Reset();                        // Reset the Z80 CPU Core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
+    
+  sordm5_reset();                       // Reset the Sord M5 Z80-CTC stuff
 
   if (sg1000_mode)
   {
