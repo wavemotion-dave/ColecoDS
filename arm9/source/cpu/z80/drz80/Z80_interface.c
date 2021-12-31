@@ -194,20 +194,16 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 
  void Z80_Cause_Interrupt(int type) 
 {
-    if (type == Z80_NMI_INT) 
-    {
 #ifdef DEBUG_Z80        
         extern unsigned int num_irqs;
         if ((drz80.pending_irq & NMI_IRQ) == 0)  num_irqs++;
 #endif        
+    if (type == Z80_NMI_INT) 
+    {
         drz80.pending_irq |= NMI_IRQ;
     }
     else if (type != Z80_IGNORE_INT) 
     {
-#ifdef DEBUG_Z80        
-        extern unsigned int num_irqs;
-        if ((drz80.pending_irq & INT_IRQ) == 0)  num_irqs++;
-#endif        
         drz80.z80irqvector = type & 0xff;
         drz80.pending_irq |= INT_IRQ;
     }
