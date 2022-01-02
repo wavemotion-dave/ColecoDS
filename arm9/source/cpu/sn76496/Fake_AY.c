@@ -37,6 +37,8 @@ extern u8 ay_reg[256];
 extern u16 sgm_low_addr;
 extern SN76496 aycol;
 
+void UpdateNoiseAY(void);
+
 static const u8 Volumes[32] = { 15,14,13,12,11,10,10,9,8,7,7,6,6,5,5,5,4,4,4,3,3,3,2,2,2,1,1,1,1,1,0,0 };
 u16 envelope_period = 0;
 
@@ -75,9 +77,9 @@ void FakeAY_Loop(void)
     static u16 delay=0;
     
     if (ay_reg[0x07] == 0xFF) return;  // Nothing enabled - nobody using the AY chip.
-    
-    if (envelope_period == 0) return;
 
+    if (envelope_period == 0) return;
+    
     if (++delay > ((envelope_period)+1))
     {
         delay = 0;
@@ -112,6 +114,7 @@ void FakeAY_Loop(void)
             }
             sn76496W(0xD0 | vol, &aycol);
         }
+        UpdateNoiseAY();
     }
 }
 
@@ -128,7 +131,7 @@ void FakeAY_WriteIndex(u8 Value)
 // -----------------------------------
 u8 FakeAY_ReadData(void)
 {
-    return ay_reg[ay_reg_idx];   
+    return ay_reg[ay_reg_idx];
 }
 
 
@@ -305,21 +308,21 @@ void FakeAY_WriteData(u8 Value)
           // Volume Registers for all channels...
           case 0x08:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
-              if (ay_reg[0x07] & 0x01) Value = 0x0;              // If Channel A is disabled, volume OFF
+              if (ay_reg[0x07] & 0x01) Value = 0x0;               // If Channel A is disabled, volume OFF
               sn76496W(0x90 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel A
               UpdateNoiseAY();
               a_idx=0;
               break;
           case 0x09:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
-              if (ay_reg[0x07] & 0x02) Value = 0x0;              // If Channel B is disabled, volume OFF
+              if (ay_reg[0x07] & 0x02) Value = 0x0;               // If Channel B is disabled, volume OFF
               sn76496W(0xB0 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel B
               UpdateNoiseAY();
               b_idx=0;
               break;
           case 0x0A:
               if (Value & 0x20) Value = 0x0;                      // If Envelope Mode... start with volume OFF
-              if (ay_reg[0x07] & 0x04) Value = 0x0;              // If Channel C is disabled, volume OFF
+              if (ay_reg[0x07] & 0x04) Value = 0x0;               // If Channel C is disabled, volume OFF
               sn76496W(0xD0 | Volumes[(Value & 0x1F)],&aycol);    // Write new Volume for Channel C
               UpdateNoiseAY();
               c_idx=0;

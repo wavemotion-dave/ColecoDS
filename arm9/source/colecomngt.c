@@ -37,6 +37,14 @@ extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
 s16 timingAdjustment = 0;
 
+u16 msx_ram_low = 0xC000;    // From C000 up is RAM... can be set to 0x8000 for a 32K MSX System
+u16 msx_ram_high = 0xFFFF;  
+u8 PortA8 = 0xD0;
+u8 PortA9 = 0x00;
+u8 PortAA = 0x00;
+
+extern u8 MSXBios[];
+
 // Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
@@ -158,6 +166,15 @@ void colecoWipeRAM(void)
   {
     memset(pColecoMem+0x7000, 0x00, 0x9000);   
   }
+  else if (msx_mode)
+  {
+    msx_ram_low = 0xC000; msx_ram_high = 0xFFFF;
+    PortA8 = 0xD0;      
+    PortA9 = 0x00;
+    PortAA = 0x00;      
+    memset(pColecoMem+0xC000, 0x00, 0x4000);   
+    memcpy(pColecoMem+0x0000, (u8 *)(MSXBios+0x0000), 0x8000);   // Restore BIOS
+  }
   else
   {
       for (int i=0; i<0x400; i++)
@@ -193,6 +210,14 @@ u8 colecoInit(char *szGame) {
   {
       memset(pColecoMem+0x2000, 0x00, 0xC000);            // Wipe Memory above BIOS
       RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
+  }
+  else if (msx_mode)  // Load MSX cartridge ... for now, just load 16K
+  {
+      // Loading 32K of ROM only 
+      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);  // Load up to 32K of game cartridge
+      
+      // Wipe RAM area from 0xC000 upwards after ROM is loaded...
+      colecoWipeRAM();
   }
   else  // Load coleco cartridge
   {
@@ -646,7 +671,44 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     fseek(handle, 0, SEEK_SET);
     if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
     {
+        memset(romBuffer, 0xFF, (512 * 1024));
         fread((void*) romBuffer, iSSize, 1, handle); 
+        
+        // ------------------------------------------------------------------------------
+        // For the MSX emulation, we will use fast VRAM to hold ROM and mirrors...
+        // These need to be loaded in a special way:
+        //    8K ROMs will mirror every 8K
+        //   16K ROMs will mirror every 16K
+        //   32K ROMs will mirror lower 16K at 0x0000 and then ROM is loaded at 0x4000
+        // ------------------------------------------------------------------------------
+        if (msx_mode)
+        {
+            if (iSSize == (8 * 1024))
+            {
+                for (u8 i=0; i<8; i++)
+                {
+                    memcpy((u8*)0x06880000+(0x2000 * i), romBuffer, 0x2000);
+                }
+            }
+            else if (iSSize == (16 * 1024))
+            {
+                for (u8 i=0; i<4; i++)
+                {
+                    memcpy((u8*)0x06880000+(0x4000 * i), romBuffer, 0x4000);
+                }
+            }
+            else if (iSSize == (32 * 1024))
+            {
+                memcpy((u8*)0x06880000+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
+                memcpy((u8*)0x06880000+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
+                memcpy((u8*)0x06880000+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
+            }
+            else    // Size too big for MSX support (max 32K)
+            {
+                fclose(handle);
+                return 0;
+            }
+        }            
         
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
@@ -758,6 +820,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 {
   if (sg1000_mode) {return cpu_readport_sg(Port);}    
   if (sordm5_mode) {return cpu_readport_m5(Port);}    
+  if (msx_mode)    {return cpu_readport_msx(Port);}
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
@@ -799,6 +862,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 {
   if (sg1000_mode) {cpu_writeport_sg(Port, Value); return;}
   if (sordm5_mode) {cpu_writeport_m5(Port, Value); return;}
+  if (msx_mode)    {cpu_writeport_msx(Port, Value); return;}
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF;
@@ -906,6 +970,169 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
     }
     else if (Port == 0x7E) sn76496W(Value, &sncol);
     else if (Port == 0x7F) sn76496W(Value, &sncol);
+}
+
+
+// ------------------------------------------------------------------
+// MSX IO Port Read - just VDP and Joystick to contend with...
+// ------------------------------------------------------------------
+unsigned char cpu_readport_msx(register unsigned short Port) 
+{
+  // MSX ports are 8-bit
+  Port &= 0x00FF; 
+
+  //98h~9Bh   Access to the VDP I/O ports.    
+  if ((Port >= 0x98 && Port <= 0x9B))  // VDP Area
+  {
+      if (Port & 1) return(RdCtrl9918()); 
+      else return(RdData9918());
+  }
+  else if (Port == 0xA2)  // PSG Read... might be joypad data
+  {
+      u8 joy1 = 0x00;
+
+      if (JoyState & JST_UP)    joy1 |= 0x01;
+      if (JoyState & JST_DOWN)  joy1 |= 0x02;
+      if (JoyState & JST_LEFT)  joy1 |= 0x04;
+      if (JoyState & JST_RIGHT) joy1 |= 0x08;
+      
+      if (JoyState & JST_FIREL) joy1 |= 0x10;
+      if (JoyState & JST_FIRER) joy1 |= 0x20;
+      
+      ay_reg[14] = ~joy1;
+      return FakeAY_ReadData();
+  }
+  else if (Port == 0xA8) return PortA8;
+  else if (Port == 0xA9)
+  {
+      // Keyboard readback...
+      u8 key1 = 0x00;
+      if ((PortAA & 0x0F) == 0) // Row 0
+      {
+          if (JoyState == JST_0)   key1 |= 0x01;  // '0'
+          if (JoyState == JST_1)   key1 |= 0x02;  // '1'
+          if (JoyState == JST_2)   key1 |= 0x04;  // '2'
+          if (JoyState == JST_3)   key1 |= 0x08;  // '3'
+          if (JoyState == JST_4)   key1 |= 0x10;  // '4'
+      }
+      else if ((PortAA & 0x0F) == 8) // Row 8
+      {
+          if (JoyState == JST_STAR) key1 |= 0x01;  // SPACE
+      }
+      return ~key1;
+  }
+  else if (Port == 0xAA) return PortAA;
+    
+  // No such port
+  return(NORAM);
+}
+
+u8 MSX_SaveRam[0x4000] = {0};
+bool bRamNeedsRestore = false;
+// ----------------------------------------------------------------------
+// MSX IO Port Write - VDP and AY Sound Chip plus Slot Mapper $A8
+// ----------------------------------------------------------------------
+void cpu_writeport_msx(register unsigned short Port,register unsigned char Value) 
+{
+    // MSX ports are 8-bit
+    Port &= 0x00FF;
+
+    if ((Port >= 0x98 && Port <= 0x9B))  // VDP Area
+    {
+        if ((Port & 1) == 0) WrData9918(Value);
+        else if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }    // MSX does not use NMI like Colecovision does...
+    }
+    else if (Port == 0xA8) // Slot system for MSX
+    {
+        if (PortA8 != Value)
+        {
+            PortA8 = Value;    // Useful when read back
+            
+            // ---------------------------------------------------------------------
+            // bits 7-6     bits 5-4     bits 3-2      bits 1-0
+            // C000h~FFFF   8000h~BFFF   4000h~7FFF    0000h~3FFF
+            // ---------------------------------------------------------------------
+            switch ((Value>>0) & 0x03)  // Main Memory - Slot 0 [0x0000~0x3FFF]
+            {
+                case 0x00:  // Slot 0:  Maps to BIOS Rom
+                    memcpy(pColecoMem+0x0000, (u8 *)(MSXBios+0x0000), 0x4000);
+                    break;
+                case 0x01:  // Slot 1:  Maps to Game Cart
+                    memcpy(pColecoMem+0x0000, (u8 *)(0x06880000+0x0000), 0x4000);
+                    break;
+                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+                    memset(pColecoMem+0x0000, 0xFF, 0x4000);
+                    break;
+            }
+            switch ((Value>>2) & 0x03)  // Main Memory - Slot 1  [0x4000~0x7FFF]
+            {
+                case 0x00:  // Slot 0:  Maps to BIOS Rom
+                    memcpy(pColecoMem+0x4000, (u8 *)(MSXBios+0x4000), 0x4000);
+                    break;
+                case 0x01:  // Slot 1:  Maps to Game Cart
+                    memcpy(pColecoMem+0x4000, (u8 *)(0x06880000+0x4000), 0x4000);
+                    break;
+                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+                    memset(pColecoMem+0x4000, 0xFF, 0x4000);
+                    break;
+            }
+            // -----------------------------------------------------------------
+            // Someday we might support 32K RAM but for now, only RAM in slot 3 
+            // will be mapped for a whopping 16K of RAM. Not much but enough.
+            // -----------------------------------------------------------------
+            u8 RamSlot2 = 0;
+            u8 RamSlot3 = 0;
+            switch ((Value>>4) & 0x03)  // Main Memory - Slot 2  [0x8000~0xBFFF]
+            {
+                case 0x01:  // Slot 1:  Maps to Game Cart
+                    memcpy(pColecoMem+0x8000, (u8 *)(0x06880000+0x8000), 0x4000);
+                    break;
+                case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+                    memset(pColecoMem+0x8000, 0xFF, 0x4000);
+                    break;
+            }
+            switch ((Value>>6) & 0x03)  // Main Memory - Slot 3  [0xC000~0xFFFF]
+            {
+                case 0x01:  // Slot 1:  Maps to Game Cart
+                    memcpy(MSX_SaveRam, pColecoMem+0xC000, 0x4000);
+                    memcpy(pColecoMem+0xC000, (u8 *)(0x06880000+0xC000), 0x4000);
+                    bRamNeedsRestore = true;
+                    break;
+                case 0x03:  // Slot 3 is RAM so we allow RAM writes now
+                    RamSlot3 = 1;
+                    if (bRamNeedsRestore)
+                    {
+                        memcpy(pColecoMem+0xC000, MSX_SaveRam, 0x4000);
+                        bRamNeedsRestore = false;
+                    }
+                    break;
+                case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+                    //memset(pColecoMem+0xC000, 0xFF, 0x4000);  - leave this alone for now, causing BIOS detection issues
+                    //bRamNeedsRestore = true;
+                    break;
+            }
+            
+            if (RamSlot2 && RamSlot3)  {msx_ram_low = 0x8000; msx_ram_high = 0xFFFF;}
+            else if (!RamSlot2 && RamSlot3) {msx_ram_low = 0xC000; msx_ram_high = 0xFFFF;}
+            else if (RamSlot2 && !RamSlot3) {msx_ram_low = 0x8000; msx_ram_high = 0xBFFF;}
+            else {msx_ram_low = 0xFFFF; msx_ram_high = 0xFFFF;}                
+        }
+    }
+    else if (Port == 0xA9)  // PPI - Register B
+    {
+        PortA9 = Value;
+    }
+    else if (Port == 0xAA)  // PPI - Register C
+    {
+        PortAA = Value;
+    }
+    else if (Port == 0xA0) {FakeAY_WriteIndex(Value & 0x0F);  AY_Enable=true;}
+    else if (Port == 0xA1) FakeAY_WriteData(Value);
 }
 
 
@@ -1110,7 +1337,7 @@ ITCM_CODE u32 LoopZ80()
       DrZ80_execute(TMS9918_LINE + timingAdjustment);
       
       // Refresh VDP 
-      if(Loop9918()) cpuirequest = (sg1000_mode ? Z80_IRQ_INT : Z80_NMI_INT);
+      if(Loop9918()) cpuirequest = ((msx_mode || sg1000_mode) ? Z80_IRQ_INT : Z80_NMI_INT);
       
       // Generate interrupt if called for
       if (cpuirequest)
@@ -1127,7 +1354,7 @@ ITCM_CODE u32 LoopZ80()
       if(Loop9918()) 
       {
           if (sordm5_mode) CPU.IRequest = sordm5_irq;   // Sord M5 only works with the CZ80 core
-          else CPU.IRequest = (sg1000_mode ? INT_RST38 : INT_NMI);
+          else CPU.IRequest = ((msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
       }
       
       // -------------------------------------------------------------------------
