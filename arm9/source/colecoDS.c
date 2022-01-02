@@ -41,6 +41,7 @@
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
+#include "MSX_CBIOS.h"
 
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
@@ -57,8 +58,8 @@ extern Z80 CPU;
 //    0x8000-0xFFFF  32K Cartridge Space
 // --------------------------------------------------------------------------
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             
-u8 ColecoBios[0x2000] = {0};  // We keep the 8K BIOS around to swap in/out
-u8 SordM5Bios[0x2000] = {0};  // We keep the 8K BIOS around to swap in/out
+u8 ColecoBios[0x2000] = {0};  // We keep the Coleco  8K BIOS around to swap in/out
+u8 SordM5Bios[0x2000] = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -77,6 +78,7 @@ u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause
 
 u8 sg1000_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
 u8 sordm5_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
+u8 msx_mode    __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
@@ -335,6 +337,7 @@ static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
 static u8 last_sordm5_mode = 0;
+static u8 last_msx_mode = 0;
 u32 num_irqs = 0;
 
 void ResetStatusFlags(void)
@@ -345,6 +348,7 @@ void ResetStatusFlags(void)
   last_mc_mode  = 0;
   last_sg1000_mode = 0;
   last_sordm5_mode = 0;
+  last_msx_mode = 0;
 }
 
 void ResetColecovision(void)
@@ -379,6 +383,11 @@ void ResetColecovision(void)
   {
       colecoWipeRAM();                          // Wipe main RAM area
       memcpy(pColecoMem,SordM5Bios,0x2000);     // Restore Sord M5 BIOS
+  }
+  else if (msx_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+      memcpy(pColecoMem,MSXBios,0x8000);        // Restore MSX BIOS
   }
   else
   {
@@ -504,7 +513,15 @@ void DisplayStatusLine(bool bForce)
             AffChaine(23,0,6, "SORD M5");
         }
     }
-    else
+    else if (msx_mode)
+    {
+        if ((last_msx_mode != msx_mode) || bForce)
+        {
+            last_msx_mode = msx_mode;
+            AffChaine(23,0,6, "  MSX-1  ");
+        }
+    }
+    else    // Various Colecovision Possibilities 
     {    
         if ((last_sgm_mode != sgm_enable) || bForce)
         {
@@ -1004,6 +1021,8 @@ u16 colecoDSInitCPU(void)
   //  Load coleco Bios ROM
   if (sordm5_mode)
     memcpy(pColecoMem,SordM5Bios,0x2000);
+  else if (msx_mode)
+    memcpy(pColecoMem,MSXBios,0x8000);
   else
     memcpy(pColecoMem,ColecoBios,0x2000);
   
@@ -1038,7 +1057,7 @@ bool ColecoBIOSFound(void)
         fread(SordM5Bios, 0x2000, 1, fp);
         fclose(fp);
     }
-
+    
     // -----------------------------------------------------------
     // Coleco ROM BIOS must exist or the show is off!
     // -----------------------------------------------------------
@@ -1165,6 +1184,7 @@ int main(int argc, char **argv)
   }
   return(0);
 }
+
 
 // End of file
 

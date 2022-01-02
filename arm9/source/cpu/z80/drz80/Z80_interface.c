@@ -150,6 +150,19 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
         }
     }
+    // ------------------------------------------------------------------------------------------
+    // For the MSX, we are only supporting a paultry 16K or 32K machine - good enough for carts
+    // ------------------------------------------------------------------------------------------
+    else if (msx_mode)
+    {
+        extern u16 msx_ram_low;
+        extern u16 msx_ram_high;
+
+        if ((address >= msx_ram_low) && (address <= msx_ram_high))
+        {
+            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+        }
+    }
     // -----------------------------------------------------------
     // If the Super Game Module has been enabled, we have a much 
     // wider range of RAM that can be written (and no mirroring)

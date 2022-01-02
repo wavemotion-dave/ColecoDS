@@ -45,4 +45,7 @@ extern unsigned char cpu_readport_sg(register unsigned short Port);
 extern void cpu_writeport_m5(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport_m5(register unsigned short Port);
 
+extern void cpu_writeport_msx(register unsigned short Port,register unsigned char Value);
+extern unsigned char cpu_readport_msx(register unsigned short Port);
+
 #endif

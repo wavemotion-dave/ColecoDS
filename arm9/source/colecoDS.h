@@ -54,6 +54,7 @@ extern u8 spinY_right;
 
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
+extern u8 msx_mode;
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
