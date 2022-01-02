@@ -683,6 +683,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
+            memset((u8*)0x06880000, 0xFF, 0x10000);
             if (iSSize == (8 * 1024))
             {
                 for (u8 i=0; i<8; i++)
@@ -703,7 +704,11 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy((u8*)0x06880000+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
                 memcpy((u8*)0x06880000+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
             }
-            else    // Size too big for MSX support (max 32K)
+            else if (iSSize == (48 * 1024))
+            {
+                memcpy((u8*)0x06880000+0x0000, romBuffer,        0xC000);      // Full Rom starting at 0x0000
+            }
+            else    // Size too big for MSX support (max 48K)
             {
                 fclose(handle);
                 return 0;
@@ -1014,6 +1019,17 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           if (JoyState == JST_2)   key1 |= 0x04;  // '2'
           if (JoyState == JST_3)   key1 |= 0x08;  // '3'
           if (JoyState == JST_4)   key1 |= 0x10;  // '4'
+          if (JoyState == JST_5)   key1 |= 0x20;  // '5'
+          if (JoyState == JST_6)   key1 |= 0x40;  // '6'
+          if (JoyState == JST_7)   key1 |= 0x80;  // '7'
+      }
+      else if ((PortAA & 0x0F) == 6) // Row 6
+      {
+          if (JoyState == JST_9) key1 |= 0x20;  // F1
+      }
+      else if ((PortAA & 0x0F) == 7) // Row 7
+      {
+          if (JoyState == JST_POUND) key1 |= 0x80;  // RETURN
       }
       else if ((PortAA & 0x0F) == 8) // Row 8
       {
@@ -1029,6 +1045,9 @@ unsigned char cpu_readport_msx(register unsigned short Port)
 
 u8 MSX_SaveRam[0x4000] = {0};
 bool bRamNeedsRestore = false;
+u8 MSX_SaveRam2[0x4000] = {0};
+bool bRamNeedsRestore2 = false;
+
 // ----------------------------------------------------------------------
 // MSX IO Port Write - VDP and AY Sound Chip plus Slot Mapper $A8
 // ----------------------------------------------------------------------
@@ -1079,20 +1098,33 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
             }
             // -----------------------------------------------------------------
-            // Someday we might support 32K RAM but for now, only RAM in slot 3 
-            // will be mapped for a whopping 16K of RAM. Not much but enough.
+            // Slot 0 holds the MSX BIOS
+            // Slot 1 is where the Game Cartridge Lives (up to 32K)
+            // Slot 2 is empty (0xFF always)
+            // Slot 3 is our main RAM. We emulate 32K of RAM
             // -----------------------------------------------------------------
             u8 RamSlot2 = 0;
             u8 RamSlot3 = 0;
             switch ((Value>>4) & 0x03)  // Main Memory - Slot 2  [0x8000~0xBFFF]
             {
                 case 0x01:  // Slot 1:  Maps to Game Cart
+                    memcpy(MSX_SaveRam2, pColecoMem+0x8000, 0x4000);
+                    bRamNeedsRestore2 = true;
                     memcpy(pColecoMem+0x8000, (u8 *)(0x06880000+0x8000), 0x4000);
                     break;
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+                    memcpy(MSX_SaveRam2, pColecoMem+0x8000, 0x4000);
+                    bRamNeedsRestore2 = true;
                     memset(pColecoMem+0x8000, 0xFF, 0x4000);
+                    break;
+                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+                    RamSlot2 = 1;
+                    if (bRamNeedsRestore2)
+                    {
+                        memcpy(pColecoMem+0x8000, MSX_SaveRam2, 0x4000);
+                        bRamNeedsRestore2 = false;
+                    }
                     break;
             }
             switch ((Value>>6) & 0x03)  // Main Memory - Slot 3  [0xC000~0xFFFF]

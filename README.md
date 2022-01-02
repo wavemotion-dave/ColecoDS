@@ -11,7 +11,8 @@ If you want to play Sord M5 games, you will
 also need an 8k sordm5.rom bios in the same
 directory as the coleco.rom BIOS.
 
-The SG-1000 emulation does not need a BIOS.
+SG-1000 emulation does not need a BIOS.
+MSX emulation does not need a BIOS (C-BIOS used)
 
 Features :
 -----------------------
@@ -26,6 +27,7 @@ Features :
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
 * Sega SG-1000 game support (.sg roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS.
+* MSX1 game support (.msx roms) up to 32K standard loader.
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -50,6 +52,9 @@ for the menu graphical design.
 Thanks to Reesy for the DrZ80 core.
 
 Thanks to Flubba for the SN76496 sound core.
+
+Thanks to the C-BIOS team for the open 
+source MSX BIOS (see cbios.txt)
 
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
@@ -127,6 +132,10 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.0: 02-Jan-2022 by wavemotion-dave
+* MSX1 game support up to 32K Standard Loader (.msx format)
+* New 3/4 Frameskip (show 3 of 4 frames) to help DS-LITE
+
 V4.9: 30-Dec-2021 by wavemotion-dave
 * Improved SG-1000 game support.
 * Preliminary support for Sord M5 games (.m5 format)

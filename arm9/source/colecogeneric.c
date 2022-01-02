@@ -839,6 +839,7 @@ void SetDefaultGameConfig(void)
     
     if (sg1000_mode) myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
     if (sordm5_mode) myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
+    if (msx_mode)    myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can swich it out
 }
 
 // -------------------------------------------------------------------------
