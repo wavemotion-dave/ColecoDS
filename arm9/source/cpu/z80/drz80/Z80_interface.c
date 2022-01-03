@@ -26,7 +26,9 @@ s32 cycle_deficit   __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
+extern u8 Slot1ROM[];
 
+static u8 lastBlock[4] = {99,99,99,99};
 
  u32 z80_rebaseSP(u16 address) {
   drz80.Z80SP_BASE = (unsigned int) pColecoMem;
@@ -108,12 +110,93 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 }
 
 
+void HandleKonamiSCC8(u32* src, u8 block, u16 address)
+{
+    // --------------------------------------------------------
+    // Konami 8K mapper with SCC 
+    //	Bank 1: 4000h - 5FFFh - mapped via writes to 5000h
+    //	Bank 2: 6000h - 7FFFh - mapped via writes to 7000h
+    //	Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
+    //	Bank 4: A000h - BFFFh - mapped via writes to B000h
+    // --------------------------------------------------------
+    if (bROMInSlot[1] && (address == 0x5000))
+    {
+        if (lastBlock[0] != block)
+        {
+            u32 *dest = (u32*)(pColecoMem+0x4000);
+            Slot1ROMPtr[2] = (u8*)src;
+            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+            lastBlock[0] = block;
+        }
+    }
+    else if (bROMInSlot[1] && (address == 0x7000))
+    {
+        if (lastBlock[1] != block)
+        {
+            u32 *dest = (u32*)(pColecoMem+0x6000);
+            Slot1ROMPtr[3] = (u8*)src;
+            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+            lastBlock[1] = block;
+        }
+    }
+    else if (bROMInSlot[2] && (address == 0x9000))
+    {
+        if (lastBlock[2] != block)
+        {
+            u32 *dest = (u32*)(pColecoMem+0x8000);
+            Slot1ROMPtr[4] = (u8*)src;
+            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+            lastBlock[2] = block;
+        }
+    }
+    else if (bROMInSlot[2] && (address == 0xB000))
+    {
+        if (lastBlock[3] != block)
+        {
+            u32 *dest = (u32*)(pColecoMem+0xA000);
+            Slot1ROMPtr[5] = (u8*)src;
+            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+            lastBlock[3] = block;
+        }
+    }    
+}
+
+void HandleAscii16K(u32* src, u8 block, u16 address)
+{
+    // -------------------------------------------------------------------------
+    // The ASCII 16K Mapper:
+    // 4000h~7FFFh 	6000h
+    // 8000h~BFFFh 	7000h or 77FFh
+    // -------------------------------------------------------------------------
+    if (bROMInSlot[1] && (address >= 0x6000) && (address <= 0x67FF))
+    {
+        if (lastBlock[0] != block)
+        {
+            u32 *dest = (u32*)(pColecoMem+0x4000);
+            Slot1ROMPtr[2] = (u8*)src;
+            Slot1ROMPtr[3] = (u8*)src+0x2000;
+            for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
+            lastBlock[0] = block;
+        }
+    }
+    if (bROMInSlot[1] && (address >= 0x7000) && (address <= 0x77FF))
+    {
+        if (lastBlock[1] != block)
+        {
+            u32 *dest = (u32*)(pColecoMem+0x8000);
+            Slot1ROMPtr[4] = (u8*)src;
+            Slot1ROMPtr[5] = (u8*)src+0x2000;
+            for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
+            lastBlock[1] = block;
+        }
+    }
+}
 
 // ------------------------------------------------------------------
 // Write memory handles both normal writes and bankswitched since
 // write is much less common than reads... 
 // ------------------------------------------------------------------
- void cpu_writemem16 (u8 value,u16 address) 
+void cpu_writemem16 (u8 value,u16 address) 
 {
     extern u8 sRamAtE000_OK;
     extern u8 sgm_enable;
@@ -150,17 +233,146 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
         }
     }
-    // ------------------------------------------------------------------------------------------
-    // For the MSX, we are only supporting a paultry 16K or 32K machine - good enough for carts
-    // ------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------
+    // For the MSX, we support a 64K main RAM machine but we do handle some of the more common memory mappers...
+    // ----------------------------------------------------------------------------------------------------------
     else if (msx_mode)
     {
-        extern u16 msx_ram_low;
-        extern u16 msx_ram_high;
-
-        if ((address >= msx_ram_low) && (address <= msx_ram_high))
+        // -------------------------------------------------------
+        // First see if this is a write to a RAM enabled slot...
+        // -------------------------------------------------------
+        if (bRAMInSlot[0] && (address < 0x3FFF))
         {
-            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+            pColecoMem[address]=value;  // Allow write - this is a RAM mapped slot
+        }
+        else if (bRAMInSlot[1] && (address >= 0x4000) && (address <= 0x7FFF))
+        {
+            pColecoMem[address]=value;  // Allow write - this is a RAM mapped slot
+        }
+        else if (bRAMInSlot[2] && (address >= 0x8000) && (address <= 0xBFFF))
+        {
+            pColecoMem[address]=value;  // Allow write - this is a RAM mapped slot
+        }
+        else if (bRAMInSlot[3] && (address >= 0xC000) && (address <= 0xFFFF))
+        {
+            pColecoMem[address]=value;  // Allow write - this is a RAM mapped slot
+        }
+        else    // Check for MSX Mappers Mappers
+        {
+            if (mapperMask)
+            {
+                // ---------------------------------------------------------------------------------
+                // The Konami 8K Mapper without SCC:
+                // 4000h-5FFFh - fixed ROM area (not swappable)
+                // 6000h~7FFFh (mirror: E000h~FFFFh)	6000h (mirrors: 6001h~7FFFh)	1
+                // 8000h~9FFFh (mirror: 0000h~1FFFh)	8000h (mirrors: 8001h~9FFFh)	Random
+                // A000h~BFFFh (mirror: 2000h~3FFFh)	A000h (mirrors: A001h~BFFFh)	Random
+                // ---------------------------------------------------------------------------------
+                u32 block = (value & mapperMask);
+                u32 *src = (u32*)(0x06880000+(block * 0x2000));
+            
+                if (mapperType == KON8)
+                {
+                    if (bROMInSlot[1] && (address == 0x4000))
+                    {
+                        if (lastBlock[0] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0x4000);
+                            Slot1ROMPtr[2] = (u8*)src;                            
+                            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+                            lastBlock[0] = block;
+                        }
+                    }
+                    else if (bROMInSlot[1] && (address == 0x6000))
+                    {
+                        if (lastBlock[1] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0x6000);
+                            Slot1ROMPtr[3] = (u8*)src;
+                            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+                            lastBlock[1] = block;
+                        }
+                    }
+                    else if (bROMInSlot[2] && (address == 0x8000))
+                    {
+                        if (lastBlock[2] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0x8000);
+                            Slot1ROMPtr[4] = (u8*)src;
+                            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+                            lastBlock[2] = block;
+                        }
+                    }
+                    else if (bROMInSlot[2] && (address == 0xA000))
+                    {
+                        if (lastBlock[3] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0xA000);
+                            Slot1ROMPtr[5] = (u8*)src;
+                            for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
+                            lastBlock[3] = block;
+                        }
+                    }
+                }
+                else if (mapperType == SCC8)
+                {
+                    HandleKonamiSCC8(src, block, address);
+                }
+                else if (mapperType == ASC16)
+                {
+                    HandleAscii16K(src, block, address);
+                }
+                else if (mapperType == ASC8)
+                {
+                    // -------------------------------------------------------------------------
+                    // The ASCII 8K Mapper:
+                    // 4000h~5FFFh (mirror: C000h~DFFFh)	6000h (mirrors: 6001h~67FFh)	0
+                    // 6000h~7FFFh (mirror: E000h~FFFFh)	6800h (mirrors: 6801h~68FFh)	0
+                    // 8000h~9FFFh (mirror: 0000h~1FFFh)	7000h (mirrors: 7001h~77FFh)	0
+                    // A000h~BFFFh (mirror: 2000h~3FFFh)	7800h (mirrors: 7801h~7FFFh)	0     
+                    // -------------------------------------------------------------------------
+                    if (bROMInSlot[1] && (address == 0x6000))
+                    {
+                        if (lastBlock[0] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0x4000);
+                            Slot1ROMPtr[2] = (u8*)src;
+                            for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            lastBlock[0] = block;
+                        }
+                    }
+                    else if (bROMInSlot[1] && (address == 0x6800))
+                    {
+                        if (lastBlock[1] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0x6000);
+                            Slot1ROMPtr[3] = (u8*)src;
+                            for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            lastBlock[1] = block;
+                        }
+                    }
+                    else if (bROMInSlot[1] && (address == 0x7000))
+                    {
+                        if (lastBlock[2] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0x8000);
+                            Slot1ROMPtr[4] = (u8*)src;
+                            for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            lastBlock[2] = block;
+                        }
+                    }
+                    else if (bROMInSlot[1] && (address == 0x7800))
+                    {
+                        if (lastBlock[3] != block)
+                        {
+                            u32 *dest = (u32*)(pColecoMem+0xA000);
+                            Slot1ROMPtr[5] = (u8*)src;
+                            for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            lastBlock[3] = block;
+                        }
+                    }
+                }
+            }
         }
     }
     // -----------------------------------------------------------
@@ -284,6 +496,8 @@ void DrZ80_Reset(void) {
   cpuirequest=0;
   lastBank = 199;
   cycle_deficit = 0;
+    
+  memset(lastBlock, 99, 4);
 }
 
 

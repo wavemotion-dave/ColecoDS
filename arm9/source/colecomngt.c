@@ -29,6 +29,18 @@
 
 #define COLECODS_SAVE_VER 0x000F        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
+// ---------------------------------------
+// Some MSX Mapper / Slot Handling stuff
+// ---------------------------------------
+u8 mapperType = 0;
+u8 mapperMask = 0;
+u8 Slot1ROM[0x10000] = {0xFF};
+u8 Slot3RAM[0x10000] = {0x00};
+u8 bROMInSlot[4] = {0,0,0,0};
+u8 bRAMInSlot[4] = {0,0,0,0};
+
+u8 *Slot1ROMPtr[8] = {0,0,0,0,0,0,0,0};
+
 #include "cpu/z80/Z80.h"
 Z80 CPU __attribute__((section(".dtcm")));
 
@@ -37,8 +49,6 @@ extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
 s16 timingAdjustment = 0;
 
-u16 msx_ram_low = 0xC000;    // From C000 up is RAM... can be set to 0x8000 for a 32K MSX System
-u16 msx_ram_high = 0xFFFF;  
 u8 PortA8 = 0xD0;
 u8 PortA9 = 0x00;
 u8 PortAA = 0x00;
@@ -168,7 +178,6 @@ void colecoWipeRAM(void)
   }
   else if (msx_mode)
   {
-    msx_ram_low = 0xC000; msx_ram_high = 0xFFFF;
     PortA8 = 0xD0;      
     PortA9 = 0x00;
     PortAA = 0x00;      
@@ -656,6 +665,63 @@ void getfile_crc(const char *path)
     if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
 }
 
+
+// --------------------------------------------------------------------------
+// Try to guess the ROM type from the loaded binary... basically we are
+// counting the number of load addresses that would access a mapper hot-spot.
+// --------------------------------------------------------------------------
+u8 GuessROMType(void)
+{
+    u8 type = KON8;  // Default to Konami 8K mapper
+    u16 guess[MAX_MAPPERS] = {0,0,0,0};
+    
+    for (int i=0; i<0x10000 - 3; i++)
+    {
+        if (romBuffer[i] == 0x32)   // LD,A instruction
+        {
+            u16 value = romBuffer[i+1] + (romBuffer[i+2] << 8);
+            switch (value)
+            {
+				case 0x5000:
+				case 0x9000:
+				case 0xb000:
+					guess[SCC8]++;
+					break;
+				case 0x4000:
+				case 0x8000:
+				case 0xa000:
+					guess[KON8]++;
+					break;
+				case 0x6800:
+				case 0x7800:
+					guess[ASC8]++;guess[ASC8]++;
+					break;
+				case 0x6000:
+					guess[KON8]++;
+					guess[ASC8]++;
+                    guess[ASC16]++;
+					break;
+				case 0x7000:
+					guess[SCC8]++;
+					guess[ASC8]++;
+                    guess[ASC16]++;
+					break;
+                case 0x77FF:
+                    guess[ASC16]++;guess[ASC16]++;
+                    break;
+            }
+        }
+    }
+
+    // Now pick the mapper that had the most Load addresses above...
+    if      ((guess[ASC16] > guess[KON8]) && (guess[ASC16] > guess[SCC8]) && (guess[ASC16] > guess[ASC8]))    type = ASC16;
+    else if ((guess[ASC8]  > guess[KON8]) && (guess[ASC8]  > guess[SCC8]) && (guess[ASC8] >= guess[ASC16]))   type = ASC8;      // ASC8 wins "ties" over ASC16
+    else if ((guess[SCC8]  > guess[KON8]) && (guess[SCC8]  > guess[ASC8]) && (guess[SCC8]  > guess[ASC16]))   type = SCC8;
+    else type = KON8;
+    
+    return type;
+}
+
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
@@ -683,38 +749,76 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
-            memset((u8*)0x06880000, 0xFF, 0x10000);
+            mapperMask = 0x00;
+            memset((u8*)0x06880000, 0xFF, 0x20000);
+            memset(Slot1ROM, 0xFF, 0x10000);
+            memset(Slot3RAM, 0x00, 0x10000);
+            memset(bRAMInSlot, 0, 4);   // Default to no RAM in slot until told so
+            memset(bROMInSlot, 0, 4);   // Default to no ROM in slot until told so
+            for (u8 i=0; i<8; i++)
+            {
+                Slot1ROMPtr[i] = 0;     // All pages normal until told otherwise by A8 writes
+            }
+            
             if (iSSize == (8 * 1024))
             {
                 for (u8 i=0; i<8; i++)
                 {
-                    memcpy((u8*)0x06880000+(0x2000 * i), romBuffer, 0x2000);
+                    memcpy((u8*)Slot1ROM+(0x2000 * i), romBuffer, 0x2000);
                 }
             }
             else if (iSSize == (16 * 1024))
             {
                 for (u8 i=0; i<4; i++)
                 {
-                    memcpy((u8*)0x06880000+(0x4000 * i), romBuffer, 0x4000);
+                    memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);
                 }
             }
             else if (iSSize == (32 * 1024))
             {
-                memcpy((u8*)0x06880000+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
-                memcpy((u8*)0x06880000+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
-                memcpy((u8*)0x06880000+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
+                memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
+                memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
+                memcpy((u8*)Slot1ROM+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
             }
             else if (iSSize == (48 * 1024))
             {
-                memcpy((u8*)0x06880000+0x0000, romBuffer,        0xC000);      // Full Rom starting at 0x0000
+                memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0xC000);      // Full Rom starting at 0x0000
             }
-            else    // Size too big for MSX support (max 48K)
+            else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)))
             {
-                fclose(handle);
-                return 0;
+                mapperType = GuessROMType();
+                
+                if ((mapperType == KON8) || (mapperType == SCC8))
+                {
+                    memcpy((u8*)Slot1ROM+0x4000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0 and 1 ROM
+                    memcpy((u8*)Slot1ROM+0xC000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0 and 1 Mirror
+                    memcpy((u8*)Slot1ROM+0x8000, romBuffer+(0 * 0x2000),  0x2000);      // Segment 2 ROM
+                    memcpy((u8*)Slot1ROM+0x0000, romBuffer+(0 * 0x2000),  0x2000);      // Segment 2 Mirror
+                    memcpy((u8*)Slot1ROM+0xA000, romBuffer+(1 * 0x2000),  0x2000);      // Segment 3 ROM
+                    memcpy((u8*)Slot1ROM+0x2000, romBuffer+(1 * 0x2000),  0x2000);      // Segment 3 Mirror                
+                }
+                else if (mapperType == ASC8)
+                {
+                    memcpy((u8*)Slot1ROM+0x0000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
+                    memcpy((u8*)Slot1ROM+0x2000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
+                    memcpy((u8*)Slot1ROM+0x4000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
+                    memcpy((u8*)Slot1ROM+0x6000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
+                    memcpy((u8*)Slot1ROM+0x8000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
+                    memcpy((u8*)Slot1ROM+0xA000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
+                }                
+                else if (mapperType == ASC16)
+                {
+                    memcpy((u8*)Slot1ROM+0x4000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0
+                    memcpy((u8*)Slot1ROM+0x8000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0
+                }                
+                memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 64K or 128K copied into our fast VRAM buffer
+                mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
+            }
+            else    // Size too big for MSX support
+            {
             }
         }            
-        
+        else
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
@@ -723,7 +827,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             memcpy(ptr, romBuffer, nmemb);
             romBankMask = 0x00;
         }
-        else    // No - must be Bankswitched Cart!!
+        else    // No - must be MC Bankswitched Cart!!
         {
             // Copy 128K worth up to the VRAM for faster bank switching on the first 8 banks
             u32 copySize = ((iSSize <= 128*1024) ? iSSize : (128*1024));
@@ -1043,10 +1147,29 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   return(NORAM);
 }
 
-u8 MSX_SaveRam[0x4000] = {0};
-bool bRamNeedsRestore = false;
-u8 MSX_SaveRam2[0x4000] = {0};
-bool bRamNeedsRestore2 = false;
+// ----------------------------
+// Save MSX Ram from Slot
+// ----------------------------
+void SaveRAM(u8 slot)
+{
+    // Only save if we had RAM in this slot previously
+    if (bRAMInSlot[slot] == 1)
+    {
+        memcpy(Slot3RAM+(slot*0x4000), pColecoMem+(slot*0x4000), 0x4000);  // Move 16K of RAM from main memory into the MSX RAM buffer
+    }
+}
+
+// ----------------------------
+// Restore MSX Ram to Slot
+// ----------------------------
+void RestoreRAM(u8 slot)
+{
+    // Only restore if we didn't have RAM here already...
+    if (bRAMInSlot[slot] == 0)
+    {
+        memcpy(pColecoMem+(slot*0x4000), Slot3RAM+(slot*0x4000), 0x4000);  // Move 16K of RAM from MSX RAM buffer back into main RAM
+    }
+}
 
 // ----------------------------------------------------------------------
 // MSX IO Port Write - VDP and AY Sound Chip plus Slot Mapper $A8
@@ -1065,94 +1188,116 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     {
         if (PortA8 != Value)
         {
-            PortA8 = Value;    // Useful when read back
+            PortA8 = Value;             // Useful when read back
+            memset(bROMInSlot, 0, 4);   // Default to no ROM in slot until decoded below
             
             // ---------------------------------------------------------------------
             // bits 7-6     bits 5-4     bits 3-2      bits 1-0
             // C000h~FFFF   8000h~BFFF   4000h~7FFF    0000h~3FFF
+            // 
+            // Slot 0 holds the 32K of MSX BIOS
+            // Slot 1 is where the Game Cartridge Lives (up to 64K)
+            // Slot 2 is empty (0xFF always)
+            // Slot 3 is our main RAM. We emulate 64K of RAM
             // ---------------------------------------------------------------------
             switch ((Value>>0) & 0x03)  // Main Memory - Slot 0 [0x0000~0x3FFF]
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
+                    SaveRAM(0);
                     memcpy(pColecoMem+0x0000, (u8 *)(MSXBios+0x0000), 0x4000);
+                    bRAMInSlot[0] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
-                    memcpy(pColecoMem+0x0000, (u8 *)(0x06880000+0x0000), 0x4000);
+                    SaveRAM(0);
+                    memcpy(pColecoMem+0x0000, (u8 *)(Slot1ROM+0x0000), 0x4000);
+                    bROMInSlot[0] = 1;
+                    bRAMInSlot[0] = 0;
                     break;
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+                    SaveRAM(0);
                     memset(pColecoMem+0x0000, 0xFF, 0x4000);
+                    bRAMInSlot[0] = 0;
+                    break;
+                case 0x03:  // Slot 3:  Maps to our 64K of RAM
+                    RestoreRAM(0);
+                    bRAMInSlot[0] = 1;
                     break;
             }
             switch ((Value>>2) & 0x03)  // Main Memory - Slot 1  [0x4000~0x7FFF]
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
+                    SaveRAM(1);
                     memcpy(pColecoMem+0x4000, (u8 *)(MSXBios+0x4000), 0x4000);
+                    bRAMInSlot[1] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
-                    memcpy(pColecoMem+0x4000, (u8 *)(0x06880000+0x4000), 0x4000);
+                    SaveRAM(1);
+                    if (Slot1ROMPtr[2])  memcpy(pColecoMem+0x4000, (u8 *)(Slot1ROMPtr[2]), 0x2000);
+                    else  memcpy(pColecoMem+0x4000, (u8 *)(Slot1ROM+0x4000), 0x2000);
+                    if (Slot1ROMPtr[3])  memcpy(pColecoMem+0x6000, (u8 *)(Slot1ROMPtr[3]), 0x2000);
+                    else  memcpy(pColecoMem+0x6000, (u8 *)(Slot1ROM+0x6000), 0x2000);                    
+                    bROMInSlot[1] = 1;
+                    bRAMInSlot[1] = 0;
                     break;
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+                    SaveRAM(1);
                     memset(pColecoMem+0x4000, 0xFF, 0x4000);
+                    bRAMInSlot[1] = 0;
+                    break;
+                case 0x03:  // Slot 3:  Maps to our 64K of RAM
+                    RestoreRAM(1);
+                    bRAMInSlot[1] = 1;
                     break;
             }
-            // -----------------------------------------------------------------
-            // Slot 0 holds the MSX BIOS
-            // Slot 1 is where the Game Cartridge Lives (up to 32K)
-            // Slot 2 is empty (0xFF always)
-            // Slot 3 is our main RAM. We emulate 32K of RAM
-            // -----------------------------------------------------------------
-            u8 RamSlot2 = 0;
-            u8 RamSlot3 = 0;
             switch ((Value>>4) & 0x03)  // Main Memory - Slot 2  [0x8000~0xBFFF]
             {
-                case 0x01:  // Slot 1:  Maps to Game Cart
-                    memcpy(MSX_SaveRam2, pColecoMem+0x8000, 0x4000);
-                    bRamNeedsRestore2 = true;
-                    memcpy(pColecoMem+0x8000, (u8 *)(0x06880000+0x8000), 0x4000);
-                    break;
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                    memcpy(MSX_SaveRam2, pColecoMem+0x8000, 0x4000);
-                    bRamNeedsRestore2 = true;
+                    SaveRAM(2);
                     memset(pColecoMem+0x8000, 0xFF, 0x4000);
+                    bRAMInSlot[2] = 0;
                     break;
-                case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-                    RamSlot2 = 1;
-                    if (bRamNeedsRestore2)
-                    {
-                        memcpy(pColecoMem+0x8000, MSX_SaveRam2, 0x4000);
-                        bRamNeedsRestore2 = false;
-                    }
+                case 0x01:  // Slot 1:  Maps to Game Cart
+                    SaveRAM(2);
+                    if (Slot1ROMPtr[4])  memcpy(pColecoMem+0x8000, (u8 *)(Slot1ROMPtr[4]), 0x2000);
+                    else  memcpy(pColecoMem+0x8000, (u8 *)(Slot1ROM+0x8000), 0x2000);
+                    if (Slot1ROMPtr[5])  memcpy(pColecoMem+0xA000, (u8 *)(Slot1ROMPtr[5]), 0x2000);
+                    else  memcpy(pColecoMem+0xA000, (u8 *)(Slot1ROM+0xA000), 0x2000);                    
+                    bROMInSlot[2] = 1;
+                    bRAMInSlot[2] = 0;
+                    break;
+                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+                    SaveRAM(2);
+                    memset(pColecoMem+0x8000, 0xFF, 0x4000);
+                    bRAMInSlot[2] = 0;
+                    break;
+                case 0x03:  // Slot 3:  Maps to our 64K of RAM
+                    RestoreRAM(2);
+                    bRAMInSlot[2] = 1;
                     break;
             }
             switch ((Value>>6) & 0x03)  // Main Memory - Slot 3  [0xC000~0xFFFF]
             {
+                case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+                    SaveRAM(3);
+                    memset(pColecoMem+0xC000, 0xFF, 0x4000);
+                    bRAMInSlot[3] = 0;
+                    break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
-                    memcpy(MSX_SaveRam, pColecoMem+0xC000, 0x4000);
-                    memcpy(pColecoMem+0xC000, (u8 *)(0x06880000+0xC000), 0x4000);
-                    bRamNeedsRestore = true;
+                    SaveRAM(3);
+                    memcpy(pColecoMem+0xC000, (u8 *)(Slot1ROM+0xC000), 0x4000);
+                    bROMInSlot[3] = 1;
+                    bRAMInSlot[3] = 0;
+                    break;
+                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+                    SaveRAM(3);
+                    memset(pColecoMem+0xC000, 0xFF, 0x4000);
+                    bRAMInSlot[3] = 0;
                     break;
                 case 0x03:  // Slot 3 is RAM so we allow RAM writes now
-                    RamSlot3 = 1;
-                    if (bRamNeedsRestore)
-                    {
-                        memcpy(pColecoMem+0xC000, MSX_SaveRam, 0x4000);
-                        bRamNeedsRestore = false;
-                    }
-                    break;
-                case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                    //memset(pColecoMem+0xC000, 0xFF, 0x4000);  - leave this alone for now, causing BIOS detection issues
-                    //bRamNeedsRestore = true;
+                    RestoreRAM(3);
+                    bRAMInSlot[3] = 1;
                     break;
             }
-            
-            if (RamSlot2 && RamSlot3)  {msx_ram_low = 0x8000; msx_ram_high = 0xFFFF;}
-            else if (!RamSlot2 && RamSlot3) {msx_ram_low = 0xC000; msx_ram_high = 0xFFFF;}
-            else if (RamSlot2 && !RamSlot3) {msx_ram_low = 0x8000; msx_ram_high = 0xBFFF;}
-            else {msx_ram_low = 0xFFFF; msx_ram_high = 0xFFFF;}                
         }
     }
     else if (Port == 0xA9)  // PPI - Register B
@@ -1171,7 +1316,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
 // ------------------------------------------------------------------
 // Sord M5 IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
 // ------------------------------------------------------------------
-ITCM_CODE unsigned char cpu_readport_m5(register unsigned short Port) 
+unsigned char cpu_readport_m5(register unsigned short Port) 
 {
   // M5 ports are 8-bit
   Port &= 0x00FF; 
@@ -1230,7 +1375,7 @@ ITCM_CODE unsigned char cpu_readport_m5(register unsigned short Port)
 // Sord M5 IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
 // --------------------------------------------------------------------------
 #define CTC_SOUND_DIV 280
-ITCM_CODE void cpu_writeport_m5(register unsigned short Port,register unsigned char Value) 
+void cpu_writeport_m5(register unsigned short Port,register unsigned char Value) 
 {
     // M5 ports are 8-bit
     Port &= 0x00FF;
@@ -1284,7 +1429,7 @@ ITCM_CODE void cpu_writeport_m5(register unsigned short Port,register unsigned c
 // accurate but it's good enough for our purposes.  Many of the
 // M5 games use the CTC timers to generate sound/music.
 // ----------------------------------------------------------------
-ITCM_CODE void Z80CTC_Timer(void)
+void Z80CTC_Timer(void)
 {
     if (CPU.IRequest == INT_NONE)
     {

@@ -132,6 +132,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.1: 03-Jan-2022 by wavemotion-dave
+* MSX1 emulation now supports some of the common Mappers - some of 
+  the 128K games work but you'll probably have to turn off Vert Sync
+  and turn on Frame Skip to get it to run full speed.
+
 V5.0: 02-Jan-2022 by wavemotion-dave
 * MSX1 game support up to 32K Standard Loader (.msx format)
 * New 3/4 Frameskip (show 3 of 4 frames) to help DS-LITE

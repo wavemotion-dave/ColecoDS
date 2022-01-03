@@ -13,6 +13,16 @@
 // The 'Fake' AY handler simply turns AY sound register access into corresponding
 // SN sound chip calls. There is some loss of fidelity and we have to handle the
 // volume envelopes in a very crude way... but it works and is good enough for now.
+//
+// The AY register map is as follows:
+// Reg      Description
+// 0-5      Tone generator control for channels A,B,C
+// 6        Noise generator control
+// 7        Mixer control-I/O enable
+// 8-10     Amplitude control for channels A,B,C
+// 11-12    Envelope generator period
+// 13       Envelope generator shape
+// 14-15    I/O ports A & B (MSX Joystick mapped in here - otherwise unused)
 // ------------------------------------------------------------------------------------
 
 #include <nds.h>
@@ -78,12 +88,15 @@ void FakeAY_Loop(void)
     
     if (envelope_period == 0) return;
 
-    if (++delay > ((envelope_period)+1))
+    if (++delay > ((envelope_period>>2)+1))
     {
         delay = 0;
-        u8 shape=0;
-        shape = ay_reg[0x0D] & 0x0F;
-        if ((ay_reg[0x08] & 0x20) && (!(ay_reg[0x07] & 0x01)))
+        u8 shape = ay_reg[0x0D] & 0x0F;
+        
+        // ---------------------------------------------------------------
+        // If Envelope is enabled for Channel A and Channel is enabled...
+        // ---------------------------------------------------------------
+        if ((ay_reg[0x08] & 0x20) && (!(ay_reg[0x07] & 0x01)) && channel_a_enable)
         {
             u8 vol = Envelopes[shape][a_idx]; 
             if (++a_idx > 31)
@@ -93,7 +106,10 @@ void FakeAY_Loop(void)
             sn76496W(0x90 | vol, &aycol);
         }
         
-        if ((ay_reg[0x09] & 0x20) && (!(ay_reg[0x07] & 0x02)))
+        // ---------------------------------------------------------------
+        // If Envelope is enabled for Channel B and Channel is enabled...
+        // ---------------------------------------------------------------
+        if ((ay_reg[0x09] & 0x20) && (!(ay_reg[0x07] & 0x02)) && channel_b_enable)
         {
             u8 vol = Envelopes[shape][b_idx]; 
             if (++b_idx > 31)
@@ -103,7 +119,10 @@ void FakeAY_Loop(void)
             sn76496W(0xB0 | vol, &aycol);
         }
 
-        if ((ay_reg[0x0A] & 0x20) && (!(ay_reg[0x07] & 0x04)))
+        // ---------------------------------------------------------------
+        // If Envelope is enabled for Channel C and Channel is enabled...
+        // ---------------------------------------------------------------
+        if ((ay_reg[0x0A] & 0x20) && (!(ay_reg[0x07] & 0x04)) && channel_c_enable)
         {
             u8 vol = Envelopes[shape][c_idx]; 
             if (++c_idx > 31)
@@ -138,7 +157,7 @@ u8 FakeAY_ReadData(void)
 // ------------------------------------------------------------------
 void UpdateNoiseAY(void)
 {
-      // Noise Channel - we turn it on if the noise channel is enable along with the channel's volume not zero...
+      // Noise Channel - we turn it on if the noise channel is enabled along with the channel's volume not zero...
       if ( (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) || 
            (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) || 
            (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) )
@@ -149,9 +168,12 @@ void UpdateNoiseAY(void)
               if (noise_period > 16) sn76496W(0xE2, &aycol);       // E2 is the lowest frequency (highest period)
               else if (noise_period > 8) sn76496W(0xE1, &aycol);   // E1 is the middle frequency (middle period)
               else sn76496W(0xE0, &aycol);                         // E0 is the highest frequency (lowest period)
+              
+              // Now output the noise for the first channel it's enbled on...
               if (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[ay_reg[0x08]], &aycol);
-              if (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[ay_reg[0x09]], &aycol);
-              if (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[ay_reg[0x0A]], &aycol);
+              else if (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[ay_reg[0x09]], &aycol);
+              else if (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[ay_reg[0x0A]], &aycol);
+              else sn76496W(0xFF, &aycol);
           }
       }
       else
@@ -275,7 +297,7 @@ void FakeAY_WriteData(u8 Value)
                   if (channel_b_enable)
                   {
                       channel_b_enable = 0;
-                      sn76496W(0xB0 | 0x0F, &aycol);
+                      sn76496W(0xB0 | 0x0F, &aycol);    // Set Volume to OFF
                   }
               }
               
@@ -305,7 +327,9 @@ void FakeAY_WriteData(u8 Value)
               UpdateNoiseAY();
               break;
               
-          // Volume Registers for all channels...
+          // ----------------------------------
+          // Volume Registers are below...
+          // ----------------------------------
           case 0x08:
               if (Value & 0x20)                                   // If Envelope Mode... see if this is being enabled
               {
@@ -352,10 +376,24 @@ void FakeAY_WriteData(u8 Value)
               UpdateNoiseAY();
               break;
              
-          // Envelope Period
+          // -----------------------------
+          // Envelope Period Register
+          // -----------------------------
           case 0x0B:
           case 0x0C:
-              envelope_period = ((ay_reg[0x0C] << 8) | ay_reg[0x0B]) & 0x3FFF;
+              {
+              u16 new_period = ((ay_reg[0x0C] << 8) | ay_reg[0x0B]) & 0x3FFF;
+              if ((envelope_period > 0) && (new_period == 0))
+              {
+                  prevEnvelopeA_enabled = false;
+                  prevEnvelopeB_enabled = false;
+                  prevEnvelopeC_enabled = false;
+                  sn76496W(0x9F, &aycol);
+                  sn76496W(0xBF, &aycol);
+                  sn76496W(0xDF, &aycol);
+              }
+              envelope_period = new_period;
+              }
               break;
       }
 }

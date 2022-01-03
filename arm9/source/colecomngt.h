@@ -8,6 +8,21 @@
 #define IMAGE_VERIFY_FAIL 0X01
 #define IMAGE_VERIFY_PASS 0x02
 
+extern u8 mapperType;
+extern u8 mapperMask;
+
+#define KON8        0
+#define ASC8        1
+#define SCC8        2
+#define ASC16       3
+
+#define MAX_MAPPERS 4
+
+extern u8 bROMInSlot[];
+extern u8 bRAMInSlot[];
+extern u8 PortA8;
+extern u8 *Slot1ROMPtr[];
+
 extern u8 VR;                           // Sound and VDP register storage
 
 extern u8 JoyMode;                      // Joystick / Paddle management
