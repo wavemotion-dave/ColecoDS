@@ -484,7 +484,7 @@ void RefreshLine3(u8 uY) {
  * Emulator calls this function to write byte 'value' into a VDP register 'iReg'
  ********************************************************************************/
 static u8 VDP_RegisterMasks[] = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };    
-ITCM_CODE byte Write9918(u8 iReg, u8 value) 
+byte Write9918(u8 iReg, u8 value) 
 { 
   int newMode;
   int VRAMMask;
