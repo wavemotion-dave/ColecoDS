@@ -124,7 +124,8 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address)
         if (lastBlock[0] != block)
         {
             u32 *dest = (u32*)(pColecoMem+0x4000);
-            Slot1ROMPtr[2] = (u8*)src;
+            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[6] = (u8*)src;  // Mirror
             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
             lastBlock[0] = block;
         }
@@ -134,7 +135,8 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address)
         if (lastBlock[1] != block)
         {
             u32 *dest = (u32*)(pColecoMem+0x6000);
-            Slot1ROMPtr[3] = (u8*)src;
+            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[7] = (u8*)src;  // Mirror
             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
             lastBlock[1] = block;
         }
@@ -144,7 +146,8 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address)
         if (lastBlock[2] != block)
         {
             u32 *dest = (u32*)(pColecoMem+0x8000);
-            Slot1ROMPtr[4] = (u8*)src;
+            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[0] = (u8*)src;  // Mirror
             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
             lastBlock[2] = block;
         }
@@ -154,7 +157,8 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address)
         if (lastBlock[3] != block)
         {
             u32 *dest = (u32*)(pColecoMem+0xA000);
-            Slot1ROMPtr[5] = (u8*)src;
+            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[0] = (u8*)src;  // Mirror
             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
             lastBlock[3] = block;
         }
@@ -163,30 +167,50 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address)
 
 void HandleAscii16K(u32* src, u8 block, u16 address)
 {
+    u32 *src_orig = src;
     // -------------------------------------------------------------------------
     // The ASCII 16K Mapper:
     // 4000h~7FFFh 	6000h
     // 8000h~BFFFh 	7000h or 77FFh
     // -------------------------------------------------------------------------
-    if (bROMInSlot[1] && (address >= 0x6000) && (address <= 0x67FF))
+    if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x7000))
     {
         if (lastBlock[0] != block)
         {
             u32 *dest = (u32*)(pColecoMem+0x4000);
             Slot1ROMPtr[2] = (u8*)src;
             Slot1ROMPtr[3] = (u8*)src+0x2000;
+            // Mirrors
+            Slot1ROMPtr[6] = (u8*)src;
+            Slot1ROMPtr[7] = (u8*)src+0x2000;
             for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
+            if (bROMInSlot[3]) 
+            {
+                src = src_orig;
+                dest = (u32*)(pColecoMem+0xC000);
+                for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
+            }
             lastBlock[0] = block;
         }
     }
-    if (bROMInSlot[1] && (address >= 0x7000) && (address <= 0x77FF))
+    if (bROMInSlot[1] && (address >= 0x7000) && (address < 0x8000))
     {
         if (lastBlock[1] != block)
         {
             u32 *dest = (u32*)(pColecoMem+0x8000);
             Slot1ROMPtr[4] = (u8*)src;
             Slot1ROMPtr[5] = (u8*)src+0x2000;
-            for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
+            // Mirrors
+            Slot1ROMPtr[0] = (u8*)src;
+            Slot1ROMPtr[1] = (u8*)src+0x2000;
+            if (bROMInSlot[2]) for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
+            if (bROMInSlot[0]) 
+            {
+                src = src_orig;
+                dest = (u32*)(pColecoMem+0x0000);
+                for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
+            }
+            
             lastBlock[1] = block;
         }
     }
@@ -269,7 +293,7 @@ void cpu_writemem16 (u8 value,u16 address)
                 // A000h~BFFFh (mirror: 2000h~3FFFh)	A000h (mirrors: A001h~BFFFh)	Random
                 // ---------------------------------------------------------------------------------
                 u32 block = (value & mapperMask);
-                u32 *src = (u32*)(0x06880000+(block * 0x2000));
+                u32 *src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
             
                 if (mapperType == KON8)
                 {
@@ -278,7 +302,8 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[0] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0x4000);
-                            Slot1ROMPtr[2] = (u8*)src;                            
+                            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[6] = (u8*)src;  // Mirror
                             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
                             lastBlock[0] = block;
                         }
@@ -288,7 +313,8 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[1] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0x6000);
-                            Slot1ROMPtr[3] = (u8*)src;
+                            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[7] = (u8*)src;  // Mirror
                             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
                             lastBlock[1] = block;
                         }
@@ -298,7 +324,8 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[2] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0x8000);
-                            Slot1ROMPtr[4] = (u8*)src;
+                            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[0] = (u8*)src;  // Mirror                            
                             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
                             lastBlock[2] = block;
                         }
@@ -308,7 +335,8 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[3] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0xA000);
-                            Slot1ROMPtr[5] = (u8*)src;
+                            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
                             for (u16 i=0; i<(0x2000/4); i++)  *dest++ = *src++;
                             lastBlock[3] = block;
                         }
@@ -336,8 +364,15 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[0] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0x4000);
-                            Slot1ROMPtr[2] = (u8*)src;
+                            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[6] = (u8*)src;  // Mirror
                             for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            if (bROMInSlot[3])
+                            {
+                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                dest = (u32*)(pColecoMem+0xC000);
+                                for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            }
                             lastBlock[0] = block;
                         }
                     }
@@ -346,8 +381,15 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[1] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0x6000);
-                            Slot1ROMPtr[3] = (u8*)src;
+                            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[7] = (u8*)src;  // Mirror
                             for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            if (bROMInSlot[3])
+                            {
+                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                dest = (u32*)(pColecoMem+0xE000);
+                                for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            }
                             lastBlock[1] = block;
                         }
                     }
@@ -356,8 +398,15 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[2] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0x8000);
-                            Slot1ROMPtr[4] = (u8*)src;
-                            for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[0] = (u8*)src;  // Mirror    
+                            if (bROMInSlot[2]) for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            if (bROMInSlot[0])
+                            {
+                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                dest = (u32*)(pColecoMem+0x0000);
+                                for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            }                            
                             lastBlock[2] = block;
                         }
                     }
@@ -366,8 +415,15 @@ void cpu_writemem16 (u8 value,u16 address)
                         if (lastBlock[3] != block)
                         {
                             u32 *dest = (u32*)(pColecoMem+0xA000);
-                            Slot1ROMPtr[5] = (u8*)src;
-                            for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
+                            Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
+                            if (bROMInSlot[2]) for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            if (bROMInSlot[0])
+                            {
+                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                dest = (u32*)(pColecoMem+0x2000);
+                                for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
+                            }                            
                             lastBlock[3] = block;
                         }
                     }
