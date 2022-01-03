@@ -27,7 +27,7 @@ Features :
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
 * Sega SG-1000 game support (.sg roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS.
-* MSX1 game support (.msx roms) up to 32K standard loader.
+* MSX1 game support (.msx roms) up to 32K standard loader and some 128K memory mappers.
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -133,9 +133,8 @@ would personally try them:
 Versions :
 -----------------------
 V5.1: 03-Jan-2022 by wavemotion-dave
-* MSX1 emulation now supports some of the common Mappers - some of 
-  the 128K games work but you'll probably have to turn off Vert Sync
-  and turn on Frame Skip to get it to run full speed.
+* MSX1 emulation now supports some of the common Mappers - some of the 128K games work but you'll probably have to turn off Vert Sync and turn on Frame Skip to get it to run full speed.
+* MSX1 emulation is now 64K Main RAM 
 
 V5.0: 02-Jan-2022 by wavemotion-dave
 * MSX1 game support up to 32K Standard Loader (.msx format)
