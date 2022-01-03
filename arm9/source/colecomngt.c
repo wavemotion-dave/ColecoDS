@@ -719,6 +719,17 @@ u8 GuessROMType(void)
     else if ((guess[SCC8]  > guess[KON8]) && (guess[SCC8]  > guess[ASC8]) && (guess[SCC8]  > guess[ASC16]))   type = SCC8;
     else type = KON8;
     
+    // ----------------------------------------------------------------------
+    // Since ASC16 is so hard to detect reliably, check a few special CRCs
+    // ----------------------------------------------------------------------
+    if (file_crc == 0x7454ad5b) type = ASC16;  // Sorcery
+    if (file_crc == 0x3891bc0f) type = ASC16;  // Govellious
+    if (file_crc == 0x1d1ec602) type = ASC16;  // Eggerland 2
+    if (file_crc == 0x704ec575) type = ASC16;  // Toobin
+    if (file_crc == 0x885773f9) type = ASC16;  // Dragon Slayer 3
+    if (file_crc == 0x0521ca7a) type = ASC16;  // Dynamite Dan
+    if (file_crc == 0xab6cd62c) type = ASC16;  // King's Knight    
+    
     return type;
 }
 
@@ -790,26 +801,36 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 
                 if ((mapperType == KON8) || (mapperType == SCC8))
                 {
-                    memcpy((u8*)Slot1ROM+0x4000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0 and 1 ROM
-                    memcpy((u8*)Slot1ROM+0xC000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0 and 1 Mirror
-                    memcpy((u8*)Slot1ROM+0x8000, romBuffer+(0 * 0x2000),  0x2000);      // Segment 2 ROM
-                    memcpy((u8*)Slot1ROM+0x0000, romBuffer+(0 * 0x2000),  0x2000);      // Segment 2 Mirror
-                    memcpy((u8*)Slot1ROM+0xA000, romBuffer+(1 * 0x2000),  0x2000);      // Segment 3 ROM
-                    memcpy((u8*)Slot1ROM+0x2000, romBuffer+(1 * 0x2000),  0x2000);      // Segment 3 Mirror                
+                    Slot1ROMPtr[0] = (u8*)0x06880000+0x4000;        // Segment 2 Mirror
+                    Slot1ROMPtr[1] = (u8*)0x06880000+0x6000;        // Segment 3 Mirror
+                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 1 default
+                    Slot1ROMPtr[4] = (u8*)0x06880000+0x4000;        // Segment 2 default
+                    Slot1ROMPtr[5] = (u8*)0x06880000+0x6000;        // Segment 3 default
+                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 Mirror
+                    Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 1 Mirror
                 }
                 else if (mapperType == ASC8)
                 {
-                    memcpy((u8*)Slot1ROM+0x0000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
-                    memcpy((u8*)Slot1ROM+0x2000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
-                    memcpy((u8*)Slot1ROM+0x4000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
-                    memcpy((u8*)Slot1ROM+0x6000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
-                    memcpy((u8*)Slot1ROM+0x8000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
-                    memcpy((u8*)Slot1ROM+0xA000, romBuffer+(0 * 0x2000),  0x2000);      // Segments 0
+                    Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[1] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[3] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[5] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 0 default
                 }                
                 else if (mapperType == ASC16)
                 {
-                    memcpy((u8*)Slot1ROM+0x4000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0
-                    memcpy((u8*)Slot1ROM+0x8000, romBuffer+(0 * 0x2000),  0x4000);      // Segments 0
+                    Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
                 }                
                 memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 64K or 128K copied into our fast VRAM buffer
                 mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
@@ -1209,7 +1230,10 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(0);
-                    memcpy(pColecoMem+0x0000, (u8 *)(Slot1ROM+0x0000), 0x4000);
+                    if (Slot1ROMPtr[0])  memcpy(pColecoMem+0x0000, (u8 *)(Slot1ROMPtr[0]), 0x2000);
+                    else  memcpy(pColecoMem+0x0000, (u8 *)(Slot1ROM+0x0000), 0x2000);
+                    if (Slot1ROMPtr[1])  memcpy(pColecoMem+0x2000, (u8 *)(Slot1ROMPtr[1]), 0x2000);
+                    else  memcpy(pColecoMem+0x2000, (u8 *)(Slot1ROM+0x2000), 0x2000);
                     bROMInSlot[0] = 1;
                     bRAMInSlot[0] = 0;
                     break;
@@ -1284,7 +1308,11 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(3);
-                    memcpy(pColecoMem+0xC000, (u8 *)(Slot1ROM+0xC000), 0x4000);
+                    if (Slot1ROMPtr[6])  memcpy(pColecoMem+0xC000, (u8 *)(Slot1ROMPtr[6]), 0x2000);
+                    else  memcpy(pColecoMem+0xC000, (u8 *)(Slot1ROM+0xC000), 0x2000);
+                    if (Slot1ROMPtr[7])  memcpy(pColecoMem+0xE000, (u8 *)(Slot1ROMPtr[7]), 0x2000);
+                    else  memcpy(pColecoMem+0xE000, (u8 *)(Slot1ROM+0xE000), 0x2000);
+                    
                     bROMInSlot[3] = 1;
                     bRAMInSlot[3] = 0;
                     break;
