@@ -23,12 +23,12 @@ struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 u16 cpuirequest     __attribute__((section(".dtcm"))) = 0;
 u8 lastBank         __attribute__((section(".dtcm"))) = 199;
 s32 cycle_deficit   __attribute__((section(".dtcm"))) = 0;
+u8 lastBlock[4] __attribute__((section(".dtcm"))) = {99,99,99,99};
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
 extern u8 Slot1ROM[];
 
-static u8 lastBlock[4] = {99,99,99,99};
 
  u32 z80_rebaseSP(u16 address) {
   drz80.Z80SP_BASE = (unsigned int) pColecoMem;
@@ -344,7 +344,10 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 }
                 else if (mapperType == SCC8)
                 {
-                    HandleKonamiSCC8(src, block, address);
+                    if ((address < 0x9800) || (address > 0x98FF))   // Don't handle SCC audio
+                    {
+                        HandleKonamiSCC8(src, block, address);
+                    }
                 }
                 else if (mapperType == ASC16)
                 {

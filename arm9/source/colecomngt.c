@@ -32,14 +32,15 @@
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
 // ---------------------------------------
-u8 mapperType = 0;
-u8 mapperMask = 0;
 u8 Slot1ROM[0x10000] = {0xFF};
 u8 Slot3RAM[0x10000] = {0x00};
-u8 bROMInSlot[4] = {0,0,0,0};
-u8 bRAMInSlot[4] = {0,0,0,0};
 
-u8 *Slot1ROMPtr[8] = {0,0,0,0,0,0,0,0};
+u8 mapperType __attribute__((section(".dtcm"))) = 0;
+u8 mapperMask __attribute__((section(".dtcm"))) = 0;
+u8 bROMInSlot[4] __attribute__((section(".dtcm"))) = {0,0,0,0};
+u8 bRAMInSlot[4] __attribute__((section(".dtcm"))) = {0,0,0,0};
+
+u8 *Slot1ROMPtr[8] __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 
 #include "cpu/z80/Z80.h"
 Z80 CPU __attribute__((section(".dtcm")));
@@ -49,9 +50,9 @@ extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
 s16 timingAdjustment = 0;
 
-u8 PortA8 = 0xD0;
-u8 PortA9 = 0x00;
-u8 PortAA = 0x00;
+u8 PortA8 __attribute__((section(".dtcm"))) = 0xD0;
+u8 PortA9 __attribute__((section(".dtcm"))) = 0x00;
+u8 PortAA __attribute__((section(".dtcm"))) = 0x00;
 
 extern u8 MSXBios[];
 
@@ -729,6 +730,8 @@ u8 GuessROMType(void)
     if (file_crc == 0x885773f9) type = ASC16;  // Dragon Slayer 3
     if (file_crc == 0x0521ca7a) type = ASC16;  // Dynamite Dan
     if (file_crc == 0xab6cd62c) type = ASC16;  // King's Knight    
+    if (file_crc == 0x827919e4) type = ASC16;  // R-Type 512k
+    if (file_crc == 0x00c5d5b5) type = ASC16;  // Hydlyde III
     
     return type;
 }
@@ -823,14 +826,28 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 }                
                 else if (mapperType == ASC16)
                 {
-                    Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                    Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    if (file_crc == 0x827919e4) // R-Type is special...
+                    {
+                        Slot1ROMPtr[0] = (u8*)0x06880000+(0x2000 * 0x0)+0x0000;  // Segment 0 default
+                        Slot1ROMPtr[1] = (u8*)0x06880000+(0x2000 * 0x0)+0x2000;  // Segment 0 default
+                        Slot1ROMPtr[2] = (u8*)0x06880000+(0x2000 * 0xF)+0x0000;  // Segment F default
+                        Slot1ROMPtr[3] = (u8*)0x06880000+(0x2000 * 0xF)+0x2000;  // Segment F default
+                        Slot1ROMPtr[4] = (u8*)0x06880000+(0x2000 * 0x0)+0x0000;  // Segment 0 default
+                        Slot1ROMPtr[5] = (u8*)0x06880000+(0x2000 * 0x0)+0x2000;  // Segment 0 default
+                        Slot1ROMPtr[6] = (u8*)0x06880000+(0x2000 * 0xF)+0x0000;  // Segment F default
+                        Slot1ROMPtr[7] = (u8*)0x06880000+(0x2000 * 0xF)+0x2000;  // Segment F default
+                    }
+                    else
+                    {
+                        Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                        Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                        Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                        Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                        Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                        Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                        Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                        Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    }
                 }                
                 
                 if (iSSize == (512 * 1024))
