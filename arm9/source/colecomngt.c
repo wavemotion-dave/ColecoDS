@@ -717,7 +717,7 @@ u8 GuessROMType(void)
     if      ((guess[ASC16] > guess[KON8]) && (guess[ASC16] > guess[SCC8]) && (guess[ASC16] > guess[ASC8]))    type = ASC16;
     else if ((guess[ASC8]  > guess[KON8]) && (guess[ASC8]  > guess[SCC8]) && (guess[ASC8] >= guess[ASC16]))   type = ASC8;      // ASC8 wins "ties" over ASC16
     else if ((guess[SCC8]  > guess[KON8]) && (guess[SCC8]  > guess[ASC8]) && (guess[SCC8]  > guess[ASC16]))   type = SCC8;
-    else type = KON8;
+    else type = KON8; 
     
     // ----------------------------------------------------------------------
     // Since ASC16 is so hard to detect reliably, check a few special CRCs
@@ -795,7 +795,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             {
                 memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0xC000);      // Full Rom starting at 0x0000
             }
-            else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)))
+            else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)) || (iSSize == (256 * 1024)) || (iSSize == (512 * 1024)))
             {
                 mapperType = GuessROMType();
                 
@@ -832,8 +832,22 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                     Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
                     Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
                 }                
-                memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 64K or 128K copied into our fast VRAM buffer
-                mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
+                
+                if (iSSize == (512 * 1024))
+                {
+                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // All 64K or 128K copied into our fast VRAM buffer
+                    mapperMask = 0x3F;
+                }
+                else if (iSSize == (256 * 1024))
+                {
+                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // All 64K or 128K copied into our fast VRAM buffer
+                    mapperMask = 0x1F;
+                }
+                else
+                {
+                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 64K or 128K copied into our fast VRAM buffer
+                    mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
+                }
             }
             else    // Size too big for MSX support
             {
