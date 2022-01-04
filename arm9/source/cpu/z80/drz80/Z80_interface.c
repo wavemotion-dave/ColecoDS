@@ -220,7 +220,7 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
 // Write memory handles both normal writes and bankswitched since
 // write is much less common than reads... 
 // ------------------------------------------------------------------
-void cpu_writemem16 (u8 value,u16 address) 
+ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
 {
     extern u8 sRamAtE000_OK;
     extern u8 sgm_enable;
@@ -293,7 +293,7 @@ void cpu_writemem16 (u8 value,u16 address)
                 // A000h~BFFFh (mirror: 2000h~3FFFh)	A000h (mirrors: A001h~BFFFh)	Random
                 // ---------------------------------------------------------------------------------
                 u32 block = (value & mapperMask);
-                u32 *src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                u32 *src = (u32*)((mapperMask > 0x0F ? (u8*)romBuffer:(u8*)0x06880000)+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
             
                 if (mapperType == KON8)
                 {

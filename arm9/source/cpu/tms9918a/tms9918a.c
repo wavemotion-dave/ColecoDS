@@ -659,7 +659,7 @@ ITCM_CODE byte RdCtrl9918(void)
 /*************************************************************/
 u8 frameSkipIdx __attribute__((section(".dtcm"))) = 0;
 u8 frameSkip[3] = {0xFF, 0x03, 0x01};   // Frameskip OFF, Light, Agressive
-ITCM_CODE byte Loop9918(void) 
+byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
   register byte bIRQ;
