@@ -88,7 +88,7 @@ void FakeAY_Loop(void)
     
     if (envelope_period == 0) return;
 
-    if (++delay > ((envelope_period>>2)+1))
+    if (++delay > ((envelope_period)+1))
     {
         delay = 0;
         u8 shape = ay_reg[0x0D] & 0x0F;
@@ -96,7 +96,7 @@ void FakeAY_Loop(void)
         // ---------------------------------------------------------------
         // If Envelope is enabled for Channel A and Channel is enabled...
         // ---------------------------------------------------------------
-        if ((ay_reg[0x08] & 0x20) && (!(ay_reg[0x07] & 0x01)) && channel_a_enable)
+        if ((ay_reg[0x08] & 0x20) && channel_a_enable)
         {
             u8 vol = Envelopes[shape][a_idx]; 
             if (++a_idx > 31)
@@ -109,7 +109,7 @@ void FakeAY_Loop(void)
         // ---------------------------------------------------------------
         // If Envelope is enabled for Channel B and Channel is enabled...
         // ---------------------------------------------------------------
-        if ((ay_reg[0x09] & 0x20) && (!(ay_reg[0x07] & 0x02)) && channel_b_enable)
+        if ((ay_reg[0x09] & 0x20) && channel_b_enable)
         {
             u8 vol = Envelopes[shape][b_idx]; 
             if (++b_idx > 31)
@@ -122,7 +122,7 @@ void FakeAY_Loop(void)
         // ---------------------------------------------------------------
         // If Envelope is enabled for Channel C and Channel is enabled...
         // ---------------------------------------------------------------
-        if ((ay_reg[0x0A] & 0x20) && (!(ay_reg[0x07] & 0x04)) && channel_c_enable)
+        if ((ay_reg[0x0A] & 0x20) && channel_c_enable)
         {
             u8 vol = Envelopes[shape][c_idx]; 
             if (++c_idx > 31)
@@ -158,19 +158,19 @@ u8 FakeAY_ReadData(void)
 void UpdateNoiseAY(void)
 {
       // Noise Channel - we turn it on if the noise channel is enabled along with the channel's volume not zero...
-      if ( (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) || 
-           (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) || 
-           (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) )
+      if ( (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0)) || 
+           (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0)) || 
+           (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0)) )
       {
           if (!noise_enable)
           {
-              noise_enable=1;
-              if (noise_period > 16) sn76496W(0xE2, &aycol);       // E2 is the lowest frequency (highest period)
-              else if (noise_period > 8) sn76496W(0xE1, &aycol);   // E1 is the middle frequency (middle period)
-              else sn76496W(0xE0, &aycol);                         // E0 is the highest frequency (lowest period)
+              noise_enable = 1;
+              if      (noise_period > 16) sn76496W(0xE2 | 0x04, &aycol);   // E2 is the lowest frequency (highest period)
+              else if (noise_period > 8)  sn76496W(0xE1 | 0x04, &aycol);   // E1 is the middle frequency (middle period)
+              else                        sn76496W(0xE0 | 0x04, &aycol);   // E0 is the highest frequency (lowest period)
               
               // Now output the noise for the first channel it's enbled on...
-              if (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[ay_reg[0x08]], &aycol);
+              if (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable)      sn76496W(0xF0 | Volumes[ay_reg[0x08]], &aycol);
               else if (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[ay_reg[0x09]], &aycol);
               else if (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[ay_reg[0x0A]], &aycol);
               else sn76496W(0xFF, &aycol);
@@ -178,6 +178,7 @@ void UpdateNoiseAY(void)
       }
       else
       {
+          noise_enable = 0;
           sn76496W(0xFF, &aycol);
       }
 }
@@ -205,7 +206,7 @@ void FakeAY_WriteData(u8 Value)
           // Channel A frequency (period) - low and high
           case 0x00:
           case 0x01:
-              if (!(ay_reg[0x07] & 0x01))
+              if ((!(ay_reg[0x07] & 0x01)) || (!(ay_reg[0x07] & 0x08)))
               {
                   freq = (ay_reg[0x01] << 8) | ay_reg[0x00];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
@@ -218,7 +219,7 @@ void FakeAY_WriteData(u8 Value)
           // Channel B frequency (period) - low and high
           case 0x02:
           case 0x03:
-              if (!(ay_reg[0x07] & 0x02))
+              if ((!(ay_reg[0x07] & 0x02)) || (!(ay_reg[0x07] & 0x10)))
               {
                   freq = (ay_reg[0x03] << 8) | ay_reg[0x02];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
@@ -230,7 +231,7 @@ void FakeAY_WriteData(u8 Value)
            // Channel C frequency (period) - low and high
           case 0x04:
           case 0x05:
-              if (!(ay_reg[0x07] & 0x04))
+              if ((!(ay_reg[0x07] & 0x04)) || (!(ay_reg[0x07] & 0x20)))
               {
                   freq = (ay_reg[0x05] << 8) | ay_reg[0x04];
                   freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
@@ -244,19 +245,15 @@ void FakeAY_WriteData(u8 Value)
                noise_period = Value & 0x1F;
                if (noise_enable)
                {
-                  if (noise_period > 16) sn76496W(0xE2|0x04, &aycol);       // E2 is the lowest frequency (highest period)
-                  else if (noise_period > 8) sn76496W(0xE1|0x04, &aycol);   // E1 is the middle frequency (middle period)
-                  else sn76496W(0xE0|0x04, &aycol);                         // E0 is the highest frequency (lowest period)
-                  if (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0) && channel_a_enable) sn76496W(0xF0 | Volumes[ay_reg[0x08]], &aycol);
-                  if (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0) && channel_b_enable) sn76496W(0xF0 | Volumes[ay_reg[0x09]], &aycol);
-                  if (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0) && channel_c_enable) sn76496W(0xF0 | Volumes[ay_reg[0x0A]], &aycol);
+                   noise_enable = 0; // Force Update of Noise
+                   UpdateNoiseAY();  // Update the Noise output
                }
               break;
               
           // Global Sound Enable/Disable Register
           case 0x07:
               // Channel A Enable/Disable
-              if (!(ay_reg[0x07] & 0x01))
+              if ((!(ay_reg[0x07] & 0x01)) || (!(ay_reg[0x07] & 0x08)))
               {
                   if (!channel_a_enable)
                   {
@@ -279,7 +276,7 @@ void FakeAY_WriteData(u8 Value)
               }
               
               // Channel B Enable/Disable
-              if (!(ay_reg[0x07] & 0x02))
+              if ((!(ay_reg[0x07] & 0x02)) || (!(ay_reg[0x07] & 0x10)))
               {
                   if (!channel_b_enable)
                   {
@@ -303,7 +300,7 @@ void FakeAY_WriteData(u8 Value)
               
               
               // Channel C Enable/Disable
-              if (!(ay_reg[0x07] & 0x04))
+              if ((!(ay_reg[0x07] & 0x04)) || (!(ay_reg[0x07] & 0x20)))
               {
                   if (!channel_c_enable)
                   {
