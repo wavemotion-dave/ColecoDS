@@ -1,8 +1,8 @@
 #ifndef _colecoDS_GENERIC_H_
 #define _colecoDS_GENERIC_H_
 
-#define MAX_ROMS 512
-#define MAX_ROM_LENGTH 128
+#define MAX_ROMS        1024
+#define MAX_ROM_LENGTH  160
 
 #define COLROM 0x01
 #define DIRECT 0x02
