@@ -1354,6 +1354,7 @@ void colecoDSChangeOptions(void)
                 if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
                 msx_mode = 0;
                 if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
+                
                 FindAndLoadConfig();    // Try to find keymap for this file...
                 DisplayFileName();
             }

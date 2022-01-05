@@ -748,6 +748,9 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         memset(romBuffer, 0xFF, (512 * 1024));
         fread((void*) romBuffer, iSSize, 1, handle); 
         
+        // Do some auto-detection for game ROM
+        if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))  msx_mode = 1;      // MSX roms start with AB
+        
         romBankMask = 0x00;         // No bank mask until proven otherwise
         bMagicMegaCart = false;     // No Mega Cart to start
         mapperMask = 0x00;          // No MSX mapper mask
