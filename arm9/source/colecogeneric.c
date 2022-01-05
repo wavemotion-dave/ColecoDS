@@ -1347,16 +1347,19 @@ void colecoDSChangeOptions(void)
             if (ucGameChoice != -1) 
             { 
                 getfile_crc(gpFic[ucGameChoice].szName);
+                
                 sg1000_mode = 0;
                 if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
                 if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
+                
                 sordm5_mode = 0;
                 if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
+                
                 msx_mode = 0;
                 if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
                 
-                FindAndLoadConfig();    // Try to find keymap for this file...
-                DisplayFileName();
+                FindAndLoadConfig();    // Try to find keymap and config for this file...
+                DisplayFileName();      // And put up the filename on the bottom screen
             }
             ucY = 10;
             AffChaine(9,5,0,"=* OPTIONS *=");
