@@ -810,9 +810,16 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             }
             else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)) || (iSSize == (256 * 1024)) || (iSSize == (512 * 1024)))
             {
-                mapperType = GuessROMType();
+                if (myConfig.msxMapper == GUESS)
+                {
+                    mapperType = GuessROMType();
+                }
+                else
+                {
+                    mapperType = myConfig.msxMapper;   
+                }
                 
-                if ((mapperType == KON8) || (mapperType == SCC8))
+                if ((mapperType == KON8) || (mapperType == SCC8) || (mapperType == ZEN8))
                 {
                     Slot1ROMPtr[0] = (u8*)0x06880000+0x4000;        // Segment 2 Mirror
                     Slot1ROMPtr[1] = (u8*)0x06880000+0x6000;        // Segment 3 Mirror
@@ -834,7 +841,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                     Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
                     Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 0 default
                 }                
-                else if (mapperType == ASC16)
+                else if (mapperType == ASC16 || mapperType == ZEN16)
                 {
                     if (file_crc == 0x827919e4) // R-Type is special...
                     {

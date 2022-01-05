@@ -607,9 +607,12 @@ void highscore_display(u32 crc)
     short firstBlank = -1;
     char bDone = 0;
 
-      dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); //ecranBas_map[24][0];
-      dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
+    // ---------------------------------------------
+    // Setup lower screen for High Score dispay...
+    // ---------------------------------------------
+    dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
+    unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32);
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
 
     swiWaitForVBlank();
 

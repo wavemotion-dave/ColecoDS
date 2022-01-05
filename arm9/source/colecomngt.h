@@ -11,12 +11,15 @@
 extern u8 mapperType;
 extern u8 mapperMask;
 
-#define KON8        0
-#define ASC8        1
-#define SCC8        2
-#define ASC16       3
+#define GUESS       0
+#define KON8        1
+#define ASC8        2
+#define SCC8        3
+#define ASC16       4
+#define ZEN8        5
+#define ZEN16       6
 
-#define MAX_MAPPERS 4
+#define MAX_MAPPERS 7
 
 extern u8 bROMInSlot[];
 extern u8 bRAMInSlot[];

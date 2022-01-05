@@ -17,7 +17,7 @@ typedef struct {
   u32 uCrc;
 } FICcoleco;
 
-#define MAX_CONFIGS 400
+#define MAX_CONFIGS 700
 #define CONFIG_VER  0x0004
 
 struct __attribute__((__packed__)) Config_t
@@ -28,7 +28,7 @@ struct __attribute__((__packed__)) Config_t
     u8  showFPS;
     u8  frameSkip;
     u8  frameBlend;
-    u8  fullSpeed;
+    u8  msxMapper;
     u8  autoFire1;
     u8  autoFire2;
     u8  overlay;

@@ -663,7 +663,7 @@ void colecoDS_main(void)
             // --------------------------------------------
             while(TIMER2_DATA < (546*(timingFrames+1)))
             {
-                if (myConfig.fullSpeed) break;
+                if (myConfig.showFPS == 2) break;   // If Full Speed, break out...
             }
         }
         
