@@ -27,7 +27,7 @@
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x000F        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x0010        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
@@ -50,7 +50,7 @@ extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
 s16 timingAdjustment = 0;
 
-u8 PortA8 __attribute__((section(".dtcm"))) = 0xD0;
+u8 PortA8 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortA9 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortAA __attribute__((section(".dtcm"))) = 0x00;
 
@@ -99,6 +99,7 @@ u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
 u8 AY_NeverEnable  __attribute__((section(".dtcm"))) = false;
 u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
+u8 AY_EnvelopeOn   __attribute__((section(".dtcm"))) = false;
 
 u8  JoyMode        __attribute__((section(".dtcm"))) = 0;           // Joystick Mode (1=Keypad, 0=Joystick)
 u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick State for P1 and P2
@@ -137,14 +138,11 @@ void sgm_reset(void)
     ay_reg[0x07] = 0xFF;         // Everything turned off to start...
     ay_reg[0x0E] = 0xFF;         // These are "max attenuation" volumes
     ay_reg[0x0F] = 0xFF;         // to keep the volume disabled
-    channel_a_enable = 0;        // All "AY" channels off
-    channel_b_enable = 0;        // ..
-    channel_c_enable = 0;        // ..
-    noise_enable = 0;            // "AY" noise generator off
-    
+   
     sgm_enable = false;          // Default to no SGM until enabled
     sgm_low_addr = 0x2000;       // And the first 8K is BIOS
     AY_Enable = false;           // Default to no AY use until accessed
+    AY_EnvelopeOn = false;       // No Envelope mode yet
     bFirstSGMEnable = true;      // First time SGM enable we clear ram
     
     Port53 = 0x00;               // Init the SGM Port 53
@@ -179,7 +177,7 @@ void colecoWipeRAM(void)
   }
   else if (msx_mode)
   {
-    PortA8 = 0xD0;      
+    PortA8 = 0x00;
     PortA9 = 0x00;
     PortAA = 0x00;      
     memset(pColecoMem+0xC000, 0x00, 0x4000);   
@@ -381,10 +379,6 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
     if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-    if (uNbO) uNbO = fwrite(&channel_a_enable, sizeof(channel_a_enable), 1, handle); 
-    if (uNbO) uNbO = fwrite(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
-    if (uNbO) uNbO = fwrite(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
-    if (uNbO) uNbO = fwrite(&noise_enable, sizeof(noise_enable), 1, handle); 
       
     // A few frame counters
     if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -497,10 +491,6 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
             if (uNbO) uNbO = fread(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
             if (uNbO) uNbO = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-            if (uNbO) uNbO = fread(&channel_a_enable, sizeof(channel_a_enable), 1, handle); 
-            if (uNbO) uNbO = fread(&channel_b_enable, sizeof(channel_b_enable), 1, handle); 
-            if (uNbO) uNbO = fread(&channel_c_enable, sizeof(channel_c_enable), 1, handle); 
-            if (uNbO) uNbO = fread(&noise_enable, sizeof(noise_enable), 1, handle); 
             
             // A few frame counters
             if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -720,6 +710,10 @@ u8 GuessROMType(void)
     else if ((guess[SCC8]  > guess[KON8]) && (guess[SCC8]  > guess[ASC8]) && (guess[SCC8]  > guess[ASC16]))   type = SCC8;
     else type = KON8; 
     
+    
+    
+    if (file_crc == 0x5dc45624) type = ASC8;  // Super Laydock
+    
     // ----------------------------------------------------------------------
     // Since ASC16 is so hard to detect reliably, check a few special CRCs
     // ----------------------------------------------------------------------
@@ -754,6 +748,11 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         memset(romBuffer, 0xFF, (512 * 1024));
         fread((void*) romBuffer, iSSize, 1, handle); 
         
+        romBankMask = 0x00;         // No bank mask until proven otherwise
+        bMagicMegaCart = false;     // No Mega Cart to start
+        mapperMask = 0x00;          // No MSX mapper mask
+        bActivisionPCB = 0;         // No Activision PCB
+
         // ------------------------------------------------------------------------------
         // For the MSX emulation, we will use fast VRAM to hold ROM and mirrors...
         // These need to be loaded in a special way:
@@ -763,7 +762,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
-            mapperMask = 0x00;
             memset((u8*)0x06880000, 0xFF, 0x20000);
             memset(Slot1ROM, 0xFF, 0x10000);
             memset(Slot3RAM, 0x00, 0x10000);
@@ -877,7 +875,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         if (iSSize <= ((sg1000_mode ? 48:32)*1024)) // Allow SG ROMs to be up to 48K
         {
             memcpy(ptr, romBuffer, nmemb);
-            romBankMask = 0x00;
         }
         else    // No - must be MC Bankswitched Cart!!
         {
@@ -1150,17 +1147,20 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   }
   else if (Port == 0xA2)  // PSG Read... might be joypad data
   {
-      u8 joy1 = 0x00;
+      if (ay_reg_idx == 14)
+      {
+          u8 joy1 = 0x00;
 
-      if (JoyState & JST_UP)    joy1 |= 0x01;
-      if (JoyState & JST_DOWN)  joy1 |= 0x02;
-      if (JoyState & JST_LEFT)  joy1 |= 0x04;
-      if (JoyState & JST_RIGHT) joy1 |= 0x08;
-      
-      if (JoyState & JST_FIREL) joy1 |= 0x10;
-      if (JoyState & JST_FIRER) joy1 |= 0x20;
-      
-      ay_reg[14] = ~joy1;
+          if (JoyState & JST_UP)    joy1 |= 0x01;
+          if (JoyState & JST_DOWN)  joy1 |= 0x02;
+          if (JoyState & JST_LEFT)  joy1 |= 0x04;
+          if (JoyState & JST_RIGHT) joy1 |= 0x08;
+
+          if (JoyState & JST_FIREL) joy1 |= 0x10;
+          if (JoyState & JST_FIRER) joy1 |= 0x20;
+
+          ay_reg[14] = ~joy1;
+      }
       return FakeAY_ReadData();
   }
   else if (Port == 0xA8) return PortA8;
@@ -1223,6 +1223,12 @@ void RestoreRAM(u8 slot)
     }
 }
 
+inline void FastMemCopy(u8* dest, u8* src, u16 numBytes)
+{
+    u32 *d=(u32*)dest;   u32 *s=(u32*)src;
+    for (u16 i=0; i<numBytes/4; i++) *d++ = *s++;
+}
+
 // ----------------------------------------------------------------------
 // MSX IO Port Write - VDP and AY Sound Chip plus Slot Mapper $A8
 // ----------------------------------------------------------------------
@@ -1240,9 +1246,6 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     {
         if (PortA8 != Value)
         {
-            PortA8 = Value;             // Useful when read back
-            memset(bROMInSlot, 0, 4);   // Default to no ROM in slot until decoded below
-            
             // ---------------------------------------------------------------------
             // bits 7-6     bits 5-4     bits 3-2      bits 1-0
             // C000h~FFFF   8000h~BFFF   4000h~7FFF    0000h~3FFF
@@ -1252,19 +1255,21 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             // Slot 2 is empty (0xFF always)
             // Slot 3 is our main RAM. We emulate 64K of RAM
             // ---------------------------------------------------------------------
+            if (((Value>>0) & 0x03) != ((PortA8>>0) & 0x03))
             switch ((Value>>0) & 0x03)  // Main Memory - Slot 0 [0x0000~0x3FFF]
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(0);
-                    memcpy(pColecoMem+0x0000, (u8 *)(MSXBios+0x0000), 0x4000);
+                    FastMemCopy(pColecoMem+0x0000, (u8 *)(MSXBios+0x0000), 0x4000);
                     bRAMInSlot[0] = 0;
+                    bROMInSlot[0] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(0);
-                    if (Slot1ROMPtr[0])  memcpy(pColecoMem+0x0000, (u8 *)(Slot1ROMPtr[0]), 0x2000);
-                    else  memcpy(pColecoMem+0x0000, (u8 *)(Slot1ROM+0x0000), 0x2000);
-                    if (Slot1ROMPtr[1])  memcpy(pColecoMem+0x2000, (u8 *)(Slot1ROMPtr[1]), 0x2000);
-                    else  memcpy(pColecoMem+0x2000, (u8 *)(Slot1ROM+0x2000), 0x2000);
+                    if (Slot1ROMPtr[0])  FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot1ROMPtr[0]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot1ROM+0x0000), 0x2000);
+                    if (Slot1ROMPtr[1])  FastMemCopy(pColecoMem+0x2000, (u8 *)(Slot1ROMPtr[1]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0x2000, (u8 *)(Slot1ROM+0x2000), 0x2000);
                     bROMInSlot[0] = 1;
                     bRAMInSlot[0] = 0;
                     break;
@@ -1272,25 +1277,30 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     SaveRAM(0);
                     memset(pColecoMem+0x0000, 0xFF, 0x4000);
                     bRAMInSlot[0] = 0;
+                    bROMInSlot[0] = 0;
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(0);
                     bRAMInSlot[0] = 1;
+                    bROMInSlot[0] = 0;
                     break;
             }
+            
+            if (((Value>>2) & 0x03) != ((PortA8>>2) & 0x03))
             switch ((Value>>2) & 0x03)  // Main Memory - Slot 1  [0x4000~0x7FFF]
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(1);
-                    memcpy(pColecoMem+0x4000, (u8 *)(MSXBios+0x4000), 0x4000);
+                    FastMemCopy(pColecoMem+0x4000, (u8 *)(MSXBios+0x4000), 0x4000);
                     bRAMInSlot[1] = 0;
+                    bROMInSlot[1] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(1);
-                    if (Slot1ROMPtr[2])  memcpy(pColecoMem+0x4000, (u8 *)(Slot1ROMPtr[2]), 0x2000);
-                    else  memcpy(pColecoMem+0x4000, (u8 *)(Slot1ROM+0x4000), 0x2000);
-                    if (Slot1ROMPtr[3])  memcpy(pColecoMem+0x6000, (u8 *)(Slot1ROMPtr[3]), 0x2000);
-                    else  memcpy(pColecoMem+0x6000, (u8 *)(Slot1ROM+0x6000), 0x2000);                    
+                    if (Slot1ROMPtr[2])  FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot1ROMPtr[2]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot1ROM+0x4000), 0x2000);
+                    if (Slot1ROMPtr[3])  FastMemCopy(pColecoMem+0x6000, (u8 *)(Slot1ROMPtr[3]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0x6000, (u8 *)(Slot1ROM+0x6000), 0x2000);                    
                     bROMInSlot[1] = 1;
                     bRAMInSlot[1] = 0;
                     break;
@@ -1298,25 +1308,30 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     SaveRAM(1);
                     memset(pColecoMem+0x4000, 0xFF, 0x4000);
                     bRAMInSlot[1] = 0;
+                    bROMInSlot[1] = 0;
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(1);
                     bRAMInSlot[1] = 1;
+                    bROMInSlot[1] = 0;
                     break;
             }
+            
+            if (((Value>>4) & 0x03) != ((PortA8>>4) & 0x03))
             switch ((Value>>4) & 0x03)  // Main Memory - Slot 2  [0x8000~0xBFFF]
             {
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
                     SaveRAM(2);
                     memset(pColecoMem+0x8000, 0xFF, 0x4000);
                     bRAMInSlot[2] = 0;
+                    bROMInSlot[2] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(2);
-                    if (Slot1ROMPtr[4])  memcpy(pColecoMem+0x8000, (u8 *)(Slot1ROMPtr[4]), 0x2000);
-                    else  memcpy(pColecoMem+0x8000, (u8 *)(Slot1ROM+0x8000), 0x2000);
-                    if (Slot1ROMPtr[5])  memcpy(pColecoMem+0xA000, (u8 *)(Slot1ROMPtr[5]), 0x2000);
-                    else  memcpy(pColecoMem+0xA000, (u8 *)(Slot1ROM+0xA000), 0x2000);                    
+                    if (Slot1ROMPtr[4])  FastMemCopy(pColecoMem+0x8000, (u8 *)(Slot1ROMPtr[4]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0x8000, (u8 *)(Slot1ROM+0x8000), 0x2000);
+                    if (Slot1ROMPtr[5])  FastMemCopy(pColecoMem+0xA000, (u8 *)(Slot1ROMPtr[5]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0xA000, (u8 *)(Slot1ROM+0xA000), 0x2000);                    
                     bROMInSlot[2] = 1;
                     bRAMInSlot[2] = 0;
                     break;
@@ -1324,25 +1339,30 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     SaveRAM(2);
                     memset(pColecoMem+0x8000, 0xFF, 0x4000);
                     bRAMInSlot[2] = 0;
+                    bROMInSlot[2] = 0;
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(2);
                     bRAMInSlot[2] = 1;
+                    bROMInSlot[2] = 0;
                     break;
             }
+            
+            if (((Value>>6) & 0x03) != ((PortA8>>6) & 0x03))
             switch ((Value>>6) & 0x03)  // Main Memory - Slot 3  [0xC000~0xFFFF]
             {
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
                     SaveRAM(3);
                     memset(pColecoMem+0xC000, 0xFF, 0x4000);
                     bRAMInSlot[3] = 0;
+                    bROMInSlot[3] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(3);
-                    if (Slot1ROMPtr[6])  memcpy(pColecoMem+0xC000, (u8 *)(Slot1ROMPtr[6]), 0x2000);
-                    else  memcpy(pColecoMem+0xC000, (u8 *)(Slot1ROM+0xC000), 0x2000);
-                    if (Slot1ROMPtr[7])  memcpy(pColecoMem+0xE000, (u8 *)(Slot1ROMPtr[7]), 0x2000);
-                    else  memcpy(pColecoMem+0xE000, (u8 *)(Slot1ROM+0xE000), 0x2000);
+                    if (Slot1ROMPtr[6])  FastMemCopy(pColecoMem+0xC000, (u8 *)(Slot1ROMPtr[6]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0xC000, (u8 *)(Slot1ROM+0xC000), 0x2000);
+                    if (Slot1ROMPtr[7])  FastMemCopy(pColecoMem+0xE000, (u8 *)(Slot1ROMPtr[7]), 0x2000);
+                    else  FastMemCopy(pColecoMem+0xE000, (u8 *)(Slot1ROM+0xE000), 0x2000);
                     
                     bROMInSlot[3] = 1;
                     bRAMInSlot[3] = 0;
@@ -1351,12 +1371,16 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     SaveRAM(3);
                     memset(pColecoMem+0xC000, 0xFF, 0x4000);
                     bRAMInSlot[3] = 0;
+                    bROMInSlot[3] = 0;
                     break;
                 case 0x03:  // Slot 3 is RAM so we allow RAM writes now
                     RestoreRAM(3);
                     bRAMInSlot[3] = 1;
+                    bROMInSlot[3] = 0;
                     break;
             }
+            
+            PortA8 = Value;             // Useful when read back
         }
     }
     else if (Port == 0xA9)  // PPI - Register B
@@ -1518,7 +1542,7 @@ ITCM_CODE u32 LoopZ80()
     cpuirequest=0;
     
   // Just in case there are AY audio envelopes... this is very rough timing.
-  if (AY_Enable) FakeAY_Loop();
+  if (AY_EnvelopeOn) FakeAY_Loop();
     
   // ------------------------------------------------------------------
   // Before we execute Z80 or Loop the 9918 (both of which can cause 

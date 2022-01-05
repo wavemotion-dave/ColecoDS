@@ -12,7 +12,10 @@ also need an 8k sordm5.rom bios in the same
 directory as the coleco.rom BIOS.
 
 SG-1000 emulation does not need a BIOS.
-MSX emulation does not need a BIOS (C-BIOS used)
+
+MSX emulation does not need a BIOS (C-BIOS used) 
+but you can put msx.rom in /roms/bios or /data/bios 
+and the emulator will use that instead.
 
 Features :
 -----------------------
@@ -70,6 +73,7 @@ Known Issues :
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * Sord M5 games are not sound accurate due to CTC emulation issues.
+* MSX envelope sound and noise emulation not accurate (close enough).
 
 Controllers :
 -----------------------
@@ -132,6 +136,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.1: 05-Jan-2022 by wavemotion-dave
+* MSX1 now supports 256K and 512K mega ROMs. 
+* AY Sound core re-written so noise and envelopes work (not perfectly accurate but good enough).
+* Optional you can use msx.rom BIOS if found in the usual places.
+
 V5.1: 03-Jan-2022 by wavemotion-dave
 * MSX1 emulation now supports some of the common Mappers - some of the 128K games work but you'll probably have to turn off Vert Sync and turn on Frame Skip to get it to run full speed.
 * MSX1 emulation is now 64K Main RAM 
