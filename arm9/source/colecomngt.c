@@ -205,9 +205,21 @@ void colecoWipeRAM(void)
 /*********************************************************************************
  * Init coleco Engine for that game
  ********************************************************************************/
-u8 colecoInit(char *szGame) {
+u8 colecoInit(char *szGame) 
+{
   u8 RetFct,uBcl;
   u16 uVide;
+
+  romBuffer[0] = 0xFF;
+  FILE* handle = fopen(szGame, "rb");  
+  if (handle)
+  {
+      fread((void*) romBuffer, 2, 1, handle); 
+      fclose(handle);
+      
+      // Do some auto-detection for game ROM
+      if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))  msx_mode = 1;      // MSX roms start with AB
+  }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
@@ -737,7 +749,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 {
   u8 bOK = 0;
 
-  FILE* handle = fopen(path, "r");  
+  FILE* handle = fopen(path, "rb");  
   if (handle != NULL) 
   {
     fseek(handle, 0, SEEK_END);
@@ -747,9 +759,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     {
         memset(romBuffer, 0xFF, (512 * 1024));
         fread((void*) romBuffer, iSSize, 1, handle); 
-        
-        // Do some auto-detection for game ROM
-        if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))  msx_mode = 1;      // MSX roms start with AB
         
         romBankMask = 0x00;         // No bank mask until proven otherwise
         bMagicMegaCart = false;     // No Mega Cart to start
