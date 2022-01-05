@@ -136,7 +136,7 @@ would personally try them:
 
 Versions :
 -----------------------
-V5.1: 05-Jan-2022 by wavemotion-dave
+V5.2: 04-Jan-2022 by wavemotion-dave
 * MSX1 now supports 256K and 512K mega ROMs. 
 * AY Sound core re-written so noise and envelopes work (not perfectly accurate but good enough).
 * Optional you can use msx.rom BIOS if found in the usual places.
