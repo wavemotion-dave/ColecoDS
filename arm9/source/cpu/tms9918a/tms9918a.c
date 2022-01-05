@@ -687,7 +687,7 @@ byte Loop9918(void)
       // we get minimal tearing... This is also how we throttle to 60 FPS
       // by using the DS vertical blank as our way of frame-to-frame timing.
       // --------------------------------------------------------------------
-      if ((myConfig.fullSpeed == 0) && (myConfig.vertSync)) 
+      if ((myConfig.showFPS != 2) && (myConfig.vertSync))   // If not full speed we can try vertical sync if enabled
       {
           swiWaitForVBlank();
       }

@@ -720,7 +720,7 @@ void SetDefaultGameConfig(void)
     myConfig.showFPS     = 0;
     myConfig.frameSkip   = 0;
     myConfig.frameBlend  = 0;
-    myConfig.fullSpeed   = 0;        
+    myConfig.msxMapper   = GUESS;
     myConfig.autoFire1   = 0;
     myConfig.autoFire2   = 0;
     myConfig.overlay     = 0;
@@ -908,8 +908,7 @@ u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
     {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},   &myConfig.overlay,    9},
-    {"FPS",             {"OFF", "ON"},                                                                                                          &myConfig.showFPS,    2},
-    {"FULL SPEED",      {"OFF", "ON"},                                                                                                          &myConfig.fullSpeed,  2},
+    {"FPS",             {"OFF", "ON", "ON FULLSPEED"},                                                                                          &myConfig.showFPS,    3},
     {"FRAME SKIP",      {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                        &myConfig.frameSkip,  3},
     {"FRAME BLEND",     {"OFF", "ON"},                                                                                                          &myConfig.frameBlend, 2},
     {"MAX SPRITES",     {"32",  "4"},                                                                                                           &myConfig.maxSprites, 2},
@@ -919,6 +918,7 @@ const struct options_t Option_Table[] =
     {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                               &myConfig.touchPad,   2},    
     {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                       &myConfig.spinSpeed,  5},
     {"Z80 CPU CORE",    {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                    &myConfig.cpuCore,    2},    
+    {"MSX MAPPER",      {"GUESS", "KONAMI 8K", "ASCII 8K", "KONAMI SCC", "ASCII 16K", "ZEMINA 8K", "ZEMINA 16K"},                               &myConfig.msxMapper,  7},
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                  &dev_z80_cycles,     16},
 #endif    
