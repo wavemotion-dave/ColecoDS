@@ -1057,7 +1057,23 @@ bool ColecoBIOSFound(void)
         fread(SordM5Bios, 0x2000, 1, fp);
         fclose(fp);
     }
-    
+
+    // -----------------------------------------------------------
+    // Next try to load the MSX.ROM - if this fails we still
+    // have the C-BIOS as a good built-in backup.
+    // -----------------------------------------------------------
+#if 1  // Not sure yet...    
+    fp = fopen("msx.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/sordm5.rom", "rb");
+    if (fp != NULL)
+    {
+        extern u8 MSXBios[];
+        fread(MSXBios, 0x8000, 1, fp);
+        fclose(fp);
+    }
+#endif    
+
     // -----------------------------------------------------------
     // Coleco ROM BIOS must exist or the show is off!
     // -----------------------------------------------------------

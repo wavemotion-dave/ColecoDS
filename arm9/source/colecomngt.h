@@ -35,6 +35,7 @@ extern u8 AY_Enable;
 extern u8 lastBank; 
 extern u8 romBankMask;
 extern u32 file_crc;
+extern u8 AY_EnvelopeOn;
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);
