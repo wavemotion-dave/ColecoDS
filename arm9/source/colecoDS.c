@@ -194,7 +194,11 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
     }
     else
     {
-        if (AY_Enable)  // If AY is enabled we mix the normal SN chip with the AY chip sound
+        if (msx_mode)   // If we are an MSX, we can just use the one sound core
+        {
+            sn76496Mixer(len*4, dest, &aycol);
+        }
+        else if (AY_Enable)  // If AY is enabled we mix the normal SN chip with the AY chip sound
         {
           sn76496Mixer(len*4, mixbuf1, &aycol);
           sn76496Mixer(len*4, mixbuf2, &sncol);
