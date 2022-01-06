@@ -156,6 +156,7 @@ V5.3: 06-Jan-2022 by wavemotion-dave
 * Upgrade High Score Database to 575 entries.
 * Upgrade roms per directory to 1024 entries.
 * Autodetect between CV and MSX .rom files.
+* Revised MSX controller map for better game support.
 * AY optmization so MSX games run faster.
 
 V5.2: 04-Jan-2022 by wavemotion-dave
