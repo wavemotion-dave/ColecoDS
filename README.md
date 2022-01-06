@@ -7,6 +7,14 @@ To run requires a coleco.rom BIOS to
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
 
+Because the chips used in the Colecovision Hardware 
+were so common in that era, other systems tended
+to be very close to the CV in terms of hardware. 
+Often only the IO/Memory was different. As such,
+ColecoDS also allows cartridge (not disk or
+cassette) games from "cousin" systems to be played - 
+namely the Sord M5, the SG-1000 and the MSX1.
+
 If you want to play Sord M5 games, you will
 also need an 8k sordm5.rom bios in the same
 directory as the coleco.rom BIOS.
