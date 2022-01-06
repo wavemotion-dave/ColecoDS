@@ -93,7 +93,7 @@ for games like Turbo steering.  You can change the spinner sensitivity
 to one of five different settings (Normal, Fast, Fastest, Slow, Slowest).
 
 For the MSX emulation, the colecovision keypad is mapped as follows:
-
+```
   1   2   3
   
   4   5  STOP
@@ -101,7 +101,7 @@ For the MSX emulation, the colecovision keypad is mapped as follows:
   M1  M2  M3
   
   SPC 0   RET
-  
+```
 That should be enough to get most MSX1 cart games running...
 
 Blend Mode (DSi) :
