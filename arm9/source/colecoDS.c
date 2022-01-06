@@ -196,7 +196,7 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
     }
     else
     {
-        if (msx_mode)   // If we are an MSX, we can just use the one sound core
+        if (msx_mode)   // If we are an MSX, we can just use the one AY sound core
         {
             sn76496Mixer(len*4, dest, &aycol);
         }

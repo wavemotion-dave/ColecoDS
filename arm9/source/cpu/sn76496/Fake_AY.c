@@ -48,22 +48,22 @@ u16 envelope_counter = 0;
 
 static const unsigned char Envelopes[16][32] =
 {
-    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
-    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
-    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
 u16 noise_period = 0;
@@ -71,6 +71,7 @@ u16 noise_period = 0;
 u8 a_idx=0;
 u8 b_idx=0;
 u8 c_idx=0;
+
 
 void UpdateNoiseAY(void);
 void UpdateTonesAY(void);
@@ -81,6 +82,8 @@ void UpdateTonesAY(void);
 // ---------------------------------------------------------------------------------------------
 void FakeAY_Loop(void)
 {
+    u8 bUpdateVols = 0;
+    
     if (++envelope_counter > envelope_period)
     {
         envelope_counter = 0;
@@ -91,13 +94,16 @@ void FakeAY_Loop(void)
         // ---------------------------------------------------------------
         if ((ay_reg[0x08] & 0x10))
         {
-            u8 vol = 15-Envelopes[shape][a_idx]; 
+            u8 vol = Envelopes[shape][a_idx]; 
             if (++a_idx > 31)
             {
                 if ((shape & 0x09) == 0x08) a_idx = 0; else a_idx=31;
             }
-            ay_reg[0x08] &= 0xF0;
-            ay_reg[0x08] |= vol;
+            if (vol != (ay_reg[0x08] & 0x0F))
+            {
+                ay_reg[0x08] = (ay_reg[0x08] & 0xF0) | vol;
+                bUpdateVols = true;
+            }
         }
         
         // ---------------------------------------------------------------
@@ -105,13 +111,16 @@ void FakeAY_Loop(void)
         // ---------------------------------------------------------------
         if ((ay_reg[0x09] & 0x10))
         {
-            u8 vol = 15-Envelopes[shape][b_idx]; 
+            u8 vol = Envelopes[shape][b_idx]; 
             if (++b_idx > 31)
             {
                 if ((shape & 0x09) == 0x08) b_idx = 0; else b_idx=31;
             }
-            ay_reg[0x09] &= 0xF0;
-            ay_reg[0x09] |= vol;
+            if (vol != (ay_reg[0x09] & 0x0F))
+            {
+                ay_reg[0x09] = (ay_reg[0x09] & 0xF0) | vol;
+                bUpdateVols = true;
+            }
         }
 
         // ---------------------------------------------------------------
@@ -119,16 +128,23 @@ void FakeAY_Loop(void)
         // ---------------------------------------------------------------
         if ((ay_reg[0x0A] & 0x10))
         {
-            u8 vol = 15-Envelopes[shape][c_idx]; 
+            u8 vol = Envelopes[shape][c_idx]; 
             if (++c_idx > 31)
             {
                 if ((shape & 0x09) == 0x08) c_idx = 0; else c_idx=31;
             }
-            ay_reg[0x0A] &= 0xF0;
-            ay_reg[0x0A] |= vol;
+            if (vol != (ay_reg[0x0A] & 0x0F))
+            {
+                ay_reg[0x0A] = (ay_reg[0x0A] & 0xF0) | vol;
+                bUpdateVols = true;
+            }
         }
-        UpdateTonesAY();
-        UpdateNoiseAY();
+        
+        if (bUpdateVols)
+        {
+            UpdateTonesAY();
+            UpdateNoiseAY();
+        }
     }
 }
 
@@ -277,11 +293,11 @@ void FakeAY_WriteData(u8 Value)
           // Volume and Envelope Enable Registers are below...
           // -------------------------------------------------------
           case 0x08:
-              if (Value & 0x10 && !prevEnvelopeA_enabled)   // If Envelope Mode... see if this is being enabled
+              if (Value & 0x10) // && !prevEnvelopeA_enabled)   // If Envelope Mode... see if this is being enabled
               {
                   prevEnvelopeA_enabled = true;
-                  a_idx = 0;
                   envelope_counter = 0xF000;    // Force first state change immediately
+                  a_idx = 0;
               }
               else 
               {
@@ -293,7 +309,7 @@ void FakeAY_WriteData(u8 Value)
               break;
               
           case 0x09:
-              if (Value & 0x10 && !prevEnvelopeB_enabled)   // If Envelope Mode... see if this is being enabled
+              if (Value & 0x10) //&& !prevEnvelopeB_enabled)   // If Envelope Mode... see if this is being enabled
               {
                   prevEnvelopeB_enabled = true;
                   envelope_counter = 0xF000;    // Force first state change immediately
@@ -309,7 +325,7 @@ void FakeAY_WriteData(u8 Value)
               break;
               
           case 0x0A:
-              if (Value & 0x10 && !prevEnvelopeC_enabled)   // If Envelope Mode... see if this is being enabled
+              if (Value & 0x10) // && !prevEnvelopeC_enabled)   // If Envelope Mode... see if this is being enabled
               {
                   prevEnvelopeC_enabled = true;
                   envelope_counter = 0xF000;    // Force first state change immediately
