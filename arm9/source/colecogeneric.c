@@ -729,6 +729,9 @@ void SetDefaultGameConfig(void)
     myConfig.spinSpeed   = 0;    
     myConfig.touchPad    = 0;
     myConfig.cpuCore     = (isDSiMode() ? 1:0);    // Default is slower/accurate CZ80 for DSi and faster DrZ80 core for DS-LITE
+    myConfig.msxBios     = 0;   // Default to the C-BIOS
+    myConfig.reserved7   = 0;    
+    myConfig.reserved8   = 0;    
     myConfig.reserved9   = 0;    
     myConfig.reservedA   = 0;    
     myConfig.reservedB   = 0;    
@@ -919,6 +922,7 @@ const struct options_t Option_Table[] =
     {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                       &myConfig.spinSpeed,  5},
     {"Z80 CPU CORE",    {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                    &myConfig.cpuCore,    2},    
     {"MSX MAPPER",      {"GUESS", "KONAMI 8K", "ASCII 8K", "KONAMI SCC", "ASCII 16K", "ZEMINA 8K", "ZEMINA 16K"},                               &myConfig.msxMapper,  7},
+    {"MSX BIOS",        {"C-BIOS", "MSX.ROM"},                                                                                                  &myConfig.msxBios,    2},    
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                  &dev_z80_cycles,     16},
 #endif    

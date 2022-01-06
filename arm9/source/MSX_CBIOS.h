@@ -36,4 +36,4 @@
 // -------------------------------------------------------------
 
 
-extern unsigned char MSXBios[];
+extern unsigned char CBios[];

@@ -19,6 +19,7 @@ and the emulator will use that instead.
 
 Features :
 -----------------------
+* Colecovision game support (.rom or .col files)
 * Super Game Module support including AY sound chip.
 * Megacart Bankswitching support (up to 512K).
 * Full Controller button mapping and touch-screen input.
@@ -30,7 +31,7 @@ Features :
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
 * Sega SG-1000 game support (.sg roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS.
-* MSX1 game support (.msx roms) up to 32K standard loader and some 128K memory mappers.
+* MSX1 game support (.msx or .rom) up to 512K 
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -82,6 +83,18 @@ There is full support for Spinner X (P1) and Spinner Y (P2) or map
 both of them to get support for trackball games. These also work
 for games like Turbo steering.  You can change the spinner sensitivity
 to one of five different settings (Normal, Fast, Fastest, Slow, Slowest).
+
+For the MSX emulation, the colecovision keypad is mapped as follows:
+
+  1   2   3
+  
+  4   5  STOP
+  
+  M1  M2  M3
+  
+  SPC 0   RET
+  
+That should be enough to get most MSX1 cart games running...
 
 Blend Mode (DSi) :
 -----------------------
@@ -136,6 +149,15 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.3: 06-Jan-2022 by wavemotion-dave
+* Added MSX config to set BIOS on per game basis.
+* Added MSX config to set mapper type.
+* Upgraded Config Database to 800 entries.
+* Upgrade High Score Database to 575 entries.
+* Upgrade roms per directory to 1024 entries.
+* Autodetect between CV and MSX .rom files.
+* AY optmization so MSX games run faster.
+
 V5.2: 04-Jan-2022 by wavemotion-dave
 * MSX1 now supports 256K and 512K mega ROMs. 
 * AY Sound core re-written so noise and envelopes work (not perfectly accurate but good enough).

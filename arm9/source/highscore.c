@@ -21,10 +21,10 @@
 
 // ------------------------------------------------------------------------------
 // With only 125 released games plus 25-50 prototypes and 50-ish homebrews,
-// this 300 game limit should be more than enough to handle the entire library.
+// this game limit should be more than enough to handle the entire library.
 // ------------------------------------------------------------------------------
-#define MAX_HS_GAMES    400
-#define HS_VERSION      0x0005      // Changing this will wipe high scores on the next install
+#define MAX_HS_GAMES    575         // Fits just barely into 128K which is all we want to use
+#define HS_VERSION      0x0006      // Changing this will wipe high scores on the next install
 
 // --------------------------------------------------------------------------
 // We allow sorting on various criteria. By default sorting is high-to-low.
@@ -69,10 +69,10 @@ struct highscore_t
 // -----------------------------------------------------------------------------------
 struct highscore_full_t
 {
-    u16 version;
+    u16    version;
     char   last_initials[4];
     struct highscore_t highscore_table[MAX_HS_GAMES];
-    u32 checksum;
+    u32    checksum;
 } highscores;
 
 
@@ -106,7 +106,8 @@ u32 highscore_checksum(void)
 // ------------------------------------------------------------------------------
 void highscore_init(void) 
 {
-    bool create_defaults = 0;
+    u8 upgrade_database = 0;
+    u8 create_defaults = 0;
     FILE *fp;
     
     strcpy(highscores.last_initials, "   ");
@@ -124,7 +125,11 @@ void highscore_init(void)
         // If the high score version is wrong or if 
         // the checksum is wrong, reset to defaults
         // --------------------------------------------
-        if (highscores.version != HS_VERSION) create_defaults = 1;
+        if (highscores.version != HS_VERSION) 
+        {
+            if (highscores.version == 0x0005)  upgrade_database = 1;    // Special to update 400 entry database to 560
+            create_defaults = 1;
+        }
         if (highscore_checksum() != highscores.checksum) create_defaults = 1;
     }
     else
@@ -132,7 +137,26 @@ void highscore_init(void)
         create_defaults = 1;
     }
     
-    if (create_defaults)  // Doesn't exist yet or is invalid... create defaults and save it...
+    if (upgrade_database)
+    {
+        for (int i=400; i<MAX_HS_GAMES; i++)
+        {
+            highscores.highscore_table[i].crc = 0x00000000;
+            strcpy(highscores.highscore_table[i].notes, "                    ");
+            highscores.highscore_table[i].options = 0x0000;
+            for (int j=0; j<10; j++)
+            {
+                strcpy(highscores.highscore_table[i].scores[j].score, "000000");
+                strcpy(highscores.highscore_table[i].scores[j].initials, "   ");
+                strcpy(highscores.highscore_table[i].scores[j].reserved, "     ");                
+                highscores.highscore_table[i].scores[j].year = 0;
+                highscores.highscore_table[i].scores[j].month = 0;
+                highscores.highscore_table[i].scores[j].day = 0;
+            }
+        }
+        highscore_save();
+    }
+    else if (create_defaults)  // Doesn't exist yet or is invalid... create defaults and save it...
     {
         strcpy(highscores.last_initials, "   ");
         

@@ -32,8 +32,9 @@
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
 // ---------------------------------------
-u8 Slot1ROM[0x10000] = {0xFF};
-u8 Slot3RAM[0x10000] = {0x00};
+u8 Slot1BIOS[0x10000] = {0xFF};
+u8 Slot1ROM[0x10000]  = {0xFF};
+u8 Slot3RAM[0x10000]  = {0x00};
 
 u8 mapperType __attribute__((section(".dtcm"))) = 0;
 u8 mapperMask __attribute__((section(".dtcm"))) = 0;
@@ -55,6 +56,7 @@ u8 PortA9 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortAA __attribute__((section(".dtcm"))) = 0x00;
 
 extern u8 MSXBios[];
+extern u8 CBios[];
 
 // Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
@@ -181,7 +183,6 @@ void colecoWipeRAM(void)
     PortA9 = 0x00;
     PortAA = 0x00;      
     memset(pColecoMem+0xC000, 0x00, 0x4000);   
-    memcpy(pColecoMem+0x0000, (u8 *)(MSXBios+0x0000), 0x8000);   // Restore BIOS
   }
   else
   {
@@ -775,8 +776,24 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         if (msx_mode)
         {
             memset((u8*)0x06880000, 0xFF, 0x20000);
-            memset(Slot1ROM, 0xFF, 0x10000);
-            memset(Slot3RAM, 0x00, 0x10000);
+            memset(Slot1BIOS, 0xFF, 0x10000);
+            memset(Slot1ROM,  0xFF, 0x10000);
+            memset(Slot3RAM,  0x00, 0x10000);
+            
+            // --------------------------------------------------------------
+            // Based on config, load up the C-BIOS or the real MSX.ROM BIOS
+            // --------------------------------------------------------------
+            if (myConfig.msxBios)
+            {
+                memcpy(Slot1BIOS, MSXBios, 0x8000);
+                memcpy(pColecoMem, MSXBios, 0x8000);
+            }
+            else
+            {
+                memcpy(Slot1BIOS, CBios, 0x8000);
+                memcpy(pColecoMem, CBios, 0x8000);
+            }
+            
             memset(bRAMInSlot, 0, 4);   // Default to no RAM in slot until told so
             memset(bROMInSlot, 0, 4);   // Default to no ROM in slot until told so
             for (u8 i=0; i<8; i++)
@@ -843,38 +860,24 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 }                
                 else if (mapperType == ASC16 || mapperType == ZEN16)
                 {
-                    if (file_crc == 0x827919e4) // R-Type is special...
-                    {
-                        Slot1ROMPtr[0] = (u8*)0x06880000+(0x2000 * 0x0)+0x0000;  // Segment 0 default
-                        Slot1ROMPtr[1] = (u8*)0x06880000+(0x2000 * 0x0)+0x2000;  // Segment 0 default
-                        Slot1ROMPtr[2] = (u8*)0x06880000+(0x2000 * 0xF)+0x0000;  // Segment F default
-                        Slot1ROMPtr[3] = (u8*)0x06880000+(0x2000 * 0xF)+0x2000;  // Segment F default
-                        Slot1ROMPtr[4] = (u8*)0x06880000+(0x2000 * 0x0)+0x0000;  // Segment 0 default
-                        Slot1ROMPtr[5] = (u8*)0x06880000+(0x2000 * 0x0)+0x2000;  // Segment 0 default
-                        Slot1ROMPtr[6] = (u8*)0x06880000+(0x2000 * 0xF)+0x0000;  // Segment F default
-                        Slot1ROMPtr[7] = (u8*)0x06880000+(0x2000 * 0xF)+0x2000;  // Segment F default
-                    }
-                    else
-                    {
-                        Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                        Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                        Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                        Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                        Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                        Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                        Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                        Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                    }
+                    Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
+                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+                    Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
                 }                
                 
                 if (iSSize == (512 * 1024))
                 {
-                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // All 64K or 128K copied into our fast VRAM buffer
+                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
                     mapperMask = 0x3F;
                 }
                 else if (iSSize == (256 * 1024))
                 {
-                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // All 64K or 128K copied into our fast VRAM buffer
+                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
                     mapperMask = 0x1F;
                 }
                 else
@@ -1185,9 +1188,20 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   else if (Port == 0xA8) return PortA8;
   else if (Port == 0xA9)
   {
-      // Keyboard readback...
+      // Keyboard Port:
+      //  Line  Bit_7 Bit_6 Bit_5 Bit_4 Bit_3 Bit_2 Bit_1 Bit_0
+      //   0     "7"   "6"   "5"   "4"   "3"   "2"   "1"   "0"
+      //   1     ";"   "]"   "["   "\"   "="   "-"   "9"   "8"
+      //   2     "B"   "A"   ???   "/"   "."   ","   "'"   "`"
+      //   3     "J"   "I"   "H"   "G"   "F"   "E"   "D"   "C"
+      //   4     "R"   "Q"   "P"   "O"   "N"   "M"   "L"   "K"
+      //   5     "Z"   "Y"   "X"   "W"   "V"   "U"   "T"   "S"
+      //   6     F3    F2    F1   CODE   CAP  GRAPH CTRL  SHIFT
+      //   7     RET   SEL   BS   STOP   TAB   ESC   F5    F4
+      //   8    RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE
+      
       u8 key1 = 0x00;
-      if ((PortAA & 0x0F) == 0) // Row 0
+      if ((PortAA & 0x0F) == 0)      // Row 0
       {
           if (JoyState == JST_0)   key1 |= 0x01;  // '0'
           if (JoyState == JST_1)   key1 |= 0x02;  // '1'
@@ -1195,15 +1209,16 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           if (JoyState == JST_3)   key1 |= 0x08;  // '3'
           if (JoyState == JST_4)   key1 |= 0x10;  // '4'
           if (JoyState == JST_5)   key1 |= 0x20;  // '5'
-          if (JoyState == JST_6)   key1 |= 0x40;  // '6'
-          if (JoyState == JST_7)   key1 |= 0x80;  // '7'
       }
       else if ((PortAA & 0x0F) == 6) // Row 6
       {
-          if (JoyState == JST_9) key1 |= 0x20;  // F1
+          if (JoyState == JST_7) key1 |= 0x20;    // F1
+          if (JoyState == JST_8) key1 |= 0x40;    // F2
+          if (JoyState == JST_9) key1 |= 0x80;    // F3
       }
       else if ((PortAA & 0x0F) == 7) // Row 7
       {
+          if (JoyState == JST_6)     key1 |= 0x10;  // STOP
           if (JoyState == JST_POUND) key1 |= 0x80;  // RETURN
       }
       else if ((PortAA & 0x0F) == 8) // Row 8
@@ -1279,7 +1294,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(0);
-                    FastMemCopy(pColecoMem+0x0000, (u8 *)(MSXBios+0x0000), 0x4000);
+                    FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot1BIOS+0x0000), 0x4000);
                     bRAMInSlot[0] = 0;
                     bROMInSlot[0] = 0;
                     break;
@@ -1310,7 +1325,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(1);
-                    FastMemCopy(pColecoMem+0x4000, (u8 *)(MSXBios+0x4000), 0x4000);
+                    FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot1BIOS+0x4000), 0x4000);
                     bRAMInSlot[1] = 0;
                     bROMInSlot[1] = 0;
                     break;

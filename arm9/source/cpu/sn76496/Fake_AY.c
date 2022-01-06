@@ -329,8 +329,8 @@ void FakeAY_WriteData(u8 Value)
           // -----------------------------
           case 0x0B:
           case 0x0C:
-              envelope_period = ((ay_reg[0x0C] << 8) | ay_reg[0x0B]) & 0x3FFF;
-              envelope_period = envelope_period / 5;  // This gets us "close"
+              envelope_period = ((ay_reg[0x0C] << 8) | ay_reg[0x0B]);
+              envelope_period = envelope_period / 8;  // This gets us "close"
               break;
       }
 }

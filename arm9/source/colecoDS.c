@@ -46,8 +46,9 @@
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 #include "cpu/z80/Z80.h"
-extern Z80 CPU;
 
+extern Z80 CPU;
+extern u8 Slot1BIOS[];
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -60,6 +61,7 @@ extern Z80 CPU;
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             
 u8 ColecoBios[0x2000] = {0};  // We keep the Coleco  8K BIOS around to swap in/out
 u8 SordM5Bios[0x2000] = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
+u8 MSXBios[0x8000]    = {0};  // We keep the MSX 32K BIOS around to swap in/out
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -137,10 +139,10 @@ u32 keyCoresp[MAX_KEY_OPTIONS] = {
 // --------------------------------------------------------------------------------
 // Spinners! X and Y taken together will actually replicate the roller controller.
 // --------------------------------------------------------------------------------
-u8 spinX_left   = 0;
-u8 spinX_right  = 0;
-u8 spinY_left   = 0;
-u8 spinY_right  = 0;
+u8 spinX_left   __attribute__((section(".dtcm"))) = 0;
+u8 spinX_right  __attribute__((section(".dtcm"))) = 0;
+u8 spinY_left   __attribute__((section(".dtcm"))) = 0;
+u8 spinY_right  __attribute__((section(".dtcm"))) = 0;
 
 // ------------------------------------------------------------
 // Utility function to show the background for the main menu
@@ -391,7 +393,7 @@ void ResetColecovision(void)
   else if (msx_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,MSXBios,0x8000);        // Restore MSX BIOS
+      memcpy(pColecoMem,Slot1BIOS,0x8000);        // Restore MSX BIOS
   }
   else
   {
@@ -1026,7 +1028,7 @@ u16 colecoDSInitCPU(void)
   if (sordm5_mode)
     memcpy(pColecoMem,SordM5Bios,0x2000);
   else if (msx_mode)
-    memcpy(pColecoMem,MSXBios,0x8000);
+    memcpy(pColecoMem,Slot1BIOS,0x8000);
   else
     memcpy(pColecoMem,ColecoBios,0x2000);
   
@@ -1066,17 +1068,14 @@ bool ColecoBIOSFound(void)
     // Next try to load the MSX.ROM - if this fails we still
     // have the C-BIOS as a good built-in backup.
     // -----------------------------------------------------------
-#if 1  // Not sure yet...    
     fp = fopen("msx.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/sordm5.rom", "rb");
     if (fp != NULL)
     {
-        extern u8 MSXBios[];
         fread(MSXBios, 0x8000, 1, fp);
         fclose(fp);
     }
-#endif    
 
     // -----------------------------------------------------------
     // Coleco ROM BIOS must exist or the show is off!
