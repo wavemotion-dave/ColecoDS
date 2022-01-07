@@ -27,7 +27,7 @@
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0010        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x0011        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
@@ -88,8 +88,6 @@ u8 sordm5_irq     __attribute__((section(".dtcm"))) = 0xFF;
 u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
 
 u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
-u8 bBlendMode     __attribute__((section(".dtcm"))) = false;
-
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
 u8 ay_reg_idx     __attribute__((section(".dtcm"))) = 0;
 u8 ay_reg[16]     __attribute__((section(".dtcm"))) = {0};
@@ -390,11 +388,18 @@ void colecoSaveState()
     // Write look-up-table
     if (uNbO) uNbO = fwrite(lutTablehh, 16*1024,1, handle);      
 
-    // Write the Super Game Module stuff
-    if (uNbO) uNbO = fwrite(ay_reg, 256, 1, handle);      
+    // Write the Super Game Module and AY sound core 
+    if (uNbO) uNbO = fwrite(ay_reg, 16, 1, handle);      
     if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
     if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
+    if (uNbO) uNbO = fwrite(&AY_EnvelopeOn, sizeof(AY_EnvelopeOn), 1, handle); 
+    if (uNbO) uNbO = fwrite(&envelope_period, sizeof(envelope_period), 1, handle); 
+    if (uNbO) uNbO = fwrite(&envelope_counter, sizeof(envelope_counter), 1, handle); 
+    if (uNbO) uNbO = fwrite(&noise_period, sizeof(noise_period), 1, handle); 
+    if (uNbO) uNbO = fwrite(&a_idx, sizeof(a_idx), 1, handle); 
+    if (uNbO) uNbO = fwrite(&b_idx, sizeof(b_idx), 1, handle); 
+    if (uNbO) uNbO = fwrite(&c_idx, sizeof(c_idx), 1, handle); 
       
     // A few frame counters
     if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -436,6 +441,30 @@ void colecoSaveState()
       
     // Write the SGM low memory
     if (uNbO) fwrite(sgm_low_mem, 0x2000,1, handle);      
+      
+    // Write stuff for MSX, SordM5 and SG-1000
+    if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
+    if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
+    if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
+    if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+    if (uNbO) fwrite(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
+    if (uNbO) fwrite(&PortA8, sizeof(PortA8),1, handle);
+    if (uNbO) fwrite(&PortA9, sizeof(PortA9),1, handle);
+    if (uNbO) fwrite(&PortAA, sizeof(PortAA),1, handle);
+    if (uNbO) fwrite(&Port53, sizeof(Port53),1, handle);
+    if (uNbO) fwrite(&Port60, sizeof(Port60),1, handle);
+      
+    if (uNbO) fwrite(ctc_control, sizeof(ctc_control),1, handle);
+    if (uNbO) fwrite(ctc_time, sizeof(ctc_time),1, handle);
+    if (uNbO) fwrite(ctc_timer, sizeof(ctc_timer),1, handle);
+    if (uNbO) fwrite(ctc_vector, sizeof(ctc_vector),1, handle);
+    if (uNbO) fwrite(ctc_latch, sizeof(ctc_latch),1, handle);
+    if (uNbO) fwrite(&sordm5_irq, sizeof(sordm5_irq),1, handle);
+      
+    if (msx_mode)   // Big enough that we will not write this if we are not MSX
+    {
+        if (uNbO) fwrite(Slot3RAM, 0x10000,1, handle);
+    }
       
     if (uNbO) 
       strcpy(szCh1,"OK ");
@@ -503,10 +532,17 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(lutTablehh, 16*1024,1, handle);         
             
             // Load the Super Game Module stuff
-            if (uNbO) uNbO = fread(ay_reg, 256, 1, handle);      
+            if (uNbO) uNbO = fread(ay_reg, 16, 1, handle);      
             if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
             if (uNbO) uNbO = fread(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
             if (uNbO) uNbO = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
+            if (uNbO) uNbO = fread(&AY_EnvelopeOn, sizeof(AY_EnvelopeOn), 1, handle); 
+            if (uNbO) uNbO = fread(&envelope_period, sizeof(envelope_period), 1, handle); 
+            if (uNbO) uNbO = fread(&envelope_counter, sizeof(envelope_counter), 1, handle); 
+            if (uNbO) uNbO = fread(&noise_period, sizeof(noise_period), 1, handle); 
+            if (uNbO) uNbO = fread(&a_idx, sizeof(a_idx), 1, handle); 
+            if (uNbO) uNbO = fread(&b_idx, sizeof(b_idx), 1, handle); 
+            if (uNbO) uNbO = fread(&c_idx, sizeof(c_idx), 1, handle); 
             
             // A few frame counters
             if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -549,6 +585,30 @@ void colecoLoadState()
             
             // Load the SGM low memory
             if (uNbO) uNbO = fread(sgm_low_mem, 0x2000,1, handle);
+            
+            // Load stuff for MSX, SordM5 and SG-1000
+            if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
+            if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
+            if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
+            if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+            if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
+            if (uNbO) fread(&PortA8, sizeof(PortA8),1, handle);
+            if (uNbO) fread(&PortA9, sizeof(PortA9),1, handle);
+            if (uNbO) fread(&PortAA, sizeof(PortAA),1, handle);
+            if (uNbO) fread(&Port53, sizeof(Port53),1, handle);
+            if (uNbO) fread(&Port60, sizeof(Port60),1, handle);
+
+            if (uNbO) fread(ctc_control, sizeof(ctc_control),1, handle);
+            if (uNbO) fread(ctc_time, sizeof(ctc_time),1, handle);
+            if (uNbO) fread(ctc_timer, sizeof(ctc_timer),1, handle);
+            if (uNbO) fread(ctc_vector, sizeof(ctc_vector),1, handle);
+            if (uNbO) fread(ctc_latch, sizeof(ctc_latch),1, handle);
+            if (uNbO) fread(&sordm5_irq, sizeof(sordm5_irq),1, handle);
+            
+            if (msx_mode)   // Big enough that we will not read this if we are not MSX
+            {
+                if (uNbO) fread(Slot3RAM, 0x10000,1, handle);
+            }
             
             // Fix up transparency
             if (BGColor)

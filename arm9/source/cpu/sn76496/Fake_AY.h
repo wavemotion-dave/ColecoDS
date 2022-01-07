@@ -1,16 +1,17 @@
 #ifndef _AY38910_H
 #define _AY38910_H
 
-extern u8 channel_a_enable;
-extern u8 channel_b_enable;
-extern u8 channel_c_enable;
-extern u8 noise_enable;
-
-
 extern void FakeAY_Loop(void);
 extern void FakeAY_WriteData(u8 Value);
 extern u8 ay_reg_idx;
 extern u8 ay_reg[];
+
+extern u16 envelope_period;
+extern u16 envelope_counter;
+extern u16 noise_period;
+extern u8 a_idx;
+extern u8 b_idx;
+extern u8 c_idx;
 
 
 // -----------------------------------
