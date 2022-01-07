@@ -177,7 +177,7 @@ void SoundUnPause(void)
 // of FluBBa, we've swiched over to the maxmod
 // sound core which seems to perform better.
 // --------------------------------------------
-#define sample_rate  55930
+#define sample_rate  55930/2
 #define buffer_size  (512+12)
 
 mm_ds_system sys;
@@ -1190,9 +1190,11 @@ int main(int argc, char **argv)
       //  Choose option
       if  (initial_file[0] != 0)
       {
+          ucGameChoice=0;
           ucGameAct=0;
           strcpy(gpFic[ucGameAct].szName, initial_file);
           initial_file[0] = 0;  // No more initial file...
+          ReadFileCRCAndConfig(); // Get CRC32 of the file and read the config/keys
       }
       else  
       {
