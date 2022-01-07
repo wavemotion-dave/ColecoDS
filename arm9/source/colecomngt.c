@@ -46,12 +46,18 @@ u8 *Slot1ROMPtr[8] __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 #include "cpu/z80/Z80.h"
 Z80 CPU __attribute__((section(".dtcm")));
 
+// --------------------------------------------------
+// Some CPU and VDP and SGM stuff that we need
+// --------------------------------------------------
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
 s16 timingAdjustment = 0;
-u8 bDontResetEnvelope = false;
+u8 bDontResetEnvelope __attribute__((section(".dtcm"))) = false;
 
+// --------------------------------------------------
+// Some special ports for the MSX machine emu
+// --------------------------------------------------
 u8 PortA8 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortA9 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortAA __attribute__((section(".dtcm"))) = 0x00;

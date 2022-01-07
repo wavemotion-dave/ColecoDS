@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/drz80/Z80_interface.h"
 
-#define VERSIONCLDS "5.3"
+#define VERSIONCLDS "5.4"
 
 //#define DEBUG_Z80   YES
 extern u32 debug1;
