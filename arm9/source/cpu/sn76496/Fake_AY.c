@@ -35,18 +35,18 @@
 #include "../../colecogeneric.h"
 
 #include "SN76496.h"
+#include "Fake_AY.h"
 
 extern u8 sgm_enable;
 extern u8 ay_reg_idx;
-extern u8 ay_reg[256];
 extern u16 sgm_low_addr;
 extern SN76496 aycol;
 
 static const u8 Volumes[16] = { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
-u16 envelope_period = 0;
-u16 envelope_counter = 0;
+u16 envelope_period __attribute__((section(".dtcm"))) = 0;
+u16 envelope_counter __attribute__((section(".dtcm"))) = 0;
 
-static const unsigned char Envelopes[16][32] =
+unsigned char Envelopes[16][32] __attribute__((section(".dtcm"))) =
 {
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -69,11 +69,14 @@ static const unsigned char Envelopes[16][32] =
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
-u16 noise_period = 0;
+u8 AY_RegisterMasks[] __attribute__((section(".dtcm"))) = {0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0x1F, 0xFF, 
+                                                           0x1F, 0x1F, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-u8 a_idx=0;
-u8 b_idx=0;
-u8 c_idx=0;
+u16 noise_period __attribute__((section(".dtcm"))) = 0;
+
+u8 a_idx __attribute__((section(".dtcm"))) = 0;
+u8 b_idx __attribute__((section(".dtcm"))) = 0;
+u8 c_idx __attribute__((section(".dtcm"))) = 0;
 
 
 void UpdateNoiseAY(void);
@@ -85,10 +88,9 @@ void UpdateTonesAY(void);
 // ---------------------------------------------------------------------------------------------
 void FakeAY_Loop(void)
 {
-    u8 bUpdateVols = false;
-    
-    if (++envelope_counter > envelope_period)
+    //if (++envelope_counter > envelope_period)  - for speed, the counter is handled by the caller
     {
+        u8 bUpdateVols = false;
         envelope_counter = 0;
         u8 shape = ay_reg[0x0D] & 0x0F;
         
@@ -180,6 +182,70 @@ void UpdateNoiseAY(void)
       }
 }
 
+void UpdateToneA(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel A tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (!(ay_reg[0x07] & 0x01))
+    {
+        freq = (ay_reg[0x01] << 8) | ay_reg[0x00];
+        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+        sn76496W(0x80 | (freq & 0xF), &aycol);
+        sn76496W((freq >> 4) & 0x3F, &aycol);
+        sn76496W(0x90 | Volumes[(ay_reg[0x08] & 0x0F)], &aycol);
+    }
+    else
+    {
+        sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
+    }    
+}
+
+void UpdateToneB(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel B tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (!(ay_reg[0x07] & 0x02))
+    {
+        freq = (ay_reg[0x03] << 8) | ay_reg[0x02];
+        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+        sn76496W(0xA0 | (freq & 0xF), &aycol);
+        sn76496W((freq >> 4) & 0x3F, &aycol);
+        sn76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x0F)], &aycol);
+    }
+    else
+    {
+        sn76496W(0xBF, &aycol); // Turn off tone sound on Channel B
+    }    
+}
+
+
+void UpdateToneC(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel C tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (!(ay_reg[0x07] & 0x04))
+    {
+        freq = (ay_reg[0x05] << 8) | ay_reg[0x04];
+        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+        sn76496W(0xC0 | (freq & 0xF), &aycol);
+        sn76496W((freq >> 4) & 0x3F, &aycol);
+        sn76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x0F)], &aycol);
+    }
+    else
+    {
+        sn76496W(0xDF, &aycol); // Turn off tone sound on Channel C
+    }    
+}
+
 // -----------------------------------------------------------------------
 // Check if any of the Tone Channels A, B or C needs to be updated/output
 // -----------------------------------------------------------------------
@@ -234,7 +300,6 @@ void UpdateTonesAY(void)
     {
         sn76496W(0xDF, &aycol); // Turn off tone sound on Channel C
     }    
-    
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -242,16 +307,16 @@ void UpdateTonesAY(void)
 // This is a bit of a hack... and it reduces the sound quality a bit on the AY chip but it allows us to use just
 // one sound driver for the SN audio chip for everythign in the system. On a retro-handheld, this is good enough.
 // ------------------------------------------------------------------------------------------------------------------
-u8 AY_RegisterMasks[] = {0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0x1F, 0xFF, 0x1F, 0x1F, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF};
 void FakeAY_WriteData(u8 Value)
 {
-    extern u8 bDontResetEnvelope;
+      extern u8 bDontResetEnvelope;
     
       // ----------------------------------------------------------------------------------------
       // This is the AY sound chip support... we're cheating here and just mapping those sounds
       // onto the original Colecovision SN sound chip. Not perfect but good enough for now...
       // ----------------------------------------------------------------------------------------
       Value &= AY_RegisterMasks[ay_reg_idx & 0x0F];
+    
       u8 prevVal = ay_reg[ay_reg_idx];
       ay_reg[ay_reg_idx]=Value;
       
@@ -260,19 +325,19 @@ void FakeAY_WriteData(u8 Value)
           // Channel A tone frequency (period) - low and high
           case 0x00:
           case 0x01:
-              UpdateTonesAY();
+              UpdateToneA();
               break;
               
           // Channel B tone frequency (period) - low and high
           case 0x02:
           case 0x03:
-              UpdateTonesAY();
+              UpdateToneB();
               break;
 
           // Channel C tone frequency (period) - low and high
           case 0x04:
           case 0x05:
-              UpdateTonesAY();
+              UpdateToneC();
               break;
               
           // Noise Period     
@@ -301,7 +366,7 @@ void FakeAY_WriteData(u8 Value)
               else
               {
                   AY_EnvelopeOn = (((ay_reg[0x08] & 0x10) || (ay_reg[0x09] & 0x10) || (ay_reg[0x0A] & 0x10))  ? true : false);
-                  UpdateTonesAY();
+                  UpdateToneA();
                   UpdateNoiseAY();
               }
               break;
@@ -317,7 +382,7 @@ void FakeAY_WriteData(u8 Value)
               else
               {
                   AY_EnvelopeOn = (((ay_reg[0x08] & 0x10) || (ay_reg[0x09] & 0x10) || (ay_reg[0x0A] & 0x10))  ? true : false);
-                  UpdateTonesAY();
+                  UpdateToneB();
                   UpdateNoiseAY();
               }
               break;
@@ -333,7 +398,7 @@ void FakeAY_WriteData(u8 Value)
               else
               {
                   AY_EnvelopeOn = (((ay_reg[0x08] & 0x10) || (ay_reg[0x09] & 0x10) || (ay_reg[0x0A] & 0x10))  ? true : false);
-                  UpdateTonesAY();
+                  UpdateToneC();
                   UpdateNoiseAY();
               }
               break;

@@ -92,7 +92,7 @@ u8 bBlendMode     __attribute__((section(".dtcm"))) = false;
 
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
 u8 ay_reg_idx     __attribute__((section(".dtcm"))) = 0;
-u8 ay_reg[256]    __attribute__((section(".dtcm"))) = {0};
+u8 ay_reg[16]     __attribute__((section(".dtcm"))) = {0};
 u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 
 static u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
@@ -137,7 +137,7 @@ SN76496 aycol   __attribute__((section(".dtcm")));
 void sgm_reset(void)
 {
     // Make sure Super Game Module registers for AY chip are clear...
-    memset(ay_reg, 0x00, 256);   // Clear the AY registers...
+    memset(ay_reg, 0x00, 16);    // Clear the AY registers...
     ay_reg[0x07] = 0xFF;         // Everything turned off to start...
     ay_reg[0x0E] = 0xFF;         // These are "max attenuation" volumes
     ay_reg[0x0F] = 0xFF;         // to keep the volume disabled
@@ -1588,7 +1588,12 @@ ITCM_CODE u32 LoopZ80()
     cpuirequest=0;
     
   // Just in case there are AY audio envelopes... this is very rough timing.
-  if (AY_EnvelopeOn) FakeAY_Loop();
+  if (AY_EnvelopeOn)
+  {
+      extern u16 envelope_counter;
+      extern u16 envelope_period;
+      if (++envelope_counter > envelope_period) FakeAY_Loop();
+  }
     
   // ------------------------------------------------------------------
   // Before we execute Z80 or Loop the 9918 (both of which can cause 
