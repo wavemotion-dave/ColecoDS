@@ -50,6 +50,7 @@ extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
 s16 timingAdjustment = 0;
+u8 bDontResetEnvelope = false;
 
 u8 PortA8 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortA9 __attribute__((section(".dtcm"))) = 0x00;
@@ -208,6 +209,7 @@ void colecoWipeRAM(void)
  ********************************************************************************/
 u8 colecoInit(char *szGame) 
 {
+  extern u8 bForceMSXLoad;
   u8 RetFct,uBcl;
   u16 uVide;
 
@@ -220,6 +222,7 @@ u8 colecoInit(char *szGame)
       
       // Do some auto-detection for game ROM
       if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))  msx_mode = 1;      // MSX roms start with AB
+      if (bForceMSXLoad) msx_mode = 1;
   }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
@@ -652,6 +655,15 @@ void getfile_crc(const char *path)
     if (file_crc == 0x17edbfd4) timingAdjustment = -1;  // Centipede (Atari) has title screen glitches otherwise
     if (file_crc == 0x56c358a6) timingAdjustment =  2;  // Destructor (Coleco) requires more cycles
     if (file_crc == 0xb5be3448) timingAdjustment =  10; // Sudoku Homebrew requires more cycles
+    
+    // ---------------------------------------------------------------------------------------------
+    // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
+    // ---------------------------------------------------------------------------------------------
+    bDontResetEnvelope = false;
+    if (file_crc == 0x90f5f414) bDontResetEnvelope = true; // MSX Warp-and-Warp
+    if (file_crc == 0x5e169d35) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)
+    if (file_crc == 0xe66eaed9) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)
+    if (file_crc == 0x785fc789) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)    
     
     // -----------------------------------------------------------------
     // Only Lord of the Dungeon allows SRAM writting in this area... 

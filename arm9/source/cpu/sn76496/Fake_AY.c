@@ -52,14 +52,17 @@ static const unsigned char Envelopes[16][32] =
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+    
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
     {15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
+    
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15},
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15},
     { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0},
@@ -82,61 +85,61 @@ void UpdateTonesAY(void);
 // ---------------------------------------------------------------------------------------------
 void FakeAY_Loop(void)
 {
-    u8 bUpdateVols = 0;
+    u8 bUpdateVols = false;
     
     if (++envelope_counter > envelope_period)
     {
         envelope_counter = 0;
         u8 shape = ay_reg[0x0D] & 0x0F;
         
-        // ---------------------------------------------------------------
-        // If Envelope is enabled for Channel A and Channel is enabled...
-        // ---------------------------------------------------------------
+        // ---------------------------------------
+        // If Envelope is enabled for Channel A 
+        // ---------------------------------------
         if ((ay_reg[0x08] & 0x10))
         {
             u8 vol = Envelopes[shape][a_idx]; 
-            if (++a_idx > 31)
-            {
-                if ((shape & 0x09) == 0x08) a_idx = 0; else a_idx=31;
-            }
             if (vol != (ay_reg[0x08] & 0x0F))
             {
                 ay_reg[0x08] = (ay_reg[0x08] & 0xF0) | vol;
                 bUpdateVols = true;
             }
+            if (++a_idx > 31)
+            {
+                if ((shape & 0x09) == 0x08) a_idx = 0; else a_idx=31;   // Decide if we continue the shape or hold 
+            }
         }
         
-        // ---------------------------------------------------------------
-        // If Envelope is enabled for Channel B and Channel is enabled...
-        // ---------------------------------------------------------------
+        // ---------------------------------------
+        // If Envelope is enabled for Channel B
+        // ---------------------------------------
         if ((ay_reg[0x09] & 0x10))
         {
             u8 vol = Envelopes[shape][b_idx]; 
-            if (++b_idx > 31)
-            {
-                if ((shape & 0x09) == 0x08) b_idx = 0; else b_idx=31;
-            }
             if (vol != (ay_reg[0x09] & 0x0F))
             {
                 ay_reg[0x09] = (ay_reg[0x09] & 0xF0) | vol;
                 bUpdateVols = true;
             }
+            if (++b_idx > 31)
+            {
+                if ((shape & 0x09) == 0x08) b_idx = 0; else b_idx=31;   // Decide if we continue the shape or hold 
+            }
         }
 
-        // ---------------------------------------------------------------
-        // If Envelope is enabled for Channel C and Channel is enabled...
-        // ---------------------------------------------------------------
+        // ---------------------------------------
+        // If Envelope is enabled for Channel C
+        // ---------------------------------------
         if ((ay_reg[0x0A] & 0x10))
         {
             u8 vol = Envelopes[shape][c_idx]; 
-            if (++c_idx > 31)
-            {
-                if ((shape & 0x09) == 0x08) c_idx = 0; else c_idx=31;
-            }
             if (vol != (ay_reg[0x0A] & 0x0F))
             {
                 ay_reg[0x0A] = (ay_reg[0x0A] & 0xF0) | vol;
                 bUpdateVols = true;
+            }
+            if (++c_idx > 31)
+            {
+                if ((shape & 0x09) == 0x08) c_idx = 0; else c_idx=31;   // Decide if we continue the shape or hold 
             }
         }
         
@@ -154,6 +157,8 @@ void FakeAY_Loop(void)
 // ------------------------------------------------------------------
 void UpdateNoiseAY(void)
 {
+      if ((ay_reg[0x07] & 0x38) == 0x38)  {sn76496W(0xFF, &aycol); return;} // No noise enabled
+                
       // Noise Channel - we turn it on if the noise channel is enabled along with the channel's volume not zero...
       if ( (!(ay_reg[0x07] & 0x08) && ((ay_reg[0x08]&0xF) != 0)) || 
            (!(ay_reg[0x07] & 0x10) && ((ay_reg[0x09]&0xF) != 0)) || 
@@ -163,18 +168,11 @@ void UpdateNoiseAY(void)
           else if (noise_period > 12) sn76496W(0xE1 | 0x04, &aycol);   // E1 is the middle frequency (middle period)
           else                        sn76496W(0xE0 | 0x04, &aycol);   // E0 is the highest frequency (lowest period)
 
-          if (noise_period > 0)
-          {
-              // Now output the noise for the first channel it's enbled on...
-              if      (!(ay_reg[0x07] & 0x08) && (ay_reg[0x08] != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x08]&0xF], &aycol);
-              else if (!(ay_reg[0x07] & 0x10) && (ay_reg[0x09] != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x09]&0xF], &aycol);
-              else if (!(ay_reg[0x07] & 0x20) && (ay_reg[0x0A] != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x0A]&0xF], &aycol);
-              else sn76496W(0xFF, &aycol);
-          }
-          else
-          {
-              sn76496W(0xFF, &aycol);   // Noise OFF
-          }
+          // Now output the noise for the first channel it's enbled on...
+          if      (!(ay_reg[0x07] & 0x08) && ((ay_reg[0x08]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x08]&0xF], &aycol);
+          else if (!(ay_reg[0x07] & 0x10) && ((ay_reg[0x09]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x09]&0xF], &aycol);
+          else if (!(ay_reg[0x07] & 0x20) && ((ay_reg[0x0A]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x0A]&0xF], &aycol);
+          else sn76496W(0xFF, &aycol);
       }
       else
       {
@@ -245,16 +243,16 @@ void UpdateTonesAY(void)
 // one sound driver for the SN audio chip for everythign in the system. On a retro-handheld, this is good enough.
 // ------------------------------------------------------------------------------------------------------------------
 u8 AY_RegisterMasks[] = {0xFF, 0x0F, 0xFF, 0x0F, 0xFF, 0x0F, 0x1F, 0xFF, 0x1F, 0x1F, 0x1F, 0xFF, 0xFF, 0xFF, 0xFF};
-u8 prevEnvelopeA_enabled = 0;
-u8 prevEnvelopeB_enabled = 0;
-u8 prevEnvelopeC_enabled = 0;
 void FakeAY_WriteData(u8 Value)
 {
+    extern u8 bDontResetEnvelope;
+    
       // ----------------------------------------------------------------------------------------
       // This is the AY sound chip support... we're cheating here and just mapping those sounds
       // onto the original Colecovision SN sound chip. Not perfect but good enough for now...
       // ----------------------------------------------------------------------------------------
       Value &= AY_RegisterMasks[ay_reg_idx & 0x0F];
+      u8 prevVal = ay_reg[ay_reg_idx];
       ay_reg[ay_reg_idx]=Value;
       
       switch (ay_reg_idx)
@@ -293,51 +291,51 @@ void FakeAY_WriteData(u8 Value)
           // Volume and Envelope Enable Registers are below...
           // -------------------------------------------------------
           case 0x08:
-              if (Value & 0x10) // && !prevEnvelopeA_enabled)   // If Envelope Mode... see if this is being enabled
+              if (Value & 0x10) // Is Envelope Mode for Channel A active?
               {
-                  prevEnvelopeA_enabled = true;
+                  if (bDontResetEnvelope == false) a_idx = 0;
+                  ay_reg[0x08] &= 0xF0 | (prevVal & 0x0F);
                   envelope_counter = 0xF000;    // Force first state change immediately
-                  a_idx = 0;
+                  AY_EnvelopeOn = true;
               }
-              else 
+              else
               {
-                  prevEnvelopeA_enabled = false;
+                  AY_EnvelopeOn = (((ay_reg[0x08] & 0x10) || (ay_reg[0x09] & 0x10) || (ay_reg[0x0A] & 0x10))  ? true : false);
+                  UpdateTonesAY();
+                  UpdateNoiseAY();
               }
-              AY_EnvelopeOn = (((prevEnvelopeA_enabled == false) && (prevEnvelopeB_enabled == false) && (prevEnvelopeC_enabled == false))  ? false : true);
-              UpdateTonesAY();
-              UpdateNoiseAY();
               break;
               
           case 0x09:
-              if (Value & 0x10) //&& !prevEnvelopeB_enabled)   // If Envelope Mode... see if this is being enabled
+              if (Value & 0x10)  // Is Envelope Mode for Channel B active?
               {
-                  prevEnvelopeB_enabled = true;
+                  if (bDontResetEnvelope == false) b_idx = 0;
+                  ay_reg[0x09] &= 0xF0 | (prevVal & 0x0F);
                   envelope_counter = 0xF000;    // Force first state change immediately
-                  b_idx = 0;
+                  AY_EnvelopeOn = true;
               }
-              else 
+              else
               {
-                  prevEnvelopeB_enabled = false;
+                  AY_EnvelopeOn = (((ay_reg[0x08] & 0x10) || (ay_reg[0x09] & 0x10) || (ay_reg[0x0A] & 0x10))  ? true : false);
+                  UpdateTonesAY();
+                  UpdateNoiseAY();
               }
-              AY_EnvelopeOn = (((prevEnvelopeA_enabled == false) && (prevEnvelopeB_enabled == false) && (prevEnvelopeC_enabled == false))  ? false : true);
-              UpdateTonesAY();
-              UpdateNoiseAY();
               break;
               
           case 0x0A:
-              if (Value & 0x10) // && !prevEnvelopeC_enabled)   // If Envelope Mode... see if this is being enabled
+              if (Value & 0x10)   // Is Envelope Mode for Channel C active?
               {
-                  prevEnvelopeC_enabled = true;
+                  if (bDontResetEnvelope == false) c_idx = 0;
+                  ay_reg[0x0A] &= 0xF0 | (prevVal & 0x0F);
                   envelope_counter = 0xF000;    // Force first state change immediately
-                  c_idx = 0;
+                  AY_EnvelopeOn = true;
               }
-              else 
+              else
               {
-                  prevEnvelopeC_enabled = false;
+                  AY_EnvelopeOn = (((ay_reg[0x08] & 0x10) || (ay_reg[0x09] & 0x10) || (ay_reg[0x0A] & 0x10))  ? true : false);
+                  UpdateTonesAY();
+                  UpdateNoiseAY();
               }
-              AY_EnvelopeOn = (((prevEnvelopeA_enabled == false) && (prevEnvelopeB_enabled == false) && (prevEnvelopeC_enabled == false))  ? false : true);
-              UpdateTonesAY();
-              UpdateNoiseAY();
               break;
              
           // -----------------------------
@@ -347,6 +345,10 @@ void FakeAY_WriteData(u8 Value)
           case 0x0C:
               envelope_period = ((ay_reg[0x0C] << 8) | ay_reg[0x0B]);
               envelope_period = envelope_period / 8;  // This gets us "close"
+              break;
+              
+          case 0x0D:
+              a_idx=0; b_idx=0; c_idx=0;
               break;
       }
 }

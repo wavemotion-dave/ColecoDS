@@ -35,6 +35,7 @@ int ucGameAct=0;
 int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
 char szName[256];
+u8 bForceMSXLoad = false;
 
 const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P1 JOY UP",
@@ -579,6 +580,8 @@ u8 colecoDSLoadFile(void)
       {
         bDone=true;
         ucGameChoice = ucGameAct;
+        bForceMSXLoad = false;
+        if (keysCurrent() & KEY_X) bForceMSXLoad=true;
         WAITVBL;
       }
       else
