@@ -10,7 +10,7 @@ extern u8 noise_enable;
 extern void FakeAY_Loop(void);
 extern void FakeAY_WriteData(u8 Value);
 extern u8 ay_reg_idx;
-extern u8 ay_reg[256];
+extern u8 ay_reg[];
 
 
 // -----------------------------------

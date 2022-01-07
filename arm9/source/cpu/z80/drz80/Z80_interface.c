@@ -594,10 +594,6 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 
  void Z80_Cause_Interrupt(int type) 
 {
-#ifdef DEBUG_Z80        
-        extern unsigned int num_irqs;
-        if ((drz80.pending_irq & NMI_IRQ) == 0)  num_irqs++;
-#endif        
     if (type == Z80_NMI_INT) 
     {
         drz80.pending_irq |= NMI_IRQ;

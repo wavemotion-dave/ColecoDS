@@ -8,6 +8,8 @@
 #define VERSIONCLDS "5.3"
 
 //#define DEBUG_Z80   YES
+extern u32 debug1;
+extern u32 debug2;
 
 #define JST_NONE            0x0000
 #define JST_KEYPAD          0x000F

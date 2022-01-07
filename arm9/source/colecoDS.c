@@ -49,6 +49,8 @@
 
 extern Z80 CPU;
 extern u8 Slot1BIOS[];
+u32 debug1=0;
+u32 debug2=0;
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -344,7 +346,7 @@ static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
 static u8 last_sordm5_mode = 0;
 static u8 last_msx_mode = 0;
-u32 num_irqs = 0;
+
 
 void ResetStatusFlags(void)
 {
@@ -420,7 +422,7 @@ void ResetColecovision(void)
 
   ResetStatusFlags();   // Some static status flags for the UI mostly
     
-  num_irqs = 0;
+  debug1 = 0;  debug2 = 0;
 }
 
 //*********************************************************************************
@@ -454,8 +456,6 @@ void ShowDebugZ80(void)
     siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "VStat %02X Data=%02X", VDPStatus, VDPDlatch);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "IRQS  %lu", num_irqs);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "VAddr %04X", VAddr);
     AffChaine(0,idx++,7, tmp);
@@ -491,7 +491,10 @@ void ShowDebugZ80(void)
     siprintf(tmp, "SGMem %04X", sgm_low_addr);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);
-    AffChaine(0,idx++,7, tmp);    
+    AffChaine(0,idx++,7, tmp);  
+    siprintf(tmp, "DEBG  %lu %lu", debug1, debug2);
+    AffChaine(0,idx++,7, tmp);
+
 }
     
     
