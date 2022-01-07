@@ -80,5 +80,6 @@ extern void InitBottomScreen(void);
 extern void PauseSound(void);
 extern void UnPauseSound(void);
 extern void ResetStatusFlags(void);
+extern void ReadFileCRCAndConfig(void);
 
 #endif

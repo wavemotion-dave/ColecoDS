@@ -1260,6 +1260,23 @@ void NoGameSelected(u32 ucY)
     affInfoOptions(ucY);
 }
 
+void ReadFileCRCAndConfig(void)
+{    
+    getfile_crc(gpFic[ucGameChoice].szName);
+
+    sg1000_mode = 0;
+    if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
+
+    sordm5_mode = 0;
+    if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
+
+    msx_mode = 0;
+    if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
+
+    FindAndLoadConfig();    // Try to find keymap and config for this file...
+}
+
 // --------------------------------------------------------------------
 // Let the user select new options for the currently loaded game...
 // --------------------------------------------------------------------
@@ -1353,19 +1370,7 @@ void colecoDSChangeOptions(void)
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
             if (ucGameChoice != -1) 
             { 
-                getfile_crc(gpFic[ucGameChoice].szName);
-                
-                sg1000_mode = 0;
-                if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
-                if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
-                
-                sordm5_mode = 0;
-                if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
-                
-                msx_mode = 0;
-                if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
-                
-                FindAndLoadConfig();    // Try to find keymap and config for this file...
+                ReadFileCRCAndConfig(); // Get CRC32 of the file and read the config/keys
                 DisplayFileName();      // And put up the filename on the bottom screen
             }
             ucY = 10;
