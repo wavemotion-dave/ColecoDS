@@ -157,6 +157,14 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.4: 07-Jan-2022 by wavemotion-dave
+* AY Envelope sound handler improved - more games sound right!
+* MSX, SG-1000 and Sord M5 SAVE/LOAD states working.
+* Press X on ROM selection to force-load MSX game cart (in case auto-detect fails).
+* Faster audio processing to gain us almost 5% speed boost across the board.
+* Fix controls when launched from TWL++
+* More cleanups and minor improvements under the hood. 
+
 V5.3: 06-Jan-2022 by wavemotion-dave
 * Added MSX config to set BIOS on per game basis.
 * Added MSX config to set mapper type.
