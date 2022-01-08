@@ -232,7 +232,7 @@ u8 colecoInit(char *szGame)
   FILE* handle = fopen(szGame, "rb");  
   if (handle)
   {
-      fread((void*) romBuffer, 2, 1, handle); 
+      fread((void*) romBuffer, 0x4002, 1, handle); 
       fclose(handle);
       
       // Do some auto-detection for game ROM
