@@ -3,7 +3,7 @@
 
 #include <nds.h>
 #include <string.h>
-#include "cpu/z80/drz80/Z80_interface.h"
+#include "cpu/z80/Z80_interface.h"
 
 #define VERSIONCLDS "5.4"
 

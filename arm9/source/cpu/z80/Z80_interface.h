@@ -3,7 +3,8 @@
 
 #include <nds.h>
 
-#include "drz80.h"
+#include "./drz80/drz80.h"
+#include "./cz80/Z80.h"
 
 #define word u16
 #define byte u8

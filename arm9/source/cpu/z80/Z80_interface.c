@@ -1,6 +1,8 @@
 // ---------------------------------------------------------------------------------
-// Most of this is related to the Dr Z80 code and interfaced to the ColecoDS code.
-// It was ported by Alekmaul with some updates by wavemotion-dave.
+// This file is our bridge between the Z80 CPU core and the rest of the system.
+// ColecoDS currently supports 2 CPU cores:
+//    DRZ80 - Fast but not 100% compatible (some games won't run with it)
+//    CZ80  - Slower but much higher compatibility (about 10% slower)
 // ---------------------------------------------------------------------------------
 #include <nds.h>
 
@@ -9,11 +11,11 @@
 #include <string.h>
 
 #include "Z80_interface.h"
-#include "../../../colecoDS.h"
-#include "../../../colecomngt.h"
+#include "../../colecoDS.h"
+#include "../../colecomngt.h"
 
-#define INT_IRQ 0x01
-#define NMI_IRQ 0x02
+#define DR_INT_IRQ 0x01
+#define DR_NMI_IRQ 0x02
 
 // ----------------------------------------------------------------------------
 // Put the whole Z80 register set into fast memory for better performance...
@@ -28,7 +30,6 @@ u8 lastBlock[4] __attribute__((section(".dtcm"))) = {99,99,99,99};
 extern u8 romBankMask;
 extern u8 romBuffer[];
 extern u8 Slot1ROM[];
-
 
  u32 z80_rebaseSP(u16 address) {
   drz80.Z80SP_BASE = (unsigned int) pColecoMem;
@@ -110,15 +111,15 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 }
 
 
+// --------------------------------------------------------
+// Konami 8K mapper with SCC 
+//	Bank 1: 4000h - 5FFFh - mapped via writes to 5000h
+//	Bank 2: 6000h - 7FFFh - mapped via writes to 7000h
+//	Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
+//	Bank 4: A000h - BFFFh - mapped via writes to B000h
+// --------------------------------------------------------
 void HandleKonamiSCC8(u32* src, u8 block, u16 address)
 {
-    // --------------------------------------------------------
-    // Konami 8K mapper with SCC 
-    //	Bank 1: 4000h - 5FFFh - mapped via writes to 5000h
-    //	Bank 2: 6000h - 7FFFh - mapped via writes to 7000h
-    //	Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
-    //	Bank 4: A000h - BFFFh - mapped via writes to B000h
-    // --------------------------------------------------------
     if (bROMInSlot[1] && (address == 0x5000))
     {
         if (lastBlock[0] != block)
@@ -221,14 +222,14 @@ void HandleZemina8K(u32* src, u8 block, u16 address)
     }
 }    
 
+// -------------------------------------------------------------------------
+// The ZENMIA 16K Mapper:
+// 4000h~7FFFh 	4000h-7FFF
+// 8000h~BFFFh 	8000h-BFFF
+// -------------------------------------------------------------------------
 void HandleZemina16K(u32* src, u8 block, u16 address)
 {
     u32 *src_orig = src;
-    // -------------------------------------------------------------------------
-    // The ZENMIA 16K Mapper:
-    // 4000h~7FFFh 	4000h-7FFF
-    // 8000h~BFFFh 	8000h-BFFF
-    // -------------------------------------------------------------------------
     if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x8000))
     {
         if (lastBlock[0] != block)
@@ -272,14 +273,14 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
     }
 }    
     
+// -------------------------------------------------------------------------
+// The ASCII 16K Mapper:
+// 4000h~7FFFh 	6000h
+// 8000h~BFFFh 	7000h or 77FFh
+// -------------------------------------------------------------------------
 void HandleAscii16K(u32* src, u8 block, u16 address)
 {
     u32 *src_orig = src;
-    // -------------------------------------------------------------------------
-    // The ASCII 16K Mapper:
-    // 4000h~7FFFh 	6000h
-    // 8000h~BFFFh 	7000h or 77FFh
-    // -------------------------------------------------------------------------
     if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x7000))
     {
         if (lastBlock[0] != block)
@@ -325,7 +326,8 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
 
 // ------------------------------------------------------------------
 // Write memory handles both normal writes and bankswitched since
-// write is much less common than reads... 
+// write is much less common than reads...   We handle the MSX
+// Konami 8K and ASCII 8K mappers directly here for max speed.
 // ------------------------------------------------------------------
 ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
 {
@@ -392,6 +394,9 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         {
             if (mapperMask)
             {
+                u32 block = (value & mapperMask);
+                u32 *src = (u32*)((mapperMask > 0x0F ? (u8*)romBuffer:(u8*)0x06880000)+(block * ((mapperType == ASC16 || mapperType == ZEN16) ? 0x4000:0x2000)));
+            
                 // ---------------------------------------------------------------------------------
                 // The Konami 8K Mapper without SCC:
                 // 4000h-5FFFh - fixed ROM area (not swappable)
@@ -399,9 +404,6 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 // 8000h~9FFFh (mirror: 0000h~1FFFh)	8000h (mirrors: 8001h~9FFFh)	Random
                 // A000h~BFFFh (mirror: 2000h~3FFFh)	A000h (mirrors: A001h~BFFFh)	Random
                 // ---------------------------------------------------------------------------------
-                u32 block = (value & mapperMask);
-                u32 *src = (u32*)((mapperMask > 0x0F ? (u8*)romBuffer:(u8*)0x06880000)+(block * ((mapperType == ASC16 || mapperType == ZEN16) ? 0x4000:0x2000)));
-            
                 if (mapperType == KON8)
                 {
                     if (bROMInSlot[1] && (address == 0x4000))
@@ -593,12 +595,12 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 {
     if (type == Z80_NMI_INT) 
     {
-        drz80.pending_irq |= NMI_IRQ;
+        drz80.pending_irq |= DR_NMI_IRQ;
     }
     else if (type != Z80_IGNORE_INT) 
     {
         drz80.z80irqvector = type & 0xff;
-        drz80.pending_irq |= INT_IRQ;
+        drz80.pending_irq |= DR_INT_IRQ;
     }
 }
 
@@ -610,15 +612,15 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 
  void Interrupt(void) 
 {
-    if (drz80.pending_irq & NMI_IRQ)  /* NMI IRQ */
+    if (drz80.pending_irq & DR_NMI_IRQ)  /* NMI IRQ */
     {
-        drz80.Z80_IRQ = NMI_IRQ;
-        drz80.pending_irq &= ~NMI_IRQ;
+        drz80.Z80_IRQ = DR_NMI_IRQ;
+        drz80.pending_irq &= ~DR_NMI_IRQ;
     } 
     else if (drz80.Z80IF & 1)  /* INT IRQ and Interrupts enabled */
     {
-        drz80.Z80_IRQ = INT_IRQ;
-        drz80.pending_irq &= ~INT_IRQ;
+        drz80.Z80_IRQ = DR_INT_IRQ;
+        drz80.pending_irq &= ~DR_INT_IRQ;
     }
 }
 
