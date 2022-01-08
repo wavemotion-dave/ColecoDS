@@ -529,10 +529,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 }
                 else if (mapperType == SCC8)
                 {
-                    if ((address < 0x9800) || (address > 0x98FF))   // Don't handle SCC audio
-                    {
-                        HandleKonamiSCC8(src, block, address);
-                    }
+                    HandleKonamiSCC8(src, block, address);
                 }
                 else if (mapperType == ASC16)
                 {
