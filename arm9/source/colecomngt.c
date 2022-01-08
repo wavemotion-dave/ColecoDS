@@ -228,7 +228,7 @@ u8 colecoInit(char *szGame)
   u8 RetFct,uBcl;
   u16 uVide;
 
-  romBuffer[0] = 0xFF;
+  memset(romBuffer, 0xFF, (512 * 1024));
   FILE* handle = fopen(szGame, "rb");  
   if (handle)
   {
