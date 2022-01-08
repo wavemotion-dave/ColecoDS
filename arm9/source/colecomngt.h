@@ -3,7 +3,7 @@
 
 #include <nds.h>
 #include "colecoDS.h"
-#include "cpu/z80/drz80/Z80_interface.h"
+#include "cpu/z80/Z80_interface.h"
 
 #define IMAGE_VERIFY_FAIL 0X01
 #define IMAGE_VERIFY_PASS 0x02

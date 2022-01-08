@@ -18,12 +18,11 @@
 
 #include "colecoDS.h"
 #include "CRC32.h"
-#include "cpu/z80/drz80/Z80_interface.h"
+#include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/sn76496/SN76496.h"
-#include "cpu/ay38910/AY38910.h"
 #include "cpu/sn76496/Fake_AY.h"
 #define NORAM 0xFF
 
@@ -43,7 +42,6 @@ u8 bRAMInSlot[4] __attribute__((section(".dtcm"))) = {0,0,0,0};
 
 u8 *Slot1ROMPtr[8] __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 
-#include "cpu/z80/Z80.h"
 Z80 CPU __attribute__((section(".dtcm")));
 
 // --------------------------------------------------

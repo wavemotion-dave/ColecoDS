@@ -24,7 +24,6 @@
 #include "colecogeneric.h"
 #include "colecomngt.h"
 #include "cpu/tms9918a/tms9918a.h"
-#include "cpu/ay38910/AY38910.h"
 #include "intro.h"
 #include "ecranBas.h"
 #include "ecranDebug.h"
@@ -45,7 +44,7 @@
 
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
-#include "cpu/z80/Z80.h"
+#include "cpu/z80/Z80_interface.h"
 
 extern Z80 CPU;
 extern u8 Slot1BIOS[];
