@@ -1,7 +1,0 @@
-AY-3-8910 To Do
----------------
-
-	Should compare against current frequency value instead of counting
-	from frequency value to zero.
-	Envelope frequency should be able to go lower (0 = half of 1, is this only on YM2149?).
-	Save more info of state.
