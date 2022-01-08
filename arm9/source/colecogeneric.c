@@ -641,7 +641,7 @@ u8 colecoDSLoadFile(void)
 }
 
 struct Config_t AllConfigs[MAX_CONFIGS];
-struct Config_t myConfig;
+struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm")));
 extern u32 file_crc;
 
 // ---------------------------------------------------------------------------

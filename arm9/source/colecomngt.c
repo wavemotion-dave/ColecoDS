@@ -239,6 +239,7 @@ u8 colecoInit(char *szGame)
       if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))            msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
       if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
       if (bForceMSXLoad) msx_mode = 1;
+      if (msx_mode) AY_Enable=true;
   }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
@@ -958,12 +959,12 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         // --------------------------------------------------------------------------------
         if (iSSize == (256 * 1024))
         {
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x20000);       // First 128K copied into our fast VRAM buffer
             mapperMask = 0x1F;
         }
-        if (iSSize == (512 * 1024))
+        else if (iSSize == (512 * 1024))
         {
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x20000);       // First 128K copied into our fast VRAM buffer
             mapperMask = 0x3F;
         }
         else
@@ -1548,7 +1549,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     {
         PortAA = Value;
     }
-    else if (Port == 0xA0) {FakeAY_WriteIndex(Value & 0x0F);  AY_Enable=true;}
+    else if (Port == 0xA0) {FakeAY_WriteIndex(Value & 0x0F);}
     else if (Port == 0xA1) FakeAY_WriteData(Value);
 }
 
@@ -1763,9 +1764,9 @@ ITCM_CODE u32 LoopZ80()
       
       // Generate interrupt if called for
       if (cpuirequest)
-        Z80_Cause_Interrupt(cpuirequest);
+        DrZ80_Cause_Interrupt(cpuirequest);
       else
-        Z80_Clear_Pending_Interrupts();
+        DrZ80_Clear_Pending_Interrupts();
   }
   else  // CZ80 core from fMSX()... slower but higher accuracy
   {

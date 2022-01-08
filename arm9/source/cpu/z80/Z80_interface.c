@@ -229,7 +229,6 @@ void HandleZemina8K(u32* src, u8 block, u16 address)
 // -------------------------------------------------------------------------
 void HandleZemina16K(u32* src, u8 block, u16 address)
 {
-    u32 *src_orig = src;
     if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x8000))
     {
         if (lastBlock[0] != block)
@@ -243,7 +242,7 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
             for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             if (bROMInSlot[3]) 
             {
-                src = src_orig;
+                src = (u32*)Slot1ROMPtr[2];
                 dest = (u32*)(pColecoMem+0xC000);
                 for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             }
@@ -263,7 +262,7 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
             if (bROMInSlot[2]) for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             if (bROMInSlot[0]) 
             {
-                src = src_orig;
+                src = (u32*)Slot1ROMPtr[4];
                 dest = (u32*)(pColecoMem+0x0000);
                 for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             }
@@ -280,7 +279,6 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
 // -------------------------------------------------------------------------
 void HandleAscii16K(u32* src, u8 block, u16 address)
 {
-    u32 *src_orig = src;
     if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x7000))
     {
         if (lastBlock[0] != block)
@@ -294,7 +292,7 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
             for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             if (bROMInSlot[3]) 
             {
-                src = src_orig;
+                src = (u32*)Slot1ROMPtr[2];
                 dest = (u32*)(pColecoMem+0xC000);
                 for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             }
@@ -314,7 +312,7 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
             if (bROMInSlot[2]) for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             if (bROMInSlot[0]) 
             {
-                src = src_orig;
+                src = (u32*)Slot1ROMPtr[4];
                 dest = (u32*)(pColecoMem+0x0000);
                 for (u16 i=0; i<(0x4000/4); i++)  {*dest++ = *src++;}
             }
@@ -394,8 +392,15 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         {
             if (mapperMask)
             {
+                // ---------------------------------------------------------
+                // Up to 128K we can fetch from fast VRAM shadow copy
+                // otherwise we are forced to fetch from slow romBuffer[]
+                // ---------------------------------------------------------
+                u32 *src;
                 u32 block = (value & mapperMask);
-                u32 *src = (u32*)((mapperMask > 0x0F ? (u8*)romBuffer:(u8*)0x06880000)+(block * ((mapperType == ASC16 || mapperType == ZEN16) ? 0x4000:0x2000)));
+                u32 offset = block * ((mapperType == ASC16 || mapperType == ZEN16) ? 0x4000:0x2000);
+                if (offset >= 0x20000) src = (u32*)((u8*)romBuffer + offset);
+                else src = (u32*)(0x06880000 + offset);                    
             
                 // ---------------------------------------------------------------------------------
                 // The Konami 8K Mapper without SCC:
@@ -470,7 +475,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             if (bROMInSlot[3])
                             {
-                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                src = (u32*)Slot1ROMPtr[2];
                                 dest = (u32*)(pColecoMem+0xC000);
                                 for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             }
@@ -487,7 +492,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             if (bROMInSlot[3])
                             {
-                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                src = (u32*)Slot1ROMPtr[3];
                                 dest = (u32*)(pColecoMem+0xE000);
                                 for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             }
@@ -504,7 +509,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             if (bROMInSlot[2]) for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             if (bROMInSlot[0])
                             {
-                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                src = (u32*)Slot1ROMPtr[4];
                                 dest = (u32*)(pColecoMem+0x0000);
                                 for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             }                            
@@ -521,7 +526,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             if (bROMInSlot[2]) for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             if (bROMInSlot[0])
                             {
-                                src = (u32*)(0x06880000+(block * (mapperType == ASC16 ? 0x4000:0x2000)));
+                                src = (u32*)Slot1ROMPtr[5];
                                 dest = (u32*)(pColecoMem+0x2000);
                                 for (u16 i=0; i<(0x2000/4); i++)  {*dest++ = *src++;}
                             }                            
@@ -591,7 +596,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     cpu_writemem16(data>>8,addr+1);
 }
 
- void Z80_Cause_Interrupt(int type) 
+ void DrZ80_Cause_Interrupt(int type) 
 {
     if (type == Z80_NMI_INT) 
     {
@@ -604,13 +609,13 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     }
 }
 
- void Z80_Clear_Pending_Interrupts(void) 
+ void DrZ80_Clear_Pending_Interrupts(void) 
 {
     drz80.pending_irq = 0;
     drz80.Z80_IRQ = 0;
 }
 
- void Interrupt(void) 
+ void DrZ80_Interrupt(void) 
 {
     if (drz80.pending_irq & DR_NMI_IRQ)  /* NMI IRQ */
     {
@@ -662,7 +667,7 @@ void DrZ80_Reset(void) {
   drz80.Z80SP=z80_rebaseSP(0xF000); 
   drz80.z80intadr = 0x38;
 
-  Z80_Clear_Pending_Interrupts();
+  DrZ80_Clear_Pending_Interrupts();
   cpuirequest=0;
   lastBank = 199;
   cycle_deficit = 0;

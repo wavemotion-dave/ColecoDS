@@ -29,7 +29,7 @@
 	  .equiv FAST_Z80SP,			1		;@0 = Use mem functions for stack pointer, 1 = Use direct mem pointer
 	  
 .if INTERRUPT_MODE
-	  .extern Interrupt
+	  .extern DrZ80_Interrupt
 .endif
       
 DrZ80Ver: .long 0x0001
@@ -1116,7 +1116,7 @@ z80_execute_end:
 
 MAIN_opcodes_POINTER2: .word MAIN_opcodes
 .if INTERRUPT_MODE
-Interrupt_local: .word Interrupt
+Interrupt_local: .word DrZ80_Interrupt
 .endif
 
 DoInterrupt:
