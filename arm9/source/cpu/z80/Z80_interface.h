@@ -28,11 +28,11 @@ extern u16 cpuirequest;
 
 extern struct DrZ80 drz80;
 
-extern void Z80_Cause_Interrupt(int type);
-extern void Interrupt(void);
-extern void Z80_Clear_Pending_Interrupts(void);
+extern void DrZ80_Cause_Interrupt(int type);
+extern void DrZ80_Interrupt(void);
+extern void DrZ80_Clear_Pending_Interrupts(void);
 extern void DrZ80_Reset(void);
-extern int DrZ80_execute(int cycles);
+extern int  DrZ80_execute(int cycles);
 
 extern u32 z80_rebaseSP(u16 address);
 extern u32 z80_rebasePC(u16 address);
