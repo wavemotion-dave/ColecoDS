@@ -99,8 +99,8 @@ u8 ay_reg_idx     __attribute__((section(".dtcm"))) = 0;
 u8 ay_reg[16]     __attribute__((section(".dtcm"))) = {0};
 u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 
-static u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
-static u8 Port60  __attribute__((section(".dtcm"))) = 0x0F;
+u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
+u8 Port60  __attribute__((section(".dtcm"))) = 0x0F;
 
 u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
@@ -133,6 +133,12 @@ u8 sgm_low_mem[8192] = {0}; // The 8K of SGM RAM that can be mapped into the BIO
 // -----------------------------------------------------------
 SN76496 sncol   __attribute__((section(".dtcm")));
 SN76496 aycol   __attribute__((section(".dtcm")));
+
+// --------------------------------------------------------------
+// Some auxillary functions/vars to help with MSX memory layout
+// --------------------------------------------------------------
+void MSX_InitialMemoryLayout(u32 iSSize);
+u32 LastROMSize = 0;
 
 // ---------------------------------------------------------
 // Reset the Super Game Module vars... we reset back to 
@@ -169,6 +175,16 @@ void sordm5_reset(void)
     sordm5_irq = 0xFF;                  // No IRQ set
 }
 
+
+// ---------------------------------------------------------
+// The MSX has a few ports and special memory mapping
+// ---------------------------------------------------------
+void msx_reset(void)
+{
+    MSX_InitialMemoryLayout(LastROMSize);
+}
+
+
 /*********************************************************************************
  * Wipe main RAM with random patterns... or fill with 0x00 for some emulations.
  ********************************************************************************/
@@ -184,10 +200,7 @@ void colecoWipeRAM(void)
   }
   else if (msx_mode)
   {
-    PortA8 = 0x00;
-    PortA9 = 0x00;
-    PortAA = 0x00;      
-    memset(pColecoMem+0xC000, 0x00, 0x4000);   
+    // Do nothing... MSX has all kinds of memory mapping that is handled elsewhere
   }
   else
   {
@@ -225,7 +238,8 @@ u8 colecoInit(char *szGame)
       fclose(handle);
       
       // Do some auto-detection for game ROM
-      if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))  msx_mode = 1;      // MSX roms start with AB
+      if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))            msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
+      if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
       if (bForceMSXLoad) msx_mode = 1;
   }
 
@@ -752,7 +766,7 @@ void getfile_crc(const char *path)
 // Try to guess the ROM type from the loaded binary... basically we are
 // counting the number of load addresses that would access a mapper hot-spot.
 // --------------------------------------------------------------------------
-u8 GuessROMType(void)
+u8 MSX_GuessROMType(void)
 {
     u8 type = KON8;  // Default to Konami 8K mapper
     u16 guess[MAX_MAPPERS] = {0,0,0,0};
@@ -821,6 +835,152 @@ u8 GuessROMType(void)
     return type;
 }
 
+
+// -------------------------------------------------------------------------
+// Setup the initial MSX memory layout based on the size of the ROM loaded
+// -------------------------------------------------------------------------
+void MSX_InitialMemoryLayout(u32 iSSize)
+{
+    LastROMSize = iSSize;
+    
+    // -------------------------------------
+    // Make sure the MSX ports are clear
+    // -------------------------------------
+    PortA8 = 0x00;
+    PortA9 = 0x00;
+    PortAA = 0x00;      
+    
+    // ---------------------------------------------
+    // Start with reset memory - fill in MSX slots
+    // ---------------------------------------------
+    memset((u8*)0x06880000, 0xFF, 0x20000);
+    memset(Slot1BIOS, 0xFF, 0x10000);
+    memset(Slot1ROM,  0xFF, 0x10000);
+    memset(Slot3RAM,  0x00, 0x10000);
+
+    // --------------------------------------------------------------
+    // Based on config, load up the C-BIOS or the real MSX.ROM BIOS
+    // --------------------------------------------------------------
+    if (myConfig.msxBios)
+    {
+        memcpy(Slot1BIOS, MSXBios, 0x8000);
+        memcpy(pColecoMem, MSXBios, 0x8000);
+    }
+    else
+    {
+        memcpy(Slot1BIOS, CBios, 0x8000);
+        memcpy(pColecoMem, CBios, 0x8000);
+    }
+
+    // -----------------------------------------
+    // Setup RAM/ROM pointers back to defaults
+    // -----------------------------------------
+    memset(bRAMInSlot, 0, 4);   // Default to no RAM in slot until told so
+    memset(bROMInSlot, 0, 4);   // Default to no ROM in slot until told so
+    for (u8 i=0; i<8; i++)
+    {
+        Slot1ROMPtr[i] = 0;     // All pages normal until told otherwise by A8 writes
+    }
+    
+    // ----------------------------------------------------
+    // Setup the Z80 memory based on the ROM size loaded
+    // ----------------------------------------------------
+    if (iSSize == (8 * 1024))
+    {
+        for (u8 i=0; i<8; i++)
+        {
+            memcpy((u8*)Slot1ROM+(0x2000 * i), romBuffer, 0x2000);
+        }
+    }
+    else if (iSSize == (16 * 1024))
+    {
+        for (u8 i=0; i<4; i++)
+        {
+            memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);
+        }
+    }
+    else if (iSSize == (32 * 1024))
+    {
+        memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
+        memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
+        memcpy((u8*)Slot1ROM+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
+    }
+    else if (iSSize == (48 * 1024))
+    {
+        memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0xC000);      // Full Rom starting at 0x0000
+    }
+    else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)) || (iSSize == (256 * 1024)) || (iSSize == (512 * 1024)))
+    {
+        if (myConfig.msxMapper == GUESS)
+        {
+            mapperType = MSX_GuessROMType();
+        }
+        else
+        {
+            mapperType = myConfig.msxMapper;   
+        }
+
+        if ((mapperType == KON8) || (mapperType == SCC8) || (mapperType == ZEN8))
+        {
+            Slot1ROMPtr[0] = (u8*)0x06880000+0x4000;        // Segment 2 Mirror
+            Slot1ROMPtr[1] = (u8*)0x06880000+0x6000;        // Segment 3 Mirror
+            Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 1 default
+            Slot1ROMPtr[4] = (u8*)0x06880000+0x4000;        // Segment 2 default
+            Slot1ROMPtr[5] = (u8*)0x06880000+0x6000;        // Segment 3 default
+            Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 Mirror
+            Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 1 Mirror
+        }
+        else if (mapperType == ASC8)
+        {
+            Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[1] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[3] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[5] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 0 default
+        }                
+        else if (mapperType == ASC16 || mapperType == ZEN16)
+        {
+            Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
+            Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
+            Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
+            Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
+        }                
+
+        // --------------------------------------------------------------------------------
+        // Now copy as much of the ROM into fast VRAM as possible. We only have 128K of
+        // VRAM available - anything beyond this will have to be fetched from slow RAM.
+        // --------------------------------------------------------------------------------
+        if (iSSize == (256 * 1024))
+        {
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
+            mapperMask = 0x1F;
+        }
+        if (iSSize == (512 * 1024))
+        {
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
+            mapperMask = 0x3F;
+        }
+        else
+        {
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 64K or 128K copied into our fast VRAM buffer
+            mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
+        }
+    }
+    else    
+    {
+        // Size not right for MSX support... we've already pre-filled 0xFF so nothing more to do here...
+    }
+}
+
+
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
@@ -853,120 +1013,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
-            memset((u8*)0x06880000, 0xFF, 0x20000);
-            memset(Slot1BIOS, 0xFF, 0x10000);
-            memset(Slot1ROM,  0xFF, 0x10000);
-            memset(Slot3RAM,  0x00, 0x10000);
-            
-            // --------------------------------------------------------------
-            // Based on config, load up the C-BIOS or the real MSX.ROM BIOS
-            // --------------------------------------------------------------
-            if (myConfig.msxBios)
-            {
-                memcpy(Slot1BIOS, MSXBios, 0x8000);
-                memcpy(pColecoMem, MSXBios, 0x8000);
-            }
-            else
-            {
-                memcpy(Slot1BIOS, CBios, 0x8000);
-                memcpy(pColecoMem, CBios, 0x8000);
-            }
-            
-            memset(bRAMInSlot, 0, 4);   // Default to no RAM in slot until told so
-            memset(bROMInSlot, 0, 4);   // Default to no ROM in slot until told so
-            for (u8 i=0; i<8; i++)
-            {
-                Slot1ROMPtr[i] = 0;     // All pages normal until told otherwise by A8 writes
-            }
-            
-            if (iSSize == (8 * 1024))
-            {
-                for (u8 i=0; i<8; i++)
-                {
-                    memcpy((u8*)Slot1ROM+(0x2000 * i), romBuffer, 0x2000);
-                }
-            }
-            else if (iSSize == (16 * 1024))
-            {
-                for (u8 i=0; i<4; i++)
-                {
-                    memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);
-                }
-            }
-            else if (iSSize == (32 * 1024))
-            {
-                memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
-                memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
-                memcpy((u8*)Slot1ROM+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
-            }
-            else if (iSSize == (48 * 1024))
-            {
-                memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0xC000);      // Full Rom starting at 0x0000
-            }
-            else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)) || (iSSize == (256 * 1024)) || (iSSize == (512 * 1024)))
-            {
-                if (myConfig.msxMapper == GUESS)
-                {
-                    mapperType = GuessROMType();
-                }
-                else
-                {
-                    mapperType = myConfig.msxMapper;   
-                }
-                
-                if ((mapperType == KON8) || (mapperType == SCC8) || (mapperType == ZEN8))
-                {
-                    Slot1ROMPtr[0] = (u8*)0x06880000+0x4000;        // Segment 2 Mirror
-                    Slot1ROMPtr[1] = (u8*)0x06880000+0x6000;        // Segment 3 Mirror
-                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 1 default
-                    Slot1ROMPtr[4] = (u8*)0x06880000+0x4000;        // Segment 2 default
-                    Slot1ROMPtr[5] = (u8*)0x06880000+0x6000;        // Segment 3 default
-                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 Mirror
-                    Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 1 Mirror
-                }
-                else if (mapperType == ASC8)
-                {
-                    Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[1] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[3] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[5] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                }                
-                else if (mapperType == ASC16 || mapperType == ZEN16)
-                {
-                    Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                    Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                    Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                    Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
-                    Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
-                }                
-                
-                if (iSSize == (512 * 1024))
-                {
-                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
-                    mapperMask = 0x3F;
-                }
-                else if (iSSize == (256 * 1024))
-                {
-                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x10000);       // First 128K copied into our fast VRAM buffer
-                    mapperMask = 0x1F;
-                }
-                else
-                {
-                    memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 64K or 128K copied into our fast VRAM buffer
-                    mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
-                }
-            }
-            else    // Size too big for MSX support
-            {
-            }
+            MSX_InitialMemoryLayout(iSSize);
         }            
         else
         // ----------------------------------------------------------------------

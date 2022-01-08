@@ -381,7 +381,8 @@ void ResetColecovision(void)
   DrZ80_Reset();                        // Reset the Z80 CPU Core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
     
-  sordm5_reset();                       // Reset the Sord M5 Z80-CTC stuff
+  sordm5_reset();                       // Reset the Sord M5 specific vars
+  msx_reset();                          // Reset the MSX specific vars
 
   if (sg1000_mode)
   {
@@ -526,8 +527,11 @@ void DisplayStatusLine(bool bForce)
     {
         if ((last_msx_mode != msx_mode) || bForce)
         {
+            extern u32 LastROMSize;
+            char tmp[12];
             last_msx_mode = msx_mode;
-            AffChaine(23,0,6, "  MSX-1  ");
+            siprintf(tmp, "MSX %dK ", (int)(LastROMSize/1024));
+            AffChaine(23,0,6, tmp);
         }
     }
     else    // Various Colecovision Possibilities 
