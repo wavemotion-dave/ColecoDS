@@ -139,7 +139,7 @@ A Tale of Two Cores :
 -----------------------
 ColecoDS supports 2 different Z80 CPU cores. 
 DrZ80 is very fast but is not 100% accurate so some games don't run right.
-CZ80 is slower but is much closer to 100% accurate and games generally run great.
+CZ80 is 10% slower but is much closer to 100% accurate and games generally run great.
 For the DSi and above, the CZ80 core is the default.
 For the DS-LITE/PHAT, the DrZ80 core is the default.
 You can toggle this (and save on a per-game basis) in GAME OPTIONS.
