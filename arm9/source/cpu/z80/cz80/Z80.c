@@ -35,6 +35,8 @@ extern Z80 CPU;
 /*************************************************************/
 #define FAST_RDOP
 
+extern u8 msx_mode;
+
 // ------------------------------------------------------
 // These defines and inline functions are to map maximum
 // speed/efficiency onto the memory system we have.
@@ -43,10 +45,11 @@ extern byte pColecoMem[];
 extern void cpu_writemem16 (u8 value,u16 address);
 extern byte cpu_readmem16_banked (u16 address);
 extern void cpu_writeport16(unsigned short Port, unsigned char Value);
+extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
 #define OpZ80(A)            pColecoMem[A]
 #define WrZ80(A,V)          cpu_writemem16(V,A)
-#define OutZ80(P,V)         cpu_writeport16(P,V)
+#define OutZ80(P,V)         (msx_mode ? cpu_writeport_msx(P,V) : cpu_writeport16(P,V))
 #define InZ80(P)            cpu_readport16(P)
 INLINE byte RdZ80(word A)   {if (A < 0xFFC0) return pColecoMem[A]; return cpu_readmem16_banked(A);}
 

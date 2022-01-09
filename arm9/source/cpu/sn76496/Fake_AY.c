@@ -159,27 +159,11 @@ void FakeAY_Loop(void)
 // ------------------------------------------------------------------
 void UpdateNoiseAY(void)
 {
-      if ((ay_reg[0x07] & 0x38) == 0x38)  {sn76496W(0xFF, &aycol); return;} // No noise enabled
-                
-      // Noise Channel - we turn it on if the noise channel is enabled along with the channel's volume not zero...
-      if ( (!(ay_reg[0x07] & 0x08) && ((ay_reg[0x08]&0xF) != 0)) || 
-           (!(ay_reg[0x07] & 0x10) && ((ay_reg[0x09]&0xF) != 0)) || 
-           (!(ay_reg[0x07] & 0x20) && ((ay_reg[0x0A]&0xF) != 0)) )
-      {
-          if      (noise_period > 24) sn76496W(0xE2 | 0x04, &aycol);   // E2 is the lowest frequency (highest period)
-          else if (noise_period > 12) sn76496W(0xE1 | 0x04, &aycol);   // E1 is the middle frequency (middle period)
-          else                        sn76496W(0xE0 | 0x04, &aycol);   // E0 is the highest frequency (lowest period)
-
-          // Now output the noise for the first channel it's enbled on...
-          if      (!(ay_reg[0x07] & 0x08) && ((ay_reg[0x08]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x08]&0xF], &aycol);
-          else if (!(ay_reg[0x07] & 0x10) && ((ay_reg[0x09]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x09]&0xF], &aycol);
-          else if (!(ay_reg[0x07] & 0x20) && ((ay_reg[0x0A]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x0A]&0xF], &aycol);
-          else sn76496W(0xFF, &aycol);
-      }
-      else
-      {
-          sn76496W(0xFF, &aycol);   // Noise OFF
-      }
+      // Output the noise for the first channel it's enbled on...
+      if      (!(ay_reg[0x07] & 0x08) && ((ay_reg[0x08]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x08]&0xF], &aycol);
+      else if (!(ay_reg[0x07] & 0x10) && ((ay_reg[0x09]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x09]&0xF], &aycol);
+      else if (!(ay_reg[0x07] & 0x20) && ((ay_reg[0x0A]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x0A]&0xF], &aycol);
+      else sn76496W(0xFF, &aycol);  // Otherwise Noise is OFF
 }
 
 void UpdateToneA(void)
@@ -305,7 +289,7 @@ void UpdateTonesAY(void)
 // ------------------------------------------------------------------------------------------------------------------
 // Writing AY data is where the magic mapping happens between the AY chip and the standard SN colecovision chip.
 // This is a bit of a hack... and it reduces the sound quality a bit on the AY chip but it allows us to use just
-// one sound driver for the SN audio chip for everythign in the system. On a retro-handheld, this is good enough.
+// one sound driver for the SN audio chip for everything in the system. On a retro-handheld, this is good enough.
 // ------------------------------------------------------------------------------------------------------------------
 void FakeAY_WriteData(u8 Value)
 {
@@ -313,9 +297,9 @@ void FakeAY_WriteData(u8 Value)
     
       // ----------------------------------------------------------------------------------------
       // This is the AY sound chip support... we're cheating here and just mapping those sounds
-      // onto the original Colecovision SN sound chip. Not perfect but good enough for now...
+      // onto the original Colecovision SN sound chip. Not perfect but good enough.
       // ----------------------------------------------------------------------------------------
-      Value &= AY_RegisterMasks[ay_reg_idx & 0x0F];
+      //Value &= AY_RegisterMasks[ay_reg_idx & 0x0F];  // Not strictly necessary
     
       u8 prevVal = ay_reg[ay_reg_idx];
       ay_reg[ay_reg_idx]=Value;
@@ -343,6 +327,9 @@ void FakeAY_WriteData(u8 Value)
           // Noise Period     
           case 0x06:
               noise_period = Value & 0x1F;
+              if      (noise_period > 24) sn76496W(0xE2 | 0x04, &aycol);   // E2 is the lowest frequency (highest period)
+              else if (noise_period > 12) sn76496W(0xE1 | 0x04, &aycol);   // E1 is the middle frequency (middle period)
+              else                        sn76496W(0xE0 | 0x04, &aycol);   // E0 is the highest frequency (lowest period)              
               UpdateNoiseAY();  // Update the Noise output
               break;
               

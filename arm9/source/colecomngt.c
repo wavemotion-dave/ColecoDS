@@ -1164,9 +1164,9 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 /*************************************************************/
 ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 {
-  if (sg1000_mode) {cpu_writeport_sg(Port, Value); return;}
-  if (sordm5_mode) {cpu_writeport_m5(Port, Value); return;}
-  if (msx_mode)    {cpu_writeport_msx(Port, Value); return;}
+  if      (sg1000_mode) {cpu_writeport_sg(Port, Value); return;}
+  else if (sordm5_mode) {cpu_writeport_m5(Port, Value); return;}
+  //if (msx_mode)    {cpu_writeport_msx(Port, Value); return;}      // This is now handled in DrZ80 and CZ80 directly
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF;
@@ -1357,6 +1357,13 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   return(NORAM);
 }
 
+inline void FastMemCopy(u8* dest, u8* src, u16 numBytes)
+{
+    u32 *d=(u32*)dest;   u32 *s=(u32*)src;
+    for (u16 i=0; i<numBytes/4; i++) *d++ = *s++;
+}
+
+
 // ----------------------------
 // Save MSX Ram from Slot
 // ----------------------------
@@ -1365,7 +1372,7 @@ void SaveRAM(u8 slot)
     // Only save if we had RAM in this slot previously
     if (bRAMInSlot[slot] == 1)
     {
-        memcpy(Slot3RAM+(slot*0x4000), pColecoMem+(slot*0x4000), 0x4000);  // Move 16K of RAM from main memory into the MSX RAM buffer
+        FastMemCopy(Slot3RAM+(slot*0x4000), pColecoMem+(slot*0x4000), 0x4000);  // Move 16K of RAM from main memory into the MSX RAM buffer
     }
 }
 
@@ -1377,14 +1384,8 @@ void RestoreRAM(u8 slot)
     // Only restore if we didn't have RAM here already...
     if (bRAMInSlot[slot] == 0)
     {
-        memcpy(pColecoMem+(slot*0x4000), Slot3RAM+(slot*0x4000), 0x4000);  // Move 16K of RAM from MSX RAM buffer back into main RAM
+        FastMemCopy(pColecoMem+(slot*0x4000), Slot3RAM+(slot*0x4000), 0x4000);  // Move 16K of RAM from MSX RAM buffer back into main RAM
     }
-}
-
-inline void FastMemCopy(u8* dest, u8* src, u16 numBytes)
-{
-    u32 *d=(u32*)dest;   u32 *s=(u32*)src;
-    for (u16 i=0; i<numBytes/4; i++) *d++ = *s++;
 }
 
 // ----------------------------------------------------------------------
@@ -1439,8 +1440,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(0);
-                    bRAMInSlot[0] = 1;
                     bROMInSlot[0] = 0;
+                    bRAMInSlot[0] = 1;
                     break;
             }
             
@@ -1470,8 +1471,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(1);
-                    bRAMInSlot[1] = 1;
                     bROMInSlot[1] = 0;
+                    bRAMInSlot[1] = 1;
                     break;
             }
             
@@ -1501,8 +1502,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(2);
-                    bRAMInSlot[2] = 1;
                     bROMInSlot[2] = 0;
+                    bRAMInSlot[2] = 1;
                     break;
             }
             
@@ -1521,7 +1522,6 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     else  FastMemCopy(pColecoMem+0xC000, (u8 *)(Slot1ROM+0xC000), 0x2000);
                     if (Slot1ROMPtr[7])  FastMemCopy(pColecoMem+0xE000, (u8 *)(Slot1ROMPtr[7]), 0x2000);
                     else  FastMemCopy(pColecoMem+0xE000, (u8 *)(Slot1ROM+0xE000), 0x2000);
-                    
                     bROMInSlot[3] = 1;
                     bRAMInSlot[3] = 0;
                     break;
@@ -1533,8 +1533,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
                 case 0x03:  // Slot 3 is RAM so we allow RAM writes now
                     RestoreRAM(3);
-                    bRAMInSlot[3] = 1;
                     bROMInSlot[3] = 0;
+                    bRAMInSlot[3] = 1;
                     break;
             }
             
@@ -1712,6 +1712,7 @@ ITCM_CODE u32 LoopZ80()
   // NMI interrupt to occur), we check and adjust the spinners which 
   // can generate a lower priority interrupt to the running Z80 code.
   // ------------------------------------------------------------------
+  if (!msx_mode && !sordm5_mode)
   if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
   {
       if (spinX_left)
