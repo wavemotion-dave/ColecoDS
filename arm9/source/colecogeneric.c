@@ -1218,7 +1218,6 @@ void colecoDSChangeKeymap(void)
 // ----------------------------------------------------------------------------------
 void DisplayFileName(void)
 {
-    char szName[64];
     siprintf(szName,"%s",gpFic[ucGameChoice].szName);
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
