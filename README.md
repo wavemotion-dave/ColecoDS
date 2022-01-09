@@ -83,6 +83,7 @@ Known Issues :
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * Sord M5 games are not sound accurate due to CTC emulation issues.
 * MSX envelope sound and noise emulation not accurate (close enough).
+* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have music)
 
 Controllers :
 -----------------------
@@ -157,6 +158,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.5: 09-Jan-2022 by wavemotion-dave
+* Major improvement in speed for MSX megaROM games. 
+* Fixed RESET of MSX megaROM games.
+* Slight optmizations to all emulation cores.
+
 V5.4: 07-Jan-2022 by wavemotion-dave
 * AY Envelope sound handler improved - more games sound right!
 * MSX, SG-1000 and Sord M5 SAVE/LOAD states working.

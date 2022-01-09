@@ -622,10 +622,10 @@ void colecoDS_main(void)
             TIMER1_DATA = 0;
             TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
             emuFps = emuActFrames;
-            if (emuFps == 61) emuFps=60;
-            
             if (myConfig.showFPS)
             {
+                if (emuFps == 61) emuFps=60;
+                else if (emuFps == 59) emuFps=60;            
                 if (emuFps/100) szChai[0] = '0' + emuFps/100;
                 else szChai[0] = ' ';
                 szChai[1] = '0' + (emuFps%100) / 10;
