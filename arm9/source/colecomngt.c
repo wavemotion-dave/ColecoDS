@@ -237,12 +237,23 @@ u8 colecoInit(char *szGame)
       fread((void*) romBuffer, 0x4004, 1, handle); 
       fclose(handle);
       
-      // Do some auto-detection for game ROM
+      // ---------------------------------------------------------------------
+      // Do some auto-detection for game ROM. MSX games have 'AB' in their
+      // header and we also want to track the INIT address for those ROMs
+      // so we can take a better guess at mapping them into our Slot1 memory
+      // ---------------------------------------------------------------------
       msx_init = 0x4000;
       if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))
       {
           msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
           msx_init = romBuffer[2] | (romBuffer[3]<<8);
+          if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
+          {
+              if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  
+              {
+                  msx_init = romBuffer[0x4002] | (romBuffer[0x4003]<<8);
+              }
+          }
       }
       else if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  
       {
@@ -1383,6 +1394,9 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   return(NORAM);
 }
 
+// -------------------------------------------------------
+// Move numBytes of memory as 32-bit words for best speed
+// -------------------------------------------------------
 inline void FastMemCopy(u8* dest, u8* src, u16 numBytes)
 {
     u32 *d=(u32*)dest;   u32 *s=(u32*)src;
@@ -1435,7 +1449,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             // bits 7-6     bits 5-4     bits 3-2      bits 1-0
             // C000h~FFFF   8000h~BFFF   4000h~7FFF    0000h~3FFF
             // 
-            // Slot 0 holds the 32K of MSX BIOS
+            // Slot 0 holds the 32K of MSX BIOS (0xFF above 32K)
             // Slot 1 is where the Game Cartridge Lives (up to 64K)
             // Slot 2 is empty (0xFF always)
             // Slot 3 is our main RAM. We emulate 64K of RAM
@@ -1446,8 +1460,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(0);
                     FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot1BIOS+0x0000), 0x4000);
-                    bRAMInSlot[0] = 0;
                     bROMInSlot[0] = 0;
+                    bRAMInSlot[0] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(0);
@@ -1461,8 +1475,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(0);
                     memset(pColecoMem+0x0000, 0xFF, 0x4000);
-                    bRAMInSlot[0] = 0;
                     bROMInSlot[0] = 0;
+                    bRAMInSlot[0] = 0;
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(0);
@@ -1477,8 +1491,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(1);
                     FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot1BIOS+0x4000), 0x4000);
-                    bRAMInSlot[1] = 0;
                     bROMInSlot[1] = 0;
+                    bRAMInSlot[1] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(1);
@@ -1492,8 +1506,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(1);
                     memset(pColecoMem+0x4000, 0xFF, 0x4000);
-                    bRAMInSlot[1] = 0;
                     bROMInSlot[1] = 0;
+                    bRAMInSlot[1] = 0;
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(1);
@@ -1508,8 +1522,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
                     SaveRAM(2);
                     memset(pColecoMem+0x8000, 0xFF, 0x4000);
-                    bRAMInSlot[2] = 0;
                     bROMInSlot[2] = 0;
+                    bRAMInSlot[2] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(2);
@@ -1523,8 +1537,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(2);
                     memset(pColecoMem+0x8000, 0xFF, 0x4000);
-                    bRAMInSlot[2] = 0;
                     bROMInSlot[2] = 0;
+                    bRAMInSlot[2] = 0;
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(2);
@@ -1539,8 +1553,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
                     SaveRAM(3);
                     memset(pColecoMem+0xC000, 0xFF, 0x4000);
-                    bRAMInSlot[3] = 0;
                     bROMInSlot[3] = 0;
+                    bRAMInSlot[3] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
                     SaveRAM(3);
@@ -1554,8 +1568,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(3);
                     memset(pColecoMem+0xC000, 0xFF, 0x4000);
-                    bRAMInSlot[3] = 0;
                     bROMInSlot[3] = 0;
+                    bRAMInSlot[3] = 0;
                     break;
                 case 0x03:  // Slot 3 is RAM so we allow RAM writes now
                     RestoreRAM(3);
