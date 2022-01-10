@@ -63,6 +63,8 @@ u8 PortAA __attribute__((section(".dtcm"))) = 0x00;
 extern u8 MSXBios[];
 extern u8 CBios[];
 
+u16 msx_init = 0x4000;
+
 // Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
@@ -232,12 +234,21 @@ u8 colecoInit(char *szGame)
   FILE* handle = fopen(szGame, "rb");  
   if (handle)
   {
-      fread((void*) romBuffer, 0x4002, 1, handle); 
+      fread((void*) romBuffer, 0x4004, 1, handle); 
       fclose(handle);
       
       // Do some auto-detection for game ROM
-      if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))            msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
-      if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
+      msx_init = 0x4000;
+      if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))
+      {
+          msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
+          msx_init = romBuffer[2] | (romBuffer[3]<<8);
+      }
+      else if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  
+      {
+          msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
+          msx_init = romBuffer[0x4002] | (romBuffer[0x4003]<<8);
+      }
       if (bForceMSXLoad) msx_mode = 1;
       if (msx_mode) AY_Enable=true;
   }
@@ -881,28 +892,43 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         Slot1ROMPtr[i] = 0;     // All pages normal until told otherwise by A8 writes
     }
     
-    // ----------------------------------------------------
-    // Setup the Z80 memory based on the ROM size loaded
-    // ----------------------------------------------------
+    // ------------------------------------------------------------
+    // Setup the Z80 memory based on the MSX game ROM size loaded
+    // ------------------------------------------------------------
     if (iSSize == (8 * 1024))
     {
         for (u8 i=0; i<8; i++)
         {
-            memcpy((u8*)Slot1ROM+(0x2000 * i), romBuffer, 0x2000);
+            memcpy((u8*)Slot1ROM+(0x2000 * i), romBuffer, 0x2000);      // 8 Mirrors so every bank is the same
         }
     }
     else if (iSSize == (16 * 1024))
     {
         for (u8 i=0; i<4; i++)
         {
-            memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);
+            memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);      // 4 Mirrors so every bank is the same
         }
     }
     else if (iSSize == (32 * 1024))
     {
-        memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
-        memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
-        memcpy((u8*)Slot1ROM+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
+        // ------------------------------------------------------------------------------------------------------
+        // For 32K roms, we need more information to determine exactly where to load it... however
+        // this simple algorithm handles at least 90% of all real-world games... basically the header
+        // of the .ROM file has a INIT load address that we can use as a clue as to what banks the actual
+        // code should be loaded... if the INIT is address 0x4000 or higher (this is fairly common) then we
+        // load the 32K rom into banks 1+2 and we mirror the first 16K on page 0 and the upper 16K on page 3.
+        // ------------------------------------------------------------------------------------------------------
+        if (msx_init >= 0x4000) // This comes from the .ROM header - if the init address is 0x4000 or higher, we load in bank 1+2
+        {
+            memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
+            memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
+            memcpy((u8*)Slot1ROM+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
+        }
+        else  // Otherwise we load in bank 0+1 and mirrors on 2+3
+        {
+            memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x8000);      // The full 32K ROM is mapped at 0x0000
+            memcpy((u8*)Slot1ROM+0x8000, romBuffer,        0x8000);      // And the full mirror is at 0x8000
+        }
     }
     else if (iSSize == (48 * 1024))
     {
