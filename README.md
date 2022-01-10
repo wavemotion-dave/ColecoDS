@@ -85,6 +85,13 @@ Known Issues :
 * MSX envelope sound and noise emulation not accurate (close enough).
 * MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have music)
 
+MSX Compatibility :
+-----------------------
+Considering this is a Colecovision emulator, the MSX1 support and compatibility is reasonably high.
+If a game doesn't run, you can try these suggestions:
+* A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options.
+* Games greater than 48K tend to use memory mappers. The emulator will guess but that's often not good enough. Use Game Options to try different mappers.
+
 Controllers :
 -----------------------
 You can map buttons to either P1 or P2 controllers. 
