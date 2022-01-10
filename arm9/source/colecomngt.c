@@ -64,6 +64,7 @@ extern u8 MSXBios[];
 extern u8 CBios[];
 
 u16 msx_init = 0x4000;
+u16 msx_basic = 0x0000;
 
 // Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
@@ -234,7 +235,15 @@ u8 colecoInit(char *szGame)
   FILE* handle = fopen(szGame, "rb");  
   if (handle)
   {
-      fread((void*) romBuffer, 0x4004, 1, handle); 
+      // ------------------------------------------------------------------------------------------
+      // MSX Header Bytes:
+      //  0 DEFB "AB" ; expansion ROM header
+      //  2 DEFW initcode ; start of the init code, 0 if no initcode
+      //  4 DEFW callstat; pointer to CALL statement handler, 0 if no such handler
+      //  6 DEFW device; pointer to expansion device handler, 0 if no such handler
+      //  8 DEFW basic ; pointer to the start of a tokenized basicprogram, 0 if no basicprogram
+      // ------------------------------------------------------------------------------------------
+      fread((void*) romBuffer, 0x400A, 1, handle); 
       fclose(handle);
       
       // ---------------------------------------------------------------------
@@ -247,11 +256,13 @@ u8 colecoInit(char *szGame)
       {
           msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
           msx_init = romBuffer[2] | (romBuffer[3]<<8);
+          msx_basic = romBuffer[8] | (romBuffer[8]<<8);
           if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
           {
               if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  
               {
                   msx_init = romBuffer[0x4002] | (romBuffer[0x4003]<<8);
+                  msx_basic = romBuffer[0x4008] | (romBuffer[0x4009]<<8);
               }
           }
       }
@@ -259,6 +270,7 @@ u8 colecoInit(char *szGame)
       {
           msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
           msx_init = romBuffer[0x4002] | (romBuffer[0x4003]<<8);
+          msx_basic = romBuffer[0x4008] | (romBuffer[0x4009]<<8);
       }
       if (bForceMSXLoad) msx_mode = 1;
       if (msx_mode) AY_Enable=true;
@@ -878,6 +890,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     memset(Slot1BIOS, 0xFF, 0x10000);
     memset(Slot1ROM,  0xFF, 0x10000);
     memset(Slot3RAM,  0x00, 0x10000);
+    memset(pColecoMem,0xFF, 0x10000);
 
     // --------------------------------------------------------------
     // Based on config, load up the C-BIOS or the real MSX.ROM BIOS
@@ -908,16 +921,30 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     // ------------------------------------------------------------
     if (iSSize == (8 * 1024))
     {
-        for (u8 i=0; i<8; i++)
+        if (msx_basic)  // Basic Game loads at 0x8000 ONLY
         {
-            memcpy((u8*)Slot1ROM+(0x2000 * i), romBuffer, 0x2000);      // 8 Mirrors so every bank is the same
+            memcpy((u8*)Slot1ROM+0x8000, romBuffer, 0x2000);      // Load rom at 0x8000
+        }
+        else
+        {
+            for (u8 i=0; i<8; i++)
+            {
+                memcpy((u8*)Slot1ROM+(0x2000 * i), romBuffer, 0x2000);      // 8 Mirrors so every bank is the same
+            }
         }
     }
     else if (iSSize == (16 * 1024))
     {
-        for (u8 i=0; i<4; i++)
+        if (msx_basic)  // Basic Game loads at 0x8000 ONLY
         {
-            memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);      // 4 Mirrors so every bank is the same
+            memcpy((u8*)Slot1ROM+0x8000, romBuffer, 0x4000);      // Load rom at 0x8000
+        }
+        else
+        {
+            for (u8 i=0; i<4; i++)
+            {
+                memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);      // 4 Mirrors so every bank is the same
+            }
         }
     }
     else if (iSSize == (32 * 1024))
@@ -1330,17 +1357,24 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   }
   else if (Port == 0xA2)  // PSG Read... might be joypad data
   {
+      // -------------------------------------------
+      // Only port 1 is used for the first Joystick
+      // -------------------------------------------
       if (ay_reg_idx == 14)
       {
           u8 joy1 = 0x00;
 
-          if (JoyState & JST_UP)    joy1 |= 0x01;
-          if (JoyState & JST_DOWN)  joy1 |= 0x02;
-          if (JoyState & JST_LEFT)  joy1 |= 0x04;
-          if (JoyState & JST_RIGHT) joy1 |= 0x08;
+          // Only port 1... not port 2
+          if ((ay_reg[15] & 0x40) == 0)
+          {
+              if (JoyState & JST_UP)    joy1 |= 0x01;
+              if (JoyState & JST_DOWN)  joy1 |= 0x02;
+              if (JoyState & JST_LEFT)  joy1 |= 0x04;
+              if (JoyState & JST_RIGHT) joy1 |= 0x08;
 
-          if (JoyState & JST_FIREL) joy1 |= 0x10;
-          if (JoyState & JST_FIRER) joy1 |= 0x20;
+              if (JoyState & JST_FIREL) joy1 |= 0x10;
+              if (JoyState & JST_FIRER) joy1 |= 0x20;
+          }
 
           ay_reg[14] = ~joy1;
       }
