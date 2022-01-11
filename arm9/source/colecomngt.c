@@ -252,6 +252,7 @@ u8 colecoInit(char *szGame)
       // so we can take a better guess at mapping them into our Slot1 memory
       // ---------------------------------------------------------------------
       msx_init = 0x4000;
+      msx_basic = 0x0000;
       if ((romBuffer[0] == 'A') && (romBuffer[1] == 'B'))
       {
           msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
@@ -274,6 +275,12 @@ u8 colecoInit(char *szGame)
       }
       if (bForceMSXLoad) msx_mode = 1;
       if (msx_mode) AY_Enable=true;
+      
+      // ------------------------------------------------------------
+      // A few games that detect wrong - set them straight here...
+      // ------------------------------------------------------------
+      if (file_crc == 0x4ff88059) msx_basic = 0x0000;      // E.I Exa Inova
+
   }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
