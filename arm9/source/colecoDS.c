@@ -47,7 +47,7 @@
 #include "cpu/z80/Z80_interface.h"
 
 extern Z80 CPU;
-extern u8 Slot1BIOS[];
+extern u8 Slot0BIOS[];
 u32 debug1=0;
 u32 debug2=0;
 
@@ -395,7 +395,7 @@ void ResetColecovision(void)
   else if (msx_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,Slot1BIOS,0x8000);        // Restore MSX BIOS
+      memcpy(pColecoMem,Slot0BIOS,0x8000);        // Restore MSX BIOS
   }
   else
   {
@@ -1034,7 +1034,7 @@ u16 colecoDSInitCPU(void)
   if (sordm5_mode)
     memcpy(pColecoMem,SordM5Bios,0x2000);
   else if (msx_mode)
-    memcpy(pColecoMem,Slot1BIOS,0x8000);
+    memcpy(pColecoMem,Slot0BIOS,0x8000);
   else
     memcpy(pColecoMem,ColecoBios,0x2000);
   

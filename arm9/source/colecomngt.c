@@ -31,7 +31,7 @@
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
 // ---------------------------------------
-u8 Slot1BIOS[0x10000] = {0xFF};
+u8 Slot0BIOS[0x10000] = {0xFF};
 u8 Slot1ROM[0x10000]  = {0xFF};
 u8 Slot3RAM[0x10000]  = {0x00};
 
@@ -275,12 +275,6 @@ u8 colecoInit(char *szGame)
       }
       if (bForceMSXLoad) msx_mode = 1;
       if (msx_mode) AY_Enable=true;
-      
-      // ------------------------------------------------------------
-      // A few games that detect wrong - set them straight here...
-      // ------------------------------------------------------------
-      //if (file_crc == 0xd5b51149) msx_basic = 0x0000;      // E.I Exa Inova
-      //if (file_crc == 0x4ff88059) msx_basic = 0x0000;      // E.I Exa Inova (alt)
   }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
@@ -894,7 +888,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     // Start with reset memory - fill in MSX slots
     // ---------------------------------------------
     memset((u8*)0x06880000, 0xFF, 0x20000);
-    memset(Slot1BIOS, 0xFF, 0x10000);
+    memset(Slot0BIOS, 0xFF, 0x10000);
     memset(Slot1ROM,  0xFF, 0x10000);
     memset(Slot3RAM,  0x00, 0x10000);
     memset(pColecoMem,0xFF, 0x10000);
@@ -904,12 +898,12 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     // --------------------------------------------------------------
     if (myConfig.msxBios)
     {
-        memcpy(Slot1BIOS, MSXBios, 0x8000);
+        memcpy(Slot0BIOS, MSXBios, 0x8000);
         memcpy(pColecoMem, MSXBios, 0x8000);
     }
     else
     {
-        memcpy(Slot1BIOS, CBios, 0x8000);
+        memcpy(Slot0BIOS, CBios, 0x8000);
         memcpy(pColecoMem, CBios, 0x8000);
     }
 
@@ -1500,7 +1494,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(0);
-                    FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot1BIOS+0x0000), 0x4000);
+                    FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot0BIOS+0x0000), 0x4000);
                     bROMInSlot[0] = 0;
                     bRAMInSlot[0] = 0;
                     break;
@@ -1531,7 +1525,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
                     SaveRAM(1);
-                    FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot1BIOS+0x4000), 0x4000);
+                    FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot0BIOS+0x4000), 0x4000);
                     bROMInSlot[1] = 0;
                     bRAMInSlot[1] = 0;
                     break;

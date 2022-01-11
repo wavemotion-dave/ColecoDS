@@ -337,7 +337,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         // -------------------------------------------------------
         // First see if this is a write to a RAM enabled slot...
         // -------------------------------------------------------
-        if (bRAMInSlot[0] && (address < 0x3FFF))
+        if (bRAMInSlot[0] && (address < 0x4000))
         {
             pColecoMem[address]=value;  // Allow write - this is a RAM mapped slot
         }
