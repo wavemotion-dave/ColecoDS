@@ -167,6 +167,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.6: 11-Jan-2022 by wavemotion-dave
+* Improved loading of MSX 8K, 16K and 32K ROMs for higher compatibility.
+* Fixed so we only return joystick input for Port 1.
+* Fixed bug in memory write to Slot 1 (rare).
+* Minor cleanups across the board.
+
 V5.5: 09-Jan-2022 by wavemotion-dave
 * Major improvement in speed for MSX megaROM games. 
 * Fixed RESET of MSX megaROM games.
