@@ -279,8 +279,8 @@ u8 colecoInit(char *szGame)
       // ------------------------------------------------------------
       // A few games that detect wrong - set them straight here...
       // ------------------------------------------------------------
-      if (file_crc == 0x4ff88059) msx_basic = 0x0000;      // E.I Exa Inova
-
+      if (file_crc == 0xd5b51149) msx_basic = 0x0000;      // E.I Exa Inova
+      if (file_crc == 0x4ff88059) msx_basic = 0x0000;      // E.I Exa Inova (alt)
   }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
