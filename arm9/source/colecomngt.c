@@ -257,13 +257,13 @@ u8 colecoInit(char *szGame)
       {
           msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
           msx_init = romBuffer[2] | (romBuffer[3]<<8);
-          msx_basic = romBuffer[8] | (romBuffer[8]<<8);
+          if (msx_init == 0x0000) msx_basic = romBuffer[8] | (romBuffer[8]<<8);
           if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
           {
               if ((romBuffer[0x4000] == 'A') && (romBuffer[0x4001] == 'B'))  
               {
                   msx_init = romBuffer[0x4002] | (romBuffer[0x4003]<<8);
-                  msx_basic = romBuffer[0x4008] | (romBuffer[0x4009]<<8);
+                  if (msx_init == 0x0000) msx_basic = romBuffer[0x4008] | (romBuffer[0x4009]<<8);
               }
           }
       }
@@ -271,7 +271,7 @@ u8 colecoInit(char *szGame)
       {
           msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
           msx_init = romBuffer[0x4002] | (romBuffer[0x4003]<<8);
-          msx_basic = romBuffer[0x4008] | (romBuffer[0x4009]<<8);
+          if (msx_init == 0x0000) msx_basic = romBuffer[0x4008] | (romBuffer[0x4009]<<8);
       }
       if (bForceMSXLoad) msx_mode = 1;
       if (msx_mode) AY_Enable=true;
@@ -279,8 +279,8 @@ u8 colecoInit(char *szGame)
       // ------------------------------------------------------------
       // A few games that detect wrong - set them straight here...
       // ------------------------------------------------------------
-      if (file_crc == 0xd5b51149) msx_basic = 0x0000;      // E.I Exa Inova
-      if (file_crc == 0x4ff88059) msx_basic = 0x0000;      // E.I Exa Inova (alt)
+      //if (file_crc == 0xd5b51149) msx_basic = 0x0000;      // E.I Exa Inova
+      //if (file_crc == 0x4ff88059) msx_basic = 0x0000;      // E.I Exa Inova (alt)
   }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
