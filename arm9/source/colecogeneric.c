@@ -733,7 +733,7 @@ void SetDefaultGameConfig(void)
     myConfig.touchPad    = 0;
     myConfig.cpuCore     = (isDSiMode() ? 1:0);    // Default is slower/accurate CZ80 for DSi and faster DrZ80 core for DS-LITE
     myConfig.msxBios     = 0;   // Default to the C-BIOS
-    myConfig.reserved7   = 0;    
+    myConfig.msxKey5     = 0;   // Default key map
     myConfig.reserved8   = 0;    
     myConfig.reserved9   = 0;    
     myConfig.reservedA   = 0;    
@@ -905,7 +905,7 @@ void FindAndLoadConfig(void)
 struct options_t
 {
     const char  *label;
-    const char  *option[25];
+    const char  *option[35];
     u8          *option_val;
     u8           option_max;
 };
@@ -913,23 +913,24 @@ struct options_t
 u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},   &myConfig.overlay,    9},
-    {"FPS",             {"OFF", "ON", "ON FULLSPEED"},                                                                                          &myConfig.showFPS,    3},
-    {"FRAME SKIP",      {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                        &myConfig.frameSkip,  3},
-    {"FRAME BLEND",     {"OFF", "ON"},                                                                                                          &myConfig.frameBlend, 2},
-    {"MAX SPRITES",     {"32",  "4"},                                                                                                           &myConfig.maxSprites, 2},
-    {"VERT SYNC",       {"OFF", "ON"},                                                                                                          &myConfig.vertSync,   2},    
-    {"AUTO FIRE B1",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire1,  2},
-    {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                          &myConfig.autoFire2,  2},
-    {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                               &myConfig.touchPad,   2},    
-    {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                       &myConfig.spinSpeed,  5},
-    {"Z80 CPU CORE",    {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                    &myConfig.cpuCore,    2},    
-    {"MSX MAPPER",      {"GUESS", "KONAMI 8K", "ASCII 8K", "KONAMI SCC", "ASCII 16K", "ZEMINA 8K", "ZEMINA 16K"},                               &myConfig.msxMapper,  7},
-    {"MSX BIOS",        {"C-BIOS", "MSX.ROM"},                                                                                                  &myConfig.msxBios,    2},    
+    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},                                   &myConfig.overlay,    9},
+    {"FPS",             {"OFF", "ON", "ON FULLSPEED"},                                                                                                                          &myConfig.showFPS,    3},
+    {"FRAME SKIP",      {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                        &myConfig.frameSkip,  3},
+    {"FRAME BLEND",     {"OFF", "ON"},                                                                                                                                          &myConfig.frameBlend, 2},
+    {"MAX SPRITES",     {"32",  "4"},                                                                                                                                           &myConfig.maxSprites, 2},
+    {"VERT SYNC",       {"OFF", "ON"},                                                                                                                                          &myConfig.vertSync,   2},    
+    {"AUTO FIRE B1",    {"OFF", "ON"},                                                                                                                                          &myConfig.autoFire1,  2},
+    {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                                                          &myConfig.autoFire2,  2},
+    {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                                                               &myConfig.touchPad,   2},    
+    {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                       &myConfig.spinSpeed,  5},
+    {"Z80 CPU CORE",    {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                                                    &myConfig.cpuCore,    2},    
+    {"MSX MAPPER",      {"GUESS", "KONAMI 8K", "ASCII 8K", "KONAMI SCC", "ASCII 16K", "ZEMINA 8K", "ZEMINA 16K"},                                                               &myConfig.msxMapper,  7},
+    {"MSX BIOS",        {"C-BIOS", "MSX.ROM"},                                                                                                                                  &myConfig.msxBios,    2},    
+    {"MSX KEY 5",       {"DEFAULT", "SHIFT","M4","M5","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","6","7","8","9"}, &myConfig.msxKey5,    34},
 #if 0   // Developer use only   
-    {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                  &dev_z80_cycles,     16},
+    {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                  &dev_z80_cycles,     16},
 #endif    
-    {NULL,              {"",      ""},                                                                                                          NULL,                 1},
+    {NULL,              {"",      ""},                                                                                                                                          NULL,                 1},
 };              
 
 
@@ -946,14 +947,14 @@ u8 display_options_list(bool bFullDisplay)
         while (true)
         {
             siprintf(strBuf, " %-12s : %-14s", Option_Table[len].label, Option_Table[len].option[*(Option_Table[len].option_val)]);
-            dsPrintValue(1,7+len, (len==0 ? 2:0), strBuf); len++;
+            dsPrintValue(1,6+len, (len==0 ? 2:0), strBuf); len++;
             if (Option_Table[len].label == NULL) break;
         }
 
         // Blank out rest of the screen... option menus are of different lengths...
         for (int i=len; i<15; i++) 
         {
-            dsPrintValue(1,7+i, 0, (char *)"                               ");
+            dsPrintValue(1,6+i, 0, (char *)"                               ");
         }
     }
 
@@ -1002,25 +1003,25 @@ void colecoDSGameOptions(void)
             if (keysCurrent() & KEY_UP) // Previous option
             {
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,7+optionHighlighted,0, strBuf);
+                dsPrintValue(1,6+optionHighlighted,0, strBuf);
                 if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+                dsPrintValue(1,6+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_DOWN) // Next option
             {
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,7+optionHighlighted,0, strBuf);
+                dsPrintValue(1,6+optionHighlighted,0, strBuf);
                 if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+                dsPrintValue(1,6+optionHighlighted,2, strBuf);
             }
 
             if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
             {
                 *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) + 1) % Option_Table[optionHighlighted].option_max;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+                dsPrintValue(1,6+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
             {
@@ -1029,7 +1030,7 @@ void colecoDSGameOptions(void)
                 else
                     *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) - 1) % Option_Table[optionHighlighted].option_max;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,7+optionHighlighted,2, strBuf);
+                dsPrintValue(1,6+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_START)  // Save Options
             {

@@ -38,7 +38,7 @@ struct __attribute__((__packed__)) Config_t
     u8  touchPad;
     u8  cpuCore;
     u8  msxBios;
-    u8  reserved7;
+    u8  msxKey5;
     u8  reserved8;
     u8  reserved9;
     u32 reservedA;
