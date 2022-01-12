@@ -1565,6 +1565,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             // Slot 3 is our main RAM. We emulate 64K of RAM
             // ---------------------------------------------------------------------
             if (((Value>>0) & 0x03) != ((PortA8>>0) & 0x03))
+
             switch ((Value>>0) & 0x03)  // Main Memory - Slot 0 [0x0000~0x3FFF]
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
@@ -1938,7 +1939,13 @@ ITCM_CODE u32 LoopZ80()
       if (sordm5_mode) Z80CTC_Timer();
 
       // Generate an interrupt if called for...
-      if(CPU.IRequest!=INT_NONE) IntZ80(&CPU, CPU.IRequest);
+      if(CPU.IRequest!=INT_NONE) 
+      {
+          IntZ80(&CPU, CPU.IRequest);
+#ifdef DEBUG_Z80 
+          CPU.User++;   // Track Interrupt Requests
+#endif          
+      }
   }
   
   // Drop out unless end of screen is reached 
