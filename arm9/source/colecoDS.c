@@ -445,7 +445,7 @@ const char *VModeNames[] =
 
 void ShowDebugZ80(void)
 {
-    extern u8 a_idx, b_idx, c_idx;
+    extern u8 a_idx, b_idx, c_idx, mapperType;
     extern u8 lastBank;
     extern u8 romBankMask;
     extern u16 sgm_low_addr;
@@ -463,16 +463,32 @@ void ShowDebugZ80(void)
     siprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
     AffChaine(0,idx++,7, tmp);
     idx++;
-    siprintf(tmp, "Z80PC %08X", drz80.Z80PC-drz80.Z80PC_BASE);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "Z80A  %08X", drz80.Z80A);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "Z80SP %08X", drz80.Z80SP - drz80.Z80SP_BASE);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "IRQ   %02X", drz80.Z80_IRQ);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "IF/IM %02X/%02X", drz80.Z80IF, drz80.Z80IM);
-    AffChaine(0,idx++,7, tmp);
+    if (myConfig.cpuCore == 0)
+    {
+        siprintf(tmp, "Z80PC %08X", drz80.Z80PC-drz80.Z80PC_BASE);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "Z80SP %08X", drz80.Z80SP - drz80.Z80SP_BASE);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "Z80A  %08X", drz80.Z80A);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "IRQ   %02X", drz80.Z80_IRQ);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "IF/IM %02X/%02X", drz80.Z80IF, drz80.Z80IM);
+        AffChaine(0,idx++,7, tmp);
+    }
+    else
+    {
+        siprintf(tmp, "Z80PC %04X", CPU.PC.W);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "Z80SP %04X", CPU.SP.W);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "Z80A  %04X", CPU.AF.W);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "IRQ   %04X", CPU.IRequest);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "IREQ  %d", CPU.User);
+        AffChaine(0,idx++,7, tmp);
+    }
     idx++;
     siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
     AffChaine(0,idx++,7, tmp);
@@ -489,13 +505,12 @@ void ShowDebugZ80(void)
     idx++;
     siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);
     AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "SGMem %04X", sgm_low_addr);
+    siprintf(tmp, "SGMem %04X, MT %d", sgm_low_addr, mapperType);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);
     AffChaine(0,idx++,7, tmp);  
     siprintf(tmp, "DEBG  %lu %lu", debug1, debug2);
     AffChaine(0,idx++,7, tmp);
-
 }
     
     
@@ -993,6 +1008,13 @@ void InitBottomScreen(void)
     }
     else // Generic Overlay
     {
+#ifdef DEBUG_Z80
+          //  Init bottom screen
+          decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
+#else        
       if (msx_mode)
       {
           //  Init bottom screen
@@ -1003,20 +1025,13 @@ void InitBottomScreen(void)
       }
       else
       {
-#ifdef DEBUG_Z80
-          //  Init bottom screen
-          decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
-#else        
           //  Init bottom screen
           decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
           decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
-#endif 
       }
+#endif 
     }
     
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
