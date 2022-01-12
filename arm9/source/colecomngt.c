@@ -275,6 +275,7 @@ u8 colecoInit(char *szGame)
       }
       if (bForceMSXLoad) msx_mode = 1;
       if (msx_mode) AY_Enable=true;
+      if (msx_mode) InitBottomScreen();  // Could Need to ensure the MSX layout is shown
   }
 
   if (sg1000_mode)  // Load SG-1000 cartridge
@@ -957,7 +958,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         // code should be loaded... if the INIT is address 0x4000 or higher (this is fairly common) then we
         // load the 32K rom into banks 1+2 and we mirror the first 16K on page 0 and the upper 16K on page 3.
         // ------------------------------------------------------------------------------------------------------
-        if (msx_init >= 0x4000) // This comes from the .ROM header - if the init address is 0x4000 or higher, we load in bank 1+2
+        if (msx_init >= 0x4000 || msx_basic) // This comes from the .ROM header - if the init address is 0x4000 or higher, we load in bank 1+2
         {
             memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
             memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here

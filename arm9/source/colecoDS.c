@@ -26,6 +26,7 @@
 #include "cpu/tms9918a/tms9918a.h"
 #include "intro.h"
 #include "ecranBas.h"
+#include "msx.h"
 #include "ecranDebug.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
@@ -992,19 +993,30 @@ void InitBottomScreen(void)
     }
     else // Generic Overlay
     {
+      if (msx_mode)
+      {
+          //  Init bottom screen
+          decompress(msxTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(msxMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) msxPal,(void*) BG_PALETTE_SUB,256*2);
+      }
+      else
+      {
 #ifdef DEBUG_Z80
-      //  Init bottom screen
-      decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
+          //  Init bottom screen
+          decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
 #else        
-      //  Init bottom screen
-      decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
-#endif        
+          //  Init bottom screen
+          decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
+#endif 
+      }
     }
     
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
