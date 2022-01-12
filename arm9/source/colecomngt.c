@@ -1405,18 +1405,92 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           if (JoyState == JST_2)   key1 |= 0x04;  // '2'
           if (JoyState == JST_3)   key1 |= 0x08;  // '3'
           if (JoyState == JST_4)   key1 |= 0x10;  // '4'
-          if (JoyState == JST_5)   key1 |= 0x20;  // '5'
+          if (JoyState == JST_5)   // This one can be user-defined
+          {
+              if (myConfig.msxKey5 == 0) key1 |= 0x20;  // '5'
+              if (myConfig.msxKey5 == 6) key1 |= 0x40;  // '6'
+              if (myConfig.msxKey5 == 7) key1 |= 0x80;  // '7'
+          }
       }
+      else if ((PortAA & 0x0F) == 1)  // Row 1
+      {
+          if (JoyState == JST_5)
+          {
+              if (myConfig.msxKey5 == 8) key1 |= 0x01;  // '8'
+              if (myConfig.msxKey5 == 9) key1 |= 0x02;  // '9'
+          }
+      }
+      else if ((PortAA & 0x0F) == 2)  // Row 2
+      {
+          if (JoyState == JST_5)
+          {
+              if (myConfig.msxKey5 == 10) key1 |= 0x40;  // 'A'
+              if (myConfig.msxKey5 == 11) key1 |= 0x80;  // 'B'
+          }
+      }
+      else if ((PortAA & 0x0F) == 3)  // Row 3
+      {
+          if (JoyState == JST_5)
+          {
+              if (myConfig.msxKey5 == 12) key1 |= 0x01;  // 'C'
+              if (myConfig.msxKey5 == 13) key1 |= 0x02;  // 'D'
+              if (myConfig.msxKey5 == 14) key1 |= 0x04;  // 'E'
+              if (myConfig.msxKey5 == 15) key1 |= 0x08;  // 'F'
+              if (myConfig.msxKey5 == 16) key1 |= 0x10;  // 'G'
+              if (myConfig.msxKey5 == 17) key1 |= 0x20;  // 'H'
+              if (myConfig.msxKey5 == 18) key1 |= 0x40;  // 'I'
+              if (myConfig.msxKey5 == 19) key1 |= 0x80;  // 'J'
+          }
+      }
+      else if ((PortAA & 0x0F) == 4)  // Row 4
+      {
+          if (JoyState == JST_5)
+          {
+              if (myConfig.msxKey5 == 20) key1 |= 0x01;  // 'K'
+              if (myConfig.msxKey5 == 21) key1 |= 0x02;  // 'L'
+              if (myConfig.msxKey5 == 22) key1 |= 0x04;  // 'M'
+              if (myConfig.msxKey5 == 23) key1 |= 0x08;  // 'N'
+              if (myConfig.msxKey5 == 24) key1 |= 0x10;  // 'O'
+              if (myConfig.msxKey5 == 25) key1 |= 0x20;  // 'P'
+              if (myConfig.msxKey5 == 26) key1 |= 0x40;  // 'Q'
+              if (myConfig.msxKey5 == 27) key1 |= 0x80;  // 'R'
+          }
+      }
+      else if ((PortAA & 0x0F) == 5)  // Row 5
+      {
+          if (JoyState == JST_5)
+          {
+              if (myConfig.msxKey5 == 28) key1 |= 0x01;  // 'S'
+              if (myConfig.msxKey5 == 29) key1 |= 0x02;  // 'T'
+              if (myConfig.msxKey5 == 30) key1 |= 0x04;  // 'U'
+              if (myConfig.msxKey5 == 31) key1 |= 0x08;  // 'V'
+              if (myConfig.msxKey5 == 32) key1 |= 0x10;  // 'W'
+              if (myConfig.msxKey5 == 33) key1 |= 0x20;  // 'X'
+              if (myConfig.msxKey5 == 34) key1 |= 0x40;  // 'Y'
+              if (myConfig.msxKey5 == 35) key1 |= 0x80;  // 'Z'
+          }
+      }      
       else if ((PortAA & 0x0F) == 6) // Row 6
       {
           if (JoyState == JST_7) key1 |= 0x20;    // F1
           if (JoyState == JST_8) key1 |= 0x40;    // F2
           if (JoyState == JST_9) key1 |= 0x80;    // F3
+          if (JoyState == JST_5)
+          {
+            if (myConfig.msxKey5 == 1) key1 |= 0x01;  // SHIFT
+            if (myConfig.msxKey5 == 2) key1 |= 0x02;  // CTRL
+          }
       }
       else if ((PortAA & 0x0F) == 7) // Row 7
       {
           if (JoyState == JST_6)     key1 |= 0x10;  // STOP
           if (JoyState == JST_POUND) key1 |= 0x80;  // RETURN
+          if (JoyState == JST_5)
+          {
+            if (myConfig.msxKey5 == 4) key1 |= 0x01;  // F4
+            if (myConfig.msxKey5 == 5) key1 |= 0x02;  // F5
+            if (myConfig.msxKey5 == 3) key1 |= 0x04;  // ESC
+          }
       }
       else if ((PortAA & 0x0F) == 8) // Row 8
       {
