@@ -905,7 +905,7 @@ void FindAndLoadConfig(void)
 struct options_t
 {
     const char  *label;
-    const char  *option[35];
+    const char  *option[37];
     u8          *option_val;
     u8           option_max;
 };
@@ -913,24 +913,24 @@ struct options_t
 u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},                                   &myConfig.overlay,    9},
-    {"FPS",             {"OFF", "ON", "ON FULLSPEED"},                                                                                                                          &myConfig.showFPS,    3},
-    {"FRAME SKIP",      {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                        &myConfig.frameSkip,  3},
-    {"FRAME BLEND",     {"OFF", "ON"},                                                                                                                                          &myConfig.frameBlend, 2},
-    {"MAX SPRITES",     {"32",  "4"},                                                                                                                                           &myConfig.maxSprites, 2},
-    {"VERT SYNC",       {"OFF", "ON"},                                                                                                                                          &myConfig.vertSync,   2},    
-    {"AUTO FIRE B1",    {"OFF", "ON"},                                                                                                                                          &myConfig.autoFire1,  2},
-    {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                                                          &myConfig.autoFire2,  2},
-    {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                                                               &myConfig.touchPad,   2},    
-    {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                       &myConfig.spinSpeed,  5},
-    {"Z80 CPU CORE",    {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                                                    &myConfig.cpuCore,    2},    
-    {"MSX MAPPER",      {"GUESS", "KONAMI 8K", "ASCII 8K", "KONAMI SCC", "ASCII 16K", "ZEMINA 8K", "ZEMINA 16K"},                                                               &myConfig.msxMapper,  7},
-    {"MSX BIOS",        {"C-BIOS", "MSX.ROM"},                                                                                                                                  &myConfig.msxBios,    2},    
-    {"MSX KEY 5",       {"DEFAULT", "SHIFT","M4","M5","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","6","7","8","9"}, &myConfig.msxKey5,    34},
+    {"OVERLAY",         {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010"},                                               &myConfig.overlay,    9},
+    {"FPS",             {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                      &myConfig.showFPS,    3},
+    {"FRAME SKIP",      {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                    &myConfig.frameSkip,  3},
+    {"FRAME BLEND",     {"OFF", "ON"},                                                                                                                                                      &myConfig.frameBlend, 2},
+    {"MAX SPRITES",     {"32",  "4"},                                                                                                                                                       &myConfig.maxSprites, 2},
+    {"VERT SYNC",       {"OFF", "ON"},                                                                                                                                                      &myConfig.vertSync,   2},    
+    {"AUTO FIRE B1",    {"OFF", "ON"},                                                                                                                                                      &myConfig.autoFire1,  2},
+    {"AUTO FIRE B2",    {"OFF", "ON"},                                                                                                                                                      &myConfig.autoFire2,  2},
+    {"TOUCH PAD",       {"PLAYER 1", "PLAYER 2"},                                                                                                                                           &myConfig.touchPad,   2},    
+    {"SPIN SPEED",      {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                   &myConfig.spinSpeed,  5},
+    {"Z80 CPU CORE",    {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                                                                &myConfig.cpuCore,    2},    
+    {"MSX MAPPER",      {"GUESS", "KONAMI 8K", "ASCII 8K", "KONAMI SCC", "ASCII 16K", "ZEMINA 8K", "ZEMINA 16K"},                                                                           &myConfig.msxMapper,  7},
+    {"MSX BIOS",        {"C-BIOS", "MSX.ROM"},                                                                                                                                              &myConfig.msxBios,    2},    
+    {"MSX KEY 5",       {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"}, &myConfig.msxKey5,    36},
 #if 0   // Developer use only   
-    {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                  &dev_z80_cycles,     16},
+    {"Z80 CYCLES!!",    {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                              &dev_z80_cycles,     16},
 #endif    
-    {NULL,              {"",      ""},                                                                                                                                          NULL,                 1},
+    {NULL,              {"",      ""},                                                                                                                                                      NULL,                 1},
 };              
 
 
