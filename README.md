@@ -87,8 +87,8 @@ Known Issues :
 
 MSX Compatibility :
 -----------------------
-Considering this is a Colecovision emulator, the MSX1 support and compatibility is reasonably high.
-If a game doesn't run, you can try these suggestions:
+Considering this is a Colecovision emulator, the MSX1 support and compatibility is reasonably high.  In Game Options you will notice that
+the default MSX Mapper is set to "GUESS" which does a fairly good job loading the ROM - especially for 32K or smaller games. However, if a game doesn't run, you can try these suggestions:
 * A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options.
 * Most 64K games use the ASC16 memory mapper - so you can try that one... but a few (e.g. Mutants from the Deep) are linear mapped from 0-64K and you will need to pick LINEAR64 in Game Options. 
 * The auto-detection on KONAMI8 and KONAMI-SCC mappers is pretty good... but many other games using ASCII8 or ASCII16 don't detect well - you should try those mappers if the "larger than 64K" game won't run.
