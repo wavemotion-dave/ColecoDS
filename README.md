@@ -94,7 +94,7 @@ the default MSX Mapper is set to "GUESS" which does a fairly good job loading th
 * The auto-detection on KONAMI8 and KONAMI-SCC mappers is pretty good... but many other games using ASCII8 or ASCII16 don't detect well - you should try those mappers if the "larger than 64K" game won't run.
 * Some of the really big games (128K or larger) run slow - if you're not getting full frame rate, you can try switching to the DrZ80 core (not all games will run with this) and/or you can disable Vertical Sync and/or enable Frame Skip.  Recommend you turn off Vertical Sync at a minimum to get the most speed from large MSX games.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
-* With a little dilligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
+* With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run.
 
 Controllers :
@@ -115,7 +115,7 @@ For the MSX emulation, the colecovision keypad is mapped as follows:
   
   SPC 0   RET
 ```
-That should be enough to get most MSX1 cart games running...
+That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '5' key to be any mappable MSX key.
 
 Blend Mode (DSi) :
 -----------------------
