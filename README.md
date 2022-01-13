@@ -167,6 +167,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.7: 12-Jan-2022 by wavemotion-dave
+* Fixed RESET of Colecovision games.
+* Added MSX keypad template and configurable MSX key '5'
+* Improved detection of 32K MSX basic games for improved compatibility.
+
 V5.6: 11-Jan-2022 by wavemotion-dave
 * Improved loading of MSX 8K, 16K and 32K ROMs for higher compatibility.
 * Fixed so we only return joystick input for Port 1.
