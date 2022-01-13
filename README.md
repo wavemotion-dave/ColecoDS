@@ -90,9 +90,12 @@ MSX Compatibility :
 Considering this is a Colecovision emulator, the MSX1 support and compatibility is reasonably high.
 If a game doesn't run, you can try these suggestions:
 * A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options.
-* Games greater than 48K tend to use memory mappers. The emulator will guess but that's often not good enough. Use Game Options to try different mappers.
+* Most 64K games use the ASC16 memory mapper - so you can try that one... but a few (e.g. Mutants from the Deep) are linear mapped from 0-64K and you will need to pick LINEAR64 in Game Options. 
+* The auto-detection on KONAMI8 and KONAMI-SCC mappers is pretty good... but many other games using ASCII8 or ASCII16 don't detect well - you should try those mappers if the "larger than 64K" game won't run.
 * Some of the really big games (128K or larger) run slow - if you're not getting full frame rate, you can try switching to the DrZ80 core (not all games will run with this) and/or you can disable Vertical Sync and/or enable Frame Skip.  Recommend you turn off Vertical Sync at a minimum to get the most speed from large MSX games.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
+* With a little dilligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
+* MSX2 games are not supported and will not run.
 
 Controllers :
 -----------------------
