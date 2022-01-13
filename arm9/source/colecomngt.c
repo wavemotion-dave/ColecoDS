@@ -182,7 +182,10 @@ void sordm5_reset(void)
 // ---------------------------------------------------------
 void msx_reset(void)
 {
-    MSX_InitialMemoryLayout(LastROMSize);
+    if (msx_mode)
+    {
+        MSX_InitialMemoryLayout(LastROMSize);
+    }
 }
 
 
