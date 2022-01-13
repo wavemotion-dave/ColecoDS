@@ -170,7 +170,10 @@ Versions :
 V5.7: 12-Jan-2022 by wavemotion-dave
 * Fixed RESET of Colecovision games.
 * Added MSX keypad template and configurable MSX key '5'
-* Improved detection of 32K MSX basic games for improved compatibility.
+* Improved detection of 32K MSX basic games for better compatibility.
+* Allow 64K ROMs to be loaded in linear memory.
+* Allow 48K ROMs to be memory mapped.
+* Allow 32K ROMs to be loaded at 0K, 4K or 8K.
 
 V5.6: 11-Jan-2022 by wavemotion-dave
 * Improved loading of MSX 8K, 16K and 32K ROMs for higher compatibility.

@@ -961,21 +961,73 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         // code should be loaded... if the INIT is address 0x4000 or higher (this is fairly common) then we
         // load the 32K rom into banks 1+2 and we mirror the first 16K on page 0 and the upper 16K on page 3.
         // ------------------------------------------------------------------------------------------------------
-        if (msx_init >= 0x4000 || msx_basic) // This comes from the .ROM header - if the init address is 0x4000 or higher, we load in bank 1+2
+        if (myConfig.msxMapper == AT0K)
         {
-            memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
-            memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
-            memcpy((u8*)Slot1ROM+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
+                memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
         }
-        else  // Otherwise we load in bank 0+1 and mirrors on 2+3
+        else  if (myConfig.msxMapper == AT4K)
         {
-            memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x8000);      // The full 32K ROM is mapped at 0x0000
-            memcpy((u8*)Slot1ROM+0x8000, romBuffer,        0x8000);      // And the full mirror is at 0x8000
+                memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
+        }
+        else if (myConfig.msxMapper == AT8K)
+        {
+                memcpy((u8*)Slot1ROM+0x8000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
+        }
+        else
+        {
+            if (msx_init >= 0x4000 || msx_basic) // This comes from the .ROM header - if the init address is 0x4000 or higher, we load in bank 1+2
+            {
+                memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x4000);      // Lower 16K is mirror of first 16K of ROM
+                memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x8000);      // Then the full 32K ROM is mapped here
+                memcpy((u8*)Slot1ROM+0xC000, romBuffer+0x4000, 0x4000);      // Upper 16K is the mirror of the second 16K of ROM
+            }
+            else  // Otherwise we load in bank 0+1 and mirrors on 2+3
+            {
+                memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0x8000);      // The full 32K ROM is mapped at 0x0000
+                memcpy((u8*)Slot1ROM+0x8000, romBuffer,        0x8000);      // And the full mirror is at 0x8000
+            }
         }
     }
     else if (iSSize == (48 * 1024))
     {
-        memcpy((u8*)Slot1ROM+0x0000, romBuffer,        0xC000);      // Full Rom starting at 0x0000
+        if (myConfig.msxMapper == ASC8)
+        {
+            Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[1] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[3] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[5] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 48K copied into our fast VRAM buffer
+            mapperMask = 0x07;
+        }
+        else if (myConfig.msxMapper == ASC16)
+        {
+            Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 0 default
+            Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 0 default
+            Slot1ROMPtr[4] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
+            Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 48K copied into our fast VRAM buffer
+            mapperMask = 0x07;
+        }
+        else if (myConfig.msxMapper == AT4K)
+        {
+            memcpy((u8*)Slot1ROM+0x4000, romBuffer,            0xC000);      // Full Rom starting at 0x4000
+        }
+        else
+        {
+            memcpy((u8*)Slot1ROM+0x0000, romBuffer,            0xC000);      // Full Rom starting at 0x0000 (this is common)
+        }
+    }
+    else if ((iSSize == (64 * 1024)) && (myConfig.msxMapper == LIN64))   // 64K Linear ROM
+    {
+        memcpy((u8*)Slot1ROM+0x0000, romBuffer,           0x10000);      // Full Rom starting at 0x0000
     }
     else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)) || (iSSize == (256 * 1024)) || (iSSize == (512 * 1024)))
     {
