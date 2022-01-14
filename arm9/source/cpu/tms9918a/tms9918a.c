@@ -585,17 +585,6 @@ byte Write9918(u8 iReg, u8 value)
 }
 
 
-/** WrData9918() *********************************************/
-/** Write a value V to the VDP Data Port.                   **/
-/*************************************************************/
-ITCM_CODE void WrData9918(byte V) 
-{
-    VDPDlatch = pVDPVidMem[VAddr] = V;
-    VAddr     = (VAddr+1)&0x3FFF;
-    VDPCtrlLatch = 0;
-}
-
-
 /** RdData9918() *********************************************/
 /** Read a value from the VDP Data Port.                    **/
 /*************************************************************/

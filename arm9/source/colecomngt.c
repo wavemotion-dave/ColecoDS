@@ -291,10 +291,10 @@ u8 colecoInit(char *szGame)
       memset(pColecoMem+0x2000, 0x00, 0xC000);            // Wipe Memory above BIOS
       RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
   }
-  else if (msx_mode)  // Load MSX cartridge ... for now, just load 16K
+  else if (msx_mode)  // Load MSX cartridge ... 
   {
-      // Loading 32K of ROM only 
-      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);  // Load up to 32K of game cartridge
+      // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
+      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);  
       
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
@@ -804,12 +804,14 @@ void getfile_crc(const char *path)
 // Try to guess the ROM type from the loaded binary... basically we are
 // counting the number of load addresses that would access a mapper hot-spot.
 // --------------------------------------------------------------------------
-u8 MSX_GuessROMType(void)
+u8 MSX_GuessROMType(u32 size)
 {
     u8 type = KON8;  // Default to Konami 8K mapper
     u16 guess[MAX_MAPPERS] = {0,0,0,0};
     
-    for (int i=0; i<0x10000 - 3; i++)
+    if (size == (64 * 1024)) return ASC16;      // Big percentage of 64K mapper ROMs are ASCII16
+    
+    for (int i=0; i<size - 3; i++)
     {
         if (romBuffer[i] == 0x32)   // LD,A instruction
         {
@@ -940,15 +942,26 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     }
     else if (iSSize == (16 * 1024))
     {
-        if (msx_basic)  // Basic Game loads at 0x8000 ONLY
+        if (myConfig.msxMapper == AT4K)
         {
-            memcpy((u8*)Slot1ROM+0x8000, romBuffer, 0x4000);      // Load rom at 0x8000
+                memcpy((u8*)Slot1ROM+0x4000, romBuffer,        0x4000);      // Load the 16K rom at 0x4000
+        }
+        else if (myConfig.msxMapper == AT8K)
+        {
+                memcpy((u8*)Slot1ROM+0x8000, romBuffer,        0x4000);      // Load the 16K rom at 0x8000
         }
         else
         {
-            for (u8 i=0; i<4; i++)
+            if (msx_basic)  // Basic Game loads at 0x8000 ONLY
             {
-                memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);      // 4 Mirrors so every bank is the same
+                memcpy((u8*)Slot1ROM+0x8000, romBuffer, 0x4000);      // Load rom at 0x8000
+            }
+            else
+            {
+                for (u8 i=0; i<4; i++)
+                {
+                    memcpy((u8*)Slot1ROM+(0x4000 * i), romBuffer, 0x4000);      // 4 Mirrors so every bank is the same
+                }
             }
         }
     }
@@ -990,7 +1003,20 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     }
     else if (iSSize == (48 * 1024))
     {
-        if (myConfig.msxMapper == ASC8)
+        if (myConfig.msxMapper == KON8)
+        {
+            Slot1ROMPtr[0] = (u8*)0x06880000+0x4000;        // Segment 2 Mirror
+            Slot1ROMPtr[1] = (u8*)0x06880000+0x6000;        // Segment 3 Mirror
+            Slot1ROMPtr[2] = (u8*)0x06880000+0x0000;        // Segment 0 default
+            Slot1ROMPtr[3] = (u8*)0x06880000+0x2000;        // Segment 1 default
+            Slot1ROMPtr[4] = (u8*)0x06880000+0x4000;        // Segment 2 default
+            Slot1ROMPtr[5] = (u8*)0x06880000+0x6000;        // Segment 3 default
+            Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 Mirror
+            Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 1 Mirror
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 48K copied into our fast VRAM buffer
+            mapperMask = 0x07;
+        }
+        else if (myConfig.msxMapper == ASC8)
         {
             Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 default
             Slot1ROMPtr[1] = (u8*)0x06880000+0x0000;        // Segment 0 default
@@ -1029,11 +1055,11 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     {
         memcpy((u8*)Slot1ROM+0x0000, romBuffer,           0x10000);      // Full Rom starting at 0x0000
     }
-    else if ((iSSize == (64 * 1024)) || (iSSize == (128 * 1024)) || (iSSize == (256 * 1024)) || (iSSize == (512 * 1024)))
+    else if ((iSSize >= (64 * 1024)) && (iSSize <= (512 * 1024)))   // We'll take anything between these two...
     {
         if (myConfig.msxMapper == GUESS)
         {
-            mapperType = MSX_GuessROMType();
+            mapperType = MSX_GuessROMType(iSSize);
         }
         else
         {
@@ -1078,21 +1104,16 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         // Now copy as much of the ROM into fast VRAM as possible. We only have 128K of
         // VRAM available - anything beyond this will have to be fetched from slow RAM.
         // --------------------------------------------------------------------------------
-        if (iSSize == (256 * 1024))
+        if (iSSize <= (128 * 1024))
         {
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x20000);       // First 128K copied into our fast VRAM buffer
-            mapperMask = 0x1F;
-        }
-        else if (iSSize == (512 * 1024))
-        {
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x20000);       // First 128K copied into our fast VRAM buffer
-            mapperMask = 0x3F;
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);        // All 64K or 128K copied into our fast VRAM buffer
+            mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
         }
         else
         {
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 64K or 128K copied into our fast VRAM buffer
-            mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
-        }
+            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x20000);       // First 128K copied into our fast VRAM buffer
+            mapperMask= (iSSize == (512 * 1024)) ? 0x3F:0x1F;
+        }        
     }
     else    
     {
@@ -1610,6 +1631,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     {
         if (PortA8 != Value)
         {
+            debug1++;
             // ---------------------------------------------------------------------
             // bits 7-6     bits 5-4     bits 3-2      bits 1-0
             // C000h~FFFF   8000h~BFFF   4000h~7FFF    0000h~3FFF

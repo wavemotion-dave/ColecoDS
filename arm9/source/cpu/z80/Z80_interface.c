@@ -125,7 +125,7 @@ ITCM_CODE void MSXBlockCopy(u32* src, u32* dest, u16 size)
     else
     {
         DC_FlushRange(dest, size);
-        dmaCopy(src, dest, size);                            
+        dmaCopyWords(3, src, dest, size);                            
     }   
 }
 
