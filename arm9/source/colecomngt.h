@@ -68,5 +68,5 @@ extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 
 extern u32 LoopZ80();
 extern void BankSwitch(u8 bank);
-
+extern void CheckMSXHeaders(char *szGame);
 #endif

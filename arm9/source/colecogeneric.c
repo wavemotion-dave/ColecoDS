@@ -36,6 +36,7 @@ int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
 char szName[256];
 u8 bForceMSXLoad = false;
+u32 file_size = 0;
 
 const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P1 JOY UP",
@@ -843,9 +844,12 @@ void SetDefaultGameConfig(void)
         myConfig.cpuCore = 1;
     }
     
-    if (sg1000_mode) myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
-    if (sordm5_mode) myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
-    if (msx_mode)    myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can swich it out
+    if (sg1000_mode)                            myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
+    if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
+    if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can swich it out
+    if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync
+    debug1=msx_mode;
+    debug2=file_size;
 }
 
 // -------------------------------------------------------------------------
@@ -1263,17 +1267,18 @@ void NoGameSelected(u32 ucY)
 void ReadFileCRCAndConfig(void)
 {    
     getfile_crc(gpFic[ucGameChoice].szName);
-
+    
     sg1000_mode = 0;
+    sordm5_mode = 0;
+    msx_mode = 0;
+    
+    CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
+
     if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
-
-    sordm5_mode = 0;
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
-
-    msx_mode = 0;
     if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
-
+    
     FindAndLoadConfig();    // Try to find keymap and config for this file...
 }
 

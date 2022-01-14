@@ -55,11 +55,14 @@ const u32 crc32_table[256] = {
 // ------------------------------------------------------------------------------------
 u32 getFileCrc(const char* filename)
 {
+    extern u32 file_size;
     u32 crc = 0xFFFFFFFF;
 
     FILE* file = fopen(filename, "rb");
+    file_size=0;
     int read = fgetc(file);
     while (read != EOF) {
+        file_size++;
         crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)read]; 
         read = fgetc(file);
     }

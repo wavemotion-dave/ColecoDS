@@ -222,19 +222,10 @@ void colecoWipeRAM(void)
       }
   }
 }
-    
 
 
-/*********************************************************************************
- * Init coleco Engine for that game
- ********************************************************************************/
-u8 colecoInit(char *szGame) 
+void CheckMSXHeaders(char *szGame)
 {
-  extern u8 bForceMSXLoad;
-  u8 RetFct,uBcl;
-  u16 uVide;
-
-  memset(romBuffer, 0xFF, (512 * 1024));
   FILE* handle = fopen(szGame, "rb");  
   if (handle)
   {
@@ -246,6 +237,7 @@ u8 colecoInit(char *szGame)
       //  6 DEFW device; pointer to expansion device handler, 0 if no such handler
       //  8 DEFW basic ; pointer to the start of a tokenized basicprogram, 0 if no basicprogram
       // ------------------------------------------------------------------------------------------
+      memset(romBuffer, 0xFF, 0x400A);
       fread((void*) romBuffer, 0x400A, 1, handle); 
       fclose(handle);
       
@@ -276,10 +268,24 @@ u8 colecoInit(char *szGame)
           msx_init = romBuffer[0x4002] | (romBuffer[0x4003]<<8);
           if (msx_init == 0x0000) msx_basic = romBuffer[0x4008] | (romBuffer[0x4009]<<8);
       }
-      if (bForceMSXLoad) msx_mode = 1;
-      if (msx_mode) AY_Enable=true;
-      if (msx_mode) InitBottomScreen();  // Could Need to ensure the MSX layout is shown
   }
+}
+
+
+/*********************************************************************************
+ * Init coleco Engine for that game
+ ********************************************************************************/
+u8 colecoInit(char *szGame) 
+{
+  extern u8 bForceMSXLoad;
+  u8 RetFct,uBcl;
+  u16 uVide;
+
+  memset(romBuffer, 0xFF, (512 * 1024));
+  
+  if (bForceMSXLoad) msx_mode = 1;
+  if (msx_mode) AY_Enable=true;
+  if (msx_mode) InitBottomScreen();  // Could Need to ensure the MSX layout is shown
 
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
@@ -1631,7 +1637,6 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     {
         if (PortA8 != Value)
         {
-            debug1++;
             // ---------------------------------------------------------------------
             // bits 7-6     bits 5-4     bits 3-2      bits 1-0
             // C000h~FFFF   8000h~BFFF   4000h~7FFF    0000h~3FFF
