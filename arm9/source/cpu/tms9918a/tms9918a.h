@@ -58,7 +58,21 @@ extern void RefreshLine2(u8 uY);
 extern void RefreshLine3(u8 uY);
 
 extern byte WrCtrl9918(byte value);
-extern void WrData9918(byte value);
+
+/** WrData9918() *********************************************/
+/** Write a value V to the VDP Data Port.                   **/
+/*************************************************************/
+inline void WrData9918(byte V)  // This one is used frequently so we try to inline it
+{
+    extern u8 VDPDlatch, VDPCtrlLatch;
+    extern u16 VAddr;
+    extern u8 pVDPVidMem[];
+    
+    VDPDlatch = pVDPVidMem[VAddr] = V;
+    VAddr     = (VAddr+1)&0x3FFF;
+    VDPCtrlLatch = 0;
+}
+
 extern byte RdData9918(void);
 extern byte RdCtrl9918(void);
 extern void Reset9918(void);
