@@ -813,10 +813,10 @@ void SetDefaultGameConfig(void)
         myConfig.keymap[7]   = 25;   // NDS Y Button mapped to P2 Button 2         
     }
     
-    // ------------------------------------------------------------------------
-    // These games all need the slower but higher compatibility CZ80 CPU Core
+    // --------------------------------------------------------------------------
+    // These CV games all need the slower but higher compatibility CZ80 CPU Core
     // so override the default above for these games in order to play them.
-    // ------------------------------------------------------------------------
+    // --------------------------------------------------------------------------
     if (
         (file_crc == 0xead5e824) ||     // Arno Dash
         (file_crc == 0x3b27ed05) ||     // Astro Storm
@@ -847,9 +847,7 @@ void SetDefaultGameConfig(void)
     if (sg1000_mode)                            myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
     if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
     if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can swich it out
-    if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync
-    debug1=msx_mode;
-    debug2=file_size;
+    if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
 }
 
 // -------------------------------------------------------------------------

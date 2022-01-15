@@ -76,6 +76,11 @@ u16 emuFps=0;
 u16 emuActFrames=0;
 u16 timingFrames=0;
 
+// For the various BIOS files ... only the coleco.rom is required
+u8 bColecoBiosFound = false;
+u8 bSordBiosFound = false;
+u8 bMSXBiosFound = false;
+
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
 u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
@@ -1081,10 +1086,18 @@ void irqVBlank(void)
 // ----------------------------------------------------------------
 // Look for the coleco.rom bios in several possible locations...
 // ----------------------------------------------------------------
-bool ColecoBIOSFound(void)
+void LoadBIOSFiles(void)
 {
     FILE *fp;
 
+    // --------------------------------------------------
+    // We will look for all 3 BIOS files here but only 
+    // the Colecovision coleco.rom is critical.
+    // --------------------------------------------------
+    bColecoBiosFound = false;
+    bSordBiosFound = false;
+    bMSXBiosFound = false;
+    
     // -----------------------------------------------------------
     // First load Sord M5 bios - don't really care if this fails
     // -----------------------------------------------------------
@@ -1093,6 +1106,7 @@ bool ColecoBIOSFound(void)
     if (fp == NULL) fp = fopen("/data/bios/sordm5.rom", "rb");
     if (fp != NULL)
     {
+        bSordBiosFound = true;
         fread(SordM5Bios, 0x2000, 1, fp);
         fclose(fp);
     }
@@ -1106,6 +1120,7 @@ bool ColecoBIOSFound(void)
     if (fp == NULL) fp = fopen("/data/bios/sordm5.rom", "rb");
     if (fp != NULL)
     {
+        bMSXBiosFound = true;
         fread(MSXBios, 0x8000, 1, fp);
         fclose(fp);
     }
@@ -1118,11 +1133,10 @@ bool ColecoBIOSFound(void)
     if (fp == NULL) fp = fopen("/data/bios/coleco.rom", "rb");
     if (fp != NULL)
     {
+        bColecoBiosFound = true;
         fread(ColecoBios, 0x2000, 1, fp);
         fclose(fp);
-        return true;   
     }
-    return false;
 }
 
 /*********************************************************************************
@@ -1158,7 +1172,7 @@ int main(int argc, char **argv)
   // -----------------------------------------------------------------
   // Grab the BIOS before we try to switch any directories around...
   // -----------------------------------------------------------------
-  bool bColecoBiosFound =  ColecoBIOSFound();    
+  LoadBIOSFiles();
     
   //  Handle command line argument... mostly for TWL++
   if  (argc > 1) 
@@ -1196,11 +1210,21 @@ int main(int argc, char **argv)
   {
     colecoDSInit();
 
+    // ---------------------------------------------------------------
+    // Let the user know what BIOS files were found - the only BIOS 
+    // that must exist is coleco.rom or else the show is off...
+    // ---------------------------------------------------------------
     if (bColecoBiosFound)
     {
-        AffChaine(2,9,0,"ALL IS OK ...");
-        AffChaine(2,11,0,"coleco.rom BIOS FOUND");
-        AffChaine(2,13,0,"TOUCH SCREEN / KEY TO BEGIN");
+        u8 idx = 9;
+        AffChaine(2,idx++,0,"BIOS FILES LOADED ..."); idx++;
+        AffChaine(2,idx++,0,"coleco.rom BIOS FOUND"); idx++;
+        if (bMSXBiosFound) {AffChaine(2,idx++,0,"msx.rom BIOS FOUND"); idx++;}
+        else {AffChaine(2,idx++,0,"msx.rom BIOS NOT FOUND"); idx++;}
+        if (bSordBiosFound) {AffChaine(2,idx++,0,"sordm5.rom BIOS FOUND"); idx++;}
+        else {AffChaine(2,idx++,0,"sordm5.rom BIOS NOT FOUND"); idx++;}
+        AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
+        
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
@@ -1211,7 +1235,7 @@ int main(int argc, char **argv)
         AffChaine(2,12,0,"ERROR: CANT RUN WITHOUT BIOS");
         AffChaine(2,14,0,"Put coleco.rom in same dir");
         AffChaine(2,15,0,"as EMULATOR or /ROMS/BIOS");
-        while(1) ;
+        while(1) ;  // We're done... Need a coleco bios to run a CV emulator
     }
   
     while(1) 
@@ -1223,7 +1247,7 @@ int main(int argc, char **argv)
           ucGameChoice=0;
           ucGameAct=0;
           strcpy(gpFic[ucGameAct].szName, initial_file);
-          initial_file[0] = 0;  // No more initial file...
+          initial_file[0] = 0;    // No more initial file...
           ReadFileCRCAndConfig(); // Get CRC32 of the file and read the config/keys
       }
       else  
