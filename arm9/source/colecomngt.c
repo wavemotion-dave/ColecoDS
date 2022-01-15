@@ -34,6 +34,7 @@
 u8 Slot0BIOS[0x10000] = {0xFF};
 u8 Slot1ROM[0x10000]  = {0xFF};
 u8 Slot3RAM[0x10000]  = {0x00};
+u8* Slot3RAMPtr __attribute__((section(".dtcm"))) = (u8*)0;
 
 u8 mapperType __attribute__((section(".dtcm"))) = 0;
 u8 mapperMask __attribute__((section(".dtcm"))) = 0;
@@ -125,7 +126,7 @@ u8 bMagicMegaCart __attribute__((section(".dtcm"))) = 0;      // Mega Carts supp
 u8 bActivisionPCB __attribute__((section(".dtcm"))) = 0;      // Activision PCB is 64K with EEPROM
 u8 sRamAtE000_OK  __attribute__((section(".dtcm"))) = 0;      // Lord of the Dungeon is the only game that needs this
 
-u32 file_crc = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
+u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
 
 u8 sgm_low_mem[8192] = {0}; // The 8K of SGM RAM that can be mapped into the BIOS area
 
@@ -913,8 +914,21 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     memset((u8*)0x06880000, 0xFF, 0x20000);
     memset(Slot0BIOS, 0xFF, 0x10000);
     memset(Slot1ROM,  0xFF, 0x10000);
-    memset(Slot3RAM,  0x00, 0x10000);
     memset(pColecoMem,0xFF, 0x10000);
+    
+    // --------------------------------------------------
+    // If we are using less than 64K of ROM, we can use 
+    // the 2nd half of the fast VRAM buffer for RAM swap
+    // --------------------------------------------------
+    if (LastROMSize <= (64 * 1024))
+    {
+        Slot3RAMPtr = (u8*)0x06890000;
+    }
+    else
+    {
+        Slot3RAMPtr = (u8*)Slot3RAM;
+    }
+    memset(Slot3RAMPtr,  0x00, 0x10000);
 
     // --------------------------------------------------------------
     // Based on config, load up the C-BIOS or the real MSX.ROM BIOS
@@ -1030,7 +1044,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[5] = (u8*)0x06880000+0x6000;        // Segment 3 default
             Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 Mirror
             Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 1 Mirror
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 48K copied into our fast VRAM buffer
+            memcpy((u8*)0x06880000, romBuffer, iSSize);     // All 48K copied into our fast VRAM buffer
             mapperMask = 0x07;
         }
         else if (myConfig.msxMapper == ASC8)
@@ -1043,7 +1057,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[5] = (u8*)0x06880000+0x0000;        // Segment 0 default
             Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
             Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 0 default
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 48K copied into our fast VRAM buffer
+            memcpy((u8*)0x06880000, romBuffer, iSSize);     // All 48K copied into our fast VRAM buffer
             mapperMask = 0x07;
         }
         else if (myConfig.msxMapper == ASC16)
@@ -1056,7 +1070,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[5] = (u8*)0x06880000+0x2000;        // Segment 0 default
             Slot1ROMPtr[6] = (u8*)0x06880000+0x0000;        // Segment 0 default
             Slot1ROMPtr[7] = (u8*)0x06880000+0x2000;        // Segment 0 default
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);       // All 48K copied into our fast VRAM buffer
+            memcpy((u8*)0x06880000, romBuffer, iSSize);     // All 48K copied into our fast VRAM buffer
             mapperMask = 0x07;
         }
         else if (myConfig.msxMapper == AT4K)
@@ -1123,13 +1137,19 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         // --------------------------------------------------------------------------------
         if (iSSize <= (128 * 1024))
         {
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   iSSize);        // All 64K or 128K copied into our fast VRAM buffer
-            mapperMask= (iSSize == (64 * 1024)) ? 0x07:0x0F;
+            memcpy((u8*)0x06880000, romBuffer,   iSSize);        // All 64K or 128K copied into our fast VRAM buffer
+            if (mapperType == ASC16 || mapperType == ZEN16)
+                mapperMask = (iSSize == (64 * 1024)) ? 0x03:0x07;
+            else
+                mapperMask = (iSSize == (64 * 1024)) ? 0x07:0x0F;
         }
         else
         {
-            memcpy((u8*)0x06880000+0x0000, romBuffer+(0 * 0x2000),   0x20000);       // First 128K copied into our fast VRAM buffer
-            mapperMask= (iSSize == (512 * 1024)) ? 0x3F:0x1F;
+            memcpy((u8*)0x06880000, romBuffer,   0x20000);       // First 128K copied into our fast VRAM buffer
+            if (mapperType == ASC16 || mapperType == ZEN16)
+                mapperMask = (iSSize == (512 * 1024)) ? 0x1F:0x0F;
+            else
+                mapperMask = (iSSize == (512 * 1024)) ? 0x3F:0x1F;
         }        
     }
     else    
@@ -1610,24 +1630,40 @@ inline void FastMemCopy(u8* dest, u8* src, u16 numBytes)
 // ----------------------------
 // Save MSX Ram from Slot
 // ----------------------------
-void SaveRAM(u8 slot)
+ITCM_CODE void SaveRAM(u8 slot)
 {
     // Only save if we had RAM in this slot previously
     if (bRAMInSlot[slot] == 1)
     {
-        FastMemCopy(Slot3RAM+(slot*0x4000), pColecoMem+(slot*0x4000), 0x4000);  // Move 16K of RAM from main memory into the MSX RAM buffer
+        if (LastROMSize <= (64 * 1024)) // If RAM buffer in VRAM, use DMA 
+        {
+            DC_FlushRange(pColecoMem+(slot*0x4000), 0x4000);
+            dmaCopyWords(3, pColecoMem+(slot*0x4000), Slot3RAMPtr+(slot*0x4000), 0x4000);
+        }
+        else
+        {
+            FastMemCopy(Slot3RAMPtr+(slot*0x4000), pColecoMem+(slot*0x4000), 0x4000);  // Move 16K of RAM from main memory into the MSX RAM buffer
+        }
     }
 }
 
 // ----------------------------
 // Restore MSX Ram to Slot
 // ----------------------------
-void RestoreRAM(u8 slot)
+ITCM_CODE void RestoreRAM(u8 slot)
 {
     // Only restore if we didn't have RAM here already...
     if (bRAMInSlot[slot] == 0)
     {
-        FastMemCopy(pColecoMem+(slot*0x4000), Slot3RAM+(slot*0x4000), 0x4000);  // Move 16K of RAM from MSX RAM buffer back into main RAM
+        if (LastROMSize <= (64 * 1024)) // If RAM buffer in VRAM, use DMA 
+        {
+            DC_FlushRange(pColecoMem+(slot*0x4000), 0x4000);
+            dmaCopyWords(3, Slot3RAMPtr+(slot*0x4000), pColecoMem+(slot*0x4000), 0x4000);
+        }
+        else
+        {
+            FastMemCopy(pColecoMem+(slot*0x4000), Slot3RAMPtr+(slot*0x4000), 0x4000);  // Move 16K of RAM from MSX RAM buffer back into main RAM
+        }
     }
 }
 

@@ -264,6 +264,8 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
     }
     if (bROMInSlot[1] && (address >= 0x7000) && (address < 0x8000))
     {
+        if ((file_crc == 0xfea70207) && (address != 0x7000)) return;  // Vaxol writes garbage to 7xxx so we ignore that
+        
         if (lastBlock[1] != block)
         {
             u32 *dest = (u32*)(pColecoMem+0x8000);
