@@ -27,7 +27,7 @@
 
 #include "tms9918a.h"
 
-u8 MaxSprites[2] = {32, 4};     // Normally the CV only shows 4 sprites on a line... for emulation we bump this up if configured
+u8 MaxSprites[2] __attribute__((section(".dtcm"))) = {32, 4};     // Normally the CV only shows 4 sprites on a line... for emulation we bump this up if configured
 
 u16 *pVidFlipBuf __attribute__((section(".dtcm"))) = (u16*) (0x06000000);    // Video flipping buffer
 
@@ -36,7 +36,7 @@ u8 XBuf_B[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buff
 u8 *XBuf __attribute__((section(".dtcm"))) = XBuf_A;
 
 // Look up table for colors - pre-generated and in VRAM for maximum speed!
-u32 (*lutTablehh)[16][16] = (void*)0x068A0000;
+u32 (*lutTablehh)[16][16] __attribute__((section(".dtcm"))) = (void*)0x068A0000;
 
 // ---------------------------------------------------------------------------------------
 // Screen handlers and masks for VDP table address registers. 
@@ -51,12 +51,6 @@ tScrMode SCR[MAXSCREEN+1] = {
   { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 0 aka MSX SCREEN 1 aka "GRAPHIC 1"  */
   { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F,0x00,0x7F,0x03,0x00 }, /* VDP Mode 3 aka MSX SCREEN 2 aka "GRAPHIC 2"  */
   { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 2 aka MSX SCREEN 3 aka "MULTICOLOR" */
-      
-//  { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 0:TEXT 40x24    */
-//  { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 1:TEXT 32x24    */
-//  { RefreshLine2,0x7F,0x80,0x3C,0xFF,0x3F,0x00,0x7F,0x03,0x00 },/* SCREEN 2:BLOCK 256x192 */
-//  { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 },/* SCREEN 3:GFX 64x48x16  */
-      
 };
 
 /** Palette9918[] ********************************************/
@@ -457,7 +451,7 @@ void ITCM_CODE RefreshLine2(u8 uY) {
 /** Refresh line Y (0..191) of SCREEN3, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void RefreshLine3(u8 uY) {
+void ITCM_CODE RefreshLine3(u8 uY) {
   register byte X,K,Offset;
   register byte *P,*T;
 
@@ -483,7 +477,7 @@ void RefreshLine3(u8 uY) {
 /*********************************************************************************
  * Emulator calls this function to write byte 'value' into a VDP register 'iReg'
  ********************************************************************************/
-static u8 VDP_RegisterMasks[] = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };    
+u8 VDP_RegisterMasks[] __attribute__((section(".dtcm"))) = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };
 byte Write9918(u8 iReg, u8 value) 
 { 
   int newMode;
@@ -648,7 +642,7 @@ ITCM_CODE byte RdCtrl9918(void)
 /** to be generated, 0 otherwise.                           **/
 /*************************************************************/
 u8 frameSkipIdx __attribute__((section(".dtcm"))) = 0;
-u8 frameSkip[3] = {0xFF, 0x03, 0x01};   // Frameskip OFF, Light, Agressive
+u8 frameSkip[3] __attribute__((section(".dtcm"))) = {0xFF, 0x03, 0x01};   // Frameskip OFF, Light, Agressive
 byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
