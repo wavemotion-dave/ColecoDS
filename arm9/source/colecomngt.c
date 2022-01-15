@@ -224,6 +224,9 @@ void colecoWipeRAM(void)
 }
 
 
+/*********************************************************************************
+ * Look for MSX 'AB' header in the ROM file
+ ********************************************************************************/
 void CheckMSXHeaders(char *szGame)
 {
   FILE* handle = fopen(szGame, "rb");  
@@ -862,12 +865,11 @@ u8 MSX_GuessROMType(u32 size)
     else type = KON8; 
     
     
-    
-    if (file_crc == 0x5dc45624) type = ASC8;  // Super Laydock
-    
     // ----------------------------------------------------------------------
-    // Since ASC16 is so hard to detect reliably, check a few special CRCs
+    // Since mappers are hard to detect reliably, check a few special CRCs
     // ----------------------------------------------------------------------
+    if (file_crc == 0x5dc45624) type = ASC8;   // Super Laydock
+    if (file_crc == 0xb885a464) type = ZEN8;   // Super Laydock    
     if (file_crc == 0x7454ad5b) type = ASC16;  // Sorcery
     if (file_crc == 0x3891bc0f) type = ASC16;  // Govellious
     if (file_crc == 0x1d1ec602) type = ASC16;  // Eggerland 2
@@ -875,8 +877,17 @@ u8 MSX_GuessROMType(u32 size)
     if (file_crc == 0x885773f9) type = ASC16;  // Dragon Slayer 3
     if (file_crc == 0x0521ca7a) type = ASC16;  // Dynamite Dan
     if (file_crc == 0xab6cd62c) type = ASC16;  // King's Knight    
-    if (file_crc == 0x827919e4) type = ASC16;  // R-Type 512k
     if (file_crc == 0x00c5d5b5) type = ASC16;  // Hydlyde III
+    if (file_crc == 0x2a019191) type = ASC8;   // R-Type 512k
+    if (file_crc == 0xa3a51fbb) type = ASC16;  // R-Type 512k
+    if (file_crc == 0x952bfaa4) type = SCC8;   // R-Type 512k
+    if (file_crc == 0xfbd3f05b) type = ASC16;  // Alien Attack 3.5
+    if (file_crc == 0xa6e924ab) type = ASC16;  // Alien2
+    if (file_crc == 0x1306ccca) type = ASC8;   // Auf Wiedershen Monty [1.7]
+    if (file_crc == 0xec036e37) type = ASC16;  // Gall Force
+    if (file_crc == 0xa29176e3) type = ASC16;  // Mecha 9    
+    if (file_crc == 0x03379ef8) type = ASC16;  // MSXDev Step Up 1.2
+    if (file_crc == 0x8183bae1) type = LIN64;  // Mutants fro the Deep (fixed)
     
     return type;
 }
