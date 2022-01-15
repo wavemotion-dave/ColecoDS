@@ -38,6 +38,11 @@ char szName[256];
 u8 bForceMSXLoad = false;
 u32 file_size = 0;
 
+struct Config_t AllConfigs[MAX_CONFIGS];
+struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm")));
+extern u32 file_crc;
+
+
 const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P1 JOY UP",
   "P1 JOY DOWN",
@@ -641,9 +646,6 @@ u8 colecoDSLoadFile(void)
   return 0x01;
 }
 
-struct Config_t AllConfigs[MAX_CONFIGS];
-struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm")));
-extern u32 file_crc;
 
 // ---------------------------------------------------------------------------
 // Write out the ColecoDS.DAT configuration file to capture the settings for

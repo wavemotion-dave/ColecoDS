@@ -182,11 +182,11 @@ void SoundUnPause(void)
 // of FluBBa, we've swiched over to the maxmod
 // sound core which seems to perform better.
 // --------------------------------------------
-#define sample_rate  55930/2
-#define buffer_size  (512+12)
+#define sample_rate  27965      // To match the driver in sn76496 - this is good enough quality for the DS
+#define buffer_size  (512+12)   // Enough buffer that we don't have to fill it too often
 
-mm_ds_system sys;
-mm_stream myStream;
+mm_ds_system sys  __attribute__((section(".dtcm")));
+mm_stream myStream __attribute__((section(".dtcm")));
 s16 mixbuf1[2048];      // When we have SN and AY sound we have to mix 3+3 channels
 s16 mixbuf2[2048];      // into a single output so we render to mix buffers first.
 
@@ -203,6 +203,8 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
     }
     else
     {
+        if ((len*4) > debug1) debug1=(len*4);
+        
         if (msx_mode)   // If we are an MSX, we can just use the one AY sound core
         {
             sn76496Mixer(len*4, dest, &aycol);
@@ -313,7 +315,7 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496W(0xFF,  &sncol);         // Disable Noise Channel
     
-  sn76496Mixer(8, mixbuf1, &sncol);  // Do  an initial mix conversion to clear the output
+  sn76496Mixer(8, mixbuf1, &sncol);  // Do an initial mix conversion to clear the output
 
     
   //  ------------------------------------------------------------------
@@ -335,7 +337,7 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496W(0xFF,  &aycol);         // Disable Noise Channel
     
-  sn76496Mixer(8, mixbuf2, &aycol);  // Do  an initial mix conversion to clear the output
+  sn76496Mixer(8, mixbuf2, &aycol);  // Do an initial mix conversion to clear the output
   
   setupStream();    // Setup maxmod stream...
 
@@ -401,7 +403,7 @@ void ResetColecovision(void)
   else if (msx_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,Slot0BIOS,0x8000);        // Restore MSX BIOS
+      memcpy(pColecoMem,Slot0BIOS,0x8000);      // Restore MSX BIOS
   }
   else
   {
