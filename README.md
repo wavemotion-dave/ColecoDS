@@ -97,6 +97,12 @@ the default MSX Mapper is set to "GUESS" which does a fairly good job loading th
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run.
 
+The MSX memory is laid out as follows:
+ SLOT0:  MSX BIOS (first 32K)
+ SLOT1:  Cartridge Slot
+ SLOT2:  Empty (0xFF)
+ SLOT3:  RAM (64K)
+
 Controllers :
 -----------------------
 You can map buttons to either P1 or P2 controllers. 
