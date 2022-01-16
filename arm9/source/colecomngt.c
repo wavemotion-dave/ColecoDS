@@ -531,6 +531,7 @@ void colecoSaveState()
       
     if (msx_mode)   // Big enough that we will not write this if we are not MSX
     {
+        if (LastROMSize <= (64 * 1024)) memcpy(Slot3RAM, Slot3RAMPtr, 0x10000);
         if (uNbO) fwrite(Slot3RAM, 0x10000,1, handle);
     }
       
@@ -676,6 +677,7 @@ void colecoLoadState()
             if (msx_mode)   // Big enough that we will not read this if we are not MSX
             {
                 if (uNbO) fread(Slot3RAM, 0x10000,1, handle);
+                if (LastROMSize <= (64 * 1024)) memcpy(Slot3RAMPtr, Slot3RAM, 0x10000);
             }
             
             // Fix up transparency

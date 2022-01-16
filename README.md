@@ -170,6 +170,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.8: 16-Jan-2022 by wavemotion-dave
+* Improved DMA memory handling of MSX to bump mega ROM games speed by up to 10%
+* Improved loading databaes so more games detect memory mapper correctly.
+* Faster RAM swapping for improved loading speed on games.
+* Other cleanups and improvements under the hood.
+
 V5.7: 12-Jan-2022 by wavemotion-dave
 * Fixed RESET of Colecovision games.
 * Added MSX keypad template and configurable MSX key '5'
