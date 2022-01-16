@@ -98,10 +98,12 @@ the default MSX Mapper is set to "GUESS" which does a fairly good job loading th
 * MSX2 games are not supported and will not run.
 
 The MSX memory is laid out as follows:
+```
  SLOT0:  MSX BIOS (first 32K)
  SLOT1:  Cartridge Slot
  SLOT2:  Empty (0xFF)
  SLOT3:  RAM (64K)
+```
 
 Controllers :
 -----------------------
