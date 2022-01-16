@@ -42,7 +42,7 @@ extern u8 ay_reg_idx;
 extern u16 sgm_low_addr;
 extern SN76496 aycol;
 
-static const u8 Volumes[16] = { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
+static const u8 Volumes[16] = { 15,15,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
 u16 envelope_period __attribute__((section(".dtcm"))) = 0;
 u16 envelope_counter __attribute__((section(".dtcm"))) = 0;
 
@@ -179,7 +179,10 @@ void UpdateToneA(void)
         freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
         sn76496W(0x80 | (freq & 0xF), &aycol);
         sn76496W((freq >> 4) & 0x3F, &aycol);
-        sn76496W(0x90 | Volumes[(ay_reg[0x08] & 0x0F)], &aycol);
+        if (freq > 0)
+            sn76496W(0x90 | Volumes[(ay_reg[0x08] & 0x0F)], &aycol);
+        else 
+            sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
     }
     else
     {
@@ -200,7 +203,10 @@ void UpdateToneB(void)
         freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
         sn76496W(0xA0 | (freq & 0xF), &aycol);
         sn76496W((freq >> 4) & 0x3F, &aycol);
-        sn76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x0F)], &aycol);
+        if (freq > 0)
+            sn76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x0F)], &aycol);
+        else 
+            sn76496W(0xBF, &aycol); // Turn off tone sound on Channel B
     }
     else
     {
@@ -222,7 +228,10 @@ void UpdateToneC(void)
         freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
         sn76496W(0xC0 | (freq & 0xF), &aycol);
         sn76496W((freq >> 4) & 0x3F, &aycol);
-        sn76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x0F)], &aycol);
+        if (freq > 0)
+            sn76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x0F)], &aycol);
+        else 
+            sn76496W(0xDF, &aycol); // Turn off tone sound on Channel C
     }
     else
     {
@@ -235,55 +244,9 @@ void UpdateToneC(void)
 // -----------------------------------------------------------------------
 void UpdateTonesAY(void)
 {
-    u16 freq=0;
-    
-    // ----------------------------------------------------------------------
-    // If Channel A tone is enabled - set frequency and update SN sound core
-    // ----------------------------------------------------------------------
-    if (!(ay_reg[0x07] & 0x01))
-    {
-        freq = (ay_reg[0x01] << 8) | ay_reg[0x00];
-        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-        sn76496W(0x80 | (freq & 0xF), &aycol);
-        sn76496W((freq >> 4) & 0x3F, &aycol);
-        sn76496W(0x90 | Volumes[(ay_reg[0x08] & 0x0F)], &aycol);
-    }
-    else
-    {
-        sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
-    }    
-    
-    // ----------------------------------------------------------------------
-    // If Channel B tone is enabled - set frequency and update SN sound core
-    // ----------------------------------------------------------------------
-    if (!(ay_reg[0x07] & 0x02))
-    {
-        freq = (ay_reg[0x03] << 8) | ay_reg[0x02];
-        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-        sn76496W(0xA0 | (freq & 0xF), &aycol);
-        sn76496W((freq >> 4) & 0x3F, &aycol);
-        sn76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x0F)], &aycol);
-    }
-    else
-    {
-        sn76496W(0xBF, &aycol); // Turn off tone sound on Channel B
-    }    
-
-    // ----------------------------------------------------------------------
-    // If Channel C tone is enabled - set frequency and update SN sound core
-    // ----------------------------------------------------------------------
-    if (!(ay_reg[0x07] & 0x04))
-    {
-        freq = (ay_reg[0x05] << 8) | ay_reg[0x04];
-        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-        sn76496W(0xC0 | (freq & 0xF), &aycol);
-        sn76496W((freq >> 4) & 0x3F, &aycol);
-        sn76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x0F)], &aycol);
-    }
-    else
-    {
-        sn76496W(0xDF, &aycol); // Turn off tone sound on Channel C
-    }    
+    UpdateToneA();
+    UpdateToneB();
+    UpdateToneC();
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -299,7 +262,7 @@ void FakeAY_WriteData(u8 Value)
       // This is the AY sound chip support... we're cheating here and just mapping those sounds
       // onto the original Colecovision SN sound chip. Not perfect but good enough.
       // ----------------------------------------------------------------------------------------
-      //Value &= AY_RegisterMasks[ay_reg_idx & 0x0F];  // Not strictly necessary
+      //Value &= AY_RegisterMasks[ay_reg_idx & 0x0F];  // Not strictly necessary so we save the CPU time
     
       u8 prevVal = ay_reg[ay_reg_idx];
       ay_reg[ay_reg_idx]=Value;
