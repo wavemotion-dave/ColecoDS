@@ -94,14 +94,15 @@ the default MSX Mapper is set to "GUESS" which does a fairly good job loading th
 * The auto-detection on KONAMI8 and KONAMI-SCC mappers is pretty good... but many other games using ASCII8 or ASCII16 don't detect well - you should try those mappers if the "larger than 64K" game won't run.
 * Some of the really big games (128K or larger) run slow - if you're not getting full frame rate, you can try switching to the DrZ80 core (not all games will run with this) and/or you can disable Vertical Sync and/or enable Frame Skip.  Recommend you turn off Vertical Sync at a minimum to get the most speed from large MSX games.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
+* Some MSX games take 6 or 7 seconds to initialize and start running due to checking various slots and subslots for memory - be patient. 
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run.
 
 The MSX memory is laid out as follows:
 ```
- SLOT0:  MSX BIOS (first 32K)
- SLOT1:  Cartridge Slot
- SLOT2:  Empty (0xFF)
+ SLOT0:  MSX BIOS (first 32K... 0xFF after that)
+ SLOT1:  Cartridge Slot (this is where the game ROM lives)
+ SLOT2:  Empty (0xFF always)
  SLOT3:  RAM (64K)
 ```
 
@@ -178,6 +179,9 @@ would personally try them:
 
 Versions :
 -----------------------
+V5.9: 19-Jan-2022 by wavemotion-dave
+* Refactor of memory to gain another 128K of fast VRAM to improve Coleco MegaCart and MSX games.
+
 V5.8: 16-Jan-2022 by wavemotion-dave
 * Improved DMA memory handling of MSX to bump mega ROM games speed by up to 10%
 * Improved loading databaes so more games detect memory mapper correctly.

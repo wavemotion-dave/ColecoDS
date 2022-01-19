@@ -32,53 +32,40 @@ extern u8 romBankMask;
 extern u8 romBuffer[];
 extern u8 Slot1ROM[];
 
- u32 z80_rebaseSP(u16 address) {
-  drz80.Z80SP_BASE = (unsigned int) pColecoMem;
-  drz80.Z80SP      = drz80.Z80SP_BASE + address;
-  return (drz80.Z80SP);
-}
-
- u32 z80_rebasePC(u16 address) {
-  drz80.Z80PC_BASE = (unsigned int) pColecoMem;
-  drz80.Z80PC      = drz80.Z80PC_BASE + address;
-  return (drz80.Z80PC);
-}
-
- void z80_irq_callback(void) {
-	drz80.Z80_IRQ = 0x00;
-}
-
 // -----------------------------
 // Normal 8-bit Read... fast!
 // -----------------------------
- u8 cpu_readmem16 (u16 address) {
+u8 cpu_readmem16 (u16 address) {
   return (pColecoMem[address]);
 }
 
-// -----------------------------
-// Normal 16-bit Read... fast!
-// -----------------------------
- u16 drz80MemReadW(u16 address) 
-{
-    return (pColecoMem[address]  |  (pColecoMem[address+1] << 8));
-}
-
-// ------------------------------------------------
+// -------------------------------------------------
 // Switch banks... do this as fast as possible..
-// ------------------------------------------------
- ITCM_CODE void BankSwitch(u8 bank)
+// Up to 256K of the Colecovision Mega Cart ROM can 
+// be stored in fast VRAM so we check that here.
+// -------------------------------------------------
+ITCM_CODE void BankSwitch(u8 bank)
 {
     if (lastBank != bank)   // Only if the bank was changed...
     {
         u32 *src;
-        if (bank < 8)   // If bank area under 128 - grab from VRAM - it's faster
-            src = (u32*)((u32)0x06880000 + ((u32)bank * (u32)0x4000));
-        else
-            src = (u32*)((u32)romBuffer + ((u32)bank * (u32)0x4000));
         u32 *dest = (u32*)(pColecoMem+0xC000);
-        for (int i=0; i<0x1000; i++)
+        if (bank < 8)   // If bank area under 128k - grab from first VRAM chunk of memory - it's faster
         {
-            *dest++ = *src++;       // Copy 4 bytes at a time for best speed...
+            src = (u32*)((u32)0x06880000 + ((u32)bank * (u32)0x4000));
+            DC_FlushRange(dest, 0x4000);
+            dmaCopyWords(3, src, dest, 0x4000);                            
+        }
+        else if (bank < 16)   // If bank area between 128k and 256k - grab from the other VRAM area - it's faster
+        {
+            src = (u32*)((u32)0x06820000 + ((u32)(bank-8) * (u32)0x4000));
+            DC_FlushRange(dest, 0x4000);
+            dmaCopyWords(3, src, dest, 0x4000);                            
+        }
+        else  // It's in main memory... best we can do is copy 4 bytes at a time
+        {
+            src = (u32*)((u32)romBuffer + ((u32)bank * (u32)0x4000));
+            for (int i=0; i<0x1000; i++) *dest++ = *src++;       // Copy 4 bytes at a time for best speed...          
         }
         lastBank = bank;
     }
@@ -99,34 +86,21 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
   return (pColecoMem[address]);
 }
 
-// -------------------------------------------------
-// 16-bit read with bankswitch support... slower...
-// -------------------------------------------------
- u16 drz80MemReadW_banked(u16 addr) 
-{
-  if (bMagicMegaCart) // Handle Megacart Hot Spots
-  {
-      return (cpu_readmem16_banked(addr) | (cpu_readmem16_banked(addr+1)<<8));   // These handle both hotspots - slower but easier than reproducing the hotspot stuff
-  }    
-  return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
-}
-
-
 // ---------------------------------------------------------------------
 // If the memory is in our VRAM cache, use dmaCopy() which is faster 
 // but if our memory is out in normal RAM, just use loop copy.
 // ---------------------------------------------------------------------
 ITCM_CODE void MSXBlockCopy(u32* src, u32* dest, u16 size)
 {
-    if (msx_offset >= 0x20000)  
-    {
-        for (u16 i=0; i<(size/4); i++)  *dest++ = *src++;
-    }
-    else
+    if (msx_offset < 0x28000)  // In VRAM so DMA copy will be faster
     {
         DC_FlushRange(dest, size);
         dmaCopyWords(3, src, dest, size);                            
-    }   
+    }
+    else  // In normal memory, just use loop copy
+    {
+        for (u16 i=0; i<(size/4); i++)  *dest++ = *src++;
+    }
 }
 
 
@@ -188,8 +162,8 @@ void HandleZemina8K(u32* src, u8 block, u16 address)
 
 // -------------------------------------------------------------------------
 // The ZENMIA 16K Mapper:
-// 4000h~7FFFh 	4000h-7FFF
-// 8000h~BFFFh 	8000h-BFFF
+// 4000h~7FFFh 	via writes to 4000h-7FFF
+// 8000h~BFFFh 	via writes to 8000h-BFFF
 // -------------------------------------------------------------------------
 void HandleZemina16K(u32* src, u8 block, u16 address)
 {
@@ -213,7 +187,7 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
             lastBlock[0] = block;
         }
     }
-    if (bROMInSlot[1] && (address >= 0x8000) && (address < 0xC000))
+    else if (bROMInSlot[1] && (address >= 0x8000) && (address < 0xC000))
     {
         if (lastBlock[1] != block)
         {
@@ -237,8 +211,8 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
     
 // -------------------------------------------------------------------------
 // The ASCII 16K Mapper:
-// 4000h~7FFFh 	6000h
-// 8000h~BFFFh 	7000h or 77FFh
+// 4000h~7FFFh 	via writes to 6000h
+// 8000h~BFFFh 	via writes to 7000h or 77FFh
 // -------------------------------------------------------------------------
 void HandleAscii16K(u32* src, u8 block, u16 address)
 {
@@ -246,44 +220,29 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
     {
         if (lastBlock[0] != block)
         {
-            u32 *dest = (u32*)(pColecoMem+0x4000);
             Slot1ROMPtr[2] = (u8*)src;
             Slot1ROMPtr[3] = (u8*)src+0x2000;
             // Mirrors
             Slot1ROMPtr[6] = (u8*)src;
             Slot1ROMPtr[7] = (u8*)src+0x2000;
-            MSXBlockCopy(src, dest, 0x4000);            
-            if (bROMInSlot[3]) 
-            {
-                src = (u32*)Slot1ROMPtr[2];
-                dest = (u32*)(pColecoMem+0xC000);
-                MSXBlockCopy(src, dest, 0x4000);
-            }
+            MSXBlockCopy(src, (u32*)(pColecoMem+0x4000), 0x4000);            
+            if (bROMInSlot[3]) MSXBlockCopy(src, (u32*)(pColecoMem+0xC000), 0x4000);
             lastBlock[0] = block;
         }
     }
-    if (bROMInSlot[1] && (address >= 0x7000) && (address < 0x8000))
+    else if (bROMInSlot[1] && (address >= 0x7000) && (address < 0x8000))
     {
         if ((file_crc == 0xfea70207) && (address != 0x7000)) return;  // Vaxol writes garbage to 7xxx so we ignore that
         
         if (lastBlock[1] != block)
         {
-            u32 *dest = (u32*)(pColecoMem+0x8000);
             Slot1ROMPtr[4] = (u8*)src;
             Slot1ROMPtr[5] = (u8*)src+0x2000;
             // Mirrors
             Slot1ROMPtr[0] = (u8*)src;
             Slot1ROMPtr[1] = (u8*)src+0x2000;
-            if (bROMInSlot[2]) 
-            {
-                MSXBlockCopy(src, dest, 0x4000);
-            }
-            if (bROMInSlot[0]) 
-            {
-                src = (u32*)Slot1ROMPtr[4];
-                dest = (u32*)(pColecoMem+0x0000);
-                MSXBlockCopy(src, dest, 0x4000);
-            }            
+            if (bROMInSlot[2]) MSXBlockCopy(src, (u32*)(pColecoMem+0x8000), 0x4000);
+            if (bROMInSlot[0]) MSXBlockCopy(src, (u32*)(pColecoMem+0x0000), 0x4000);
             lastBlock[1] = block;
         }
     }
@@ -292,7 +251,7 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
 // ------------------------------------------------------------------
 // Write memory handles both normal writes and bankswitched since
 // write is much less common than reads...   We handle the MSX
-// Konami 8K and ASCII 8K mappers directly here for max speed.
+// Konami 8K, SCC and ASCII 8K mappers directly here for max speed.
 // ------------------------------------------------------------------
 ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
 {
@@ -318,8 +277,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
             {
                 pColecoMem[address]=value;  // Allow writes in this 8K range to emulate DahJee RAM expander
             }
-        }
-        
+        }        
     }
     // ----------------------------------------------------------------------------------
     // For the Sord M5, RAM is at 0x7000 and we emulate the 32K RAM Expander above that
@@ -332,7 +290,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         }
     }
     // ----------------------------------------------------------------------------------------------------------
-    // For the MSX, we support a 64K main RAM machine but we do handle some of the more common memory mappers...
+    // For the MSX, we support a 64K main RAM machine plus some of the more common memory mappers...
     // ----------------------------------------------------------------------------------------------------------
     else if (msx_mode)
     {
@@ -366,8 +324,13 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 u32 *src;
                 u32 block = (value & mapperMask);
                 msx_offset = block * ((mapperType == ASC16 || mapperType == ZEN16) ? 0x4000:0x2000);
-                if (msx_offset >= 0x20000) src = (u32*)((u8*)romBuffer + msx_offset);
-                else src = (u32*)(0x06880000 + msx_offset);                    
+
+                // -------------------------------------------------------------------------------------------------------
+                // Up to 128K is in first VRAM area then next 32K is in second VRAM area and finally we're in normal RAM
+                // -------------------------------------------------------------------------------------------------------
+                if      (msx_offset < 0x20000) src = (u32*)(0x06880000 + msx_offset);
+                else if (msx_offset < 0x28000) src = (u32*)(0x06820000 + (msx_offset - 0x20000));
+                else    src = (u32*)((u8*)romBuffer + msx_offset);
             
                 // ---------------------------------------------------------------------------------
                 // The Konami 8K Mapper without SCC:
@@ -500,7 +463,6 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     //	Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
                     //	Bank 4: A000h - BFFFh - mapped via writes to B000h
                     // --------------------------------------------------------
-                    if ((value&0x3F) == 0x3F) return;       // SCC sound isn't supported anyway - just return and save the CPU cycles
                     if (bROMInSlot[1] && (address == 0x5000))
                     {
                         if (lastBlock[0] != block)
@@ -523,6 +485,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     }
                     else if (bROMInSlot[2] && (address == 0x9000))
                     {
+                        if ((value&0x3F) == 0x3F) return;       // SCC sound isn't supported anyway - just return and save the CPU cycles
                         if (lastBlock[2] != block)
                         {
                             Slot1ROMPtr[4] = (u8*)src;  // Main ROM
@@ -591,15 +554,36 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 
 
 // -----------------------------------------------------------------
+// All functions below are interfaces into the DrZ80 core
+// -----------------------------------------------------------------
+
+// -----------------------------------------------------------------
 // The 16-bit write simply makes 2 calls into the 8-bit writes...
 // -----------------------------------------------------------------
- void drz80MemWriteW(u16 data,u16 addr) 
+void drz80MemWriteW(u16 data,u16 addr) 
 {
     cpu_writemem16(data & 0xff , addr);
     cpu_writemem16(data>>8,addr+1);
 }
 
- void DrZ80_Cause_Interrupt(int type) 
+u32 z80_rebaseSP(u16 address) {
+  drz80.Z80SP_BASE = (unsigned int) pColecoMem;
+  drz80.Z80SP      = drz80.Z80SP_BASE + address;
+  return (drz80.Z80SP);
+}
+
+u32 z80_rebasePC(u16 address) {
+  drz80.Z80PC_BASE = (unsigned int) pColecoMem;
+  drz80.Z80PC      = drz80.Z80PC_BASE + address;
+  return (drz80.Z80PC);
+}
+
+void z80_irq_callback(void) {
+	drz80.Z80_IRQ = 0x00;
+}
+
+
+void DrZ80_Cause_Interrupt(int type) 
 {
     if (type == Z80_NMI_INT) 
     {
@@ -632,6 +616,29 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     }
 }
 
+// -----------------------------
+// Normal 16-bit Read... fast!
+// -----------------------------
+ u16 drz80MemReadW(u16 address) 
+{
+    return (pColecoMem[address]  |  (pColecoMem[address+1] << 8));
+}
+
+// -------------------------------------------------
+// 16-bit read with bankswitch support... slower...
+// -------------------------------------------------
+ u16 drz80MemReadW_banked(u16 addr) 
+{
+  if (bMagicMegaCart) // Handle Megacart Hot Spots
+  {
+      return (cpu_readmem16_banked(addr) | (cpu_readmem16_banked(addr+1)<<8));   // These handle both hotspots - slower but easier than reproducing the hotspot stuff
+  }    
+  return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
+}
+
+// ------------------------------------------------------
+// DrZ80 uses pointers to various read/write memory/IO
+// ------------------------------------------------------
 void DrZ80_InitHandlers() {
   extern u8 romBankMask;
   drz80.z80_write8=cpu_writemem16;
