@@ -554,6 +554,15 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 
 
 // -----------------------------------------------------------------
+// If we are MSX mode and this is the VDP interrupt, we clear it
+// -----------------------------------------------------------------
+void ClearMSXInterrupt(void)
+{
+    if (msx_mode && (CPU.IRequest == INT_RST38)) CPU.IRequest=INT_NONE;
+}
+
+
+// -----------------------------------------------------------------
 // All functions below are interfaces into the DrZ80 core
 // -----------------------------------------------------------------
 

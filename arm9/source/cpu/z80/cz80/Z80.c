@@ -572,6 +572,7 @@ ITCM_CODE int ExecZ80(register int RunCycles)
 }
 #endif /* EXECZ80 */
 
+
 /** IntZ80() *************************************************/
 /** This function will generate interrupt of given vector.  **/
 /*************************************************************/
@@ -586,7 +587,7 @@ void IntZ80(Z80 *R,word Vector)
     M_PUSH(PC);
 
     /* Automatically reset IRequest if needed */
-    if(CPU.IAutoReset&&(Vector==CPU.IRequest)) CPU.IRequest=INT_NONE;
+    if(CPU.IAutoReset&&(Vector==CPU.IRequest)) {if (!((msx_mode && CPU.IRequest == INT_RST38))) CPU.IRequest=INT_NONE;}  // For MSX mode, we don't auto-reset the VDP interrupt
 
     /* If it is NMI... */
     if(Vector==INT_NMI)
