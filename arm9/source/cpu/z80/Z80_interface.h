@@ -27,6 +27,9 @@ struct __attribute__((__packed__)) Z80_Regs {
 extern u16 cpuirequest;
 
 extern struct DrZ80 drz80;
+extern Z80 CPU;
+
+extern void ClearMSXInterrupt(void);
 
 extern void DrZ80_Cause_Interrupt(int type);
 extern void DrZ80_Interrupt(void);

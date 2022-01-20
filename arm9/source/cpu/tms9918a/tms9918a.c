@@ -632,6 +632,8 @@ ITCM_CODE byte RdCtrl9918(void)
   VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
   VDPCtrlLatch = 0;
     
+  ClearMSXInterrupt();
+
   return(data);
 }
 
