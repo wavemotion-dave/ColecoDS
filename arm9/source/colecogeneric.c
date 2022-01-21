@@ -737,7 +737,7 @@ void SetDefaultGameConfig(void)
     myConfig.cpuCore     = (isDSiMode() ? 1:0);    // Default is slower/accurate CZ80 for DSi and faster DrZ80 core for DS-LITE
     myConfig.msxBios     = 0;   // Default to the C-BIOS
     myConfig.msxKey5     = 0;   // Default key map
-    myConfig.reserved8   = 0;    
+    myConfig.dpad        = DPAD_JOYSTICK;   // Normal DPAD use - mapped to joystick
     myConfig.reserved9   = 0;    
     myConfig.reservedA   = 0;    
     myConfig.reservedB   = 0;    
@@ -926,6 +926,7 @@ const struct options_t Option_Table[] =
     {"AUTO FIRE B1",   {"OFF", "ON"},                                                                                                                                                       &myConfig.autoFire1,  2},
     {"AUTO FIRE B2",   {"OFF", "ON"},                                                                                                                                                       &myConfig.autoFire2,  2},
     {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
+    {"NDS DPAD",       {"NORMAL", "MSX KEYS", "DIAGONALS"},                                                                                                                                 &myConfig.dpad,       3},   
     {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                    &myConfig.spinSpeed,  5},
     {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                                                                 &myConfig.cpuCore,    2},    
     {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
@@ -951,14 +952,14 @@ u8 display_options_list(bool bFullDisplay)
         while (true)
         {
             siprintf(strBuf, " %-12s : %-14s", Option_Table[len].label, Option_Table[len].option[*(Option_Table[len].option_val)]);
-            dsPrintValue(1,6+len, (len==0 ? 2:0), strBuf); len++;
+            dsPrintValue(1,5+len, (len==0 ? 2:0), strBuf); len++;
             if (Option_Table[len].label == NULL) break;
         }
 
         // Blank out rest of the screen... option menus are of different lengths...
         for (int i=len; i<15; i++) 
         {
-            dsPrintValue(1,6+i, 0, (char *)"                               ");
+            dsPrintValue(1,5+i, 0, (char *)"                               ");
         }
     }
 
@@ -1007,25 +1008,25 @@ void colecoDSGameOptions(void)
             if (keysCurrent() & KEY_UP) // Previous option
             {
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,6+optionHighlighted,0, strBuf);
+                dsPrintValue(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,6+optionHighlighted,2, strBuf);
+                dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_DOWN) // Next option
             {
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,6+optionHighlighted,0, strBuf);
+                dsPrintValue(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,6+optionHighlighted,2, strBuf);
+                dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
 
             if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
             {
                 *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) + 1) % Option_Table[optionHighlighted].option_max;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,6+optionHighlighted,2, strBuf);
+                dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
             {
@@ -1034,7 +1035,7 @@ void colecoDSGameOptions(void)
                 else
                     *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) - 1) % Option_Table[optionHighlighted].option_max;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
-                dsPrintValue(1,6+optionHighlighted,2, strBuf);
+                dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_START)  // Save Options
             {
@@ -1260,7 +1261,6 @@ void NoGameSelected(u32 ucY)
     while (!(keysCurrent()  & (KEY_START | KEY_A)));
     while (keysCurrent()  & (KEY_START | KEY_A));
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-    AffChaine(9,5,0,"=* OPTIONS *=");
     affInfoOptions(ucY);
 }
 
@@ -1327,7 +1327,6 @@ void colecoDSChangeOptions(void)
   dmaVal = *(bgGetMapPtr(bg1b)+24*32); 
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 
-  AffChaine(9,5,0,"=* OPTIONS *=");
   affInfoOptions(ucY);
   
   if (ucGameChoice != -1) 
@@ -1379,7 +1378,6 @@ void colecoDSChangeOptions(void)
                 DisplayFileName();      // And put up the filename on the bottom screen
             }
             ucY = 10;
-            AffChaine(9,5,0,"=* OPTIONS *=");
             affInfoOptions(ucY);
             break;
           case 10 :     // PLAY GAME
@@ -1397,7 +1395,6 @@ void colecoDSChangeOptions(void)
             { 
                 colecoDSChangeKeymap();
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-                AffChaine(9,5,0,"=* OPTIONS *=");
                 affInfoOptions(ucY);
                 DisplayFileName();
             }
@@ -1411,7 +1408,6 @@ void colecoDSChangeOptions(void)
             { 
                 colecoDSGameOptions();
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-                AffChaine(9,5,0,"=* OPTIONS *=");
                 affInfoOptions(ucY);
                 DisplayFileName();
             }

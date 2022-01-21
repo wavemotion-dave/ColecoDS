@@ -558,7 +558,10 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 // -----------------------------------------------------------------
 void ClearMSXInterrupt(void)
 {
-    if (msx_mode && (CPU.IRequest == INT_RST38)) CPU.IRequest=INT_NONE;
+    if (msx_mode)
+    {
+        if (!msx_auto_clear_irq && (CPU.IRequest == INT_RST38)) CPU.IRequest=INT_NONE;
+    }
 }
 
 
