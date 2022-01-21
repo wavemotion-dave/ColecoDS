@@ -22,7 +22,7 @@ directory as the coleco.rom BIOS.
 SG-1000 emulation does not need a BIOS.
 
 MSX emulation does not need a BIOS (C-BIOS used) 
-but you can put msx.rom in /roms/bios or /data/bios 
+but you can put the 32k msx.rom in /roms/bios or /data/bios 
 and the emulator will use that instead.
 
 Features :
