@@ -179,6 +179,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.0: 21-Jan-2022 by wavemotion-dave
+* Improved MSX compatibilty - more playable games.
+* Added D-PAD to emulate MSX arrow keys.
+* Added D-PAD diagonals emulation.
+
 V5.9: 19-Jan-2022 by wavemotion-dave
 * Refactor of memory to gain another 128K of fast VRAM to improve Coleco MegaCart and MSX games.
 

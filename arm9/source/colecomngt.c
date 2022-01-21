@@ -61,6 +61,9 @@ u8 PortA8 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortA9 __attribute__((section(".dtcm"))) = 0x00;
 u8 PortAA __attribute__((section(".dtcm"))) = 0x00;
 
+u8 msx_auto_clear_irq __attribute__((section(".dtcm"))) = 0;
+
+
 extern u8 MSXBios[];
 extern u8 CBios[];
 
@@ -814,6 +817,13 @@ void getfile_crc(const char *path)
     SGM_NeverEnable = false;                            // And allow SGM by default unless Super DK or Super DK-Jr (directly below)
     if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
     if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
+    
+    msx_auto_clear_irq = false;
+    if (file_crc == 0xef339b82) msx_auto_clear_irq = true; // Ninja Kun - Bouken
+    if (file_crc == 0xc9bcbe5a) msx_auto_clear_irq = true; // Ghostbusters
+    if (file_crc == 0x9814c355) msx_auto_clear_irq = true; // Ghostbusters    
+    if (file_crc == 0x90530889) msx_auto_clear_irq = true; // Soul of a Robot
+    if (file_crc == 0x33221ad9) msx_auto_clear_irq = true; // Time Bandits    
 }
 
 
@@ -1602,13 +1612,26 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           // Only port 1... not port 2
           if ((ay_reg[15] & 0x40) == 0)
           {
-              if (JoyState & JST_UP)    joy1 |= 0x01;
-              if (JoyState & JST_DOWN)  joy1 |= 0x02;
-              if (JoyState & JST_LEFT)  joy1 |= 0x04;
-              if (JoyState & JST_RIGHT) joy1 |= 0x08;
+              if (myConfig.dpad == DPAD_JOYSTICK)
+              {
+                  if (JoyState & JST_UP)    joy1 |= 0x01;
+                  if (JoyState & JST_DOWN)  joy1 |= 0x02;
+                  if (JoyState & JST_LEFT)  joy1 |= 0x04;
+                  if (JoyState & JST_RIGHT) joy1 |= 0x08;
 
-              if (JoyState & JST_FIREL) joy1 |= 0x10;
-              if (JoyState & JST_FIRER) joy1 |= 0x20;
+                  if (JoyState & JST_FIREL) joy1 |= 0x10;
+                  if (JoyState & JST_FIRER) joy1 |= 0x20;
+              }
+              else if (myConfig.dpad == DPAD_DIAGONALS)
+              {
+                  if (JoyState & JST_UP)    joy1 |= (0x01 | 0x08);
+                  if (JoyState & JST_DOWN)  joy1 |= (0x02 | 0x04);
+                  if (JoyState & JST_LEFT)  joy1 |= (0x04 | 0x01);
+                  if (JoyState & JST_RIGHT) joy1 |= (0x08 | 0x02);
+
+                  if (JoyState & JST_FIREL) joy1 |= 0x10;
+                  if (JoyState & JST_FIRER) joy1 |= 0x20;
+              }
           }
 
           ay_reg[14] = ~joy1;
@@ -1725,9 +1748,19 @@ unsigned char cpu_readport_msx(register unsigned short Port)
             if (myConfig.msxKey5 == 3) key1 |= 0x04;  // ESC
           }
       }
-      else if ((PortAA & 0x0F) == 8) // Row 8
+      else if ((PortAA & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
       {
           if (JoyState == JST_STAR) key1 |= 0x01;  // SPACE
+          
+          if (myConfig.dpad == DPAD_MSX_KEYS)
+          {
+              if (JoyState & JST_UP)    key1 |= 0x20;  // KEY UP
+              if (JoyState & JST_DOWN)  key1 |= 0x40;  // KEY DOWN
+              if (JoyState & JST_LEFT)  key1 |= 0x10;  // KEY LEFT
+              if (JoyState & JST_RIGHT) key1 |= 0x80;  // KEY RIGHT          
+              if (JoyState & JST_FIREL) key1 |= 0x01;  // SPACE
+              if (JoyState & JST_FIRER) key1 |= 0x01;  // SPACE
+          }
       }
       return ~key1;
   }

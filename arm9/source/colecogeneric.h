@@ -11,6 +11,10 @@
 #define ID_SHM_YES    0x01
 #define ID_SHM_NO     0x02
 
+#define DPAD_JOYSTICK   0
+#define DPAD_MSX_KEYS   1
+#define DPAD_DIAGONALS  2
+
 typedef struct {
   char szName[MAX_ROM_LENGTH];
   u8 uType;
@@ -39,7 +43,7 @@ struct __attribute__((__packed__)) Config_t
     u8  cpuCore;
     u8  msxBios;
     u8  msxKey5;
-    u8  reserved8;
+    u8  dpad;
     u8  reserved9;
     u32 reservedA;
     u32 reservedB;

@@ -35,7 +35,7 @@ extern Z80 CPU;
 /*************************************************************/
 #define FAST_RDOP
 
-extern u8 msx_mode;
+extern u8 msx_mode, msx_auto_clear_irq;
 
 // ------------------------------------------------------
 // These defines and inline functions are to map maximum
@@ -587,7 +587,20 @@ void IntZ80(Z80 *R,word Vector)
     M_PUSH(PC);
 
     /* Automatically reset IRequest if needed */
-    if(CPU.IAutoReset&&(Vector==CPU.IRequest)) {if (!((msx_mode && CPU.IRequest == INT_RST38))) CPU.IRequest=INT_NONE;}  // For MSX mode, we don't auto-reset the VDP interrupt
+    if (CPU.IAutoReset && (Vector==CPU.IRequest))
+    {
+        if (msx_mode && (CPU.IRequest == INT_RST38))
+        {
+            if (msx_auto_clear_irq)
+            {
+                CPU.IRequest=INT_NONE;      // For MSX mode, we only auto-clear for special games
+            }
+        }
+        else
+        {
+            CPU.IRequest=INT_NONE;
+        }
+    }
 
     /* If it is NMI... */
     if(Vector==INT_NMI)
