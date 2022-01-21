@@ -124,7 +124,7 @@ For the MSX emulation, the colecovision keypad is mapped as follows:
   
   SPC 0   RET
 ```
-That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '5' key to be any mappable MSX key.
+That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '5' key to be any mappable MSX key. For the few games that still require the MSX arrows to play - you can emulate that via the D-PAD in Game Options.
 
 Blend Mode (DSi) :
 -----------------------
@@ -180,7 +180,7 @@ would personally try them:
 Versions :
 -----------------------
 V6.0: 21-Jan-2022 by wavemotion-dave
-* Improved MSX compatibilty - more playable games.
+* Improved MSX compatabilty - more playable games.
 * Added D-PAD to emulate MSX arrow keys.
 * Added D-PAD diagonals emulation.
 
