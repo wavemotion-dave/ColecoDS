@@ -153,6 +153,33 @@ void FakeAY_Loop(void)
     }
 }
 
+// ------------------------------------------------------------------------------------
+// If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it), 
+// then we need to service it here. We basically track the frequency at which the
+// game has hit the beeper and approximate that by using AY Channel A to produce the 
+// tone.  This is crude and doesn't sound quite right... but good enough.
+// ------------------------------------------------------------------------------------
+void BeeperON(u16 beeper_freq)
+{
+    if (beeper_freq > 0)
+    {
+        if (beeper_freq > 0x3FF) beeper_freq = 0x3FF;
+        beeper_freq = 0x3FF - beeper_freq;
+        sn76496W(0x80 | (beeper_freq & 0xF), &aycol);
+        sn76496W((beeper_freq >> 4) & 0x3F, &aycol);
+        sn76496W(0x97, &aycol); // Turn on sound at fixed volume 
+    }
+    else 
+    {
+        sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
+    }
+}
+
+void BeeperOFF(void)
+{
+    sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
+}
+
 // ------------------------------------------------------------------
 // Noise is a bit more complicated on the AY chip as we have to
 // check each A,B,C channel to see if we should be mixing in noise. 
