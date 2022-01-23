@@ -13,6 +13,8 @@ extern u8 a_idx;
 extern u8 b_idx;
 extern u8 c_idx;
 
+extern void BeeperON(u16 freq);
+extern void BeeperOFF(void);
 
 // -----------------------------------
 // Write the AY register index...

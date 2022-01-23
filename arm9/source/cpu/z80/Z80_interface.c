@@ -456,6 +456,8 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 }
                 else if (mapperType == SCC8)
                 {
+                    if ((address & 0x0FFF) != 0) return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes
+                    
                     // --------------------------------------------------------
                     // Konami 8K mapper with SCC 
                     //	Bank 1: 4000h - 5FFFh - mapped via writes to 5000h

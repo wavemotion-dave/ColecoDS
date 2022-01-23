@@ -43,7 +43,14 @@ u8 bRAMInSlot[4] __attribute__((section(".dtcm"))) = {0,0,0,0};
 
 u8 *Slot1ROMPtr[8] __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 
+u16 beeperFreq __attribute__((section(".dtcm"))) = 0;
+
 Z80 CPU __attribute__((section(".dtcm")));
+
+u8 msx_beeper_process __attribute__((section(".dtcm"))) = 0;
+u8 msx_beeper_enabled  __attribute__((section(".dtcm"))) = 0;
+u8 beeperWasOn __attribute__((section(".dtcm"))) = 0;
+
 
 // --------------------------------------------------
 // Some CPU and VDP and SGM stuff that we need
@@ -818,12 +825,25 @@ void getfile_crc(const char *path)
     if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
     if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
     
+    // ---------------------------------------------------------------------------------
+    // A few games don't work well with the clearing of interrupts on VDP and run 
+    // better with auto-clear.  So we adjust those here...
+    // ---------------------------------------------------------------------------------
     msx_auto_clear_irq = false;
     if (file_crc == 0xef339b82) msx_auto_clear_irq = true; // Ninja Kun - Bouken
     if (file_crc == 0xc9bcbe5a) msx_auto_clear_irq = true; // Ghostbusters
     if (file_crc == 0x9814c355) msx_auto_clear_irq = true; // Ghostbusters    
     if (file_crc == 0x90530889) msx_auto_clear_irq = true; // Soul of a Robot
     if (file_crc == 0x33221ad9) msx_auto_clear_irq = true; // Time Bandits    
+    
+    // ---------------------------------------------------------------------------------
+    // A few of the ZX Spectrum ports actually use the MSX beeper for sound. Go figure!
+    // ---------------------------------------------------------------------------------
+    msx_beeper_enabled = 0;
+    if (file_crc == 0x1b8873ca) msx_beeper_enabled = 1;     // MSX Avenger uses beeper
+    if (file_crc == 0x111fc33b) msx_beeper_enabled = 1;     // MSX Avenger uses beeper    
+    if (file_crc == 0x690f9715) msx_beeper_enabled = 1;     // MSX Batman (the movie) uses beeper
+    if (file_crc == 0x3571f5d4) msx_beeper_enabled = 1;     // MSX Master of the Universe uses beeper
 }
 
 
@@ -1854,7 +1874,6 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
                     RestoreRAM(0);
-                    debug2++;
                     bROMInSlot[0] = 0;
                     bRAMInSlot[0] = 1;
                     break;
@@ -1956,7 +1975,32 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     }
     else if (Port == 0xAA)  // PPI - Register C
     {
+        if (Value & 0x80)  // Beeper ON
+        {
+            if ((PortAA & 0x80) == 0) beeperFreq++;
+        }
         PortAA = Value;
+    }
+    else if (Port == 0xAB)  // PPI - Register C Fast Modify
+    {
+        if ((Value & 0x0E) == 0x0E)
+        {
+            if (Value & 1)  // Beeper ON
+            {
+                if ((PortAA & 0x80) == 0) beeperFreq++;
+                PortAA |= 0x80; // Set bit
+            }
+            else
+            {
+                PortAA &= 0x7F; // Clear bit
+            }
+            
+        }
+    }
+    else
+    {
+        if (debug1 == 0) debug1=Port;
+        else if (debug2 == 0) debug2=Port;
     }
 }
 
@@ -2113,7 +2157,7 @@ ITCM_CODE u32 LoopZ80()
       extern u16 envelope_period;
       if (++envelope_counter > envelope_period) FakeAY_Loop();
   }
-    
+   
   // ------------------------------------------------------------------
   // Before we execute Z80 or Loop the 9918 (both of which can cause 
   // NMI interrupt to occur), we check and adjust the spinners which 
@@ -2205,7 +2249,32 @@ ITCM_CODE u32 LoopZ80()
   }
   
   // Drop out unless end of screen is reached 
-  return (CurLine == TMS9918_END_LINE) ? 0:1;
+  if (CurLine == TMS9918_END_LINE)
+  {
+      // ------------------------------------------------------------------------------------
+      // If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it), 
+      // then we need to service it here. We basically track the frequency at which the
+      // game has hit the beeper and approximate that by using AY Channel A to produce the 
+      // tone.  This is crude and doesn't sound quite right... but good enough.
+      // ------------------------------------------------------------------------------------
+      if (msx_beeper_enabled)
+      {
+          if (++msx_beeper_process & 1)
+          {
+              if (beeperFreq > 0)
+              {
+                  BeeperON(30 * beeperFreq); // Frequency in Hz
+                  beeperFreq = 0;            // Gather new Beeper freq
+                  beeperWasOn=1;
+              } else {if (beeperWasOn) {BeeperOFF(); beeperWasOn=0;}}
+          }
+      }
+      return 0;
+  }
+  else
+  {
+      return 1;
+  }
 }
 
 // End of file
