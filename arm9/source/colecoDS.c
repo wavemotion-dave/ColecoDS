@@ -856,8 +856,8 @@ void colecoDS_main(void)
                 else if ((iTx >= 145) && (iTx < 167))  msx_key = 'Z';
                 else if ((iTx >= 167) && (iTx < 189))  msx_key = MSX_KEY_UP;
                 else if ((iTx >= 189) && (iTx < 211))  msx_key = MSX_KEY_DOWN;
-                else if ((iTx >= 211) && (iTx < 233))  msx_key = MSX_KEY_RIGHT;
-                else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_LEFT;
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = MSX_KEY_LEFT;
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_RIGHT;
             }
             else if ((iTy >= 134) && (iTy < 157)) // Row 5
             {
@@ -1325,12 +1325,10 @@ int main(int argc, char **argv)
     if (bColecoBiosFound)
     {
         u8 idx = 9;
-        AffChaine(2,idx++,0,"BIOS FILES LOADED ..."); idx++;
+        AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
         AffChaine(2,idx++,0,"coleco.rom BIOS FOUND"); idx++;
         if (bMSXBiosFound) {AffChaine(2,idx++,0,"msx.rom BIOS FOUND"); idx++;}
-        else {AffChaine(2,idx++,0,"msx.rom BIOS NOT FOUND"); idx++;}
         if (bSordBiosFound) {AffChaine(2,idx++,0,"sordm5.rom BIOS FOUND"); idx++;}
-        else {AffChaine(2,idx++,0,"sordm5.rom BIOS NOT FOUND"); idx++;}
         AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
         
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
