@@ -413,7 +413,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     // 8000h~9FFFh (mirror: 0000h~1FFFh)	7000h (mirrors: 7001h~77FFh)	0
                     // A000h~BFFFh (mirror: 2000h~3FFFh)	7800h (mirrors: 7801h~7FFFh)	0     
                     // -------------------------------------------------------------------------
-                    if (bROMInSlot[1] && (address == 0x6000))
+                    if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x6800))
                     {
                         if (lastBlock[0] != block)
                         {
@@ -427,7 +427,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             lastBlock[0] = block;
                         }
                     }
-                    else if (bROMInSlot[1] && (address == 0x6800))
+                    else if (bROMInSlot[1] && (address >= 0x6800)  && (address < 0x7000))
                     {
                         if (lastBlock[1] != block)
                         {
@@ -441,7 +441,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             lastBlock[1] = block;
                         }
                     }
-                    else if (bROMInSlot[1] && (address == 0x7000))
+                    else if (bROMInSlot[1] && (address >= 0x7000)  && (address < 0x7800))
                     {
                         if (lastBlock[2] != block)
                         {
@@ -474,7 +474,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             lastBlock[2] = block;
                         }
                     }
-                    else if (bROMInSlot[1] && (address == 0x7800))
+                    else if (bROMInSlot[1] && (address >= 0x7800) && (address < 0x8000))
                     {
                         if (lastBlock[3] != block)
                         {

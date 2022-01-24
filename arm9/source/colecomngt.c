@@ -853,10 +853,14 @@ void getfile_crc(const char *path)
     if (file_crc == 0x3571f5d4) msx_beeper_enabled = 1;     // MSX Master of the Universe uses beeper
     
     msx_sram_enabled = 0;
-    if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness 
-    if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness 
-    if (file_crc == 0xd640deaf) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu
-    if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II    
+    if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN) 
+    if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
+    if (file_crc == 0xd640deaf) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (EN)
+    if (file_crc == 0x119b7ba8) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (JP)    
+    if (file_crc == 0x27fd8f9a) msx_sram_enabled = 0x10;       // MSX Deep Dungeon I (JP)
+    if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (EN)
+    if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)
+    
 }
 
 
@@ -1879,6 +1883,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == MSX_KEY_DOWN)  key1 = 0x40;
               if (msx_key == MSX_KEY_LEFT)  key1 = 0x10;
               if (msx_key == MSX_KEY_RIGHT) key1 = 0x80;
+              if (msx_key == MSX_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the less used SEL key
           }          
       }
       return ~key1;
