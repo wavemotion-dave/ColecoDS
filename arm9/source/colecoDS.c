@@ -27,6 +27,7 @@
 #include "intro.h"
 #include "ecranBas.h"
 #include "msx.h"
+#include "msx_full.h"
 #include "ecranDebug.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
@@ -88,6 +89,7 @@ u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause
 u8 sg1000_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
 u8 sordm5_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
 u8 msx_mode    __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
+u8 msx_key     __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
@@ -705,6 +707,7 @@ void colecoDS_main(void)
       // Handle any screen touch events
       // ------------------------------------------
       ucUN  = 0;
+      msx_key = 0;
       if  (keysCurrent() & KEY_TOUCH) {
         touchPosition touch;
         touchRead(&touch);
@@ -712,7 +715,8 @@ void colecoDS_main(void)
         iTy = touch.py;
     
         // Test if "Reset Game" selected
-        if ((iTx>=6) && (iTy>=40) && (iTx<=130) && (iTy<67)) 
+        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=38) && (iTx<= 35) && (iTy<63))) ||
+            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=40) && (iTx<=130) && (iTy<67))))
         {
           if  (!ResetNow) {
             ResetNow = 1;
@@ -733,7 +737,8 @@ void colecoDS_main(void)
         }
         
         // Test if "End Game" selected
-        if ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95)) 
+        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=63) && (iTx<= 35) && (iTy<86))) ||
+            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95))))
         {
           //  Stop sound
           SoundPause();
@@ -750,7 +755,8 @@ void colecoDS_main(void)
         }
 
         // Test if "High Score" selected
-        if ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125)) 
+        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=86) && (iTx<= 35) && (iTy<110))) ||
+            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125))))
         {
           //  Stop sound
           SoundPause();
@@ -760,7 +766,8 @@ void colecoDS_main(void)
         }
           
         // Test if "Save State" selected
-        if ((iTx>=6) && (iTy>=125) && (iTx<=130) && (iTy<155) ) 
+        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=110) && (iTx<= 35) && (iTy<134))) ||
+            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=125) && (iTx<=130) && (iTy<155)))) 
         {
           if  (!SaveNow) 
           {
@@ -775,7 +782,8 @@ void colecoDS_main(void)
           SaveNow = 0;
           
         // Test if "Load State" selected
-        if ((iTx>=6) && (iTy>=155) && (iTx<=130) && (iTy<184) ) 
+        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=134) && (iTx<= 35) && (iTy<157))) ||
+             ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=155) && (iTx<=130) && (iTy<184))))
         {
           if  (!LoadNow) 
           {
@@ -790,24 +798,115 @@ void colecoDS_main(void)
           LoadNow = 0;
   
         // --------------------------------------------------------------------------
-        // Test the touchscreen rendering of the Coleco KEYPAD
+        // Test the touchscreen rendering of the Coleco/MSX KEYPAD
         // --------------------------------------------------------------------------
-        ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
-        ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
+        if (myConfig.overlay == 9)  // MSX-Full Keyboard ~60 keys
+        {
+            if ((iTy >= 38) && (iTy < 63))        // Row 1 (top row)
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   msx_key = '0';
+                else if ((iTx >= 57)  && (iTx < 79))   msx_key = '1';
+                else if ((iTx >= 79)  && (iTx < 101))  msx_key = '2';
+                else if ((iTx >= 101) && (iTx < 123))  msx_key = '3';
+                else if ((iTx >= 123) && (iTx < 145))  msx_key = '4';
+                else if ((iTx >= 145) && (iTx < 167))  msx_key = '5';
+                else if ((iTx >= 167) && (iTx < 189))  msx_key = '6';
+                else if ((iTx >= 189) && (iTx < 211))  msx_key = '7';
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = '8';
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = '9';
+                
+            }
+            else if ((iTy >= 63) && (iTy < 86))   // Row 2
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   msx_key = 'A';
+                else if ((iTx >= 57)  && (iTx < 79))   msx_key = 'B';
+                else if ((iTx >= 79)  && (iTx < 101))  msx_key = 'C';
+                else if ((iTx >= 101) && (iTx < 123))  msx_key = 'D';
+                else if ((iTx >= 123) && (iTx < 145))  msx_key = 'E';
+                else if ((iTx >= 145) && (iTx < 167))  msx_key = 'F';
+                else if ((iTx >= 167) && (iTx < 189))  msx_key = 'G';
+                else if ((iTx >= 189) && (iTx < 211))  msx_key = 'H';
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = 'I';
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = 'J';
+            }
+            else if ((iTy >= 86) && (iTy < 110))  // Row 3
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   msx_key = 'K';
+                else if ((iTx >= 57)  && (iTx < 79))   msx_key = 'L';
+                else if ((iTx >= 79)  && (iTx < 101))  msx_key = 'M';
+                else if ((iTx >= 101) && (iTx < 123))  msx_key = 'N';
+                else if ((iTx >= 123) && (iTx < 145))  msx_key = 'O';
+                else if ((iTx >= 145) && (iTx < 167))  msx_key = 'P';
+                else if ((iTx >= 167) && (iTx < 189))  msx_key = 'Q';
+                else if ((iTx >= 189) && (iTx < 211))  msx_key = 'R';
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = 'S';
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = 'T';
+            }
+            else if ((iTy >= 110) && (iTy < 134)) // Row 4
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   msx_key = 'U';
+                else if ((iTx >= 57)  && (iTx < 79))   msx_key = 'V';
+                else if ((iTx >= 79)  && (iTx < 101))  msx_key = 'W';
+                else if ((iTx >= 101) && (iTx < 123))  msx_key = 'X';
+                else if ((iTx >= 123) && (iTx < 145))  msx_key = 'Y';
+                else if ((iTx >= 145) && (iTx < 167))  msx_key = 'Z';
+                else if ((iTx >= 167) && (iTx < 189))  msx_key = MSX_KEY_UP;
+                else if ((iTx >= 189) && (iTx < 211))  msx_key = MSX_KEY_DOWN;
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = MSX_KEY_RIGHT;
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_LEFT;
+            }
+            else if ((iTy >= 134) && (iTy < 157)) // Row 5
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   msx_key = MSX_KEY_CTRL;
+                else if ((iTx >= 57)  && (iTx < 79))   msx_key = MSX_KEY_CTRL;
+                else if ((iTx >= 79)  && (iTx < 101))  msx_key = MSX_KEY_ESC;
+                else if ((iTx >= 101) && (iTx < 123))  msx_key = MSX_KEY_ESC;
+                else if ((iTx >= 123) && (iTx < 145))  msx_key = '.';
+                else if ((iTx >= 145) && (iTx < 167))  msx_key = MSX_KEY_M1;
+                else if ((iTx >= 167) && (iTx < 189))  msx_key = MSX_KEY_M2;
+                else if ((iTx >= 189) && (iTx < 211))  msx_key = MSX_KEY_M3;
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = MSX_KEY_M4;
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_M5;
+            }
+            else if ((iTy >= 157) && (iTy < 192)) // Row 6
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   msx_key = MSX_KEY_DEL;
+                else if ((iTx >= 35)  && (iTx < 57))   msx_key = MSX_KEY_STOP;
+                else if ((iTx >= 57)  && (iTx < 79))   msx_key = MSX_KEY_STOP;
+                else if ((iTx >= 79)  && (iTx < 101))  msx_key = MSX_KEY_SEL;
+                else if ((iTx >= 101) && (iTx < 123))  msx_key = MSX_KEY_SEL;
+                else if ((iTx >= 123) && (iTx < 145))  msx_key = ' ';
+                else if ((iTx >= 145) && (iTx < 167))  msx_key = ' ';
+                else if ((iTx >= 167) && (iTx < 189))  msx_key = MSX_KEY_RET;
+                else if ((iTx >= 189) && (iTx < 211))  msx_key = MSX_KEY_RET;
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = MSX_KEY_SHIFT;
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_SHIFT;
+            }
+        }
+        else    // Normal 12 button virtual keypad
+        {
+            ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
+            ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
 
-        ucUN = ( ((iTx>=137) && (iTy>=73) && (iTx<=171) && (iTy<=110)) ? 0x0D: ucUN);
-        ucUN = ( ((iTx>=171) && (iTy>=73) && (iTx<=210) && (iTy<=110)) ? 0x0C: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=73) && (iTx<=248) && (iTy<=110)) ? 0x01: ucUN);
+            ucUN = ( ((iTx>=137) && (iTy>=73) && (iTx<=171) && (iTy<=110)) ? 0x0D: ucUN);
+            ucUN = ( ((iTx>=171) && (iTy>=73) && (iTx<=210) && (iTy<=110)) ? 0x0C: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=73) && (iTx<=248) && (iTy<=110)) ? 0x01: ucUN);
 
-        ucUN = ( ((iTx>=137) && (iTy>=111) && (iTx<=171) && (iTy<=147)) ? 0x0A: ucUN);
-        ucUN = ( ((iTx>=171) && (iTy>=111) && (iTx<=210) && (iTy<=147)) ? 0x0E: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=111) && (iTx<=248) && (iTy<=147)) ? 0x04: ucUN);
+            ucUN = ( ((iTx>=137) && (iTy>=111) && (iTx<=171) && (iTy<=147)) ? 0x0A: ucUN);
+            ucUN = ( ((iTx>=171) && (iTy>=111) && (iTx<=210) && (iTy<=147)) ? 0x0E: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=111) && (iTx<=248) && (iTy<=147)) ? 0x04: ucUN);
 
-        ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
-        ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
-        ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
-
+            ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
+            ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
+            ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
+        }
+          
         // ---------------------------------------------------------------------
         // If we are mapping the touch-screen keypad to P2, we shift these up.
         // ---------------------------------------------------------------------
@@ -1011,6 +1110,14 @@ void InitBottomScreen(void)
       decompress(hal2010Map, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) hal2010Pal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 9)  // MSX-Full Keyboard
+    {
+      //  Init bottom screen
+      decompress(msx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(msx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay
     {

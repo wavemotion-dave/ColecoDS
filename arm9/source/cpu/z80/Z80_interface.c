@@ -27,11 +27,13 @@ u8 lastBank         __attribute__((section(".dtcm"))) = 199;
 s32 cycle_deficit   __attribute__((section(".dtcm"))) = 0;
 u8 lastBlock[4]     __attribute__((section(".dtcm"))) = {99,99,99,99};
 u32 msx_offset      __attribute__((section(".dtcm"))) = 0;
+u8 msx_sram_at_8000 __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
 extern u8 Slot1ROM[];
-
+extern u8 msx_SRAM[];
+   
 // -----------------------------
 // Normal 8-bit Read... fast!
 // -----------------------------
@@ -236,13 +238,33 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
         
         if (lastBlock[1] != block)
         {
-            Slot1ROMPtr[4] = (u8*)src;
-            Slot1ROMPtr[5] = (u8*)src+0x2000;
-            // Mirrors
-            Slot1ROMPtr[0] = (u8*)src;
-            Slot1ROMPtr[1] = (u8*)src+0x2000;
-            if (bROMInSlot[2]) MSXBlockCopy(src, (u32*)(pColecoMem+0x8000), 0x4000);
-            if (bROMInSlot[0]) MSXBlockCopy(src, (u32*)(pColecoMem+0x0000), 0x4000);
+            // ---------------------------------------------------------------------------------------------------------
+            // Check if we have an SRAM capable game - those games (e.g. Hydlide II) use the block at 0x8000 for SRAM.
+            // In theory this 2K or 8K of SRAM is mirrored but we don't worry about it - just allow writes.
+            // ---------------------------------------------------------------------------------------------------------
+            if (msx_sram_enabled && (block == 0x10))
+            {
+                if (!msx_sram_at_8000)
+                {
+                    memcpy((u32*)(pColecoMem+0x8000), msx_SRAM, 0x4000);    // Move SRAM area back into main memory
+                    msx_sram_at_8000 = true;
+                }
+            }
+            else
+            {
+                if (msx_sram_at_8000)
+                {
+                    memcpy(msx_SRAM, (u32*)(pColecoMem+0x8000), 0x4000);    // Save SRAM area from Main Memory back into SRAM buffer
+                    msx_sram_at_8000 = false;
+                }
+                Slot1ROMPtr[4] = (u8*)src;
+                Slot1ROMPtr[5] = (u8*)src+0x2000;
+                // Mirrors
+                Slot1ROMPtr[0] = (u8*)src;
+                Slot1ROMPtr[1] = (u8*)src+0x2000;
+                if (bROMInSlot[2]) MSXBlockCopy(src, (u32*)(pColecoMem+0x8000), 0x4000);
+                if (bROMInSlot[0]) MSXBlockCopy(src, (u32*)(pColecoMem+0x0000), 0x4000);
+            }
             lastBlock[1] = block;
         }
     }
@@ -305,9 +327,9 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         {
             pColecoMem[address]=value;  // Allow write - this is a RAM mapped slot
         }
-        else if (bRAMInSlot[2] && (address >= 0x8000) && (address <= 0xBFFF))
+        else if ((bRAMInSlot[2] || msx_sram_at_8000) && (address >= 0x8000) && (address <= 0xBFFF))
         {
-            pColecoMem[address]=value;  // Allow write - this is a RAM mapped slot
+            pColecoMem[address]=value;  // Allow write - this is a RAM (or SRAM) mapped slot
         }
         else if (bRAMInSlot[3] && (address >= 0xC000))
         {
@@ -423,16 +445,32 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     {
                         if (lastBlock[2] != block)
                         {
-                            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[0] = (u8*)src;  // Mirror    
-                            if (bROMInSlot[2])
+                            if (msx_sram_enabled && (block == 0x20))
                             {
-                                MSXBlockCopy(src, (u32*)(pColecoMem+0x8000), 0x2000);
+                                if (!msx_sram_at_8000)
+                                {
+                                    memcpy((u32*)(pColecoMem+0x8000), msx_SRAM, 0x4000);    // Move SRAM area back into main memory
+                                    msx_sram_at_8000 = true;
+                                }
                             }
-                            if (bROMInSlot[0])
+                            else
                             {
-                                MSXBlockCopy(src, (u32*)(pColecoMem+0x0000), 0x2000);
-                            }                            
+                                if (msx_sram_at_8000)
+                                {
+                                    memcpy(msx_SRAM, (u32*)(pColecoMem+0x8000), 0x4000);    // Move SRAM area back into main memory
+                                    msx_sram_at_8000 = false;
+                                }
+                                Slot1ROMPtr[4] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[0] = (u8*)src;  // Mirror    
+                                if (bROMInSlot[2])
+                                {
+                                    MSXBlockCopy(src, (u32*)(pColecoMem+0x8000), 0x2000);
+                                }
+                                if (bROMInSlot[0])
+                                {
+                                    MSXBlockCopy(src, (u32*)(pColecoMem+0x0000), 0x2000);
+                                }                            
+                            }
                             lastBlock[2] = block;
                         }
                     }
@@ -440,16 +478,32 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     {
                         if (lastBlock[3] != block)
                         {
-                            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
-                            if (bROMInSlot[2]) 
+                            if (msx_sram_enabled && (block == 0x20))
                             {
-                                MSXBlockCopy(src, (u32*)(pColecoMem+0xA000), 0x2000);
+                                if (!msx_sram_at_8000)
+                                {
+                                    memcpy((u32*)(pColecoMem+0x8000), msx_SRAM, 0x4000);    // Move SRAM area back into main memory
+                                    msx_sram_at_8000 = true;
+                                }
                             }
-                            if (bROMInSlot[0])
+                            else
                             {
-                                MSXBlockCopy(src, (u32*)(pColecoMem+0x2000), 0x2000);
-                            }                            
+                                if (msx_sram_at_8000)
+                                {
+                                    memcpy(msx_SRAM, (u32*)(pColecoMem+0x8000), 0x4000);    // Move SRAM area back into main memory
+                                    msx_sram_at_8000 = false;
+                                }
+                                Slot1ROMPtr[5] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
+                                if (bROMInSlot[2]) 
+                                {
+                                    MSXBlockCopy(src, (u32*)(pColecoMem+0xA000), 0x2000);
+                                }
+                                if (bROMInSlot[0])
+                                {
+                                    MSXBlockCopy(src, (u32*)(pColecoMem+0x2000), 0x2000);
+                                }                            
+                            }
                             lastBlock[3] = block;
                         }
                     }
@@ -705,6 +759,7 @@ void DrZ80_Reset(void) {
   cpuirequest=0;
   lastBank = 199;
   cycle_deficit = 0;
+  msx_sram_at_8000 = 0;
     
   memset(lastBlock, 99, 4);
 }
