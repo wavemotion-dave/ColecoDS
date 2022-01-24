@@ -1854,6 +1854,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == MSX_KEY_M4)    key1 = 0x01;
               if (msx_key == MSX_KEY_M5)    key1 = 0x02;
               if (msx_key == MSX_KEY_STOP)  key1 = 0x10;
+              if (msx_key == MSX_KEY_DEL)   key1 = 0x20;
               if (msx_key == MSX_KEY_RET)   key1 = 0x80;
               if (msx_key == MSX_KEY_SEL)   key1 = 0x40;
               if (msx_key == MSX_KEY_ESC)   key1 = 0x04;
@@ -1879,7 +1880,6 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == MSX_KEY_DOWN)  key1 = 0x40;
               if (msx_key == MSX_KEY_LEFT)  key1 = 0x10;
               if (msx_key == MSX_KEY_RIGHT) key1 = 0x80;
-              if (msx_key == MSX_KEY_DEL)   key1 = 0x08;
           }          
       }
       return ~key1;

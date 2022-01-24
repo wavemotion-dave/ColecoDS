@@ -876,16 +876,16 @@ void colecoDS_main(void)
             else if ((iTy >= 157) && (iTy < 192)) // Row 6
             {
                 if      ((iTx >= 1)   && (iTx < 35))   msx_key = MSX_KEY_DEL;
-                else if ((iTx >= 35)  && (iTx < 57))   msx_key = MSX_KEY_STOP;
-                else if ((iTx >= 57)  && (iTx < 79))   msx_key = MSX_KEY_STOP;
-                else if ((iTx >= 79)  && (iTx < 101))  msx_key = MSX_KEY_SEL;
-                else if ((iTx >= 101) && (iTx < 123))  msx_key = MSX_KEY_SEL;
-                else if ((iTx >= 123) && (iTx < 145))  msx_key = ' ';
-                else if ((iTx >= 145) && (iTx < 167))  msx_key = ' ';
-                else if ((iTx >= 167) && (iTx < 189))  msx_key = MSX_KEY_RET;
-                else if ((iTx >= 189) && (iTx < 211))  msx_key = MSX_KEY_RET;
-                else if ((iTx >= 211) && (iTx < 233))  msx_key = MSX_KEY_SHIFT;
-                else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_SHIFT;
+                else if ((iTx >= 35)  && (iTx < 57))   msx_key = MSX_KEY_SHIFT;
+                else if ((iTx >= 57)  && (iTx < 79))   msx_key = MSX_KEY_SHIFT;
+                else if ((iTx >= 79)  && (iTx < 101))  msx_key = MSX_KEY_STOP;
+                else if ((iTx >= 101) && (iTx < 123))  msx_key = MSX_KEY_STOP;
+                else if ((iTx >= 123) && (iTx < 145))  msx_key = MSX_KEY_SEL;
+                else if ((iTx >= 145) && (iTx < 167))  msx_key = MSX_KEY_SEL;
+                else if ((iTx >= 167) && (iTx < 189))  msx_key = ' ';
+                else if ((iTx >= 189) && (iTx < 211))  msx_key = ' ';
+                else if ((iTx >= 211) && (iTx < 233))  msx_key = MSX_KEY_RET;
+                else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_RET;
             }
         }
         else    // Normal 12 button virtual keypad
