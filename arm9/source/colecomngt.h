@@ -40,6 +40,7 @@ extern u32 JoyState;                    // Joystick / Paddle management
 
 extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
+extern u8 msx_sram_enabled;
 extern u8 sgm_enable;
 extern u8 AY_Enable;
 extern u8 lastBank; 

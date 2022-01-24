@@ -45,6 +45,25 @@ extern u32 debug2;
 #define JOYMODE_JOYSTICK    0
 #define JOYMODE_KEYPAD      1
 
+
+// For the MSX Full Keyboard...
+#define MSX_KEY_UP          1
+#define MSX_KEY_DOWN        2
+#define MSX_KEY_RIGHT       3
+#define MSX_KEY_LEFT        4
+#define MSX_KEY_M1          5
+#define MSX_KEY_M2          6
+#define MSX_KEY_M3          7
+#define MSX_KEY_M4          8
+#define MSX_KEY_M5          9
+#define MSX_KEY_CTRL        10
+#define MSX_KEY_SHIFT       11
+#define MSX_KEY_ESC         12
+#define MSX_KEY_STOP        13
+#define MSX_KEY_SEL         14
+#define MSX_KEY_RET         15
+#define MSX_KEY_DEL         16
+
 extern u16 emuFps;
 extern u16 emuActFrames;
 extern u16 timingFrames;
@@ -57,6 +76,7 @@ extern u8 spinY_right;
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
 extern u8 msx_mode;
+extern u8 msx_key;
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 

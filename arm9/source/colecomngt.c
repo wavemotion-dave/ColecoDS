@@ -33,24 +33,24 @@
 // ---------------------------------------
 u8 Slot0BIOS[0x10000] = {0xFF};
 u8 Slot3RAM[0x10000]  = {0x00};
-u8* Slot3RAMPtr __attribute__((section(".dtcm"))) = (u8*)0;
-u8* Slot0BIOSPtr __attribute__((section(".dtcm"))) = (u8*)0;
+u8 msx_SRAM[0x4000]   = {0x00};
+u8* Slot3RAMPtr         __attribute__((section(".dtcm"))) = (u8*)0;
+u8* Slot0BIOSPtr        __attribute__((section(".dtcm"))) = (u8*)0;
 
-u8 mapperType __attribute__((section(".dtcm"))) = 0;
-u8 mapperMask __attribute__((section(".dtcm"))) = 0;
-u8 bROMInSlot[4] __attribute__((section(".dtcm"))) = {0,0,0,0};
-u8 bRAMInSlot[4] __attribute__((section(".dtcm"))) = {0,0,0,0};
+u8 mapperType           __attribute__((section(".dtcm"))) = 0;
+u8 mapperMask           __attribute__((section(".dtcm"))) = 0;
+u8 bROMInSlot[4]        __attribute__((section(".dtcm"))) = {0,0,0,0};
+u8 bRAMInSlot[4]        __attribute__((section(".dtcm"))) = {0,0,0,0};
 
-u8 *Slot1ROMPtr[8] __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
-
-u16 beeperFreq __attribute__((section(".dtcm"))) = 0;
+u8 *Slot1ROMPtr[8]      __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
+        
+u16 beeperFreq          __attribute__((section(".dtcm"))) = 0;
+u8 msx_beeper_process   __attribute__((section(".dtcm"))) = 0;
+u8 msx_beeper_enabled   __attribute__((section(".dtcm"))) = 0;
+u8 beeperWasOn          __attribute__((section(".dtcm"))) = 0;
+u8 msx_sram_enabled     __attribute__((section(".dtcm"))) = 0;
 
 Z80 CPU __attribute__((section(".dtcm")));
-
-u8 msx_beeper_process __attribute__((section(".dtcm"))) = 0;
-u8 msx_beeper_enabled  __attribute__((section(".dtcm"))) = 0;
-u8 beeperWasOn __attribute__((section(".dtcm"))) = 0;
-
 
 // --------------------------------------------------
 // Some CPU and VDP and SGM stuff that we need
@@ -82,6 +82,7 @@ extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
 extern u32* lutTablehh;
 extern int cycle_deficit;
+extern u8 msx_sram_at_8000;
 
 // ----------------------------------------------------------------------------
 // Some vars for the Z80-CTC timer/counter chip which is only partially 
@@ -548,6 +549,8 @@ void colecoSaveState()
     {
         memcpy(Slot3RAM, Slot3RAMPtr, 0x10000);
         if (uNbO) fwrite(Slot3RAM, 0x10000,1, handle);
+        if (uNbO) fwrite(msx_SRAM, 0x4000,1, handle);
+        if (uNbO) fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
     }
       
     if (uNbO) 
@@ -693,6 +696,8 @@ void colecoLoadState()
             {
                 if (uNbO) fread(Slot3RAM, 0x10000,1, handle);
                 memcpy(Slot3RAMPtr, Slot3RAM, 0x10000);
+                if (uNbO) fread(msx_SRAM, 0x4000,1, handle);
+                if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
             }
             
             // Fix up transparency
@@ -835,6 +840,8 @@ void getfile_crc(const char *path)
     if (file_crc == 0x9814c355) msx_auto_clear_irq = true; // Ghostbusters    
     if (file_crc == 0x90530889) msx_auto_clear_irq = true; // Soul of a Robot
     if (file_crc == 0x33221ad9) msx_auto_clear_irq = true; // Time Bandits    
+    if (file_crc == 0x9dbdd4bc) msx_auto_clear_irq = true; // GP World (Sega)    
+    if (file_crc == 0x7820e86c) msx_auto_clear_irq = true; // GP World (Sega)   
     
     // ---------------------------------------------------------------------------------
     // A few of the ZX Spectrum ports actually use the MSX beeper for sound. Go figure!
@@ -844,6 +851,13 @@ void getfile_crc(const char *path)
     if (file_crc == 0x111fc33b) msx_beeper_enabled = 1;     // MSX Avenger uses beeper    
     if (file_crc == 0x690f9715) msx_beeper_enabled = 1;     // MSX Batman (the movie) uses beeper
     if (file_crc == 0x3571f5d4) msx_beeper_enabled = 1;     // MSX Master of the Universe uses beeper
+    
+    msx_sram_enabled = 0;
+    if (file_crc == 0x92943e5b) msx_sram_enabled = 1;       // MSX Hydlide 2 - Shine Of Darkness 
+    if (file_crc == 0xb29edaec) msx_sram_enabled = 1;       // MSX Hydlide 2 - Shine Of Darkness 
+    if (file_crc == 0xd640deaf) msx_sram_enabled = 1;       // MSX Dragon Slayer 2 - Xanadu
+    
+    
 }
 
 
@@ -1042,7 +1056,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 7
         }
     }
-    else if (iSSize == (16 * 1024))
+    else if (iSSize <= (16 * 1024))
     {
         if (myConfig.msxMapper == AT4K)  // Load the 16K rom at 0x4000 without Mirrors
         {
@@ -1092,7 +1106,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             }
         }
     }
-    else if (iSSize == (32 * 1024))
+    else if (iSSize <= (32 * 1024))
     {
         // ------------------------------------------------------------------------------------------------------
         // For 32K roms, we need more information to determine exactly where to load it... however
@@ -1296,6 +1310,8 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             else
                 mapperMask = (iSSize == (512 * 1024)) ? 0x3F:0x1F;
         }        
+        
+        if (msx_sram_enabled) mapperMask = 0x3F;        // Override for SRAM which uses upper bits (4 or 5) to select
     }
     else    
     {
@@ -1661,8 +1677,9 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   else if (Port == 0xA8) return PortA8;
   else if (Port == 0xA9)
   {
+      // ----------------------------------------------------------
       // Keyboard Port:
-      //  Line  Bit_7 Bit_6 Bit_5 Bit_4 Bit_3 Bit_2 Bit_1 Bit_0
+      //  Row   Bit_7 Bit_6 Bit_5 Bit_4 Bit_3 Bit_2 Bit_1 Bit_0
       //   0     "7"   "6"   "5"   "4"   "3"   "2"   "1"   "0"
       //   1     ";"   "]"   "["   "\"   "="   "-"   "9"   "8"
       //   2     "B"   "A"   ???   "/"   "."   ","   "'"   "`"
@@ -1672,6 +1689,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       //   6     F3    F2    F1   CODE   CAP  GRAPH CTRL  SHIFT
       //   7     RET   SEL   BS   STOP   TAB   ESC   F5    F4
       //   8    RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE
+      // ----------------------------------------------------------
       
       u8 key1 = 0x00;
       if ((PortAA & 0x0F) == 0)      // Row 0
@@ -1687,6 +1705,17 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 6) key1 |= 0x40;  // '6'
               if (myConfig.msxKey5 == 7) key1 |= 0x80;  // '7'
           }
+          if (msx_key)
+          {
+              if (msx_key == '0')           key1 = 0x01;
+              if (msx_key == '1')           key1 = 0x02;
+              if (msx_key == '2')           key1 = 0x04;
+              if (msx_key == '3')           key1 = 0x08;
+              if (msx_key == '4')           key1 = 0x10;
+              if (msx_key == '5')           key1 = 0x20;
+              if (msx_key == '6')           key1 = 0x40;
+              if (msx_key == '7')           key1 = 0x80;
+          }
       }
       else if ((PortAA & 0x0F) == 1)  // Row 1
       {
@@ -1695,6 +1724,12 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 8) key1 |= 0x01;  // '8'
               if (myConfig.msxKey5 == 9) key1 |= 0x02;  // '9'
           }
+          if (msx_key)
+          {
+              if (msx_key == '8')           key1 = 0x01;
+              if (msx_key == '9')           key1 = 0x02;
+          }
+          
       }
       else if ((PortAA & 0x0F) == 2)  // Row 2
       {
@@ -1703,6 +1738,12 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 10) key1 |= 0x40;  // 'A'
               if (myConfig.msxKey5 == 11) key1 |= 0x80;  // 'B'
           }
+          if (msx_key)
+          {
+              if (msx_key == '.')           key1 = 0x08;
+              if (msx_key == 'A')           key1 = 0x40;
+              if (msx_key == 'B')           key1 = 0x80;
+          }          
       }
       else if ((PortAA & 0x0F) == 3)  // Row 3
       {
@@ -1717,6 +1758,17 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 18) key1 |= 0x40;  // 'I'
               if (myConfig.msxKey5 == 19) key1 |= 0x80;  // 'J'
           }
+          if (msx_key)
+          {
+              if (msx_key == 'C')           key1 = 0x01;
+              if (msx_key == 'D')           key1 = 0x02;
+              if (msx_key == 'E')           key1 = 0x04;
+              if (msx_key == 'F')           key1 = 0x08;
+              if (msx_key == 'G')           key1 = 0x10;
+              if (msx_key == 'H')           key1 = 0x20;
+              if (msx_key == 'I')           key1 = 0x40;
+              if (msx_key == 'J')           key1 = 0x80;
+          }          
       }
       else if ((PortAA & 0x0F) == 4)  // Row 4
       {
@@ -1731,6 +1783,17 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 26) key1 |= 0x40;  // 'Q'
               if (myConfig.msxKey5 == 27) key1 |= 0x80;  // 'R'
           }
+          if (msx_key)
+          {
+              if (msx_key == 'K')           key1 = 0x01;
+              if (msx_key == 'L')           key1 = 0x02;
+              if (msx_key == 'M')           key1 = 0x04;
+              if (msx_key == 'N')           key1 = 0x08;
+              if (msx_key == 'O')           key1 = 0x10;
+              if (msx_key == 'P')           key1 = 0x20;
+              if (msx_key == 'Q')           key1 = 0x40;
+              if (msx_key == 'R')           key1 = 0x80;
+          }          
       }
       else if ((PortAA & 0x0F) == 5)  // Row 5
       {
@@ -1745,6 +1808,17 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 34) key1 |= 0x40;  // 'Y'
               if (myConfig.msxKey5 == 35) key1 |= 0x80;  // 'Z'
           }
+          if (msx_key)
+          {
+              if (msx_key == 'S')           key1 = 0x01;
+              if (msx_key == 'T')           key1 = 0x02;
+              if (msx_key == 'U')           key1 = 0x04;
+              if (msx_key == 'V')           key1 = 0x08;
+              if (msx_key == 'W')           key1 = 0x10;
+              if (msx_key == 'X')           key1 = 0x20;
+              if (msx_key == 'Y')           key1 = 0x40;
+              if (msx_key == 'Z')           key1 = 0x80;
+          }          
       }      
       else if ((PortAA & 0x0F) == 6) // Row 6
       {
@@ -1756,6 +1830,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
             if (myConfig.msxKey5 == 1) key1 |= 0x01;  // SHIFT
             if (myConfig.msxKey5 == 2) key1 |= 0x02;  // CTRL
           }
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_SHIFT) key1 = 0x02;
+              if (msx_key == MSX_KEY_CTRL)  key1 = 0x01;
+              if (msx_key == MSX_KEY_M1)    key1 = 0x20;
+              if (msx_key == MSX_KEY_M2)    key1 = 0x40;
+              if (msx_key == MSX_KEY_M3)    key1 = 0x80;
+          }          
       }
       else if ((PortAA & 0x0F) == 7) // Row 7
       {
@@ -1767,6 +1849,15 @@ unsigned char cpu_readport_msx(register unsigned short Port)
             if (myConfig.msxKey5 == 5) key1 |= 0x02;  // F5
             if (myConfig.msxKey5 == 3) key1 |= 0x04;  // ESC
           }
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_M4)    key1 = 0x01;
+              if (msx_key == MSX_KEY_M5)    key1 = 0x02;
+              if (msx_key == MSX_KEY_STOP)  key1 = 0x10;
+              if (msx_key == MSX_KEY_RET)   key1 = 0x80;
+              if (msx_key == MSX_KEY_SEL)   key1 = 0x40;
+              if (msx_key == MSX_KEY_ESC)   key1 = 0x04;
+          }          
       }
       else if ((PortAA & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
       {
@@ -1781,6 +1872,15 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (JoyState & JST_FIREL) key1 |= 0x01;  // SPACE
               if (JoyState & JST_FIRER) key1 |= 0x01;  // SPACE
           }
+          if (msx_key)
+          {
+              if (msx_key == ' ')           key1 = 0x01;
+              if (msx_key == MSX_KEY_UP)    key1 = 0x20;
+              if (msx_key == MSX_KEY_DOWN)  key1 = 0x40;
+              if (msx_key == MSX_KEY_LEFT)  key1 = 0x10;
+              if (msx_key == MSX_KEY_RIGHT) key1 = 0x80;
+              if (msx_key == MSX_KEY_DEL)   key1 = 0x08;
+          }          
       }
       return ~key1;
   }
