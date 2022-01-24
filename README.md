@@ -94,8 +94,8 @@ the default MSX Mapper is set to "GUESS" which does a fairly good job loading th
 * The auto-detection on KONAMI8 and KONAMI-SCC mappers is pretty good... but many other games using ASCII8 or ASCII16 don't detect well - you should try those mappers if the "larger than 64K" game won't run.
 * Some of the really big games (128K or larger) run slow - if you're not getting full frame rate, you can try switching to the DrZ80 core (not all games will run with this) and/or you can disable Vertical Sync and/or enable Frame Skip.  Recommend you turn off Vertical Sync at a minimum to get the most speed from large MSX games.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
-* Some MSX games take 6 or 7 seconds to initialize and start running due to checking various slots and subslots for memory - be patient. 
-* With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
+* Some MSX games take 4 or 5 seconds to initialize and start running due to checking various slots and subslots for memory - be patient. 
+* With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 98% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run.
 
 The MSX memory is laid out as follows:
@@ -125,6 +125,7 @@ For the MSX emulation, the colecovision keypad is mapped as follows:
   SPC 0   RET
 ```
 That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '5' key to be any mappable MSX key. For the few games that still require the MSX arrows to play - you can emulate that via the D-PAD in Game Options.
+As of version 6.1 there is also a custom overlay for "MSX Full" keyboard.
 
 Blend Mode (DSi) :
 -----------------------
@@ -179,6 +180,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.1: 24-Jan-2022 by wavemotion-dave
+* Added full MSX keyboard overlay - Choose "MSX Full" in Game Options.
+* Improved ASC8 mapper so Bomber King, Batman Rovin and others now playable.
+* Added SRAM support to make Hydlide II, Dragon Slayer II (Xanadu) and Deep Dungeon 2 are now playable.
+* Added 'beeper music' sounds so games like Avenger, Batman - The Movie and Masters of the Universe have sound.
+
 V6.0: 21-Jan-2022 by wavemotion-dave
 * Improved MSX compatabilty - more playable games.
 * Added D-PAD to emulate MSX arrow keys.

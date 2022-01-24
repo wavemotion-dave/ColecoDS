@@ -1179,7 +1179,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     }
     else if (iSSize == (48 * 1024))
     {
-        if (myConfig.msxMapper == KON8)
+        if ((myConfig.msxMapper == KON8) || (myConfig.msxMapper == ZEN8))
         {
             Slot1ROMPtr[0] = (u8*)0x06880000+0x4000;        // Segment 2 Mirror
             Slot1ROMPtr[1] = (u8*)0x06880000+0x6000;        // Segment 3 Mirror
@@ -1203,7 +1203,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[7] = (u8*)0x06880000+0x0000;        // Segment 0 
             mapperMask = 0x07;
         }
-        else if (myConfig.msxMapper == ASC16)
+        else if ((myConfig.msxMapper == ASC16) || (myConfig.msxMapper == ZEN16))
         {
             Slot1ROMPtr[0] = (u8*)0x06880000+0x0000;        // Segment 0 
             Slot1ROMPtr[1] = (u8*)0x06880000+0x2000;        // Segment 1 
@@ -1247,7 +1247,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         Slot1ROMPtr[4] = (u8*)0x06880000+0x8000;        // Segment 4
         Slot1ROMPtr[5] = (u8*)0x06880000+0xA000;        // Segment 5
         Slot1ROMPtr[6] = (u8*)0x06880000+0xC000;        // Segment 6
-        Slot1ROMPtr[7] = (u8*)0x06880000+0xE000;        // Segment 6
+        Slot1ROMPtr[7] = (u8*)0x06880000+0xE000;        // Segment 7
         
     }
     else if ((iSSize >= (64 * 1024)) && (iSSize <= (512 * 1024)))   // We'll take anything between these two...
@@ -1296,8 +1296,8 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         }                
 
         // --------------------------------------------------------------------------------
-        // Now copy as much of the ROM into fast VRAM as possible. We only have 128K of
-        // VRAM available - anything beyond this will have to be fetched from slow RAM.
+        // We've copied as much of the ROM into fast VRAM as possible. We only have 256K 
+        // of VRAM available - anything beyond this will have to be fetched from slow RAM.
         // --------------------------------------------------------------------------------
         if (iSSize <= (128 * 1024))
         {
