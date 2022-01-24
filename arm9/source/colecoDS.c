@@ -914,11 +914,11 @@ void colecoDS_main(void)
           
         if (++dampenClick > 3)  // Make sure the key is pressed for an appreciable amount of time...
         {
-            if ((ucUN != 0) && (lastUN == 0))
+            if (((ucUN != 0) || (msx_key != 0)) && (lastUN == 0))
             {
                 mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
             }
-            lastUN = ucUN;                
+            lastUN = (ucUN ? ucUN:msx_key);
         }
       } //  SCR_TOUCH
       else  
