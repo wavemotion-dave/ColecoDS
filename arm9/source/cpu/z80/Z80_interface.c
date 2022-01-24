@@ -242,7 +242,7 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
             // Check if we have an SRAM capable game - those games (e.g. Hydlide II) use the block at 0x8000 for SRAM.
             // In theory this 2K or 8K of SRAM is mirrored but we don't worry about it - just allow writes.
             // ---------------------------------------------------------------------------------------------------------
-            if (msx_sram_enabled && (block == 0x10))
+            if (msx_sram_enabled && (block == msx_sram_enabled))
             {
                 if (!msx_sram_at_8000)
                 {
@@ -445,7 +445,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     {
                         if (lastBlock[2] != block)
                         {
-                            if (msx_sram_enabled && (block == 0x20))
+                            if (msx_sram_enabled && (block == msx_sram_enabled))
                             {
                                 if (!msx_sram_at_8000)
                                 {
@@ -478,7 +478,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     {
                         if (lastBlock[3] != block)
                         {
-                            if (msx_sram_enabled && (block == 0x20))
+                            if (msx_sram_enabled && (block == msx_sram_enabled))
                             {
                                 if (!msx_sram_at_8000)
                                 {

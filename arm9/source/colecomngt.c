@@ -853,11 +853,10 @@ void getfile_crc(const char *path)
     if (file_crc == 0x3571f5d4) msx_beeper_enabled = 1;     // MSX Master of the Universe uses beeper
     
     msx_sram_enabled = 0;
-    if (file_crc == 0x92943e5b) msx_sram_enabled = 1;       // MSX Hydlide 2 - Shine Of Darkness 
-    if (file_crc == 0xb29edaec) msx_sram_enabled = 1;       // MSX Hydlide 2 - Shine Of Darkness 
-    if (file_crc == 0xd640deaf) msx_sram_enabled = 1;       // MSX Dragon Slayer 2 - Xanadu
-    
-    
+    if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness 
+    if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness 
+    if (file_crc == 0xd640deaf) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu
+    if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II    
 }
 
 

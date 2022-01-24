@@ -58,7 +58,7 @@ u32 debug2=0;
 // The memory is generally used as follows:
 //    0x0000-0x1FFF  coleco.rom BIOS - Super Game Module can map RAM here
 //    0x2000-0x5FFF  Usually unused - but Super Game Module maps RAM here
-//    0x6000-0x7FFF  SRAM - there is only 1K repeated with 8 mirrors
+//    0x6000-0x7FFF  RAM - there is only 1K repeated with 8 mirrors
 //    0x8000-0xFFFF  32K Cartridge Space
 // --------------------------------------------------------------------------
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             
