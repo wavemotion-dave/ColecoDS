@@ -180,7 +180,7 @@ would personally try them:
 
 Versions :
 -----------------------
-V6.1: 24-Jan-2022 by wavemotion-dave
+V6.1: 25-Jan-2022 by wavemotion-dave
 * Added full MSX keyboard overlay - Choose "MSX Full" in Game Options.
 * Improved ASC8 mapper so Bomber King, Batman Rovin and others now playable.
 * Added SRAM support to make Hydlide II, Dragon Slayer II (Xanadu) and Deep Dungeon 2 are now playable.
