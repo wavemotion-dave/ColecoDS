@@ -42,8 +42,8 @@ extern u8 ay_reg_idx;
 extern u16 sgm_low_addr;
 extern SN76496 aycol;
 
-static const u8 Volumes[16] = { 15,15,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
-u16 envelope_period __attribute__((section(".dtcm"))) = 0;
+u8 Volumes[16]       __attribute__((section(".dtcm"))) = { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
+u16 envelope_period  __attribute__((section(".dtcm"))) = 0;
 u16 envelope_counter __attribute__((section(".dtcm"))) = 0;
 
 unsigned char Envelopes[16][32] __attribute__((section(".dtcm"))) =
@@ -165,19 +165,19 @@ void BeeperON(u16 beeper_freq)
     {
         if (beeper_freq > 0x3FF) beeper_freq = 0x3FF;
         beeper_freq = 0x3FF - beeper_freq;
-        sn76496W(0x80 | (beeper_freq & 0xF), &aycol);
-        sn76496W((beeper_freq >> 4) & 0x3F, &aycol);
-        sn76496W(0x97, &aycol); // Turn on sound at fixed volume 
+        ay76496W(0x80 | (beeper_freq & 0xF), &aycol);
+        ay76496W((beeper_freq >> 4) & 0x3F, &aycol);
+        ay76496W(0x97, &aycol); // Turn on sound at fixed volume 
     }
     else 
     {
-        sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
+        ay76496W(0x9F, &aycol); // Turn off tone sound on Channel A
     }
 }
 
 void BeeperOFF(void)
 {
-    sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
+    ay76496W(0x9F, &aycol); // Turn off tone sound on Channel A
 }
 
 // ------------------------------------------------------------------
@@ -187,10 +187,10 @@ void BeeperOFF(void)
 void UpdateNoiseAY(void)
 {
       // Output the noise for the first channel it's enbled on...
-      if      (!(ay_reg[0x07] & 0x08) && ((ay_reg[0x08]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x08]&0xF], &aycol);
-      else if (!(ay_reg[0x07] & 0x10) && ((ay_reg[0x09]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x09]&0xF], &aycol);
-      else if (!(ay_reg[0x07] & 0x20) && ((ay_reg[0x0A]&0xF) != 0)) sn76496W(0xF0 | Volumes[ay_reg[0x0A]&0xF], &aycol);
-      else sn76496W(0xFF, &aycol);  // Otherwise Noise is OFF
+      if      (!(ay_reg[0x07] & 0x08) && ((ay_reg[0x08]&0xF) != 0)) ay76496W(0xF0 | Volumes[ay_reg[0x08]&0xF], &aycol);
+      else if (!(ay_reg[0x07] & 0x10) && ((ay_reg[0x09]&0xF) != 0)) ay76496W(0xF0 | Volumes[ay_reg[0x09]&0xF], &aycol);
+      else if (!(ay_reg[0x07] & 0x20) && ((ay_reg[0x0A]&0xF) != 0)) ay76496W(0xF0 | Volumes[ay_reg[0x0A]&0xF], &aycol);
+      else ay76496W(0xFF, &aycol);  // Otherwise Noise is OFF
 }
 
 void UpdateToneA(void)
@@ -204,16 +204,16 @@ void UpdateToneA(void)
     {
         freq = (ay_reg[0x01] << 8) | ay_reg[0x00];
         freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-        sn76496W(0x80 | (freq & 0xF), &aycol);
-        sn76496W((freq >> 4) & 0x3F, &aycol);
+        ay76496W(0x80 | (freq & 0xF), &aycol);
+        ay76496W((freq >> 4) & 0x3F, &aycol);
         if (freq > 0)
-            sn76496W(0x90 | Volumes[(ay_reg[0x08] & 0x0F)], &aycol);
+            ay76496W(0x90 | Volumes[(ay_reg[0x08] & 0x0F)], &aycol);
         else 
-            sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
+            ay76496W(0x9F, &aycol); // Turn off tone sound on Channel A
     }
     else
     {
-        sn76496W(0x9F, &aycol); // Turn off tone sound on Channel A
+        ay76496W(0x9F, &aycol); // Turn off tone sound on Channel A
     }    
 }
 
@@ -228,16 +228,16 @@ void UpdateToneB(void)
     {
         freq = (ay_reg[0x03] << 8) | ay_reg[0x02];
         freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-        sn76496W(0xA0 | (freq & 0xF), &aycol);
-        sn76496W((freq >> 4) & 0x3F, &aycol);
+        ay76496W(0xA0 | (freq & 0xF), &aycol);
+        ay76496W((freq >> 4) & 0x3F, &aycol);
         if (freq > 0)
-            sn76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x0F)], &aycol);
+            ay76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x0F)], &aycol);
         else 
-            sn76496W(0xBF, &aycol); // Turn off tone sound on Channel B
+            ay76496W(0xBF, &aycol); // Turn off tone sound on Channel B
     }
     else
     {
-        sn76496W(0xBF, &aycol); // Turn off tone sound on Channel B
+        ay76496W(0xBF, &aycol); // Turn off tone sound on Channel B
     }    
 }
 
@@ -253,16 +253,16 @@ void UpdateToneC(void)
     {
         freq = (ay_reg[0x05] << 8) | ay_reg[0x04];
         freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
-        sn76496W(0xC0 | (freq & 0xF), &aycol);
-        sn76496W((freq >> 4) & 0x3F, &aycol);
+        ay76496W(0xC0 | (freq & 0xF), &aycol);
+        ay76496W((freq >> 4) & 0x3F, &aycol);
         if (freq > 0)
-            sn76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x0F)], &aycol);
+            ay76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x0F)], &aycol);
         else 
-            sn76496W(0xDF, &aycol); // Turn off tone sound on Channel C
+            ay76496W(0xDF, &aycol); // Turn off tone sound on Channel C
     }
     else
     {
-        sn76496W(0xDF, &aycol); // Turn off tone sound on Channel C
+        ay76496W(0xDF, &aycol); // Turn off tone sound on Channel C
     }    
 }
 
@@ -317,9 +317,12 @@ void FakeAY_WriteData(u8 Value)
           // Noise Period     
           case 0x06:
               noise_period = Value & 0x1F;
-              if      (noise_period > 24) sn76496W(0xE2 | 0x04, &aycol);   // E2 is the lowest frequency (highest period)
-              else if (noise_period > 12) sn76496W(0xE1 | 0x04, &aycol);   // E1 is the middle frequency (middle period)
-              else                        sn76496W(0xE0 | 0x04, &aycol);   // E0 is the highest frequency (lowest period)              
+              if      (noise_period > 28) ay76496W(0xE6 , &aycol);   // E6 is the lowest frequency (highest period)
+              else if (noise_period > 20) ay76496W(0xE5 , &aycol);   // E5 is the middle frequency (middle period)
+              else if (noise_period > 12) ay76496W(0xE4 , &aycol);   // E4 is the middle frequency (middle period)
+              else if (noise_period > 8)  ay76496W(0xE3 , &aycol);   // E3 is the middle frequency (middle period)
+              else if (noise_period > 4)  ay76496W(0xE2 , &aycol);   // E2 is the middle frequency (middle period)
+              else                        ay76496W(0xE1 , &aycol);   // E1 is the highest frequency (lowest period)              
               UpdateNoiseAY();  // Update the Noise output
               break;
               

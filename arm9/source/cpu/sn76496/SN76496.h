@@ -44,6 +44,7 @@ typedef struct __attribute__((__packed__))
 
 
 void sn76496Reset(int chiptype, SN76496 *chip);
+void ay76496Reset(int chiptype, SN76496 *chip);
 
 /**
  * Saves the state of the SN76496 chip to the destination.
@@ -69,6 +70,7 @@ int sn76496GetStateSize(void);
 
 void sn76496Mixer(int len, void *dest, SN76496 *chip);
 void sn76496W(u8 val, SN76496 *chip);
+void ay76496W(u8 val, SN76496 *chip);    
 
 
 #ifdef __cplusplus

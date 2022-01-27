@@ -374,10 +374,10 @@ u8 colecoInit(char *szGame)
     u16 tmp_samples[32];
     sn76496Mixer(32, tmp_samples, &sncol);
 
-    sn76496Reset(1, &aycol);           // Reset the SN sound chip
-    sn76496W(0x90 | 0x0F ,&aycol);     // Write new Volume for Channel A  
-    sn76496W(0xB0 | 0x0F ,&aycol);     // Write new Volume for Channel B
-    sn76496W(0xD0 | 0x0F ,&aycol);     // Write new Volume for Channel C  
+    ay76496Reset(2, &aycol);           // Reset the SN sound chip
+    ay76496W(0x90 | 0x0F ,&aycol);     // Write new Volume for Channel A  
+    ay76496W(0xB0 | 0x0F ,&aycol);     // Write new Volume for Channel B
+    ay76496W(0xD0 | 0x0F ,&aycol);     // Write new Volume for Channel C  
     sn76496Mixer(32, tmp_samples, &aycol);
       
     DrZ80_Reset();                      // Reset the DrZ80 core CPU

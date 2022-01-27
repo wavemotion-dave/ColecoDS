@@ -321,21 +321,21 @@ void dsInstallSoundEmuFIFO(void)
   //  ------------------------------------------------------------------
   //  The "fake AY" sound chip is for Super Game Module sound handling
   //  ------------------------------------------------------------------
-  sn76496Reset(1, &aycol);         // Reset the "AY" sound chip
+  ay76496Reset(2, &aycol);         // Reset the "AY" sound chip
     
-  sn76496W(0x80 | 0x00,&aycol);    // Write new Frequency for Channel A
-  sn76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel A
-  sn76496W(0x90 | 0x0F,&aycol);    // Write new Volume for Channel A
+  ay76496W(0x80 | 0x00,&aycol);    // Write new Frequency for Channel A
+  ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel A
+  ay76496W(0x90 | 0x0F,&aycol);    // Write new Volume for Channel A
     
-  sn76496W(0xA0 | 0x00,&aycol);    // Write new Frequency for Channel B
-  sn76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel B
-  sn76496W(0xB0 | 0x0F,&aycol);    // Write new Volume for Channel B
+  ay76496W(0xA0 | 0x00,&aycol);    // Write new Frequency for Channel B
+  ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel B
+  ay76496W(0xB0 | 0x0F,&aycol);    // Write new Volume for Channel B
     
-  sn76496W(0xC0 | 0x00,&aycol);    // Write new Frequency for Channel C
-  sn76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel C
-  sn76496W(0xD0 | 0x0F,&aycol);    // Write new Volume for Channel C
+  ay76496W(0xC0 | 0x00,&aycol);    // Write new Frequency for Channel C
+  ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel C
+  ay76496W(0xD0 | 0x0F,&aycol);    // Write new Volume for Channel C
 
-  sn76496W(0xFF,  &aycol);         // Disable Noise Channel
+  ay76496W(0xFF,  &aycol);         // Disable Noise Channel
     
   sn76496Mixer(8, mixbuf2, &aycol);  // Do an initial mix conversion to clear the output
   
@@ -380,10 +380,10 @@ void ResetColecovision(void)
   sn76496W(0xB0 | 0x0F  ,&sncol);       //  Write new Volume for Channel B (off)
   sn76496W(0xD0 | 0x0F  ,&sncol);       //  Write new Volume for Channel C (off)
 
-  sn76496Reset(1, &aycol);              // Reset the SN sound chip
-  sn76496W(0x90 | 0x0F  ,&aycol);       //  Write new Volume for Channel A (off)
-  sn76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
-  sn76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
+  ay76496Reset(2, &aycol);              // Reset the SN sound chip
+  ay76496W(0x90 | 0x0F  ,&aycol);       //  Write new Volume for Channel A (off)
+  ay76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
+  ay76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
     
   DrZ80_Reset();                        // Reset the Z80 CPU Core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
