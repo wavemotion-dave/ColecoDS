@@ -4,11 +4,13 @@
 #include "SN76496.i"
 
 	.global sn76496Reset
+	.global ay76496Reset
 	.global sn76496SaveState
 	.global sn76496LoadState
 	.global sn76496GetStateSize
 	.global sn76496Mixer
 	.global sn76496W
+	.global ay76496W
 	.global sn76496GGW
 								;@ These values are for the SMS/GG/MD vdp/sound chip.
 .equ PFEED_SMS,	0x8000			;@ Periodic Noise Feedback
@@ -18,9 +20,9 @@
 .equ PFEED_SN,	0x4000			;@ Periodic Noise Feedback
 .equ WFEED_SN,	0x6000			;@ White Noise Feedback
 
-								;@ These values are for the NCR 8496 sound chip.
-.equ PFEED_NCR,	0x4000			;@ Periodic Noise Feedback
-.equ WFEED_NCR,	0x4400			;@ White Noise Feedback
+								;@ These values are for the "fake AY" sound chip.
+.equ PFEED_AY,	0x6000			;@ Periodic Noise Feedback
+.equ WFEED_AY,	0x6000			;@ White Noise Feedback
 
 	.syntax unified
 	.arm
@@ -122,6 +124,36 @@ rLoop:
 	bx lr
 
 ;@----------------------------------------------------------------------------
+ay76496Reset:				;@ r0 = chiptype SMS/SN76496, snptr=r12=pointer to struct
+    .type   ay76496Reset STT_FUNC
+;@----------------------------------------------------------------------------
+    mov r12,r1
+	cmp r0,#1
+	adr r0,SMSFeedback
+	addeq r0,r0,#12
+	addhi r0,r0,#24
+	ldmia r0,{r1-r3}
+	adr r0,noiseFeedback_ay
+	str r2,[r0],#8
+	str r3,[r0]
+
+	mov r0,#0
+	mov r2,#snSize/4			;@ 60/4=15
+rLoop2:
+	subs r2,r2,#1
+	strpl r0,[snptr,r2,lsl#2]
+	bhi rLoop2
+	strh r1,[snptr,#noiseFB]
+	mov r1,#calculatedVolumes
+	str r1,[snptr,#currentBits]
+	str r0,[snptr,r1]
+	mov r0,#0xFF
+	strb r0,[snptr,#ggStereo]
+
+	bx lr
+
+
+;@----------------------------------------------------------------------------
 sn76496SaveState:		;@ In r0=destination, r1=snptr. Out r0=state size.
 	.type   sn76496SaveState STT_FUNC
 ;@----------------------------------------------------------------------------
@@ -158,9 +190,9 @@ SNFeedback:
 	mov r0,#PFEED_SN			;@ Periodic noise
 	movne r0,#WFEED_SN			;@ White noise
 NCRFeedback:
-	.long PFEED_NCR
-	mov r0,#PFEED_NCR			;@ Periodic noise
-	movne r0,#WFEED_NCR			;@ White noise
+	.long PFEED_AY
+	mov r0,#PFEED_AY			;@ Periodic noise
+	movne r0,#WFEED_AY			;@ White noise
 
 ;@----------------------------------------------------------------------------
 sn76496W:					;@ r0 = value, snptr = r12 = struct-pointer
@@ -215,6 +247,57 @@ noiseFeedback:
 	mov r2,r2,lsl r1
 	cmp r1,#3
 	ldrheq r2,[snptr,#ch2Frq]
+	strh r2,[snptr,#ch3Frq]
+	bx lr
+    
+
+
+;@----------------------------------------------------------------------------
+ay76496W:					;@ r0 = value, snptr = r12 = struct-pointer
+    .type   ay76496W STT_FUNC
+;@----------------------------------------------------------------------------
+    mov r12,r1
+	tst r0,#0x80
+	andne r2,r0,#0x70
+	strbne r2,[snptr,#snLastReg]
+	ldrbeq r2,[snptr,#snLastReg]
+	movs r2,r2,lsr#5
+	add r1,snptr,r2,lsl#2
+	bcc setFreq_ay
+doVolume_ay:
+	and r0,r0,#0x0F
+	ldrb r2,[r1,#ch0Att]
+	eors r2,r2,r0
+	strbne r0,[r1,#ch0Att]
+	strbne r2,[snptr,#snAttChg]
+	bx lr
+
+setFreq_ay:
+	cmp r2,#3					;@ Noise channel
+	beq setNoiseFreq_ay
+	tst r0,#0x80
+	andeq r0,r0,#0x3F
+	movne r0,r0,lsl#4
+	strbeq r0,[r1,#ch0Reg+1]
+	strbne r0,[r1,#ch0Reg]
+	ldrh r0,[r1,#ch0Reg]
+	movs r0,r0,lsl#2
+	cmp r0,#0x0180				;@ We set any value under 6 to 1 to fix aliasing.
+	movmi r0,#0x0040			;@ Value zero is same as 1 on SMS.
+	strh r0,[r1,#ch0Frq]
+	bx lr
+
+setNoiseFreq_ay:
+	and r1,r0,#0x07
+	strb r1,[snptr,#ch3Reg]
+	tst r0,#0x08
+noiseFeedback_ay:
+	mov r0,#PFEED_SMS			;@ Periodic noise
+	strh r0,[snptr,#rng]
+	movne r0,#WFEED_SMS			;@ White noise
+	strh r0,[snptr,#noiseFB]
+	mov r2,#0x0040				;@ These values sound ok
+	mov r2,r2,lsl r1
 	strh r2,[snptr,#ch3Frq]
 	bx lr
 
