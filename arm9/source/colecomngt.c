@@ -1592,10 +1592,20 @@ unsigned char cpu_readport_sg(register unsigned short Port)
   {
       u8 joy1 = 0x00;
 
-      if (JoyState & JST_UP)    joy1 |= 0x01;
-      if (JoyState & JST_DOWN)  joy1 |= 0x02;
-      if (JoyState & JST_LEFT)  joy1 |= 0x04;
-      if (JoyState & JST_RIGHT) joy1 |= 0x08;
+      if (myConfig.dpad == DPAD_DIAGONALS)
+      {
+          if (JoyState & JST_UP)    joy1 |= (0x01 | 0x08);
+          if (JoyState & JST_DOWN)  joy1 |= (0x02 | 0x04);
+          if (JoyState & JST_LEFT)  joy1 |= (0x04 | 0x01);
+          if (JoyState & JST_RIGHT) joy1 |= (0x08 | 0x02);
+      }
+      else
+      {
+          if (JoyState & JST_UP)    joy1 |= 0x01;
+          if (JoyState & JST_DOWN)  joy1 |= 0x02;
+          if (JoyState & JST_LEFT)  joy1 |= 0x04;
+          if (JoyState & JST_RIGHT) joy1 |= 0x08;
+      }     
       
       if (JoyState & JST_FIREL) joy1 |= 0x10;
       if (JoyState & JST_FIRER) joy1 |= 0x20;
@@ -1885,7 +1895,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == MSX_KEY_DOWN)  key1 = 0x40;
               if (msx_key == MSX_KEY_LEFT)  key1 = 0x10;
               if (msx_key == MSX_KEY_RIGHT) key1 = 0x80;
-              if (msx_key == MSX_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the less used SEL key
+              if (msx_key == MSX_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the seldom used SEL key
           }          
       }
       return ~key1;

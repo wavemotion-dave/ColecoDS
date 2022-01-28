@@ -189,7 +189,7 @@ SNFeedback:
 	.long PFEED_SN
 	mov r0,#PFEED_SN			;@ Periodic noise
 	movne r0,#WFEED_SN			;@ White noise
-NCRFeedback:
+AYFeedback:
 	.long PFEED_AY
 	mov r0,#PFEED_AY			;@ Periodic noise
 	movne r0,#WFEED_AY			;@ White noise
