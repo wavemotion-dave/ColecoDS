@@ -854,6 +854,9 @@ void getfile_crc(const char *path)
     if (file_crc == 0x690f9715) msx_beeper_enabled = 1;     // MSX Batman (the movie) uses beeper
     if (file_crc == 0x3571f5d4) msx_beeper_enabled = 1;     // MSX Master of the Universe uses beeper
     
+    // ------------------------------------------------------------------------------
+    // And a handful of games require SRAM which is a special case-by-case basis...
+    // ------------------------------------------------------------------------------
     msx_sram_enabled = 0;
     if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN) 
     if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
