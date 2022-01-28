@@ -842,6 +842,8 @@ void getfile_crc(const char *path)
     if (file_crc == 0x33221ad9) msx_auto_clear_irq = true; // Time Bandits    
     if (file_crc == 0x9dbdd4bc) msx_auto_clear_irq = true; // GP World (Sega)    
     if (file_crc == 0x7820e86c) msx_auto_clear_irq = true; // GP World (Sega)   
+    if (file_crc == 0x6e8bb5fa) msx_auto_clear_irq = true; // Seleniak - Mark II
+    
     
     // ---------------------------------------------------------------------------------
     // A few of the ZX Spectrum ports actually use the MSX beeper for sound. Go figure!
