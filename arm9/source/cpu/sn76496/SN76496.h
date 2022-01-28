@@ -69,6 +69,7 @@ int sn76496LoadState(SN76496 *chip, const void *source);
 int sn76496GetStateSize(void);
 
 void sn76496Mixer(int len, void *dest, SN76496 *chip);
+void ay76496Mixer(int len, void *dest, SN76496 *chip);
 void sn76496W(u8 val, SN76496 *chip);
 void ay76496W(u8 val, SN76496 *chip);    
 

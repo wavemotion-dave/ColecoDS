@@ -203,9 +203,9 @@ void UpdateToneA(void)
     if (!(ay_reg[0x07] & 0x01))
     {
         freq = (ay_reg[0x01] << 8) | ay_reg[0x00];
-        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
         ay76496W(0x80 | (freq & 0xF), &aycol);
-        ay76496W((freq >> 4) & 0x3F, &aycol);
+        ay76496W((freq >> 4) & 0x7F, &aycol);
         if (freq > 0)
             ay76496W(0x90 | Volumes[(ay_reg[0x08] & 0x0F)], &aycol);
         else 
@@ -227,9 +227,9 @@ void UpdateToneB(void)
     if (!(ay_reg[0x07] & 0x02))
     {
         freq = (ay_reg[0x03] << 8) | ay_reg[0x02];
-        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
         ay76496W(0xA0 | (freq & 0xF), &aycol);
-        ay76496W((freq >> 4) & 0x3F, &aycol);
+        ay76496W((freq >> 4) & 0x7F, &aycol);
         if (freq > 0)
             ay76496W(0xB0 | Volumes[(ay_reg[0x09] & 0x0F)], &aycol);
         else 
@@ -252,9 +252,9 @@ void UpdateToneC(void)
     if (!(ay_reg[0x07] & 0x04))
     {
         freq = (ay_reg[0x05] << 8) | ay_reg[0x04];
-        freq = ((freq & 0x0C00) ? 0x3FF : freq&0x3FF);
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
         ay76496W(0xC0 | (freq & 0xF), &aycol);
-        ay76496W((freq >> 4) & 0x3F, &aycol);
+        ay76496W((freq >> 4) & 0x7F, &aycol);
         if (freq > 0)
             ay76496W(0xD0 | Volumes[(ay_reg[0x0A] & 0x0F)], &aycol);
         else 

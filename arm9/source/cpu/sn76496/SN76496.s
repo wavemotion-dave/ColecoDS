@@ -9,6 +9,7 @@
 	.global sn76496LoadState
 	.global sn76496GetStateSize
 	.global sn76496Mixer
+	.global ay76496Mixer
 	.global sn76496W
 	.global ay76496W
 	.global sn76496GGW
@@ -89,6 +90,52 @@ innerMixLoop:
 	stmia snptr,{r2-r7}			;@ Writeback freq,addr,currentBits,rng
 	ldmfd sp!,{r4-r9,lr}
 	bx lr
+    
+    
+ay76496Mixer:				;@ r0=len, r1=dest, r12=snptr
+    .type   ay76496Mixer STT_FUNC
+;@----------------------------------------------------------------------------
+    mov r12,r2
+	stmfd sp!,{r4-r9,lr}
+	ldmia snptr,{r2-r8,lr}		;@ Load freq/addr0-3, currentBits, rng, noisefb, attChg
+	tst lr,#0xff
+	blne calculateVolumes
+;@----------------------------------------------------------------------------
+mixLoop_ay:
+	mov lr,#0x80000000
+innerMixLoop_ay:
+	adds r2,r2,#0x00400000
+	subcs r2,r2,r2,lsl#16
+	eorcs r6,r6,#0x04
+
+	adds r3,r3,#0x00400000
+	subcs r3,r3,r3,lsl#16
+	eorcs r6,r6,#0x08
+
+	adds r4,r4,#0x00400000
+	subcs r4,r4,r4,lsl#16
+	eorcs r6,r6,#0x10
+
+	adds r5,r5,#0x00800000		;@ 0x00200000?
+	subcs r5,r5,r5,lsl#16
+	biccs r6,r6,#0x20
+	movscs r7,r7,lsr#1
+	eorcs r7,r7,r8
+	orrcs r6,r6,#0x20
+
+	ldr r9,[snptr,r6]
+	add lr,lr,r9
+	sub r0,r0,#1
+	tst r0,#3
+	bne innerMixLoop_ay
+	eor lr,lr,#0x00008000
+	cmp r0,#0
+	strpl lr,[r1],#4
+	bhi mixLoop_ay
+
+	stmia snptr,{r2-r7}			;@ Writeback freq,addr,currentBits,rng
+	ldmfd sp!,{r4-r9,lr}
+	bx lr    
 ;@----------------------------------------------------------------------------
 
 	.section .text
@@ -276,14 +323,14 @@ setFreq_ay:
 	cmp r2,#3					;@ Noise channel
 	beq setNoiseFreq_ay
 	tst r0,#0x80
-	andeq r0,r0,#0x3F
+	andeq r0,r0,#0x7F
 	movne r0,r0,lsl#4
 	strbeq r0,[r1,#ch0Reg+1]
 	strbne r0,[r1,#ch0Reg]
 	ldrh r0,[r1,#ch0Reg]
-	movs r0,r0,lsl#2
-	cmp r0,#0x0180				;@ We set any value under 6 to 1 to fix aliasing.
-	movmi r0,#0x0040			;@ Value zero is same as 1 on SMS.
+	movs r0,r0,lsl#1
+	cmp r0,#0x00C0				;@ We set any value under 6 to 1 to fix aliasing.
+	movmi r0,#0x0020			;@ Value zero is same as 1 on SMS.
 	strh r0,[r1,#ch0Frq]
 	bx lr
 
