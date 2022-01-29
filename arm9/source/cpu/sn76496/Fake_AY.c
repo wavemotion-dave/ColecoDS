@@ -23,6 +23,13 @@
 // 11-12    Envelope generator period
 // 13       Envelope generator shape
 // 14-15    I/O ports A & B (MSX Joystick mapped in here - otherwise unused)
+//
+//
+// We make calls to ay76496W() to do the register writes... there is no such chip
+// as an ay76496 - but this alternate function to sn76496W allows us to extend 1 extra
+// bit for noise (to go from 3 frequency levels of noise to 7) and 1 extra bit of
+// tone frequency (higher periods so we can produce 1 octave lower tones). This gets
+// us part-way to what a real AY sound chip can produce... it's good enough.
 // ------------------------------------------------------------------------------------
 
 #include <nds.h>
@@ -389,7 +396,7 @@ void FakeAY_WriteData(u8 Value)
           case 0x0B:
           case 0x0C:
               envelope_period = ((ay_reg[0x0C] << 8) | ay_reg[0x0B]);
-              envelope_period = envelope_period / 8;  // This gets us "close"
+              envelope_period = envelope_period / 10;  // This gets us "close"
               break;
               
           case 0x0D:
