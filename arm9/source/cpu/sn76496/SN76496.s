@@ -337,11 +337,10 @@ setFreq_ay:
 setNoiseFreq_ay:
 	and r1,r0,#0x07
 	strb r1,[snptr,#ch3Reg]
-	tst r0,#0x08
 noiseFeedback_ay:
-	mov r0,#PFEED_SMS			;@ Periodic noise
+	mov r0,#PFEED_AY			;@ Periodic noise
 	strh r0,[snptr,#rng]
-	movne r0,#WFEED_SMS			;@ White noise
+	mov r0,#WFEED_AY			;@ White noise
 	strh r0,[snptr,#noiseFB]
 	mov r2,#0x0040				;@ These values sound ok
 	mov r2,r2,lsl r1

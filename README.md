@@ -180,6 +180,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.2: 29-Jan-2022 by wavemotion-dave
+* Increased AY noise frequency dynamic range - improves MSX and CV-SGM sounds.
+* Increased AY tone frequency dynamic range - improves MSX and CV-SGM sounds.
+* Diagnoal d-pad mapping now available on SG-1000.
+* Other minor cleanups as time permitted.
+
 V6.1: 25-Jan-2022 by wavemotion-dave
 * Added full MSX keyboard overlay - Choose "MSX Full" in Game Options.
 * Improved ASC8 mapper so Bomber King, Batman Rovin and others now playable.
