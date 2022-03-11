@@ -5,11 +5,15 @@
 #include <string.h>
 #include "cpu/z80/Z80_interface.h"
 
-#define VERSIONCLDS "6.2"
+#define VERSIONCLDS "6.x"
 
 //#define DEBUG_Z80   YES
 extern u32 debug1;
 extern u32 debug2;
+extern u32 debug3;
+extern u32 debug4;
+extern u32 debug5;
+extern u32 debug6;
 
 #define JST_NONE            0x0000
 #define JST_KEYPAD          0x000F
@@ -76,6 +80,7 @@ extern u8 spinY_right;
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
 extern u8 msx_mode;
+extern u8 adam_mode;
 extern u8 msx_key;
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
@@ -101,5 +106,6 @@ extern void PauseSound(void);
 extern void UnPauseSound(void);
 extern void ResetStatusFlags(void);
 extern void ReadFileCRCAndConfig(void);
+extern void SetupAdam(bool);
 
 #endif

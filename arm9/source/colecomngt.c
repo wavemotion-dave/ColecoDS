@@ -17,6 +17,7 @@
 #include <fat.h>
 
 #include "colecoDS.h"
+#include "AdamNet.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
@@ -27,6 +28,11 @@
 #define NORAM 0xFF
 
 #define COLECODS_SAVE_VER 0x0011        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+
+// ------------------------------------------------
+// Adam RAM is 128K (64K Intrinsic, 64K Expanded)
+// ------------------------------------------------
+u8 AdamRAM[0x20000]   = {0x00};
 
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
@@ -50,6 +56,15 @@ u8 msx_beeper_enabled   __attribute__((section(".dtcm"))) = 0;
 u8 beeperWasOn          __attribute__((section(".dtcm"))) = 0;
 u8 msx_sram_enabled     __attribute__((section(".dtcm"))) = 0;
 
+
+u8 adam_ram_lo = false;
+u8 adam_ram_hi = false;
+u8 adam_ram_lo_exp = false;
+u8 adam_ram_hi_exp = false;
+
+extern u8 ColecoBios[];       // Swap in the Coleco BIOS (save SRAM)
+extern void SetupAdam(bool bResetAdamNet);
+
 Z80 CPU __attribute__((section(".dtcm")));
 
 // --------------------------------------------------
@@ -58,7 +73,6 @@ Z80 CPU __attribute__((section(".dtcm")));
 extern byte Loop9918(void);
 extern void DrZ80_InitHandlers(void);
 extern u8 lastBank;
-s16 timingAdjustment = 0;
 u8 bDontResetEnvelope __attribute__((section(".dtcm"))) = false;
 
 // --------------------------------------------------
@@ -73,13 +87,27 @@ u8 msx_auto_clear_irq __attribute__((section(".dtcm"))) = 0;
 
 extern u8 MSXBios[];
 extern u8 CBios[];
+extern u8 AdamEOS[];
+extern u8 AdamWRITER[];
 
+
+// --------------------------------------------------------------------------
+// These aren't used very often so we don't need them in fast .dtcm memory
+// --------------------------------------------------------------------------
+s16 timingAdjustment = 0;
 u16 msx_init = 0x4000;
 u16 msx_basic = 0x0000;
+u32 LastROMSize = 0;
 
+// --------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------
 // Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
+
+// -------------------------------
+// A few misc externs needed...
+// -------------------------------
 extern u32* lutTablehh;
 extern int cycle_deficit;
 extern u8 msx_sram_at_8000;
@@ -114,6 +142,7 @@ u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 
 u8 Port53  __attribute__((section(".dtcm"))) = 0x00;
 u8 Port60  __attribute__((section(".dtcm"))) = 0x0F;
+u8 Port20  __attribute__((section(".dtcm"))) = 0x00;
 
 u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
@@ -128,7 +157,7 @@ u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick 
 // We provide 5 "Sensitivity" settings for the X/Y spinner
 // ---------------------------------------------------------------
 // Hand Tweaked Speeds:      Norm   Fast   Fastest  Slow   Slowest
-const u16 SPINNER_SPEED[] = {120,   75,    50,      200,   300};    
+u16 SPINNER_SPEED[] __attribute__((section(".dtcm"))) = {120,   75,    50,      200,   300};    
 
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
@@ -151,7 +180,6 @@ SN76496 aycol   __attribute__((section(".dtcm")));
 // Some auxillary functions/vars to help with MSX memory layout
 // --------------------------------------------------------------
 void MSX_InitialMemoryLayout(u32 iSSize);
-u32 LastROMSize = 0;
 
 // ---------------------------------------------------------
 // Reset the Super Game Module vars... we reset back to 
@@ -172,7 +200,8 @@ void sgm_reset(void)
     bFirstSGMEnable = true;      // First time SGM enable we clear ram
     
     Port53 = 0x00;               // Init the SGM Port 53
-    Port60 = 0x0F;               // And the Adam/Memory Port 60
+    Port60 = (adam_mode?0x00:0x0F);// And the Adam/Memory Port 60
+    Port20 = 0x00;               // Adam Net 
 }
 
 // ---------------------------------------------------------
@@ -217,6 +246,10 @@ void colecoWipeRAM(void)
   else if (msx_mode)
   {
     // Do nothing... MSX has all kinds of memory mapping that is handled elsewhere
+  }
+  else if (adam_mode)
+  {
+    // Do nothing... ADAM has special handling...
   }
   else
   {
@@ -297,6 +330,9 @@ u8 colecoInit(char *szGame)
   u8 RetFct,uBcl;
   u16 uVide;
 
+  // ----------------------------------------------------------------------------------  
+  // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory
+  // ----------------------------------------------------------------------------------  
   memset(romBuffer, 0xFF, (512 * 1024));
   
   if (bForceMSXLoad) msx_mode = 1;
@@ -318,6 +354,10 @@ u8 colecoInit(char *szGame)
   REG_BG3PD = (1<<8);
   REG_BG3X = 0;
   REG_BG3Y = 0;
+    
+  // Unload any ADAM related stuff
+  for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
+  for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
 
   // Init the page flipping buffer...
   for (uBcl=0;uBcl<192;uBcl++) 
@@ -343,6 +383,11 @@ u8 colecoInit(char *szGame)
       
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
+  }
+  else if (adam_mode)  // Load Adam DDP
+  {
+      sgm_reset();                       // Make sure the super game module is disabled to start
+      RetFct = loadrom(szGame,pColecoMem,0x10000);  
   }
   else  // Load coleco cartridge
   {
@@ -434,6 +479,8 @@ void colecoSaveState()
   long pSvg;
   char szFile[128];
   char szCh1[32];
+    
+  if (adam_mode) return;    //TBD: Not supporting ADAM saves yet...
 
   // Init filename = romname and STA in place of ROM
   strcpy(szFile,gpFic[ucGameAct].szName);
@@ -578,6 +625,8 @@ void colecoLoadState()
     char szFile[128];
     char szCh1[32];
 
+    if (adam_mode) return;    //TBD: Not supporting ADAM saves yet...
+    
     // Init filename = romname and .SAV in place of ROM
     strcpy(szFile,gpFic[ucGameAct].szName);
     szFile[strlen(szFile)-3] = 's';
@@ -1328,6 +1377,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
 }
 
 
+
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system                                            */
 /*******************************************************************************/
@@ -1345,6 +1395,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     {
         memset(romBuffer, 0xFF, (512 * 1024));
         fread((void*) romBuffer, iSSize, 1, handle); 
+        fclose(handle);
         
         romBankMask = 0x00;         // No bank mask until proven otherwise
         bMagicMegaCart = false;     // No Mega Cart to start
@@ -1357,7 +1408,23 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         if (msx_mode)
         {
             MSX_InitialMemoryLayout(iSSize);
-        }            
+        }
+        // ---------------------------------------------------------------------------
+        // For ADAM mode, we need to setup the memory banks and tape/disk access...
+        // ---------------------------------------------------------------------------
+        else if (adam_mode)
+        {
+            for (int i=0; i< 0x20000; i++) AdamRAM[i] = rand() & 0xFF;
+            memset(pColecoMem, 0xFF, 0x10000);
+            Port60 = 0x00;               // Adam Memory default
+            Port20 = 0x00;               // Adam Net default
+            SetupAdam(false);
+            // The .ddp is now in romBuffer[]
+            if (strstr(path, ".ddp") != 0) 
+                ChangeTape(0, path);
+            else
+                ChangeDisk(0, path);
+        }
         else
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
@@ -1415,12 +1482,12 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 else if (iSSize == (128 * 1024)) romBankMask = 0x07;
                 else if (iSSize == (256 * 1024)) romBankMask = 0x0F;
                 else if (iSSize == (512 * 1024)) romBankMask = 0x1F;
-                else romBankMask = 0x07;    // Not sure what to do... good enough
+                else romBankMask = 0x3F;    // Not sure what to do... good enough - this allows a wide range of banks
             }
         }
         bOK = 1;
     }
-    fclose(handle);
+    else fclose(handle);
   }
   return bOK;
 }
@@ -1432,6 +1499,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 void SetupSGM(void)
 {
     if (SGM_NeverEnable) return;        // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
+    if (adam_mode) return;
     
     sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
     
@@ -1453,7 +1521,6 @@ void SetupSGM(void)
     // ------------------------------------------------------
     if (Port60 & 0x02)  
     {
-      extern u8 ColecoBios[];       // Swap in the Coleco BIOS (save SRAM)
       if (sgm_low_addr != 0x2000)
       {
           memcpy(sgm_low_mem,pColecoMem,0x2000);
@@ -1470,6 +1537,87 @@ void SetupSGM(void)
           sgm_low_addr = 0x0000; 
       }
     }
+}
+
+// ================================================================================================
+// Setup Adam based on Port60 (Adam Memory) and Port20 (AdamNet)
+// Most of this hinges around Port60:
+// xxxx xxNN  : Lower address space code.
+//       00 = Onboard ROM.  Can be switched between EOS and SmartWriter by output to port 0x20
+//       01 = Onboard RAM (lower 32K)
+//       10 = Expansion RAM.  Bank switch chosen by port 0x42
+//       11 = OS-7 and 24K RAM (ColecoVision mode)
+// 
+// xxxx NNxx  : Upper address space code.
+//       00 = Onboard RAM (upper 32K)
+//       01 = Expansion ROM (those extra ROM sockets)
+//       10 = Expansion RAM.  Bank switch chosen by port 0x42
+//       11 = Cartridge ROM (ColecoVision mode).
+// 
+// And Port20: bit 1 (0x02) to determine if EOS.ROM is present on top of WRITER.ROM
+// ================================================================================================
+void SetupAdam(bool bResetAdamNet)
+{
+    if (!adam_mode) return;
+    
+    // ----------------------------------
+    // Configure lower 32K of memory
+    // ----------------------------------
+    if ((Port60 & 0x03) == 0x00)    // WRITER.ROM (and possibly EOS.ROM)
+    {
+        adam_ram_lo = false;
+        adam_ram_lo_exp = false;
+        memcpy(pColecoMem, AdamWRITER, 0x8000);
+        if (Port20 & 0x02) 
+        {
+            memcpy(pColecoMem+0x6000, AdamEOS, 0x2000);
+        }
+    }
+    else if ((Port60 & 0x03) == 0x01)   // Onboard RAM
+    {
+        adam_ram_lo = true;
+        adam_ram_lo_exp = false;
+        memcpy(pColecoMem+0x0000, AdamRAM+0x0000, 0x8000);
+    }
+    else if ((Port60 & 0x03) == 0x03)   // Colecovision BIOS + RAM
+    {
+        adam_ram_lo = true;
+        adam_ram_lo_exp = false;
+        memcpy(pColecoMem+0x0000, AdamRAM+0x0000, 0x8000);
+        memcpy(pColecoMem, ColecoBios, 0x2000);
+    }
+    else                                // Expanded RAM
+    {
+        adam_ram_lo = false;
+        adam_ram_lo_exp = true;
+        memcpy(pColecoMem+0x0000, AdamRAM+0x10000, 0x8000);
+    }
+
+
+    // ----------------------------------
+    // Configure upper 32K of memory
+    // ----------------------------------
+    if ((Port60 & 0x0C) == 0x00)    // Onboard RAM
+    {
+        adam_ram_hi = true;
+        adam_ram_hi_exp = false;
+        memcpy(pColecoMem+0x8000, AdamRAM+0x8000, 0x8000);
+    }
+    else if ((Port60 & 0x0C) == 0x08)    // Expanded RAM
+    {
+        adam_ram_hi = false;
+        adam_ram_hi_exp = true;
+        memcpy(pColecoMem+0x8000, AdamRAM+0x18000, 0x8000);
+    }
+    else        // Nothing else exists so just return 0xFF
+    {
+        adam_ram_hi = false;
+        adam_ram_hi_exp = false;
+        memset(pColecoMem+0x8000, 0xFF, 0x8000);
+    }
+    
+    // Check if we are to Reset the AdamNet
+    if (bResetAdamNet)  ResetPCB();
 }
 
 /** InZ80() **************************************************/
@@ -1493,7 +1641,12 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 
   switch(Port&0xE0) 
   {
+    case 0x20:
+      return Port20 & 0x0F;
+      break;
+          
     case 0x40: // Printer Status - not used
+      return(0xFF);
       break;
    
     case 0x60:  // Adam/Memory Port
@@ -1530,7 +1683,8 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------------------------
   // Port 53 is used for the Super Game Module to enable SGM mode...
   // -----------------------------------------------------------------
-  if (Port == 0x53) {Port53 = Value; SetupSGM(); return;}
+  if (Port == 0x53 && !adam_mode) {Port53 = Value; SetupSGM(); return;}
+    
   // -----------------------------------------------
   // Port 50 is the AY sound chip register index...
   // -----------------------------------------------
@@ -1553,6 +1707,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // Now handle the rest of the CV ports - this handles the mirroring of
   // port writes - for example, a write to port 0x7F will hit 0x60 Memory Port
   // ---------------------------------------------------------------------------
+  bool resetAdamNet = false;
   switch(Port&0xE0) 
   {
     case 0x80:  // Set Joystick Read Mode
@@ -1569,11 +1724,16 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI; cpuirequest=Z80_NMI_INT; }
       return;
     case 0x40:  // Printer status and ADAM related stuff...not used
-    case 0x20:
+      return;
+    case 0x20:  // AdamNet port
+      resetAdamNet = (Port20 & 1) && ((Value & 1) == 0);
+      Port20 = Value;
+      if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
       return;
     case 0x60:  // Adam/Memory port
+      resetAdamNet = false;
       Port60 = Value;
-      SetupSGM();
+      if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
       return;   
   }
 }

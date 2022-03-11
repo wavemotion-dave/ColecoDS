@@ -20,6 +20,7 @@
 #include <maxmod9.h>
 
 #include "colecoDS.h"
+#include "AdamNet.h"
 #include "highscore.h"
 #include "colecogeneric.h"
 #include "colecomngt.h"
@@ -28,6 +29,7 @@
 #include "ecranBas.h"
 #include "msx.h"
 #include "msx_full.h"
+#include "adam_full.h"
 #include "ecranDebug.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
@@ -52,6 +54,11 @@ extern Z80 CPU;
 extern u8 Slot0BIOS[];
 u32 debug1=0;
 u32 debug2=0;
+u32 debug3=0;
+u32 debug4=0;
+u32 debug5=0;
+u32 debug6=0;
+extern u8 adam_ram_lo, adam_ram_hi;
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -65,6 +72,8 @@ u8 pColecoMem[0x10000] ALIGN(32) = {0};
 u8 ColecoBios[0x2000] = {0};  // We keep the Coleco  8K BIOS around to swap in/out
 u8 SordM5Bios[0x2000] = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
 u8 MSXBios[0x8000]    = {0};  // We keep the MSX 32K BIOS around to swap in/out
+u8 AdamEOS[0x2000]    = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
+u8 AdamWRITER[0x8000] = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -77,10 +86,13 @@ u16 emuFps=0;
 u16 emuActFrames=0;
 u16 timingFrames=0;
 
+u8 last_adam_key = -1;
+
 // For the various BIOS files ... only the coleco.rom is required
 u8 bColecoBiosFound = false;
 u8 bSordBiosFound = false;
 u8 bMSXBiosFound = false;
+u8 bAdamBiosFound = false;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
@@ -89,6 +101,7 @@ u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause
 u8 sg1000_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
 u8 sordm5_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
 u8 msx_mode    __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
+u8 adam_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
 u8 msx_key     __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
@@ -143,6 +156,8 @@ u32 keyCoresp[MAX_KEY_OPTIONS] = {
     
     META_SPINX_LEFT, META_SPINX_RIGHT, META_SPINY_LEFT, META_SPINY_RIGHT
 };
+
+extern u8 msx_scc_enable;
 
 
 // --------------------------------------------------------------------------------
@@ -353,6 +368,8 @@ static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
 static u8 last_sordm5_mode = 0;
 static u8 last_msx_mode = 0;
+static u8 last_adam_mode = 0;
+static u8 last_scc_mode = 0;
 
 
 void ResetStatusFlags(void)
@@ -364,6 +381,8 @@ void ResetStatusFlags(void)
   last_sg1000_mode = 0;
   last_sordm5_mode = 0;
   last_msx_mode = 0;
+  last_scc_mode = 0;
+  last_adam_mode = 0;
 }
 
 void ResetColecovision(void)
@@ -405,6 +424,13 @@ void ResetColecovision(void)
       colecoWipeRAM();                          // Wipe main RAM area
       memcpy(pColecoMem,Slot0BIOS,0x8000);      // Restore MSX BIOS
   }
+  else if (adam_mode)
+  {
+      extern u8 AdamRAM[];
+      memset(pColecoMem, 0xFF, 0x10000);
+      for (int i=0; i< 0x20000; i++) AdamRAM[i] = rand() & 0xFF;
+      SetupAdam(false);
+  }
   else
   {
       memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
@@ -430,7 +456,7 @@ void ResetColecovision(void)
 
   ResetStatusFlags();   // Some static status flags for the UI mostly
     
-  debug1 = 0;  debug2 = 0;
+  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0; debug5 = 0; debug6 = 0;
 }
 
 //*********************************************************************************
@@ -452,10 +478,11 @@ const char *VModeNames[] =
 
 void ShowDebugZ80(void)
 {
-    extern u8 a_idx, b_idx, c_idx, mapperType;
+    extern u8 a_idx, b_idx, c_idx;
     extern u8 lastBank;
     extern u8 romBankMask;
-    extern u16 sgm_low_addr;
+    extern u8 Port20, Port53, Port60;
+    extern u16 PCBAddr;
     char tmp[33];
     u8 idx=1;
     
@@ -509,14 +536,15 @@ void ShowDebugZ80(void)
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
     AffChaine(0,idx++,7, tmp);
-    idx++;
     siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);
     AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "SGMem %04X, MT %d", sgm_low_addr, mapperType);
+    siprintf(tmp, "PORTS %02X %02X %02X", Port20, Port53, Port60);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);
     AffChaine(0,idx++,7, tmp);  
-    siprintf(tmp, "DEBG  %lu %lu", debug1, debug2);
+    siprintf(tmp, "DEBG  %lu %lu %04X", debug1, debug2, PCBAddr);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "DEBG  %lu %lu %lu %lu", debug3, debug4, debug5, debug6);
     AffChaine(0,idx++,7, tmp);
 }
     
@@ -556,6 +584,22 @@ void DisplayStatusLine(bool bForce)
             AffChaine(23,0,6, tmp);
         }
     }
+    else if (adam_mode)
+    {
+        extern u8 io_show_status;
+        if ((last_adam_mode != adam_mode) || bForce)
+        {
+            last_adam_mode = adam_mode;
+            AffChaine(23,0,6, "ADAM");
+        }
+        if (io_show_status) 
+        {
+            AffChaine(30,0,6, (io_show_status == 2 ? "WR":"RD"));
+            io_show_status = 0;
+        }
+        else
+            AffChaine(30,0,6, "  ");
+    }
     else    // Various Colecovision Possibilities 
     {    
         if ((last_sgm_mode != sgm_enable) || bForce)
@@ -576,6 +620,12 @@ void DisplayStatusLine(bool bForce)
             AffChaine(22,0,6, (romBankMask ? "MC":"  "));
         }
     }
+}
+
+u8 IsFullKeyboard(void)
+{
+    if ((myConfig.overlay == 9) || (myConfig.overlay == 10)) return 1; 
+    return 0;
 }
 
 // ------------------------------------------------------------------------
@@ -715,8 +765,8 @@ void colecoDS_main(void)
         iTy = touch.py;
     
         // Test if "Reset Game" selected
-        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=38) && (iTx<= 35) && (iTy<63))) ||
-            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=40) && (iTx<=130) && (iTy<67))))
+        if  ((IsFullKeyboard() && ((iTx>=1) && (iTy>=38) && (iTx<= 35) && (iTy<63))) ||
+            ((!IsFullKeyboard()) && ((iTx>=6) && (iTy>=40) && (iTx<=130) && (iTy<67))))
         {
           if  (!ResetNow) {
             ResetNow = 1;
@@ -737,8 +787,8 @@ void colecoDS_main(void)
         }
         
         // Test if "End Game" selected
-        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=63) && (iTx<= 35) && (iTy<86))) ||
-            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95))))
+        if  ((IsFullKeyboard() && ((iTx>=1) && (iTy>=63) && (iTx<= 35) && (iTy<86))) ||
+            ((!IsFullKeyboard()) && ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95))))
         {
           //  Stop sound
           SoundPause();
@@ -755,8 +805,8 @@ void colecoDS_main(void)
         }
 
         // Test if "High Score" selected
-        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=86) && (iTx<= 35) && (iTy<110))) ||
-            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125))))
+        if  ((IsFullKeyboard() && ((iTx>=1) && (iTy>=86) && (iTx<= 35) && (iTy<110))) ||
+            ((!IsFullKeyboard()) && ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125))))
         {
           //  Stop sound
           SoundPause();
@@ -766,8 +816,8 @@ void colecoDS_main(void)
         }
           
         // Test if "Save State" selected
-        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=110) && (iTx<= 35) && (iTy<134))) ||
-            ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=125) && (iTx<=130) && (iTy<155)))) 
+        if  ((IsFullKeyboard() && ((iTx>=1) && (iTy>=110) && (iTx<= 35) && (iTy<134))) ||
+            ((!IsFullKeyboard()) && ((iTx>=6) && (iTy>=125) && (iTx<=130) && (iTy<155)))) 
         {
           if  (!SaveNow) 
           {
@@ -782,8 +832,8 @@ void colecoDS_main(void)
           SaveNow = 0;
           
         // Test if "Load State" selected
-        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=134) && (iTx<= 35) && (iTy<157))) ||
-             ((myConfig.overlay != 9) && ((iTx>=6) && (iTy>=155) && (iTx<=130) && (iTy<184))))
+        if  ((IsFullKeyboard() && ((iTx>=1) && (iTy>=134) && (iTx<= 35) && (iTy<157))) ||
+             ((!IsFullKeyboard()) && ((iTx>=6) && (iTy>=155) && (iTx<=130) && (iTy<184))))
         {
           if  (!LoadNow) 
           {
@@ -888,6 +938,104 @@ void colecoDS_main(void)
                 else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_RET;
             }
         }
+        
+        u8 adam_key = 0;
+        if (myConfig.overlay == 10)  // Adam Keyboard ~60 keys
+        {
+            if ((iTy >= 38) && (iTy < 63))        // Row 1 (top row)
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   adam_key = '0';
+                else if ((iTx >= 57)  && (iTx < 79))   adam_key = '1';
+                else if ((iTx >= 79)  && (iTx < 101))  adam_key = '2';
+                else if ((iTx >= 101) && (iTx < 123))  adam_key = '3';
+                else if ((iTx >= 123) && (iTx < 145))  adam_key = '4';
+                else if ((iTx >= 145) && (iTx < 167))  adam_key = '5';
+                else if ((iTx >= 167) && (iTx < 189))  adam_key = '6';
+                else if ((iTx >= 189) && (iTx < 211))  adam_key = '7';
+                else if ((iTx >= 211) && (iTx < 233))  adam_key = '8';
+                else if ((iTx >= 233) && (iTx < 255))  adam_key = '9';
+                
+            }
+            else if ((iTy >= 63) && (iTy < 86))   // Row 2
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'A';
+                else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'B';
+                else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'C';
+                else if ((iTx >= 101) && (iTx < 123))  adam_key = 'D';
+                else if ((iTx >= 123) && (iTx < 145))  adam_key = 'E';
+                else if ((iTx >= 145) && (iTx < 167))  adam_key = 'F';
+                else if ((iTx >= 167) && (iTx < 189))  adam_key = 'G';
+                else if ((iTx >= 189) && (iTx < 211))  adam_key = 'H';
+                else if ((iTx >= 211) && (iTx < 233))  adam_key = 'I';
+                else if ((iTx >= 233) && (iTx < 255))  adam_key = 'J';
+            }
+            else if ((iTy >= 86) && (iTy < 110))  // Row 3
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'K';
+                else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'L';
+                else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'M';
+                else if ((iTx >= 101) && (iTx < 123))  adam_key = 'N';
+                else if ((iTx >= 123) && (iTx < 145))  adam_key = 'O';
+                else if ((iTx >= 145) && (iTx < 167))  adam_key = 'P';
+                else if ((iTx >= 167) && (iTx < 189))  adam_key = 'Q';
+                else if ((iTx >= 189) && (iTx < 211))  adam_key = 'R';
+                else if ((iTx >= 211) && (iTx < 233))  adam_key = 'S';
+                else if ((iTx >= 233) && (iTx < 255))  adam_key = 'T';
+            }
+            else if ((iTy >= 110) && (iTy < 134)) // Row 4
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'U';
+                else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'V';
+                else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'W';
+                else if ((iTx >= 101) && (iTx < 123))  adam_key = 'X';
+                else if ((iTx >= 123) && (iTx < 145))  adam_key = 'Y';
+                else if ((iTx >= 145) && (iTx < 167))  adam_key = 'Z';
+                else if ((iTx >= 167) && (iTx < 189))  adam_key = ADAM_KEY_UP;
+                else if ((iTx >= 189) && (iTx < 211))  adam_key = ADAM_KEY_DOWN;
+                else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_LEFT;
+                else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_RIGHT;
+            }
+            else if ((iTy >= 134) && (iTy < 157)) // Row 5
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+                else if ((iTx >= 35)  && (iTx < 57))   adam_key = ':';
+                else if ((iTx >= 57)  && (iTx < 79))   adam_key = '=';
+                else if ((iTx >= 79)  && (iTx < 101))  adam_key = '#';
+                else if ((iTx >= 101) && (iTx < 123))  adam_key = '.';
+                else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_F1;
+                else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_F2;
+                else if ((iTx >= 167) && (iTx < 189))  adam_key = ADAM_KEY_F3;
+                else if ((iTx >= 189) && (iTx < 211))  adam_key = ADAM_KEY_F4;
+                else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_F5;
+                else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_F6;
+            }
+            else if ((iTy >= 157) && (iTy < 192)) // Row 6
+            {
+                if      ((iTx >= 1)   && (iTx < 35))   adam_key = ADAM_KEY_DEL;
+                else if ((iTx >= 35)  && (iTx < 57))   adam_key = ADAM_KEY_INS;
+                else if ((iTx >= 57)  && (iTx < 79))   adam_key = ADAM_KEY_INS;
+                else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_BS;
+                else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_BS;
+                else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_ESC;
+                else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_ESC;
+                else if ((iTx >= 167) && (iTx < 189))  adam_key = ' ';
+                else if ((iTx >= 189) && (iTx < 211))  adam_key = ' ';
+                else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_ENTER;
+                else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_ENTER;
+            }
+            else {adam_key = 0; last_adam_key = 0;}
+            
+            if (adam_key != last_adam_key && (adam_key != 0))
+            {
+                PutKBD(adam_key);
+                mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+            }
+            last_adam_key = adam_key;
+        }          
         else    // Normal 12 button virtual keypad
         {
             ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
@@ -925,6 +1073,7 @@ void colecoDS_main(void)
       {
         ResetNow=SaveNow=LoadNow = 0;
         lastUN = 0;  dampenClick = 0;
+        last_adam_key = 0;
       }
 
       // ---------------------------------------------------
@@ -1119,6 +1268,14 @@ void InitBottomScreen(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
     }
+    else if (myConfig.overlay == 10)  // Adam Keyboard
+    {
+      //  Init bottom screen
+      decompress(adam_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(adam_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
+    }
     else // Generic Overlay
     {
 #ifdef DEBUG_Z80
@@ -1205,6 +1362,7 @@ void LoadBIOSFiles(void)
     bColecoBiosFound = false;
     bSordBiosFound = false;
     bMSXBiosFound = false;
+    bAdamBiosFound = false;
     
     // -----------------------------------------------------------
     // First load Sord M5 bios - don't really care if this fails
@@ -1233,6 +1391,33 @@ void LoadBIOSFiles(void)
         fclose(fp);
     }
 
+    // -----------------------------------------------------------
+    // Try loading the EOS.ROM and WRITER.ROM Adam files...
+    // -----------------------------------------------------------
+    fp = fopen("eos.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/eos.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/eos.rom", "rb");
+    if (fp != NULL)
+    {
+        bAdamBiosFound = true;
+        fread(AdamEOS, 0x2000, 1, fp);
+        fclose(fp);
+    }
+    
+    if (bAdamBiosFound)
+    {
+        fp = fopen("writer.rom", "rb");
+        if (fp == NULL) fp = fopen("/roms/bios/writer.rom", "rb");
+        if (fp == NULL) fp = fopen("/data/bios/writer.rom", "rb");
+        if (fp != NULL)
+        {
+            bAdamBiosFound = true;
+            fread(AdamWRITER, 0x8000, 1, fp);
+            fclose(fp);
+        }
+        else bAdamBiosFound = false;    // Both EOS and WRITER need to be found...
+    }
+    
     // -----------------------------------------------------------
     // Coleco ROM BIOS must exist or the show is off!
     // -----------------------------------------------------------
@@ -1273,6 +1458,8 @@ int main(int argc, char **argv)
   TIMER2_DATA=0;
   TIMER2_CR=TIMER_ENABLE|TIMER_DIV_1024;  
   dsInstallSoundEmuFIFO();
+    
+  SetYtrigger(190); //trigger 2 lines before vsync    
     
   irqSet(IRQ_VBLANK,  irqVBlank);
   irqEnable(IRQ_VBLANK);
@@ -1329,6 +1516,8 @@ int main(int argc, char **argv)
         AffChaine(2,idx++,0,"coleco.rom BIOS FOUND"); idx++;
         if (bMSXBiosFound) {AffChaine(2,idx++,0,"msx.rom BIOS FOUND"); idx++;}
         if (bSordBiosFound) {AffChaine(2,idx++,0,"sordm5.rom BIOS FOUND"); idx++;}
+        if (bAdamBiosFound) {AffChaine(2,idx++,0,"eos.rom and writer.rom FOUND"); idx++;}
+        
         AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
         
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);

@@ -404,6 +404,18 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".ddp") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".dsk") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
       }
     }
   }
@@ -848,7 +860,9 @@ void SetDefaultGameConfig(void)
     
     if (sg1000_mode)                            myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
     if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
-    if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can swich it out
+    if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
+    if (adam_mode)                              myConfig.cpuCore = 1;  // Adam defaults to CZ80 core - user can switch it out
+    if (adam_mode && !isDSiMode())              myConfig.frameSkip=1;  // If Adam and older DS-LITE, turn on light frameskip
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
 }
 
@@ -917,7 +931,7 @@ struct options_t
 u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "MSX FULL"},                                    &myConfig.overlay,    10},
+    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "MSX FULL", "ADAM KEYBD"},                      &myConfig.overlay,    11},
     {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
     {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
     {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
@@ -1271,6 +1285,7 @@ void ReadFileCRCAndConfig(void)
     sg1000_mode = 0;
     sordm5_mode = 0;
     msx_mode = 0;
+    adam_mode = 0;
     
     CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
 
@@ -1278,8 +1293,11 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".ddp") != 0) adam_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) adam_mode = 1;
     
     FindAndLoadConfig();    // Try to find keymap and config for this file...
+    
 }
 
 // --------------------------------------------------------------------
