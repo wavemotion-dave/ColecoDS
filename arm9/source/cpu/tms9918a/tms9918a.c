@@ -45,7 +45,7 @@ u32 (*lutTablehh)[16][16] __attribute__((section(".dtcm"))) = (void*)0x068A0000;
 // plus there are the undocumented modes. So I've done my best to comment using 
 // all of the names you will find out there in the wild world of VDP documentation!
 // ---------------------------------------------------------------------------------------
-tScrMode SCR[MAXSCREEN+1] = {
+tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
                 // R2,  R3,  R4,  R5,  R6,  M2,  M3,  M4,  M5
   { RefreshLine0,0x7F,0x00,0x3F,0x00,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 1 aka MSX SCREEN 0 aka "TEXT 1"     */
   { RefreshLine1,0x7F,0xFF,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 0 aka MSX SCREEN 1 aka "GRAPHIC 1"  */
@@ -56,7 +56,7 @@ tScrMode SCR[MAXSCREEN+1] = {
 /** Palette9918[] ********************************************/
 /** 16 standard colors used by TMS9918/TMS9928 VDP chips.   **/
 /*************************************************************/
-u8 TMS9918A_palette[16*3] = {
+u8 TMS9918A_palette[16*3] __attribute__((section(".dtcm")))  = {
   0x00,0x00,0x00,   0x00,0x00,0x00,   0x20,0xC0,0x20,   0x60,0xE0,0x60,
   0x20,0x20,0xE0,   0x40,0x60,0xE0,   0xA0,0x20,0x20,   0x40,0xC0,0xE0,
   0xE0,0x20,0x20,   0xE0,0x60,0x60,   0xC0,0xC0,0x20,   0xC0,0xC0,0x80,
@@ -491,7 +491,7 @@ byte Write9918(u8 iReg, u8 value)
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
 
   /* VRAM can either be 4kB or 16kB - this checks if the bit has changed on this call which will force the logic in case 1 below */
-  if (msx_mode) VRAMMask = 0x3FFF;    // For MSX we only support 16K
+  if (msx_mode || adam_mode) VRAMMask = 0x3FFF;    // For MSX we only support 16K
   else VRAMMask = (iReg==1) && ( (VDP[1]^value) & TMS9918_REG1_RAM16K ) ? 0 : TMS9918_VRAMMask;  
 
   /* Store value into the register */

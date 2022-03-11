@@ -44,6 +44,7 @@ extern u8 msx_mode, msx_auto_clear_irq;
 extern byte pColecoMem[];
 extern void cpu_writemem16 (u8 value,u16 address);
 extern byte cpu_readmem16_banked (u16 address);
+extern byte cpu_readmem16 (u16 address);
 extern void cpu_writeport16(unsigned short Port, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
@@ -51,7 +52,7 @@ extern byte cpu_readport16(unsigned short Port);
 #define WrZ80(A,V)          cpu_writemem16(V,A)
 #define OutZ80(P,V)         (msx_mode ? cpu_writeport_msx(P,V) : cpu_writeport16(P,V))
 #define InZ80(P)            cpu_readport16(P)
-INLINE byte RdZ80(word A)   {if (A < 0xFFC0) return pColecoMem[A]; return cpu_readmem16_banked(A);}
+INLINE byte RdZ80(word A)   {if (A < 0xC800) return pColecoMem[A]; return cpu_readmem16_banked(A);}
 
 /** Macros for use through the CPU subsystem */
 #define S(Fl)        CPU.AF.B.l|=Fl

@@ -13,6 +13,7 @@
 #include "Z80_interface.h"
 #include "../../colecoDS.h"
 #include "../../colecomngt.h"
+#include "../../AdamNet.h"
 
 #define DR_INT_IRQ 0x01
 #define DR_NMI_IRQ 0x02
@@ -28,16 +29,24 @@ s32 cycle_deficit   __attribute__((section(".dtcm"))) = 0;
 u8 lastBlock[4]     __attribute__((section(".dtcm"))) = {99,99,99,99};
 u32 msx_offset      __attribute__((section(".dtcm"))) = 0;
 u8 msx_sram_at_8000 __attribute__((section(".dtcm"))) = 0;
+u8 msx_scc_enable   __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
 extern u8 romBuffer[];
 extern u8 Slot1ROM[];
 extern u8 msx_SRAM[];
-   
+extern u8 PCBTable[];
+extern u8 adam_ram_lo;
+extern u8 adam_ram_hi;
+extern u8 adam_ram_lo_exp;
+extern u8 adam_ram_hi_exp;
+extern u8 AdamRAM[];
+
 // -----------------------------
 // Normal 8-bit Read... fast!
 // -----------------------------
-u8 cpu_readmem16 (u16 address) {
+u8 cpu_readmem16 (u16 address) 
+{
   return (pColecoMem[address]);
 }
 
@@ -85,6 +94,8 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
           BankSwitch(address & romBankMask);
       }
   }    
+  else if ((adam_mode) && PCBTable[address]) ReadPCB(address);
+    
   return (pColecoMem[address]);
 }
 
@@ -510,7 +521,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 }
                 else if (mapperType == SCC8)
                 {
-                    if ((address & 0x0FFF) != 0) return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes
+                    if ((address & 0x0FFF) != 0) return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes which are not yet supported
                     
                     // --------------------------------------------------------
                     // Konami 8K mapper with SCC 
@@ -541,7 +552,8 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                     }
                     else if (bROMInSlot[2] && (address == 0x9000))
                     {
-                        if ((value&0x3F) == 0x3F) return;       // SCC sound isn't supported anyway - just return and save the CPU cycles
+                        if ((value&0x3F) == 0x3F) {msx_scc_enable=true; return;}       // SCC sound isn't supported - set a flag for now and just return and save the CPU cycles
+                        
                         if (lastBlock[2] != block)
                         {
                             Slot1ROMPtr[4] = (u8*)src;  // Main ROM
@@ -576,6 +588,17 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
             }
         }
     }
+    // --------------------------------------------------------------
+    // If the ADAM is enabled, we may be trying to write to AdamNet
+    // --------------------------------------------------------------
+    else if (adam_mode)
+    {
+        if ((address < 0x8000) && adam_ram_lo)        {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+        else if ((address >= 0x8000) && adam_ram_hi)  {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+        
+        if ((address < 0x8000) && adam_ram_lo_exp)        {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
+        else if ((address >= 0x8000) && adam_ram_hi_exp)  {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
+    }
     // -----------------------------------------------------------
     // If the Super Game Module has been enabled, we have a much 
     // wider range of RAM that can be written (and no mirroring)
@@ -605,7 +628,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
       {
           BankSwitch((address>>4) & romBankMask);
       }
-    }     
+    }
 }
 
 
@@ -697,7 +720,7 @@ void DrZ80_Cause_Interrupt(int type)
 // -------------------------------------------------
  u16 drz80MemReadW_banked(u16 addr) 
 {
-  if (bMagicMegaCart) // Handle Megacart Hot Spots
+  if (bMagicMegaCart || adam_mode) // Handle Megacart Hot Spots
   {
       return (cpu_readmem16_banked(addr) | (cpu_readmem16_banked(addr+1)<<8));   // These handle both hotspots - slower but easier than reproducing the hotspot stuff
   }    
@@ -723,8 +746,8 @@ void DrZ80_InitHandlers() {
       drz80.z80_out=(sg1000_mode ? cpu_writeport_sg:cpu_writeport16);    
   }    
     
-  drz80.z80_read8= (romBankMask ? cpu_readmem16_banked : cpu_readmem16 );
-  drz80.z80_read16= (romBankMask ? drz80MemReadW_banked : drz80MemReadW);
+  drz80.z80_read8= ((romBankMask || adam_mode) ? cpu_readmem16_banked : cpu_readmem16 );
+  drz80.z80_read16= ((romBankMask || adam_mode) ? drz80MemReadW_banked : drz80MemReadW);
   drz80.z80_rebasePC=(unsigned int (*)(short unsigned int))z80_rebasePC;
   drz80.z80_rebaseSP=(unsigned int (*)(short unsigned int))z80_rebaseSP;
   drz80.z80_irq_callback=z80_irq_callback;
@@ -760,6 +783,7 @@ void DrZ80_Reset(void) {
   lastBank = 199;
   cycle_deficit = 0;
   msx_sram_at_8000 = 0;
+  msx_scc_enable = 0;
     
   memset(lastBlock, 99, 4);
 }
