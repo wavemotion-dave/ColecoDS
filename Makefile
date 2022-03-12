@@ -9,7 +9,7 @@ include $(DEVKITARM)/ds_rules
 
 export TARGET		:=	ColecoDS
 export TOPDIR		:=	$(CURDIR)
-export VERSION		:=  6.2b
+export VERSION		:=  6.2c
 
 ICON 		:= -b $(CURDIR)/logo.bmp "ColecoDS $(VERSION);wavemotion-dave;https://github.com/wavemotion-dave/ColecoDS" 
 
