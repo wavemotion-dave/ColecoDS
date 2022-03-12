@@ -66,6 +66,11 @@ typedef struct
   byte Header[6];  /* Current header, result of SeekFDI() */
   byte Verbose;    /* 1: Print debugging messages */
 } FDIDisk;
+    
+    
+extern FDIDisk Disks[];
+extern FDIDisk Tapes[];
+    
 
 /** InitFDI() ************************************************/
 /** Clear all data structure fields.                        **/

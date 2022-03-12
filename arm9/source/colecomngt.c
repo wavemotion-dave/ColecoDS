@@ -90,6 +90,7 @@ extern u8 CBios[];
 extern u8 AdamEOS[];
 extern u8 AdamWRITER[];
 
+char lastPath[256];
 
 // --------------------------------------------------------------------------
 // These aren't used very often so we don't need them in fast .dtcm memory
@@ -249,7 +250,9 @@ void colecoWipeRAM(void)
   }
   else if (adam_mode)
   {
-    // Do nothing... ADAM has special handling...
+    // ADAM has special handling...
+    for (int i=0; i< 0x20000; i++) AdamRAM[i] = 0x02;   // This pattern tends to make most things start up properly...
+    memset(pColecoMem, 0xFF, 0x10000);
   }
   else
   {
@@ -387,6 +390,7 @@ u8 colecoInit(char *szGame)
   else if (adam_mode)  // Load Adam DDP
   {
       sgm_reset();                       // Make sure the super game module is disabled to start
+      colecoWipeRAM();
       RetFct = loadrom(szGame,pColecoMem,0x10000);  
   }
   else  // Load coleco cartridge
@@ -1414,16 +1418,20 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ---------------------------------------------------------------------------
         else if (adam_mode)
         {
-            for (int i=0; i< 0x20000; i++) AdamRAM[i] = rand() & 0xFF;
-            memset(pColecoMem, 0xFF, 0x10000);
             Port60 = 0x00;               // Adam Memory default
             Port20 = 0x00;               // Adam Net default
             SetupAdam(false);
             // The .ddp is now in romBuffer[]
-            if (strstr(path, ".ddp") != 0) 
+            if (strstr(path, ".ddp") != 0)
+            {
                 ChangeTape(0, path);
+                strcpy(lastPath, path);
+            }
             else
+            {
                 ChangeDisk(0, path);
+                strcpy(lastPath, path);
+            }
         }
         else
         // ----------------------------------------------------------------------
