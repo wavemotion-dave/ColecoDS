@@ -25,11 +25,14 @@ MSX emulation does not need a BIOS (C-BIOS used)
 but you can put the 32k msx.rom in /roms/bios or /data/bios 
 and the emulator will use that instead.
 
+ADAM computer emulation requires eos.rom and writer.rom 
+
 Features :
 -----------------------
 * Colecovision game support (.rom or .col files)
 * Super Game Module support including AY sound chip.
 * Megacart Bankswitching support (up to 512K).
+* Coleco ADAM game support (.ddp or .dsk files)
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
 * Save/Load Game State (one slot).
@@ -84,6 +87,15 @@ Known Issues :
 * Sord M5 games are not sound accurate due to CTC emulation issues.
 * MSX envelope sound and noise emulation not accurate (close enough).
 * MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have music)
+
+ADAM Compatibility :
+-----------------------
+The emulated ADAM is not completely bug-free but generally will run most tape images (.ddp) or disk images (.dsk).
+The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for most any game.
+Sometimes when loading an ADAM game the system doesn't run... just hit RESET and it will probably load.
+You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD').
+The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon
+to make that happen (and only whenthe tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
 
 MSX Compatibility :
 -----------------------
@@ -180,6 +192,10 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.3: 12-Mar-2022 by wavemotion-dave
+* ADAM Computer support is added! Play .ddp and .dsk games (requires eos.rom and writer.rom).
+* Other minor cleanups and fixes as time permitted.
+
 V6.2: 29-Jan-2022 by wavemotion-dave
 * Increased AY noise frequency dynamic range - improves MSX and CV-SGM sounds.
 * Increased AY tone frequency dynamic range - improves MSX and CV-SGM sounds.
