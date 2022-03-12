@@ -62,7 +62,7 @@ u32 debug5=0;
 u32 debug6=0;
 extern u8 adam_ram_lo, adam_ram_hi;
 extern u8 io_show_status;
-
+u8 adam_CapsLock = 0;
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -458,7 +458,7 @@ void ResetColecovision(void)
 
   ResetStatusFlags();   // Some static status flags for the UI mostly
     
-  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0; debug5 = 0; debug6 = 0;
+  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0;
 }
 
 //*********************************************************************************
@@ -546,7 +546,7 @@ void ShowDebugZ80(void)
     AffChaine(0,idx++,7, tmp);  
     siprintf(tmp, "DEBG  %lu %lu %04X", debug1, debug2, PCBAddr);
     AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "DEBG  %lu %lu %lu %lu", debug3, debug4, debug5, debug6);
+    siprintf(tmp, "DEBG  %lu %lu", debug3, debug4);
     AffChaine(0,idx++,7, tmp);
 }
     
@@ -1040,8 +1040,8 @@ void colecoDS_main(void)
             else if ((iTy >= 157) && (iTy < 192)) // Row 6
             {
                 if      ((iTx >= 1)   && (iTx < 35))   SaveAdamTapeOrDisk();
-                else if ((iTx >= 35)  && (iTx < 57))   adam_key = ADAM_KEY_INS;
-                else if ((iTx >= 57)  && (iTx < 79))   adam_key = ADAM_KEY_INS;
+                else if ((iTx >= 35)  && (iTx < 57))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
+                else if ((iTx >= 57)  && (iTx < 79))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
                 else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_BS;
                 else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_BS;
                 else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_ESC;
@@ -1053,12 +1053,12 @@ void colecoDS_main(void)
             }
             else {adam_key = 0; last_adam_key = 0;}
             
-            if (adam_key != last_adam_key && (adam_key != 0))
+            if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
             {
-                PutKBD(adam_key);
+                PutKBD(adam_key | (adam_CapsLock ? CON_SHIFT:0));
                 mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
             }
-            last_adam_key = adam_key;
+            if (last_adam_key != 255) last_adam_key = adam_key;
         }          
         else    // Normal 12 button virtual keypad
         {

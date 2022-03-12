@@ -28,7 +28,12 @@ extern byte AdamRAM[];
 extern byte adam_ram_hi;
 extern byte adam_ram_lo;
 
-byte Verbose = 0x00;
+byte HoldingBuf[4096];
+u8 io_busy= 0;
+word savedBUF = 0;
+word savedLEN = 0;
+byte last_command_read=false;
+byte io_show_status=0;
 
 #define DELAY_IO 10
 
@@ -146,9 +151,9 @@ extern byte Port60;
 byte PCBTable[0x10000];
 
 word PCBAddr;
-static byte DiskID;
-static byte KBDStatus;
-static byte LastKey;
+byte DiskID;
+byte KBDStatus;
+byte LastKey;
 
 extern byte pColecoMem[];
 
@@ -369,13 +374,6 @@ static void UpdatePRN(byte Dev,int V)
   }
 }
 
-byte HoldingBuf[4096];
-word io_busy= 0;
-word savedBUF = 0;
-word savedLEN = 0;
-byte last_command_read=false;
-byte io_show_status=0;
-
 static void UpdateDSK(byte N,byte Dev,int V)
 {
   static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 };
@@ -426,7 +424,6 @@ static void UpdateDSK(byte N,byte Dev,int V)
       break;
 
     case CMD_SOFT_RESET:
-      if(Verbose&0x80) printf("Disk %c: Soft reset\n",N+'A');
       SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
       break;
 
@@ -445,10 +442,6 @@ static void UpdateDSK(byte N,byte Dev,int V)
       SEC = GetDCBSector(Dev);
       savedBUF = BUF;
       savedLEN = LEN;
-      if(Verbose&0x80)
-        printf("Disk %c: %s %d bytes, sector 0x%X, memory 0x%04X\n",
-          N+'A',V==CMD_READ? "Reading":"Writing",LEN,SEC<<1,BUF
-        );
       /* For each 512-byte sector... */
       for(I=0, SEC<<=1 ; I<LEN ; ++SEC, I+=0x200)
       {
@@ -537,7 +530,6 @@ static void UpdateTAP(byte N,byte Dev,int V)
       break;
  
     case CMD_SOFT_RESET:
-      if(Verbose&0x80) printf("Tape %c: Soft reset\n",N+'A');
       SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
       break;
 
@@ -557,10 +549,6 @@ static void UpdateTAP(byte N,byte Dev,int V)
       savedBUF = BUF;
       savedLEN = LEN;
       
-      if(Verbose&0x80)
-        printf("Tape %c: %s %d bytes, sector 0x%X, memory 0x%04X\n",
-          N+'A',V==CMD_READ? "Reading":"Writing",LEN,SEC<<1,BUF
-        );
       /* For each 512-byte sector... */
       for(I=0, SEC<<=1 ; I<LEN ; ++SEC, I+=0x200)
       {
@@ -628,8 +616,6 @@ static void UpdateDCB(byte Dev,int V)
 
     default:
       SetDCB(Dev,DCB_CMD_STAT,RSP_ACK+0x0B);
-      if(Verbose&0x80)
-        printf("AdamNet: %s unknown device #%d\n",V>=0? "Write to":"Read from",DevID);
       break;
   }
 }
@@ -686,11 +672,9 @@ void WritePCB(word A,byte V)
       case CMD_PCB_WAIT:
         break;
       case CMD_PCB_RESET:
-        debug5 = 55;
         memset(PCBTable,0,sizeof(PCBTable));
         break;
       default:
-        debug6 = 66;
         memset(PCBTable,0,sizeof(PCBTable));
         break;
     }

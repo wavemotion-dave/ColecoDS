@@ -81,21 +81,21 @@ updated Sprite/Line handling from ColEM 5.6
 Known Issues :
 -----------------------
 * Borders are not correctly rendered - only a few games utilize them and are still fully playable without this.
-* Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech.
+* Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * Sord M5 games are not sound accurate due to CTC emulation issues.
-* MSX envelope sound and noise emulation not accurate (close enough).
-* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have music)
+* MSX envelope sound and noise emulation is not perfectly accurate (but close enough).
+* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music)
 
 ADAM Compatibility :
 -----------------------
-The emulated ADAM is not completely bug-free but generally will run most tape images (.ddp) or disk images (.dsk).
-The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for most any game.
-Sometimes when loading an ADAM game the system doesn't run... just hit RESET and it will probably load.
-You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD').
-The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon
-to make that happen (and only whenthe tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
+* The emulated ADAM is not completely bug-free but generally will run most tape images (.ddp) or disk images (.dsk).
+* The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
+* Sometimes when loading an ADAM game the system doesn't run... just hit RESET and it will probably load.
+* You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD').
+* The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only whenthe tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
+* Save and Load state files for ADAM games are generally rather large - about 320K. 
 
 MSX Compatibility :
 -----------------------
