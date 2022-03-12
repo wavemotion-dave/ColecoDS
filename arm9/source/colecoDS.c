@@ -21,12 +21,14 @@
 
 #include "colecoDS.h"
 #include "AdamNet.h"
+#include "FDIDisk.h"
 #include "highscore.h"
 #include "colecogeneric.h"
 #include "colecomngt.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "intro.h"
 #include "ecranBas.h"
+#include "adam.h"
 #include "msx.h"
 #include "msx_full.h"
 #include "adam_full.h"
@@ -59,6 +61,8 @@ u32 debug4=0;
 u32 debug5=0;
 u32 debug6=0;
 extern u8 adam_ram_lo, adam_ram_hi;
+extern u8 io_show_status;
+
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -426,9 +430,7 @@ void ResetColecovision(void)
   }
   else if (adam_mode)
   {
-      extern u8 AdamRAM[];
-      memset(pColecoMem, 0xFF, 0x10000);
-      for (int i=0; i< 0x20000; i++) AdamRAM[i] = rand() & 0xFF;
+      colecoWipeRAM();
       SetupAdam(false);
   }
   else
@@ -586,7 +588,6 @@ void DisplayStatusLine(bool bForce)
     }
     else if (adam_mode)
     {
-        extern u8 io_show_status;
         if ((last_adam_mode != adam_mode) || bForce)
         {
             last_adam_mode = adam_mode;
@@ -620,6 +621,20 @@ void DisplayStatusLine(bool bForce)
             AffChaine(22,0,6, (romBankMask ? "MC":"  "));
         }
     }
+}
+
+void SaveAdamTapeOrDisk(void)
+{
+    extern char lastPath[];
+    
+    if (io_show_status) return; // Don't save while io status
+    
+    AffChaine(12,0,6, "SAVING");
+    if (strstr(lastPath, ".ddp") != 0)
+        SaveFDI(&Tapes[0], lastPath, FMT_DDP);
+    else
+        SaveFDI(&Disks[0], lastPath, FMT_ADMDSK);
+    AffChaine(12,0,6, "      ");
 }
 
 u8 IsFullKeyboard(void)
@@ -846,6 +861,15 @@ void colecoDS_main(void)
         }
         else
           LoadNow = 0;
+          
+        // For ADAM, the standard overlay has a CASSETTE icon to save data...
+        if (adam_mode && (myConfig.overlay == 0))
+        {
+            if ((iTy >= 9) && (iTy < 30) && (iTx >= 120) && (iTx <= 155))
+            {
+                SaveAdamTapeOrDisk();
+            }
+        }
   
         // --------------------------------------------------------------------------
         // Test the touchscreen rendering of the Coleco/MSX KEYPAD
@@ -1015,7 +1039,7 @@ void colecoDS_main(void)
             }
             else if ((iTy >= 157) && (iTy < 192)) // Row 6
             {
-                if      ((iTx >= 1)   && (iTx < 35))   adam_key = ADAM_KEY_DEL;
+                if      ((iTx >= 1)   && (iTx < 35))   SaveAdamTapeOrDisk();
                 else if ((iTx >= 35)  && (iTx < 57))   adam_key = ADAM_KEY_INS;
                 else if ((iTx >= 57)  && (iTx < 79))   adam_key = ADAM_KEY_INS;
                 else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_BS;
@@ -1292,6 +1316,14 @@ void InitBottomScreen(void)
           decompress(msxMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) msxPal,(void*) BG_PALETTE_SUB,256*2);
+      }
+      else if (adam_mode)
+      {
+          //  Init bottom screen
+          decompress(adamTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(adamMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) adamPal,(void*) BG_PALETTE_SUB,256*2);
       }
       else
       {
