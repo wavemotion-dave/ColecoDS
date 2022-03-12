@@ -18,6 +18,7 @@
 
 #include "colecoDS.h"
 #include "AdamNet.h"
+#include "FDIDisk.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
@@ -484,8 +485,6 @@ void colecoSaveState()
   char szFile[128];
   char szCh1[32];
     
-  if (adam_mode) return;    //TBD: Not supporting ADAM saves yet...
-
   // Init filename = romname and STA in place of ROM
   strcpy(szFile,gpFic[ucGameAct].szName);
   szFile[strlen(szFile)-3] = 's';
@@ -604,6 +603,29 @@ void colecoSaveState()
         if (uNbO) fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
     }
       
+    if (adam_mode)  // Big enough that we will not write this if we are not ADAM
+    {
+        if (uNbO) fwrite(AdamRAM, 0x20000,1, handle);
+        if (uNbO) fwrite(PCBTable, 0x10000,1, handle);
+        if (uNbO) fwrite(HoldingBuf, 0x4000,1, handle);
+        if (uNbO) fwrite(Tapes, sizeof(Tapes),1, handle);
+        if (uNbO) fwrite(Disks, sizeof(Disks),1, handle);
+        if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);
+        
+        if (uNbO) fwrite(&Port20, sizeof(Port20),1, handle);
+        if (uNbO) fwrite(&adam_ram_lo, sizeof(adam_ram_lo),1, handle);
+        if (uNbO) fwrite(&adam_ram_hi, sizeof(adam_ram_hi),1, handle);
+        if (uNbO) fwrite(&adam_ram_lo_exp, sizeof(adam_ram_lo_exp),1, handle);
+        if (uNbO) fwrite(&adam_ram_hi_exp, sizeof(adam_ram_hi_exp),1, handle);
+        if (uNbO) fwrite(&DiskID, sizeof(DiskID),1, handle);
+        if (uNbO) fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
+        if (uNbO) fwrite(&LastKey, sizeof(LastKey),1, handle);
+        if (uNbO) fwrite(&io_busy, sizeof(io_busy),1, handle);
+        if (uNbO) fwrite(&savedBUF, sizeof(savedBUF),1, handle);
+        if (uNbO) fwrite(&savedLEN, sizeof(savedLEN),1, handle);
+        if (uNbO) fwrite(spare, 32,1, handle);        
+    }
+      
     if (uNbO) 
       strcpy(szCh1,"OK ");
     else
@@ -629,8 +651,6 @@ void colecoLoadState()
     char szFile[128];
     char szCh1[32];
 
-    if (adam_mode) return;    //TBD: Not supporting ADAM saves yet...
-    
     // Init filename = romname and .SAV in place of ROM
     strcpy(szFile,gpFic[ucGameAct].szName);
     szFile[strlen(szFile)-3] = 's';
@@ -752,6 +772,30 @@ void colecoLoadState()
                 if (uNbO) fread(msx_SRAM, 0x4000,1, handle);
                 if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
             }
+            
+            if (adam_mode)  // Big enough that we will not write this if we are not ADAM
+            {
+                if (uNbO) fread(AdamRAM, 0x20000,1, handle);
+                if (uNbO) fread(PCBTable, 0x10000,1, handle);
+                if (uNbO) fread(HoldingBuf, 0x4000,1, handle);
+                if (uNbO) fread(Tapes, sizeof(Tapes),1, handle);
+                if (uNbO) fread(Disks, sizeof(Disks),1, handle);
+                if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
+
+                if (uNbO) fread(&Port20, sizeof(Port20),1, handle);
+                if (uNbO) fread(&adam_ram_lo, sizeof(adam_ram_lo),1, handle);
+                if (uNbO) fread(&adam_ram_hi, sizeof(adam_ram_hi),1, handle);
+                if (uNbO) fread(&adam_ram_lo_exp, sizeof(adam_ram_lo_exp),1, handle);
+                if (uNbO) fread(&adam_ram_hi_exp, sizeof(adam_ram_hi_exp),1, handle);
+                if (uNbO) fread(&DiskID, sizeof(DiskID),1, handle);
+                if (uNbO) fread(&KBDStatus, sizeof(KBDStatus),1, handle);
+                if (uNbO) fread(&LastKey, sizeof(LastKey),1, handle);
+                if (uNbO) fread(&io_busy, sizeof(io_busy),1, handle);
+                if (uNbO) fread(&savedBUF, sizeof(savedBUF),1, handle);
+                if (uNbO) fread(&savedLEN, sizeof(savedLEN),1, handle);
+                if (uNbO) fread(spare, 32,1, handle);                
+            }
+            
             
             // Fix up transparency
             if (BGColor)

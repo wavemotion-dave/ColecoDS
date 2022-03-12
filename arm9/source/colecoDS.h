@@ -5,15 +5,13 @@
 #include <string.h>
 #include "cpu/z80/Z80_interface.h"
 
-#define VERSIONCLDS "6.x"
+#define VERSIONCLDS "6.3"
 
 //#define DEBUG_Z80   YES
 extern u32 debug1;
 extern u32 debug2;
 extern u32 debug3;
 extern u32 debug4;
-extern u32 debug5;
-extern u32 debug6;
 
 #define JST_NONE            0x0000
 #define JST_KEYPAD          0x000F

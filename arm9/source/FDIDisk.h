@@ -24,20 +24,9 @@ extern "C" {
 
                            /* Supported disk image formats:  */
 #define FMT_AUTO   0       /* Determine format automatically */                   
-#define FMT_IMG    1       /* ZX Spectrum disk               */             
-#define FMT_MGT    2       /* ZX Spectrum disk, same as .DSK */             
-#define FMT_TRD    3       /* ZX Spectrum TRDOS disk         */
-#define FMT_FDI    4       /* Generic FDI image              */ 
-#define FMT_SCL    5       /* ZX Spectrum TRDOS disk         */
-#define FMT_HOBETA 6       /* ZX Spectrum HoBeta disk        */
-#define FMT_MSXDSK 7       /* MSX disk                       */          
-#define FMT_CPCDSK 8       /* CPC disk                       */          
-#define FMT_SF7000 9       /* Sega SF-7000 disk              */ 
-#define FMT_SAMDSK 10      /* Sam Coupe disk                 */    
-#define FMT_ADMDSK 11      /* Coleco Adam disk               */  
-#define FMT_DDP    12      /* Coleco Adam tape               */  
-#define FMT_SAD    13      /* Sam Coupe disk                 */
-#define FMT_DSK    14      /* Generic raw disk image         */
+#define FMT_FDI    1       /* Generic FDI image              */ 
+#define FMT_ADMDSK 2       /* Coleco Adam disk               */  
+#define FMT_DDP    3       /* Coleco Adam tape               */  
 
 #define SEEK_DELETED (0x40000000)
 
@@ -68,8 +57,11 @@ typedef struct
 } FDIDisk;
     
     
-extern FDIDisk Disks[];
-extern FDIDisk Tapes[];
+#define MAX_DISKS 4
+#define MAX_TAPES 4
+    
+extern FDIDisk Disks[MAX_DISKS];
+extern FDIDisk Tapes[MAX_DISKS];
     
 
 /** InitFDI() ************************************************/
