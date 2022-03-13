@@ -591,8 +591,11 @@ void DisplayStatusLine(bool bForce)
         if ((last_adam_mode != adam_mode) || bForce)
         {
             last_adam_mode = adam_mode;
-            AffChaine(23,0,6, "ADAM");
+            AffChaine(25,0,6, "ADAM");
         }
+        
+        AffChaine(20,0,6, (adam_CapsLock ? "CAP":"   "));
+        
         if (io_show_status) 
         {
             AffChaine(30,0,6, (io_show_status == 2 ? "WR":"RD"));
@@ -1055,7 +1058,7 @@ void colecoDS_main(void)
             
             if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
             {
-                PutKBD(adam_key | (adam_CapsLock ? CON_SHIFT:0));
+                PutKBD(adam_key | ((adam_CapsLock && (adam_key >= 'A') && (adam_key <= 'Z')) ? CON_SHIFT:0));
                 mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
             }
             if (last_adam_key != 255) last_adam_key = adam_key;
@@ -1078,7 +1081,7 @@ void colecoDS_main(void)
             ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
             ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
         }
-          
+
         // ---------------------------------------------------------------------
         // If we are mapping the touch-screen keypad to P2, we shift these up.
         // ---------------------------------------------------------------------
@@ -1147,6 +1150,25 @@ void colecoDS_main(void)
       // Accumulate all bits above into the Joystick State var... 
       // ---------------------------------------------------------
       JoyState = ucUN | ucDEUX;
+
+      // -------------------------------------------------------------------
+      // If we are ADAM mode and we have configured joystick-keyboard map...
+      // -------------------------------------------------------------------
+      if (adam_mode && myConfig.dpad == DPAD_MSX_KEYS)
+      {
+          static u32 LastJoyState = 999;
+          if (JoyState != LastJoyState)
+          {
+              if (JoyState & JST_UP)         PutKBD(ADAM_KEY_UP);
+              else if (JoyState & JST_DOWN)  PutKBD(ADAM_KEY_DOWN);
+              else if (JoyState & JST_LEFT)  PutKBD(ADAM_KEY_LEFT);
+              else if (JoyState & JST_RIGHT) PutKBD(ADAM_KEY_RIGHT);
+              else if (JoyState & JST_FIREL) PutKBD(' ');
+              else if (JoyState & JST_FIRER) PutKBD(' ');
+          }
+          LastJoyState = JoyState;
+      }          
+        
 
       // --------------------------------------------------
       // Handle Auto-Fire if enabled in configuration...
