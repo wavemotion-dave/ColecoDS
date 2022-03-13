@@ -931,7 +931,7 @@ struct options_t
 u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "MSX FULL", "ADAM KEYBD"},                      &myConfig.overlay,    11},
+    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "MSX KEYBD", "ADAM KEYBD"},                     &myConfig.overlay,    11},
     {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
     {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
     {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
@@ -940,7 +940,7 @@ const struct options_t Option_Table[] =
     {"AUTO FIRE B1",   {"OFF", "ON"},                                                                                                                                                       &myConfig.autoFire1,  2},
     {"AUTO FIRE B2",   {"OFF", "ON"},                                                                                                                                                       &myConfig.autoFire2,  2},
     {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
-    {"NDS DPAD",       {"NORMAL", "MSX KEYS", "DIAGONALS"},                                                                                                                                 &myConfig.dpad,       3},   
+    {"NDS DPAD",       {"NORMAL", "KEYBD ARROWS", "DIAGONALS"},                                                                                                                             &myConfig.dpad,       3},   
     {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                    &myConfig.spinSpeed,  5},
     {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                                                                 &myConfig.cpuCore,    2},    
     {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
