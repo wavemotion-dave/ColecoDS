@@ -93,7 +93,8 @@ ADAM Compatibility :
 * The emulated ADAM is not completely bug-free but generally will run most tape images (.ddp) or disk images (.dsk).
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
 * Sometimes when loading an ADAM game the system doesn't run... just hit RESET and it will probably load.
-* You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD').
+* By default, RAM is cleared when you reset the ADAM. In Game Config you can change this to 'RANDOM' which may improve the ability to load some games.
+* You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). It's not all ADAM keys but should be enough to play games.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only whenthe tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
 * Save and Load state files for ADAM games are generally rather large - about 320K. 
 
