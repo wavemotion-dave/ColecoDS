@@ -1029,10 +1029,10 @@ void colecoDS_main(void)
             else if ((iTy >= 134) && (iTy < 157)) // Row 5
             {
                 if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-                else if ((iTx >= 35)  && (iTx < 57))   adam_key = ':';
-                else if ((iTx >= 57)  && (iTx < 79))   adam_key = '=';
-                else if ((iTx >= 79)  && (iTx < 101))  adam_key = '#';
-                else if ((iTx >= 101) && (iTx < 123))  adam_key = '.';
+                else if ((iTx >= 35)  && (iTx < 57))   adam_key = (adam_CapsLock ? '+' : ':');
+                else if ((iTx >= 57)  && (iTx < 79))   adam_key = (adam_CapsLock ? '-' : '=');
+                else if ((iTx >= 79)  && (iTx < 101))  adam_key = (adam_CapsLock ? '*' : '#');
+                else if ((iTx >= 101) && (iTx < 123))  adam_key = (adam_CapsLock ? '.' : '.');
                 else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_F1;
                 else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_F2;
                 else if ((iTx >= 167) && (iTx < 189))  adam_key = ADAM_KEY_F3;
