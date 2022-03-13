@@ -252,7 +252,7 @@ void colecoWipeRAM(void)
   else if (adam_mode)
   {
     // ADAM has special handling...
-    for (int i=0; i< 0x20000; i++) AdamRAM[i] = 0x02;   // This pattern tends to make most things start up properly...
+    for (int i=0; i< 0x20000; i++) AdamRAM[i] = (myConfig.memWipe ? 0x02:  (rand() & 0xFF));   // This pattern tends to make most things start up properly...
     memset(pColecoMem, 0xFF, 0x10000);
   }
   else
@@ -260,14 +260,14 @@ void colecoWipeRAM(void)
       for (int i=0; i<0x400; i++)
       {
           u8 randbyte = rand() & 0xFF;
-          pColecoMem[0x6000 + i] = randbyte;
-          pColecoMem[0x6400 + i] = randbyte;
-          pColecoMem[0x6800 + i] = randbyte;
-          pColecoMem[0x6C00 + i] = randbyte;
-          pColecoMem[0x7000 + i] = randbyte;
-          pColecoMem[0x7400 + i] = randbyte;
-          pColecoMem[0x7800 + i] = randbyte;
-          pColecoMem[0x7C00 + i] = randbyte;
+          pColecoMem[0x6000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          pColecoMem[0x6400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          pColecoMem[0x6800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          pColecoMem[0x6C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          pColecoMem[0x7000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          pColecoMem[0x7400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          pColecoMem[0x7800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          pColecoMem[0x7C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
       }
   }
 }

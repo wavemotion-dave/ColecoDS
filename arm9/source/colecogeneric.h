@@ -44,7 +44,7 @@ struct __attribute__((__packed__)) Config_t
     u8  msxBios;
     u8  msxKey5;
     u8  dpad;
-    u8  reserved9;
+    u8  memWipe;
     u32 reservedA;
     u32 reservedB;
     u32 reservedC;
