@@ -750,7 +750,7 @@ void SetDefaultGameConfig(void)
     myConfig.msxBios     = 0;   // Default to the C-BIOS
     myConfig.msxKey5     = 0;   // Default key map
     myConfig.dpad        = DPAD_JOYSTICK;   // Normal DPAD use - mapped to joystick
-    myConfig.reserved9   = 0;    
+    myConfig.memWipe     = 0;    
     myConfig.reservedA   = 0;    
     myConfig.reservedB   = 0;    
     myConfig.reservedC   = 0;    
@@ -862,6 +862,7 @@ void SetDefaultGameConfig(void)
     if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
     if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
     if (adam_mode)                              myConfig.cpuCore = 1;  // Adam defaults to CZ80 core - user can switch it out
+    if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (adam_mode && !isDSiMode())              myConfig.frameSkip=1;  // If Adam and older DS-LITE, turn on light frameskip
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
 }
@@ -946,6 +947,7 @@ const struct options_t Option_Table[] =
     {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
     {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
     {"MSX KEY 5",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
+    {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},        
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
 #endif    
@@ -961,6 +963,7 @@ u8 display_options_list(bool bFullDisplay)
     char strBuf[35];
     int len=0;
     
+    dsPrintValue(1,21, 0, (char *)"                              ");
     if (bFullDisplay)
     {
         while (true)
@@ -977,7 +980,7 @@ u8 display_options_list(bool bFullDisplay)
         }
     }
 
-    dsPrintValue(2,21, 0, (char *)"USE DPAD. B=EXIT, START=SAVE");
+    dsPrintValue(1,22, 0, (char *)" USE DPAD. B=EXIT, START=SAVE ");
     return len;    
 }
 
