@@ -398,6 +398,18 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".mtx") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".run") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
         if ( (strcasecmp(strrchr(szFile, '.'), ".msx") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -860,11 +872,26 @@ void SetDefaultGameConfig(void)
     
     if (sg1000_mode)                            myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
     if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
+    if (memotech_mode)                          myConfig.cpuCore = 1;  // Memotech MTX always uses the CZ80 core
     if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
     if (adam_mode)                              myConfig.cpuCore = 1;  // Adam defaults to CZ80 core - user can switch it out
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (adam_mode && !isDSiMode())              myConfig.frameSkip=1;  // If Adam and older DS-LITE, turn on light frameskip
+    if (memotech_mode && !isDSiMode())          myConfig.frameSkip=1;  // If Memotech and older DS-LITE, turn on light frameskip
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
+    if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
+    
+    if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 3;  // Rolla Ball needs full memory wipe
+    if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 3;  // Surface Scanner needs full memory wipe
+    if (file_crc == 0xe8bceb5c)                 myConfig.memWipe = 3;  // Surface Scanner needs full memory wipe
+    if (file_crc == 0x018f0e13)                 myConfig.memWipe = 3;  // SMG needs full memory wipe
+    if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 3;  // Astro PAC needs full memory wipe
+    if (file_crc == 0xf9934809)                 myConfig.memWipe = 3;  // Reveal needs full memory wipe
+    if (file_crc == 0x8c96be92)                 myConfig.memWipe = 3;  // Turbo needs full memory wipe
+    
+    if (file_crc == 0x9d8fa05f)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo needs diagonals
+    if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo2 needs diagonals    
+    if (file_crc == 0xf9934809)                 myConfig.dpad = DPAD_DIAGONALS;  // Reveal needs diagonals    
 }
 
 // -------------------------------------------------------------------------
@@ -932,7 +959,7 @@ struct options_t
 u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "MSX KEYBD", "ADAM KEYBD"},                     &myConfig.overlay,    11},
+    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "MSX KEYBD", "ADAM KEYBD", "MEMOTECH KBD"},     &myConfig.overlay,    12},
     {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
     {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
     {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
@@ -947,7 +974,7 @@ const struct options_t Option_Table[] =
     {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
     {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
     {"MSX KEY 5",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
-    {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},        
+    {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL"},                                                                                                                                     &myConfig.memWipe,    3},
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
 #endif    
@@ -1287,20 +1314,30 @@ void ReadFileCRCAndConfig(void)
     
     sg1000_mode = 0;
     sordm5_mode = 0;
+    memotech_mode = 0;
     msx_mode = 0;
     adam_mode = 0;
     
     CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
 
     if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".SC") != 0) sg1000_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".M5") != 0) sordm5_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".mtx") != 0) memotech_mode = 2;
+    if (strstr(gpFic[ucGameChoice].szName, ".MTX") != 0) memotech_mode = 2;
+    if (strstr(gpFic[ucGameChoice].szName, ".run") != 0) memotech_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".RUN") != 0) memotech_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".MSX") != 0) msx_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".ddp") != 0) adam_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".DDP") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) adam_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) adam_mode = 1;
     
     FindAndLoadConfig();    // Try to find keymap and config for this file...
-    
 }
 
 // --------------------------------------------------------------------

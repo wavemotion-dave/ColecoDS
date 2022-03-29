@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/Z80_interface.h"
 
-#define VERSIONCLDS "6.3"
+#define VERSIONCLDS "6.4"
 
 //#define DEBUG_Z80   YES
 extern u32 debug1;
@@ -77,6 +77,7 @@ extern u8 spinY_right;
 
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
+extern u8 memotech_mode;
 extern u8 msx_mode;
 extern u8 adam_mode;
 extern u8 msx_key;
