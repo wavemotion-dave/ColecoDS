@@ -31,6 +31,7 @@
 #include "adam.h"
 #include "msx.h"
 #include "msx_full.h"
+#include "mtx_full.h"
 #include "adam_full.h"
 #include "ecranDebug.h"
 #include "ecranBasSel.h"
@@ -47,6 +48,7 @@
 #include "soundbank.h"
 #include "soundbank_bin.h"
 #include "MSX_CBIOS.h"
+#include "MTX_BIOS.h"
 
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
@@ -63,6 +65,9 @@ u32 debug6=0;
 extern u8 adam_ram_lo, adam_ram_hi;
 extern u8 io_show_status;
 u8 adam_CapsLock = 0;
+u8 key_shift = false;
+u8 memotech_load_keys = 0;
+u16 last_tape_pos = 9999;
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -100,13 +105,14 @@ u8 bAdamBiosFound = false;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
-u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;     // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
+u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
-u8 sg1000_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
-u8 sordm5_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
-u8 msx_mode    __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
-u8 adam_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
-u8 msx_key     __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
+u8 sg1000_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
+u8 sordm5_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
+u8 memotech_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .mtx or .run game is loaded for Memotech MTX support 
+u8 msx_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
+u8 adam_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
+u8 msx_key       __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
@@ -371,6 +377,7 @@ static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
 static u8 last_sordm5_mode = 0;
+static u8 last_memotech_mode = 0;
 static u8 last_msx_mode = 0;
 static u8 last_adam_mode = 0;
 static u8 last_scc_mode = 0;
@@ -384,6 +391,7 @@ void ResetStatusFlags(void)
   last_mc_mode  = 0;
   last_sg1000_mode = 0;
   last_sordm5_mode = 0;
+  last_memotech_mode = 0;
   last_msx_mode = 0;
   last_scc_mode = 0;
   last_adam_mode = 0;
@@ -412,6 +420,7 @@ void ResetColecovision(void)
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
     
   sordm5_reset();                       // Reset the Sord M5 specific vars
+  memotech_reset();                     // Reset the memotech MTX specific vars
   msx_reset();                          // Reset the MSX specific vars
 
   if (sg1000_mode)
@@ -422,6 +431,13 @@ void ResetColecovision(void)
   {
       colecoWipeRAM();                          // Wipe main RAM area
       memcpy(pColecoMem,SordM5Bios,0x2000);     // Restore Sord M5 BIOS
+  }
+  else if (memotech_mode)
+  {
+      colecoWipeRAM();                            // Wipe main RAM area
+      memcpy(pColecoMem+0x0000,mtx_os,0x2000);    // Restore Memotech BIOS OS
+      memcpy(pColecoMem+0x2000,mtx_basic,0x2000); // Restore Memotech BASIC
+      pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
   }
   else if (msx_mode)
   {
@@ -544,6 +560,7 @@ void ShowDebugZ80(void)
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);
     AffChaine(0,idx++,7, tmp);  
+
     siprintf(tmp, "DEBG  %lu %lu %04X", debug1, debug2, PCBAddr);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "DEBG  %lu %lu", debug3, debug4);
@@ -573,6 +590,22 @@ void DisplayStatusLine(bool bForce)
         {
             last_sordm5_mode = sordm5_mode;
             AffChaine(23,0,6, "SORD M5");
+        }
+    }
+    else if (memotech_mode)
+    {
+        if ((last_memotech_mode != memotech_mode) || bForce)
+        {
+            last_memotech_mode = memotech_mode;
+            AffChaine(20,0,6, "MEMOTECH MTX");
+        }
+        extern u16 tape_pos, tape_len;
+        if ((memotech_mode == 2) && (last_tape_pos != tape_pos))
+        {
+            last_tape_pos = tape_pos;
+            char tmp[15];
+            siprintf(tmp, "TAPE: %d%%  ", (100 * tape_pos)/tape_len);
+            AffChaine(8,0,6, tmp);
         }
     }
     else if (msx_mode)
@@ -642,7 +675,7 @@ void SaveAdamTapeOrDisk(void)
 
 u8 IsFullKeyboard(void)
 {
-    if ((myConfig.overlay == 9) || (myConfig.overlay == 10)) return 1; 
+    if ((myConfig.overlay == 9) || (myConfig.overlay == 10) || (myConfig.overlay == 11)) return 1; 
     return 0;
 }
 
@@ -873,11 +906,13 @@ void colecoDS_main(void)
                 SaveAdamTapeOrDisk();
             }
         }
+          
+        u8 adam_key = 0;
   
         // --------------------------------------------------------------------------
         // Test the touchscreen rendering of the Coleco/MSX KEYPAD
         // --------------------------------------------------------------------------
-        if (myConfig.overlay == 9)  // MSX-Full Keyboard ~60 keys
+        if (myConfig.overlay == 9 || myConfig.overlay == 11)  // MSX-Full Keyboard ~60 keys
         {
             if ((iTy >= 38) && (iTy < 63))        // Row 1 (top row)
             {
@@ -965,9 +1000,7 @@ void colecoDS_main(void)
                 else if ((iTx >= 233) && (iTx < 255))  msx_key = MSX_KEY_RET;
             }
         }
-        
-        u8 adam_key = 0;
-        if (myConfig.overlay == 10)  // Adam Keyboard ~60 keys
+        else if (myConfig.overlay == 10)  // Adam Keyboard ~60 keys
         {
             if ((iTy >= 38) && (iTy < 63))        // Row 1 (top row)
             {
@@ -1087,7 +1120,7 @@ void colecoDS_main(void)
         // ---------------------------------------------------------------------
         if (myConfig.touchPad) ucUN = ucUN << 16;
           
-        if (++dampenClick > 3)  // Make sure the key is pressed for an appreciable amount of time...
+        if (++dampenClick > 2)  // Make sure the key is pressed for an appreciable amount of time...
         {
             if (((ucUN != 0) || (msx_key != 0)) && (lastUN == 0))
             {
@@ -1114,6 +1147,7 @@ void colecoDS_main(void)
       // ------------------------------------------------------------------------
       //  Test DS keypresses (ABXY, L/R) and map to corresponding Coleco keys
       // ------------------------------------------------------------------------
+      key_shift = false;
       ucDEUX  = 0;  
       keys_pressed  = keysCurrent();
       if ((keys_pressed & KEY_L) && (keys_pressed & KEY_R) && (keys_pressed & KEY_X)) 
@@ -1124,6 +1158,40 @@ void colecoDS_main(void)
       else        
       if  (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
+          if (memotech_mode && (keys_pressed & KEY_L))
+          {
+              key_shift = true;
+          }
+          else if (memotech_mode && (keys_pressed & KEY_START))
+          {
+              extern u8 romBuffer[];
+              if (memotech_mode == 2)   // .MTX file: enter LOAD "" into the keyboard buffer
+              {
+                  memotech_load_keys = 1;
+              }
+              else  // .RUN file: load and jump to program
+              {
+                  if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
+                  {
+                    memset(pColecoMem, 0x00, 0x10000);
+                    cpu_writeport_memotech(0x00, 0x80);
+                  }
+                  
+                  pColecoMem[0x3627] = 0xd3;
+                  pColecoMem[0x3628] = 0x05;
+                  CPU.IFF &= 0xFE;   // Disable Interrupts
+                  u16 mtx_start = (romBuffer[1] << 8) | romBuffer[0];
+                  u16 mtx_len   = (romBuffer[3] << 8) | romBuffer[2];
+                  u16 idx=4;
+                  for (int i=mtx_start; i < (mtx_start+mtx_len); i++)
+                  {
+                      pColecoMem[i] = romBuffer[idx++];
+                  }
+                  CPU.PC.W = mtx_start;
+              }
+              WAITVBL;WAITVBL;
+          }
+          else
           // --------------------------------------------------------------------------------------------------
           // There are 12 NDS buttons (D-Pad, XYAB, L/R and Start+Select) - we allow mapping of any of these.
           // --------------------------------------------------------------------------------------------------
@@ -1170,6 +1238,24 @@ void colecoDS_main(void)
       }          
         
 
+      // -------------------------------------------------------------------------------
+      // We force-feed some characters into the buffer for START on Memotech machines
+      // -------------------------------------------------------------------------------
+      if (memotech_mode)
+      {
+        if (memotech_load_keys == 1)      {msx_key = 'L'; if (!(timingFrames % 3)) memotech_load_keys=2;}
+        else if (memotech_load_keys == 2) {msx_key = 'O'; if (!(timingFrames % 3)) memotech_load_keys=3;}
+        else if (memotech_load_keys == 3) {msx_key = 'A'; if (!(timingFrames % 3)) memotech_load_keys=4;}
+        else if (memotech_load_keys == 4) {msx_key = 'D'; if (!(timingFrames % 3)) memotech_load_keys=5;}
+        else if (memotech_load_keys == 5) {msx_key = ' '; if (!(timingFrames % 3)) memotech_load_keys=6;}
+        else if (memotech_load_keys == 6) {msx_key = 0; key_shift=1;  if (!(timingFrames % 3)) memotech_load_keys=7;}
+        else if (memotech_load_keys == 7) {msx_key = '2'; key_shift=1;if (!(timingFrames % 3)) memotech_load_keys=8;}
+        else if (memotech_load_keys == 8) {msx_key = 0;   key_shift=1;if (!(timingFrames % 3)) memotech_load_keys=9;}
+        else if (memotech_load_keys == 9) {msx_key = '2'; key_shift=1;if (!(timingFrames % 3)) memotech_load_keys=10;}
+        else if (memotech_load_keys ==10) {msx_key = MSX_KEY_RET; if (!(timingFrames % 3)) memotech_load_keys=0;}
+      } 
+
+        
       // --------------------------------------------------
       // Handle Auto-Fire if enabled in configuration...
       // --------------------------------------------------
@@ -1322,6 +1408,14 @@ void InitBottomScreen(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
     }
+    else if (myConfig.overlay == 11)  // MTX-Full Keyboard
+    {
+      //  Init bottom screen
+      decompress(mtx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(mtx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) mtx_fullPal,(void*) BG_PALETTE_SUB,256*2);
+    }
     else // Generic Overlay
     {
 #ifdef DEBUG_Z80
@@ -1383,7 +1477,15 @@ u16 colecoDSInitCPU(void)
 
   //  Load coleco Bios ROM
   if (sordm5_mode)
+  {
     memcpy(pColecoMem,SordM5Bios,0x2000);
+  }
+  else if (memotech_mode)
+  {
+    memcpy(pColecoMem,mtx_os,0x2000);
+    memcpy(pColecoMem+0x2000,mtx_basic,0x2000);
+    pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
+  }
   else if (msx_mode)
     memcpy(pColecoMem,Slot0BIOS,0x8000);
   else

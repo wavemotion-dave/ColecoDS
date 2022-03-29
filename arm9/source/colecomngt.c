@@ -23,6 +23,7 @@
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
+#include "MTX_BIOS.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
@@ -34,6 +35,16 @@
 // Adam RAM is 128K (64K Intrinsic, 64K Expanded)
 // ------------------------------------------------
 u8 AdamRAM[0x20000]   = {0x00};
+
+u16 memotech_RAM_start = 0x4000;
+
+unsigned char IOBYTE = 0x00;
+unsigned char MTX_KBD_DRIVE = 0x00;
+u8 lastIOBYTE = 99;
+extern u8 key_shift;
+u16 tape_pos = 0;
+u16 tape_len = 0;
+extern u16 last_tape_pos;
 
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
@@ -221,6 +232,28 @@ void sordm5_reset(void)
 
 
 // ---------------------------------------------------------
+// The Memotech MTX has CTC plus some memory handling stuff
+// ---------------------------------------------------------
+void memotech_reset(void)
+{
+    extern u8 memotech_load_keys;
+    // Reset the Z80-CTC stuff...
+    memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
+    memset(ctc_time, 0x00, 4);          // No time value set
+    memset(ctc_vector, 0x00, 4);        // No vectors set
+    memset(ctc_latch, 0x00, 4);         // No latch set
+    sordm5_irq = 0xFF;                  // No IRQ set
+    
+    memotech_RAM_start = 0x4000;
+    IOBYTE = 0x00;
+    MTX_KBD_DRIVE = 0x00;
+    lastIOBYTE = 99;
+    memotech_load_keys = 0;
+    tape_pos = 0;
+}
+
+
+// ---------------------------------------------------------
 // The MSX has a few ports and special memory mapping
 // ---------------------------------------------------------
 void msx_reset(void)
@@ -244,6 +277,10 @@ void colecoWipeRAM(void)
   else if (sordm5_mode)
   {
     memset(pColecoMem+0x7000, 0x00, 0x9000);   
+  }
+  else if (memotech_mode)
+  {
+    memset(pColecoMem+0x4000, 0x00, 0xC000);
   }
   else if (msx_mode)
   {
@@ -377,8 +414,18 @@ u8 colecoInit(char *szGame)
   }
   else if (sordm5_mode)  // Load Sord M5 cartridge
   {
-      memset(pColecoMem+0x2000, 0x00, 0xC000);            // Wipe Memory above BIOS
+      memset(pColecoMem+0x2000, 0x00, 0xE000);            // Wipe Memory above BIOS
       RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
+  }
+  else if (memotech_mode)  // Load Memotech MTX file
+  {
+      
+      memcpy((u8 *)0x6820000+0x0000, mtx_os,    0x2000);  // Fast copy buffer
+      memcpy((u8 *)0x6820000+0x2000, mtx_basic, 0x2000);  // Fast copy buffer
+      memcpy((u8 *)0x6820000+0x4000, mtx_assem, 0x2000);  // Fast copy buffer
+      memset((u8 *)0x6830000, 0x00, 0x10000);             // Clear RAM buffer
+      memset(pColecoMem+0x4000, 0xFF, 0xC000);            // Wipe Memory above BIOS
+      RetFct = loadrom(szGame,pColecoMem+0x4000,0xC000);  // Load up to 48K
   }
   else if (msx_mode)  // Load MSX cartridge ... 
   {
@@ -435,6 +482,8 @@ u8 colecoInit(char *szGame)
     Reset9918();                        // Reset the VDP
       
     sordm5_reset();                     // Reset the Sord M5 CTC stuff
+      
+    memotech_reset();                   // Reset the Memotech MTX stuff
       
     XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
       
@@ -1481,8 +1530,10 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
-        if (iSSize <= ((sg1000_mode ? 48:32)*1024)) // Allow SG ROMs to be up to 48K
+        if (iSSize <= (((sg1000_mode||memotech_mode) ? 64:32)*1024)) // Allow SG ROMs and MTX "Roms" to be up to 64K
         {
+            tape_len = iSSize;  // For Memotech MTX, the tape size is saved for showing tape load progress
+            last_tape_pos = 9999;
             memcpy(ptr, romBuffer, nmemb);
         }
         else    // No - must be Mega Cart (MC) Bankswitched!!  We have two banks of 128K VRAM to help with speed.
@@ -1678,9 +1729,10 @@ void SetupAdam(bool bResetAdamNet)
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
 {
-  if (sg1000_mode) {return cpu_readport_sg(Port);}    
-  if (sordm5_mode) {return cpu_readport_m5(Port);}    
-  if (msx_mode)    {return cpu_readport_msx(Port);}
+  if (sg1000_mode)   {return cpu_readport_sg(Port);}    
+  if (sordm5_mode)   {return cpu_readport_m5(Port);}    
+  if (memotech_mode) {return cpu_readport_memotech(Port);}    
+  if (msx_mode)      {return cpu_readport_msx(Port);}
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
@@ -1723,10 +1775,11 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 /** Z80 emulation calls this function to write a byte to a  **/
 /** given I/O port.                                         **/
 /*************************************************************/
-ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
+void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 {
-  if      (sg1000_mode) {cpu_writeport_sg(Port, Value); return;}
-  else if (sordm5_mode) {cpu_writeport_m5(Port, Value); return;}
+  if      (sg1000_mode)   {cpu_writeport_sg(Port, Value); return;}
+  else if (sordm5_mode)   {cpu_writeport_m5(Port, Value); return;}
+  else if (memotech_mode) {cpu_writeport_memotech(Port, Value); return;}
   //if (msx_mode)    {cpu_writeport_msx(Port, Value); return;}      // This is now handled in DrZ80 and CZ80 directly
     
   // Colecovision ports are 8-bit
@@ -2328,11 +2381,6 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             
         }
     }
-    else
-    {
-        if (debug1 == 0) debug1=Port;
-        else if (debug2 == 0) debug2=Port;
-    }
 }
 
 
@@ -2446,6 +2494,368 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
     else if (Port == 0x20) sn76496W(Value, &sncol);
 }
 
+
+// ---------------------------------------------------------------------
+// Memotech MTX IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
+// ---------------------------------------------------------------------
+unsigned char cpu_readport_memotech(register unsigned short Port) 
+{
+  // MTX ports are 8-bit
+  Port &= 0x00FF; 
+
+  if (Port == 0x00) return IOBYTE;
+  else if (Port >= 0x08 && Port <= 0x0B)      // Z80-CTC Area
+  {
+      return ctc_timer[Port-0x08];
+  }
+  else if ((Port == 0x01))  // VDP Area
+  {
+      return(RdData9918());
+  }
+  else if ((Port == 0x02))  // VDP Area
+  {
+      return(RdCtrl9918());
+  }
+  else if ((Port == 0x03))  // Per MEMO - drive 0x03
+  {
+      return(0x03);
+  }
+  else if ((Port == 0x05))
+  {
+      u8 joy1 = 0x00;
+      if (myConfig.dpad == DPAD_DIAGONALS)
+      {
+          if (JoyState & JST_UP)    joy1 |= (0x01 | 0x08);
+          if (JoyState & JST_DOWN)  joy1 |= (0x02 | 0x04);
+          if (JoyState & JST_LEFT)  joy1 |= (0x04 | 0x01);
+          if (JoyState & JST_RIGHT) joy1 |= (0x08 | 0x02);
+      }
+      else
+      {
+          if (JoyState & JST_UP)    joy1 |= 0x01;
+          if (JoyState & JST_DOWN)  joy1 |= 0x02;
+          if (JoyState & JST_LEFT)  joy1 |= 0x04;
+          if (JoyState & JST_RIGHT) joy1 |= 0x08;
+      }          
+      
+      if ((JoyState == 0) && (msx_key == 0) && (key_shift == 0)) return 0xFF;
+      
+      if (MTX_KBD_DRIVE == 0xFD)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_ESC)   key1 = 0x01;
+              if (msx_key == '2')           key1 = 0x02;
+              if (msx_key == '4')           key1 = 0x04;
+              if (msx_key == '6')           key1 = 0x08;
+              if (msx_key == '8')           key1 = 0x10;
+              if (msx_key == '0')           key1 = 0x20;
+          }          
+          return (~key1 & 0xFF);
+      }
+      
+      if (MTX_KBD_DRIVE == 0xFE)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == '1')           key1 = 0x01;
+              if (msx_key == '3')           key1 = 0x02;
+              if (msx_key == '5')           key1 = 0x04;
+              if (msx_key == '7')           key1 = 0x08;
+              if (msx_key == '9')           key1 = 0x10;
+              return (~key1 & 0xFF);
+          }          
+      }
+
+      if (MTX_KBD_DRIVE == 0xFB)
+      {
+          u8 key1 = 0x00;
+          if (joy1 & 0x01)                  key1 = 0x80;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_CTRL)  key1 = 0x01;
+              if (msx_key == 'W')           key1 = 0x02;
+              if (msx_key == 'R')           key1 = 0x04;
+              if (msx_key == 'Y')           key1 = 0x08;
+              if (msx_key == 'I')           key1 = 0x10;
+              if (msx_key == 'P')           key1 = 0x20;
+              if (msx_key == '[')           key1 = 0x40;
+              if (msx_key == MSX_KEY_UP)    key1 = 0x80;
+          }          
+          return (~key1 & 0xFF);
+      }
+      if (MTX_KBD_DRIVE == 0xF7)
+      {
+          u8 key1 = 0x00;
+          if (joy1 & 0x04)                  key1 = 0x80;
+          if (msx_key)
+          {
+              if (msx_key == 'Q')           key1 = 0x01;
+              if (msx_key == 'E')           key1 = 0x02;
+              if (msx_key == 'T')           key1 = 0x04;
+              if (msx_key == 'U')           key1 = 0x08;
+              if (msx_key == 'O')           key1 = 0x10;
+              if (msx_key == '@')           key1 = 0x20;
+              if (msx_key == MSX_KEY_LEFT)  key1 = 0x80;              
+          }          
+          return (~key1 & 0xFF);
+      }
+      
+      
+      if (MTX_KBD_DRIVE == 0xEF)
+      {
+          u8 key1 = 0x00;
+          if (joy1 & 0x08)                  key1 = 0x80;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_SHIFT) key1 = 0x01;
+              if (msx_key == 'S')           key1 = 0x02;
+              if (msx_key == 'F')           key1 = 0x04;
+              if (msx_key == 'H')           key1 = 0x08;
+              if (msx_key == 'K')           key1 = 0x10;
+              if (msx_key == ';')           key1 = 0x20;
+              if (msx_key == ']')           key1 = 0x40;
+              if (msx_key == MSX_KEY_RIGHT) key1 = 0x80;              
+          }          
+          return (~key1 & 0xFF);
+      }
+      if (MTX_KBD_DRIVE == 0xDF)
+      {
+          u8 key1 = 0x00;
+          if (JoyState & JST_FIRER)         key1 = 0x80;
+          if (JoyState & JST_FIREL)         key1 = 0x80;
+          if (msx_key)
+          {
+              if (msx_key == 'A')           key1 = 0x01;
+              if (msx_key == 'D')           key1 = 0x02;
+              if (msx_key == 'G')           key1 = 0x04;
+              if (msx_key == 'J')           key1 = 0x08;
+              if (msx_key == 'L')           key1 = 0x10;
+              if (msx_key == ':')           key1 = 0x20;
+              if (msx_key == MSX_KEY_RET)   key1 = 0x40;
+          }          
+          return (~key1 & 0xFF);
+      }
+
+
+      if (MTX_KBD_DRIVE == 0xBF)
+      {
+          u8 key1 = 0x00;
+          if (joy1 & 0x02)                  key1 = 0x80;
+          if (key_shift)                    key1 = 0x01;    // SHIFT key
+          
+          if (msx_key)
+          {
+              if (msx_key == 'X')           key1 = 0x02;
+              if (msx_key == 'V')           key1 = 0x04;
+              if (msx_key == 'N')           key1 = 0x08;
+              if (msx_key == ',')           key1 = 0x10;
+              if (msx_key == '/')           key1 = 0x20;
+              if (msx_key == MSX_KEY_DOWN)  key1 = 0x80;              
+          }          
+         return (~key1 & 0xFF);
+      }
+      if (MTX_KBD_DRIVE == 0x7F)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == 'Z')           key1 = 0x01;
+              if (msx_key == 'C')           key1 = 0x02;
+              if (msx_key == 'B')           key1 = 0x04;
+              if (msx_key == 'M')           key1 = 0x08;
+              if (msx_key == '.')           key1 = 0x10;
+          }          
+          return (~key1 & 0xFF);
+      }
+  }    
+  else if ((Port == 0x06))
+  {
+      if (MTX_KBD_DRIVE == 0xFD)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_STOP)              key1 = 0x01;    // Backspace key on Memotech
+              if (msx_key == MSX_KEY_M1 && key_shift)   key1 = 0x02;    // F5 (shift of F1)
+          }          
+          return (~key1 & 0xFF);
+      }
+      else if (MTX_KBD_DRIVE == 0xFE)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_CTRL)  key1 = 0x01;    // BREAK key on Memotech
+              if (msx_key == MSX_KEY_M1)    key1 = 0x02;    // F1
+          }          
+          return (~key1 & 0xFF);
+      }
+
+      else if (MTX_KBD_DRIVE == 0xFB)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_M2)    key1 = 0x02;    // F2
+          }          
+          return (~key1 & 0xFF);
+      }
+      else if (MTX_KBD_DRIVE == 0xF7)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_M2 && key_shift)   key1 = 0x02;    // F6 (shift of F2)
+          }          
+          return (~key1 & 0xFF);
+      }
+      
+      
+      else if (MTX_KBD_DRIVE == 0xEF)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_M3 && key_shift)   key1 = 0x02;    // F7 (shift of F3)
+          }          
+          return (~key1 & 0xFF);
+      }
+      else if (MTX_KBD_DRIVE == 0xDF)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_M3)    key1 = 0x02;    // F3
+          }          
+          return (~key1 & 0xFF);
+      }
+      
+
+      else if (MTX_KBD_DRIVE == 0xBF)
+      {
+          u8 key1 = 0x00;
+          if (msx_key)
+          {
+              if (msx_key == MSX_KEY_M5)    key1 = 0x02;    // F8
+          }          
+          return (~key1 & 0xFF);
+      }
+      else if (MTX_KBD_DRIVE == 0x7F)
+      {
+          u8 key1 = 0x00;
+          if (JoyState & JST_BLUE)          key1 = 0x01;    // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
+          if (JoyState & JST_PURPLE)        key1 = 0x01;          
+          if (msx_key)
+          {
+              if (msx_key == ' ')           key1 = 0x01;
+              if (msx_key == MSX_KEY_M4)    key1 = 0x02;    // F4
+          }          
+          return (~key1 & 0xFF);
+      }
+  }
+
+  // No such port
+  return(NORAM);
+}
+
+// ------------------------------------------------------------------------------------
+
+// Sord Memotech MTX IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
+// ------------------------------------------------------------------------------------
+#define MTX_CTC_SOUND_DIV 260
+void cpu_writeport_memotech(register unsigned short Port,register unsigned char Value) 
+{
+    // M5 ports are 8-bit
+    Port &= 0x00FF;
+
+    if (Port == 0x00)   // This is where the memory bank map magic happens for the MTX
+    {
+        IOBYTE = Value;
+        if (lastIOBYTE != IOBYTE)
+        {
+            // -----------------------------------------------------------------------
+            // We are using very simplified logic for the MTX... real bank handling 
+            // is more complex than is required just to play a few more games...
+            // -----------------------------------------------------------------------
+            if ((IOBYTE & 0x80) == 0)  // ROM Mode...
+            {
+                if (memotech_RAM_start == 0x0000)
+                {
+                    FastMemCopy(pColecoMem+0x0000, (u8 *)(0x6820000+0x0000), 0x2000);   // Copy mtx_os[] rom into memory
+                    pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
+                }
+                
+                if ((IOBYTE & 0x70) == 0x00)       
+                {
+                    FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x2000), 0x2000);   // Copy mtx_basic[] rom into memory
+                    memotech_RAM_start = 0x4000;
+                }
+                else if ((IOBYTE & 0x70) == 0x10)  
+                {
+                    FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x4000), 0x2000);   // Copy mtx_assem[] rom into memory
+                    memotech_RAM_start = 0xC000;                                        // We only allow access to upper RAM here
+                }
+                else 
+                {
+                    memset(pColecoMem+0x2000,0xFF,0x2000);      // Nothing lives here...
+                    memotech_RAM_start = 0xC000;
+                }
+            }
+            else                      // RAM Mode
+            {
+                memotech_RAM_start = 0x0000;        // We're emulating a 64K machine
+            }
+            lastIOBYTE = IOBYTE;
+        }
+    }
+    // ----------------------------------------------------------------------
+    // Z80-CTC Area
+    // This is only a partial implementation of the CTC logic - just enough
+    // to handle the VDP and Sound Generation and very little else. This is
+    // NOT accurate emulation - but it's good enough to render the Memotech
+    // games as playable in this emulator.
+    // ----------------------------------------------------------------------
+    else if (Port >= 0x08 && Port <= 0x0B)
+    {
+        Port &= 0x03;
+        if (ctc_latch[Port])    // If latched, we now have the countdown timer value
+        {
+            ctc_time[Port] = Value;     // Latch the time constant and compute the countdown timer directly below.
+            ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / MTX_CTC_SOUND_DIV) + 1;
+            ctc_latch[Port] = 0x00;     // Reset the latch - we're back to looking for control words
+        }
+        else
+        {
+            if (Value & 1) // Control Word
+            {
+                ctc_control[Port] = Value;      // Keep track of the control port 
+                ctc_latch[Port] = Value & 0x04; // If the caller wants to set a countdown timer, the next value read will latch the timer
+            }
+            else
+            {
+                if (Port == 0x00) // Channel 0, bit0 clear is special - this is where the 4 CTC vector addresses are setup
+                {
+                    ctc_vector[0] = (Value & 0xf8) | 0;     // VDP Interrupt
+                    ctc_vector[1] = (Value & 0xf8) | 2;     // 
+                    ctc_vector[2] = (Value & 0xf8) | 4;     // 
+                    ctc_vector[3] = (Value & 0xf8) | 6;     // 
+                    sordm5_irq = ctc_vector[0];             // When the VDP interrupts the CPU, it's channel 0 on the CTC
+                }
+            }
+        }
+    }
+    else if ((Port == 0x01) || (Port == 0x02))  // VDP Area
+    {
+        if ((Port & 1) != 0) WrData9918(Value);
+        else if (WrCtrl9918(Value)) CPU.IRequest=sordm5_irq;    // Memotech MTX must get vector from the Z80-CTC. Only the CZ80 core works with this.
+    }
+    else if (Port == 0x05) MTX_KBD_DRIVE = Value;
+    else if (Port == 0x06) sn76496W(Value, &sncol);
+}
+
 // ----------------------------------------------------------------
 // Fires every scanline if we are in Sord M5 mode - this provides
 // some rough timing for the Z80-CTC chip. It's not perfectly
@@ -2456,17 +2866,88 @@ void Z80CTC_Timer(void)
 {
     if (CPU.IRequest == INT_NONE)
     {
-        // -----------------------------------------------------------------------------------------
-        // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
-        // Originally we were handling channels 0, 1 and 2 but there was never any program usage
-        // of channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which 
-        // are not supported by ColecoDS.  So we save time and effort here and only deal with Port1.
-        // -----------------------------------------------------------------------------------------
-        if (--ctc_timer[1] <= 0)
+        if (memotech_mode)
         {
-            ctc_timer[1] = ((((ctc_control[1] & 0x20) ? 256 : 16) * (ctc_time[1] ? ctc_time[1]:256)) / CTC_SOUND_DIV) + 1;
-            if (ctc_control[1] & 0x80)  CPU.IRequest = ctc_vector[1];
+            for (u8 i=1; i<4; i++)
+            {
+                if (--ctc_timer[i] <= 0)
+                {
+                    ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / MTX_CTC_SOUND_DIV) + 1;
+                    if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
+                }
+            }
         }
+        else
+        {
+            // -----------------------------------------------------------------------------------------
+            // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
+            // Originally we were handling channels 0, 1 and 2 but there was never any program usage
+            // of channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which 
+            // are not supported by ColecoDS.  So we save time and effort here and only deal with Port1.
+            // -----------------------------------------------------------------------------------------
+            if (--ctc_timer[1] <= 0)
+            {
+                ctc_timer[1] = ((((ctc_control[1] & 0x20) ? 256 : 16) * (ctc_time[1] ? ctc_time[1]:256)) / CTC_SOUND_DIV) + 1;
+                if (ctc_control[1] & 0x80)  CPU.IRequest = ctc_vector[1];
+            }
+        }
+    }
+}
+
+
+void PatchZ80(register Z80 *r)
+{
+    if (memotech_mode != 2) return;
+    
+    if ( r->PC.W-2 == 0x0AAE )
+    {
+        word base   = r->HL.W;
+        word length = r->DE.W;
+        //word calcst = pColecoMem[0xfa81] + (pColecoMem[0xfa82] * 256);
+
+	    if ( pColecoMem[0xfd68] == 0 )
+		/* SAVE */
+		{
+		}
+	    else if ( pColecoMem[0xfd67] != 0 )
+		/* VERIFY.
+		   Normally, if verification fails, the MTX BASIC ROM
+		   stops the tape, cleans up and does rst 0x28.
+		   That rst instruction is at 0x0adb. */
+		{
+		    if ( base == 0xc011 && length == 18 )
+			{
+                tape_pos = 0;
+			}
+            tape_pos += length;
+		}
+        else
+        {
+            /* LOAD */
+            if ( base == 0xc011 && length == 18 )
+            /* Load header, so read whole file */
+            {
+                // File is in romBuffer[]
+                tape_pos = 0;
+            }
+
+            /* Then return chunks as requested */
+            memcpy(pColecoMem + base, romBuffer+tape_pos, length);
+            tape_pos += length;
+        }
+
+        cpu_writeport_memotech(0x08, 0x00);
+        cpu_writeport_memotech(0x08, 0xf0);
+        cpu_writeport_memotech(0x08, 0x03);
+        cpu_writeport_memotech(0x09, 0x03);
+        cpu_writeport_memotech(0x0A, 0x03);
+        cpu_writeport_memotech(0x0B, 0x03);
+
+        RdCtrl9918();
+
+        /* Then re-enables the video interrupt */
+        cpu_writeport_memotech(0x08, 0xa5);
+        cpu_writeport_memotech(0x08, 0x7d);    
     }
 }
 
@@ -2494,7 +2975,7 @@ ITCM_CODE u32 LoopZ80()
   // NMI interrupt to occur), we check and adjust the spinners which 
   // can generate a lower priority interrupt to the running Z80 code.
   // ------------------------------------------------------------------
-  if (!msx_mode && !sordm5_mode)
+  if (!msx_mode && !sordm5_mode && !memotech_mode)
   if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
   {
       if (spinX_left)
@@ -2553,21 +3034,36 @@ ITCM_CODE u32 LoopZ80()
   }
   else  // CZ80 core from fMSX()... slower but higher accuracy
   {
-      // Execute 1 scanline worth of CPU instructions
-      cycle_deficit = ExecZ80(TMS9918_LINE + cycle_deficit);
-      
-      // Refresh VDP 
-      if(Loop9918()) 
+      if (memotech_mode)
       {
-          if (sordm5_mode) CPU.IRequest = sordm5_irq;   // Sord M5 only works with the CZ80 core
-          else CPU.IRequest = ((msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
+          // Execute 1 scanline worth of CPU instructions
+          cycle_deficit = ExecZ80(TMS9918_LINE_MTX + cycle_deficit);
+
+          // Refresh VDP 
+          if(Loop9918()) 
+          {
+              CPU.IRequest = sordm5_irq;   // Sord M5 and Memotech MTX only works with the CZ80 core
+          }
+          Z80CTC_Timer();          
       }
-      
-      // -------------------------------------------------------------------------
-      // The Sord M5 has a CTC timer circuit that needs attention - this isnt 
-      // timing accurate but it's good enough to allow those timers to trigger.
-      // -------------------------------------------------------------------------
-      if (sordm5_mode) Z80CTC_Timer();
+      else
+      {
+          // Execute 1 scanline worth of CPU instructions
+          cycle_deficit = ExecZ80(TMS9918_LINE + cycle_deficit);
+
+          // Refresh VDP 
+          if(Loop9918()) 
+          {
+              if (sordm5_mode) CPU.IRequest = sordm5_irq;   // Sord M5 and Memotech MTX only works with the CZ80 core
+              else CPU.IRequest = ((msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
+          }
+
+          // -------------------------------------------------------------------------
+          // The Sord M5 has a CTC timer circuit that needs attention - this isnt 
+          // timing accurate but it's good enough to allow those timers to trigger.
+          // -------------------------------------------------------------------------
+          if (sordm5_mode) Z80CTC_Timer();
+      }
 
       // Generate an interrupt if called for...
       if(CPU.IRequest!=INT_NONE) 

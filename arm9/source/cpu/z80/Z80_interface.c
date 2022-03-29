@@ -42,6 +42,8 @@ extern u8 adam_ram_lo_exp;
 extern u8 adam_ram_hi_exp;
 extern u8 AdamRAM[];
 
+extern u16 memotech_RAM_start;
+
 // -----------------------------
 // Normal 8-bit Read... fast!
 // -----------------------------
@@ -318,6 +320,16 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     else if (sordm5_mode)
     {
         if (address >= 0x7000)
+        {
+            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+        }
+    }
+    // ----------------------------------------------------------------------------------
+    // For the Memotech MTX, allow anything in the upper 48K
+    // ----------------------------------------------------------------------------------
+    else if (memotech_mode)
+    {
+        if (address >= memotech_RAM_start)
         {
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
         }

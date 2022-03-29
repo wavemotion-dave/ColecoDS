@@ -64,6 +64,7 @@ extern void colecoWipeRAM(void);
 extern u8 colecoCartVerify(const u8 *cartData);
 extern void sgm_reset(void);
 extern void sordm5_reset(void);
+extern void memotech_reset(void);
 extern void msx_reset(void);
 
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);

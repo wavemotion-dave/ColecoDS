@@ -6,11 +6,13 @@
 #define MAXSCREEN           3   // Highest screen mode supported
 
 #define TMS9918_BASE        10738635
+#define TMS9918_BASE_MTX    13738635
 
 #define TMS9918_FRAMES      60
 #define TMS9918_CLOCK       (TMS9918_BASE/3)
 #define TMS9918_FRAME       (TMS9918_BASE/(3*60))
 #define TMS9918_LINE        ((TMS9918_BASE/(3*60*262)))
+#define TMS9918_LINE_MTX    ((TMS9918_BASE_MTX/(3*60*262)))
 
 #define TMS9918_REG1_RAM16K 0x80 /* 1: 16kB VRAM (0=4kB)     */
 #define TMS9918_REG1_SCREEN 0x40 /* 1: Enable display        */
