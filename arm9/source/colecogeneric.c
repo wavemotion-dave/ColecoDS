@@ -881,13 +881,13 @@ void SetDefaultGameConfig(void)
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
     
-    if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 3;  // Rolla Ball needs full memory wipe
-    if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 3;  // Surface Scanner needs full memory wipe
-    if (file_crc == 0xe8bceb5c)                 myConfig.memWipe = 3;  // Surface Scanner needs full memory wipe
-    if (file_crc == 0x018f0e13)                 myConfig.memWipe = 3;  // SMG needs full memory wipe
-    if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 3;  // Astro PAC needs full memory wipe
-    if (file_crc == 0xf9934809)                 myConfig.memWipe = 3;  // Reveal needs full memory wipe
-    if (file_crc == 0x8c96be92)                 myConfig.memWipe = 3;  // Turbo needs full memory wipe
+    if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 2;  // Rolla Ball needs full memory wipe
+    if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 2;  // Surface Scanner needs full memory wipe
+    if (file_crc == 0xe8bceb5c)                 myConfig.memWipe = 2;  // Surface Scanner needs full memory wipe
+    if (file_crc == 0x018f0e13)                 myConfig.memWipe = 2;  // SMG needs full memory wipe
+    if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 2;  // Astro PAC needs full memory wipe
+    if (file_crc == 0xf9934809)                 myConfig.memWipe = 2;  // Reveal needs full memory wipe
+    if (file_crc == 0x8c96be92)                 myConfig.memWipe = 2;  // Turbo needs full memory wipe
     
     if (file_crc == 0x9d8fa05f)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo needs diagonals
     if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo2 needs diagonals    
