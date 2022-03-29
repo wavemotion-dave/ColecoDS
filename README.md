@@ -126,6 +126,7 @@ Memotech MTX Compatibility :
 -----------------------
 The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound is not perfect due to some CTC chip timing differences from real hardware. Also, only about 65% of the games load and run properly - some games use more complex loaders and are not well supported by ColecoDS. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  Of the two types (.mtx and .run), the .RUN files are generally better supported - seek those out (the excellent MEMU MTX emulator has a good selection).
 
+The MTX emulated is a base MTX-500 system with 32K of RAM... plus an extra 16K of ram in the 4000h bank. This isn't a "standard" MTX machine but it allows a few more playable games that need to load into the lower 16K of RAM (Mecha8, Zombie Near, Kung Fu 64, etc).
 
 Controllers :
 -----------------------
