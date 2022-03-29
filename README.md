@@ -128,6 +128,8 @@ The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5
 
 The MTX emulated is a base MTX-500 system with 32K of RAM... plus an extra 16K of ram in the 4000h bank. This isn't a "standard" MTX machine but it allows a few more playable games that need to load into the lower 16K of RAM (Mecha8, Zombie Near, Kung Fu 64, etc).
 
+Once the game is loaded into memory you will be sitting at the BASIC prompt. At this prompt you need to LOAD "" (if .MTX) or RUN the game (if .RUN). I've made this simple - just hit the DS **START** key to enter the proper command automatically.
+
 Controllers :
 -----------------------
 You can map buttons to either P1 or P2 controllers. 
