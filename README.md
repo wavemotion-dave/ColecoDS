@@ -1,5 +1,5 @@
 # ColecoDS
-ColecoDS - A Colecovision Emulator for the DS/DSi
+ColecoDS - A Colecovision and ADAM Emulator for the DS/DSi
 
 _**Your Vision Is Our Vision...  COLECOVISION**_
 
@@ -21,6 +21,8 @@ directory as the coleco.rom BIOS.
 
 SG-1000 emulation does not need a BIOS.
 
+Memotech MTX emulation has a built-in BIOS.
+
 MSX emulation does not need a BIOS (C-BIOS used) 
 but you can put the 32k msx.rom in /roms/bios or /data/bios 
 and the emulator will use that instead.
@@ -33,6 +35,10 @@ Features :
 * Super Game Module support including AY sound chip.
 * Megacart Bankswitching support (up to 512K).
 * Coleco ADAM game support (.ddp or .dsk files)
+* Sega SG-1000 game support (.sg roms)
+* Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS.
+* MSX1 game support (.msx or .rom) up to 512K 
+* Memotech MTX game support (.mtx or .run) - single loader games only.
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
 * Save/Load Game State (one slot).
@@ -40,9 +46,6 @@ Features :
 * LCD Screen Swap (press and hold L+R+X during gameplay).
 * Overlay support for the few games that need them.
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
-* Sega SG-1000 game support (.sg roms)
-* Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS.
-* MSX1 game support (.msx or .rom) up to 512K 
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -119,6 +122,11 @@ The MSX memory is laid out as follows:
  SLOT3:  RAM (64K)
 ```
 
+Memotech MTX Compatibility :
+-----------------------
+The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound is not perfect due to some CTC chip timing differences from real hardware. Also, only about 65% of the games load and run properly - some games use more complex loaders and are not well supported by ColecoDS. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  Of the two types (.mtx and .run), the .RUN files are generally better supported - seek those out (the excellent MEMU MTX emulator has a good selection).
+
+
 Controllers :
 -----------------------
 You can map buttons to either P1 or P2 controllers. 
@@ -193,6 +201,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.4: 29-Mar-2022 by wavemotion-dave
+* Memotech MTX support added (.mtx and .run files only)
+* Better load file handling so more games are recognized correctly.
+* Other minor cleanups and fixes as time permitted.
+
 V6.3: 12-Mar-2022 by wavemotion-dave
 * ADAM Computer support is added! Play .ddp and .dsk games (requires eos.rom and writer.rom).
 * Other minor cleanups and fixes as time permitted.
