@@ -74,6 +74,11 @@ Thanks to Flubba for the SN76496 sound core.
 Thanks to the C-BIOS team for the open 
 source MSX BIOS (see cbios.txt)
 
+Thanks to Andy and his amazing Memotech 
+Emulator MEMO which helped me get some
+preliminary and simple MTX-500 support 
+included.
+
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
 core emulation (specifically TMS9918 VDP
