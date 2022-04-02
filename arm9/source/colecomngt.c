@@ -37,14 +37,17 @@
 u8 AdamRAM[0x20000]   = {0x00};
 
 u16 memotech_RAM_start = 0x4000;
+u16 svi_RAM_start = 0x8000;
 
 unsigned char IOBYTE = 0x00;
 unsigned char MTX_KBD_DRIVE = 0x00;
 u8 lastIOBYTE = 99;
 extern u8 key_shift;
-u16 tape_pos = 0;
-u16 tape_len = 0;
-extern u16 last_tape_pos;
+u32 tape_pos = 0;
+u32 tape_len = 0;
+extern u32 last_tape_pos;
+
+u8 key_shift_hold=0;
 
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
@@ -222,12 +225,16 @@ void sgm_reset(void)
 // ---------------------------------------------------------
 void sordm5_reset(void)
 {
-    // Reset the Z80-CTC stuff...
-    memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
-    memset(ctc_time, 0x00, 4);          // No time value set
-    memset(ctc_vector, 0x00, 4);        // No vectors set
-    memset(ctc_latch, 0x00, 4);         // No latch set
-    sordm5_irq = 0xFF;                  // No IRQ set
+    if (sordm5_mode)
+    {
+        // Reset the Z80-CTC stuff...
+        memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
+        memset(ctc_time, 0x00, 4);          // No time value set
+        memset(ctc_vector, 0x00, 4);        // No vectors set
+        memset(ctc_latch, 0x00, 4);         // No latch set
+        memset(ctc_timer, 0x00, 8);         // No timer value set
+        sordm5_irq = 0xFF;                  // No IRQ set
+    }
 }
 
 
@@ -236,20 +243,43 @@ void sordm5_reset(void)
 // ---------------------------------------------------------
 void memotech_reset(void)
 {
-    extern u8 memotech_load_keys;
-    // Reset the Z80-CTC stuff...
-    memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
-    memset(ctc_time, 0x00, 4);          // No time value set
-    memset(ctc_vector, 0x00, 4);        // No vectors set
-    memset(ctc_latch, 0x00, 4);         // No latch set
-    sordm5_irq = 0xFF;                  // No IRQ set
-    
-    memotech_RAM_start = 0x4000;
-    IOBYTE = 0x00;
-    MTX_KBD_DRIVE = 0x00;
-    lastIOBYTE = 99;
-    memotech_load_keys = 0;
-    tape_pos = 0;
+    if (memotech_mode)
+    {
+        // Reset the Z80-CTC stuff...
+        memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
+        memset(ctc_time, 0x00, 4);          // No time value set
+        memset(ctc_timer, 0x00, 8);         // No timer value set
+        memset(ctc_vector, 0x00, 4);        // No vectors set
+        memset(ctc_latch, 0x00, 4);         // No latch set
+        sordm5_irq = 0xFF;                  // No IRQ set
+
+        memotech_RAM_start = 0x4000;
+        IOBYTE = 0x00;
+        MTX_KBD_DRIVE = 0x00;
+        lastIOBYTE = 99;
+        tape_pos = 0;
+    }
+}
+
+
+// ---------------------------------------------------------
+// The SVI has some tape related stuff
+// ---------------------------------------------------------
+void svi_reset(void)
+{
+    if (svi_mode)
+    {
+        IOBYTE = 0x00;
+        MTX_KBD_DRIVE = 0x00;
+        lastIOBYTE = 99;
+        tape_pos = 0;
+
+        svi_RAM_start = 0x8000;
+        
+        PortA8 = 0x00;
+        PortA9 = 0x00;
+        PortAA = 0x00;       
+    }
 }
 
 
@@ -260,7 +290,13 @@ void msx_reset(void)
 {
     if (msx_mode)
     {
+        tape_pos = 0;
         MSX_InitialMemoryLayout(LastROMSize);
+    }
+    else
+    {
+        msx_init = 0x4000;
+        msx_basic = 0x0000;
     }
 }
 
@@ -280,7 +316,12 @@ void colecoWipeRAM(void)
   }
   else if (memotech_mode)
   {
-    memset(pColecoMem+0x4000, 0x00, 0xC000);
+    for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));   // This pattern tends to make most things start up properly...
+  }
+  else if (svi_mode)
+  {
+    for (int i=0; i< 0x8000; i++) pColecoMem[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));   // This pattern tends to make most things start up properly...
+    memset(Slot3RAM,  0x00, 0x10000);
   }
   else if (msx_mode)
   {
@@ -361,6 +402,17 @@ void CheckMSXHeaders(char *szGame)
 }
 
 
+/*********************************************************************************
+ * Keybaord Key Buffering Engine...
+ ********************************************************************************/
+u8 BufferedKeys[32];
+u8 BufferedKeysWriteIdx=0;
+u8 BufferedKeysReadIdx=0;
+void BufferKey(u8 key)
+{
+    BufferedKeys[BufferedKeysWriteIdx] = key;
+    BufferedKeysWriteIdx = (BufferedKeysWriteIdx+1) % 32;
+}
 
 /*********************************************************************************
  * Init coleco Engine for that game
@@ -378,6 +430,7 @@ u8 colecoInit(char *szGame)
   
   if (bForceMSXLoad) msx_mode = 1;
   if (msx_mode) AY_Enable=true;
+  if (svi_mode) AY_Enable=true;
   if (msx_mode) InitBottomScreen();  // Could Need to ensure the MSX layout is shown
     
   // -----------------------------------------------------------------
@@ -435,6 +488,14 @@ u8 colecoInit(char *szGame)
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
   }
+  else if (svi_mode)  // Load MSX cartridge ... 
+  {
+      // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
+      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);  
+      
+      // Wipe RAM area from 0x8000 upwards after ROM is loaded...
+      colecoWipeRAM();
+  }
   else if (adam_mode)  // Load Adam DDP
   {
       sgm_reset();                       // Make sure the super game module is disabled to start
@@ -485,6 +546,8 @@ u8 colecoInit(char *szGame)
       
     memotech_reset();                   // Reset the Memotech MTX stuff
       
+    svi_reset();                        // Reset the SVI stuff
+      
     XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
       
     ResetStatusFlags();                 // Some status flags for the UI mostly
@@ -526,7 +589,7 @@ void colecoSetPal(void)
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
-u8  spare[508] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
+u8  spare[497] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
 void colecoSaveState() 
 {
   u32 uNbO;
@@ -590,6 +653,15 @@ void colecoSaveState()
       
     // Deficit Z80 CPU Cycle counter
     if (uNbO) uNbO = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
+      
+    // Some Memotech MTX stuff...
+    if (uNbO) uNbO = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
+    if (uNbO) uNbO = fwrite(&IOBYTE, sizeof(IOBYTE), 1, handle); 
+    if (uNbO) uNbO = fwrite(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
+    if (uNbO) uNbO = fwrite(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
+    if (uNbO) uNbO = fwrite(&tape_pos, sizeof(tape_pos), 1, handle); 
+    if (uNbO) uNbO = fwrite(&tape_len, sizeof(tape_len), 1, handle); 
+    if (uNbO) uNbO = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
       
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
@@ -759,6 +831,16 @@ void colecoLoadState()
             
             // Deficit Z80 CPU Cycle counter
             if (uNbO) uNbO = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
+            
+            // Some Memotech MTX stuff...
+            if (uNbO) uNbO = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
+            if (uNbO) uNbO = fread(&IOBYTE, sizeof(IOBYTE), 1, handle); 
+            if (uNbO) uNbO = fread(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
+            if (uNbO) uNbO = fread(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
+            if (uNbO) uNbO = fread(&tape_pos, sizeof(tape_pos), 1, handle); 
+            if (uNbO) uNbO = fread(&tape_len, sizeof(tape_len), 1, handle); 
+            if (uNbO) uNbO = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
+            
             
             // Load spare memory for future use
             if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 
@@ -960,6 +1042,7 @@ void getfile_crc(const char *path)
     if (file_crc == 0x5e169d35) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)
     if (file_crc == 0xe66eaed9) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)
     if (file_crc == 0x785fc789) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)    
+    if (file_crc == 0xe50d6e60) bDontResetEnvelope = true; // MSX Warp-and-Warp (cassette)    
     
     // -----------------------------------------------------------------
     // Only Lord of the Dungeon allows SRAM writting in this area... 
@@ -1033,30 +1116,30 @@ u8 MSX_GuessROMType(u32 size)
             u16 value = romBuffer[i+1] + (romBuffer[i+2] << 8);
             switch (value)
             {
-				case 0x5000:
-				case 0x9000:
-				case 0xb000:
-					guess[SCC8]++;
-					break;
-				case 0x4000:
-				case 0x8000:
-				case 0xa000:
-					guess[KON8]++;
-					break;
-				case 0x6800:
-				case 0x7800:
-					guess[ASC8]++;guess[ASC8]++;
-					break;
-				case 0x6000:
-					guess[KON8]++;
-					guess[ASC8]++;
+                case 0x5000:
+                case 0x9000:
+                case 0xb000:
+                    guess[SCC8]++;
+                    break;
+                case 0x4000:
+                case 0x8000:
+                case 0xa000:
+                    guess[KON8]++;
+                    break;
+                case 0x6800:
+                case 0x7800:
+                    guess[ASC8]++;guess[ASC8]++;
+                    break;
+                case 0x6000:
+                    guess[KON8]++;
+                    guess[ASC8]++;
                     guess[ASC16]++;
-					break;
-				case 0x7000:
-					guess[SCC8]++;
-					guess[ASC8]++;
+                    break;
+                case 0x7000:
+                    guess[SCC8]++;
+                    guess[ASC8]++;
                     guess[ASC16]++;
-					break;
+                    break;
                 case 0x77FF:
                     guess[ASC16]++;guess[ASC16]++;
                     break;
@@ -1504,6 +1587,9 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
+            tape_len = iSSize;  // For Memotech MTX, the tape size is saved for showing tape load progress
+            tape_pos = 0;
+            last_tape_pos = 9999;
             MSX_InitialMemoryLayout(iSSize);
         }
         // ---------------------------------------------------------------------------
@@ -1526,14 +1612,18 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 strcpy(lastPath, path);
             }
         }
+        else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 512K
+        {
+            tape_len = iSSize;  // For Memotech MTX, the tape size is saved for showing tape load progress
+            tape_pos = 0;
+            last_tape_pos = 9999;
+        }
         else
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
-        if (iSSize <= (((sg1000_mode||memotech_mode) ? 64:32)*1024)) // Allow SG ROMs and MTX "Roms" to be up to 64K
+        if (iSSize <= (((sg1000_mode) ? 48:32)*1024)) // Allow SG ROMs to be up to 48K, otherwise 32K limit
         {
-            tape_len = iSSize;  // For Memotech MTX, the tape size is saved for showing tape load progress
-            last_tape_pos = 9999;
             memcpy(ptr, romBuffer, nmemb);
         }
         else    // No - must be Mega Cart (MC) Bankswitched!!  We have two banks of 128K VRAM to help with speed.
@@ -1733,6 +1823,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
   if (sordm5_mode)   {return cpu_readport_m5(Port);}    
   if (memotech_mode) {return cpu_readport_memotech(Port);}    
   if (msx_mode)      {return cpu_readport_msx(Port);}
+  if (svi_mode)      {return cpu_readport_svi(Port);}
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
@@ -1780,6 +1871,7 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
   if      (sg1000_mode)   {cpu_writeport_sg(Port, Value); return;}
   else if (sordm5_mode)   {cpu_writeport_m5(Port, Value); return;}
   else if (memotech_mode) {cpu_writeport_memotech(Port, Value); return;}
+  else if (svi_mode)      {return cpu_writeport_svi(Port, Value); return;}
   //if (msx_mode)    {cpu_writeport_msx(Port, Value); return;}      // This is now handled in DrZ80 and CZ80 directly
     
   // Colecovision ports are 8-bit
@@ -1977,6 +2069,17 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       u8 key1 = 0x00;
       if ((PortAA & 0x0F) == 0)      // Row 0
       {
+          // ---------------------------------------------------
+          // At the top of the scan loop, handle the key buffer
+          // ---------------------------------------------------
+          if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
+          if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+          {
+              msx_key = BufferedKeys[BufferedKeysReadIdx];
+              BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
+              if (msx_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+          }
+          
           if (JoyState == JST_0)   key1 |= 0x01;  // '0'
           if (JoyState == JST_1)   key1 |= 0x02;  // '1'
           if (JoyState == JST_2)   key1 |= 0x04;  // '2'
@@ -2011,6 +2114,12 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           {
               if (msx_key == '8')           key1 = 0x01;
               if (msx_key == '9')           key1 = 0x02;
+              if (msx_key == '-')           key1 = 0x04;
+              if (msx_key == '=')           key1 = 0x08;
+              if (msx_key == '\\')          key1 = 0x10;
+              if (msx_key == ']')           key1 = 0x20;
+              if (msx_key == '[')           key1 = 0x40;
+              if (msx_key == ':')           key1 = 0x80;
           }
           
       }
@@ -2023,7 +2132,11 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           if (msx_key)
           {
+              if (msx_key == KBD_KEY_QUOTE) key1 = 0x01;
+              if (msx_key == '#')           key1 = 0x02;
+              if (msx_key == ',')           key1 = 0x04;
               if (msx_key == '.')           key1 = 0x08;
+              if (msx_key == '/')           key1 = 0x10;
               if (msx_key == 'A')           key1 = 0x40;
               if (msx_key == 'B')           key1 = 0x80;
           }          
@@ -2115,12 +2228,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_SHIFT) key1 = 0x02;
-              if (msx_key == MSX_KEY_CTRL)  key1 = 0x01;
-              if (msx_key == MSX_KEY_M1)    key1 = 0x20;
-              if (msx_key == MSX_KEY_M2)    key1 = 0x40;
-              if (msx_key == MSX_KEY_M3)    key1 = 0x80;
+              if (msx_key == KBD_KEY_SHIFT) key1 = 0x01;
+              if (msx_key == KBD_KEY_CTRL)  key1 = 0x02;
+              if (msx_key == KBD_KEY_CAPS)  key1 = 0x08;
+              if (msx_key == KBD_KEY_F1)    key1 = 0x20;
+              if (msx_key == KBD_KEY_F2)    key1 = 0x40;
+              if (msx_key == KBD_KEY_F3)    key1 = 0x80;
           }          
+          if (key_shift)                    key1 |= 0x01;  // SHIFT
       }
       else if ((PortAA & 0x0F) == 7) // Row 7
       {
@@ -2134,13 +2249,13 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_M4)    key1 = 0x01;
-              if (msx_key == MSX_KEY_M5)    key1 = 0x02;
-              if (msx_key == MSX_KEY_STOP)  key1 = 0x10;
-              if (msx_key == MSX_KEY_DEL)   key1 = 0x20;
-              if (msx_key == MSX_KEY_RET)   key1 = 0x80;
-              if (msx_key == MSX_KEY_SEL)   key1 = 0x40;
-              if (msx_key == MSX_KEY_ESC)   key1 = 0x04;
+              if (msx_key == KBD_KEY_F4)    key1 = 0x01;
+              if (msx_key == KBD_KEY_F5)    key1 = 0x02;
+              if (msx_key == KBD_KEY_STOP)  key1 = 0x10;
+              if (msx_key == KBD_KEY_DEL)   key1 = 0x20;
+              if (msx_key == KBD_KEY_RET)   key1 = 0x80;
+              if (msx_key == KBD_KEY_SEL)   key1 = 0x40;
+              if (msx_key == KBD_KEY_ESC)   key1 = 0x04;
           }          
       }
       else if ((PortAA & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
@@ -2159,11 +2274,11 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           if (msx_key)
           {
               if (msx_key == ' ')           key1 = 0x01;
-              if (msx_key == MSX_KEY_UP)    key1 = 0x20;
-              if (msx_key == MSX_KEY_DOWN)  key1 = 0x40;
-              if (msx_key == MSX_KEY_LEFT)  key1 = 0x10;
-              if (msx_key == MSX_KEY_RIGHT) key1 = 0x80;
-              if (msx_key == MSX_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the seldom used SEL key
+              if (msx_key == KBD_KEY_UP)    key1 = 0x20;
+              if (msx_key == KBD_KEY_DOWN)  key1 = 0x40;
+              if (msx_key == KBD_KEY_LEFT)  key1 = 0x10;
+              if (msx_key == KBD_KEY_RIGHT) key1 = 0x80;
+              if (msx_key == KBD_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the seldom used SEL key
           }          
       }
       return ~key1;
@@ -2245,11 +2360,14 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     bRAMInSlot[0] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
-                    FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot1ROMPtr[0]), 0x2000);
-                    FastMemCopy(pColecoMem+0x2000, (u8 *)(Slot1ROMPtr[1]), 0x2000);
-                    bROMInSlot[0] = 1;
-                    bRAMInSlot[0] = 0;
-                    break;
+                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+                    {
+                        FastMemCopy(pColecoMem+0x0000, (u8 *)(Slot1ROMPtr[0]), 0x2000);
+                        FastMemCopy(pColecoMem+0x2000, (u8 *)(Slot1ROMPtr[1]), 0x2000);
+                        bROMInSlot[0] = 1;
+                        bRAMInSlot[0] = 0;
+                        break;
+                    }
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(0);
                     memset(pColecoMem+0x0000, 0xFF, 0x4000);
@@ -2273,12 +2391,15 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     bRAMInSlot[1] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
-                    SaveRAM(1);
-                    FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot1ROMPtr[2]), 0x2000);
-                    FastMemCopy(pColecoMem+0x6000, (u8 *)(Slot1ROMPtr[3]), 0x2000);
-                    bROMInSlot[1] = 1;
-                    bRAMInSlot[1] = 0;
-                    break;
+                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+                    {
+                        SaveRAM(1);
+                        FastMemCopy(pColecoMem+0x4000, (u8 *)(Slot1ROMPtr[2]), 0x2000);
+                        FastMemCopy(pColecoMem+0x6000, (u8 *)(Slot1ROMPtr[3]), 0x2000);
+                        bROMInSlot[1] = 1;
+                        bRAMInSlot[1] = 0;
+                        break;
+                    }
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(1);
                     memset(pColecoMem+0x4000, 0xFF, 0x4000);
@@ -2302,12 +2423,15 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     bRAMInSlot[2] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
-                    SaveRAM(2);
-                    FastMemCopy(pColecoMem+0x8000, (u8 *)(Slot1ROMPtr[4]), 0x2000);
-                    FastMemCopy(pColecoMem+0xA000, (u8 *)(Slot1ROMPtr[5]), 0x2000);
-                    bROMInSlot[2] = 1;
-                    bRAMInSlot[2] = 0;
-                    break;
+                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+                    {
+                        SaveRAM(2);
+                        FastMemCopy(pColecoMem+0x8000, (u8 *)(Slot1ROMPtr[4]), 0x2000);
+                        FastMemCopy(pColecoMem+0xA000, (u8 *)(Slot1ROMPtr[5]), 0x2000);
+                        bROMInSlot[2] = 1;
+                        bRAMInSlot[2] = 0;
+                        break;
+                    }
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(2);
                     memset(pColecoMem+0x8000, 0xFF, 0x4000);
@@ -2331,12 +2455,15 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     bRAMInSlot[3] = 0;
                     break;
                 case 0x01:  // Slot 1:  Maps to Game Cart
-                    SaveRAM(3);
-                    FastMemCopy(pColecoMem+0xC000, (u8 *)(Slot1ROMPtr[6]), 0x2000);
-                    FastMemCopy(pColecoMem+0xE000, (u8 *)(Slot1ROMPtr[7]), 0x2000);
-                    bROMInSlot[3] = 1;
-                    bRAMInSlot[3] = 0;
-                    break;
+                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+                    {
+                        SaveRAM(3);
+                        FastMemCopy(pColecoMem+0xC000, (u8 *)(Slot1ROMPtr[6]), 0x2000);
+                        FastMemCopy(pColecoMem+0xE000, (u8 *)(Slot1ROMPtr[7]), 0x2000);
+                        bROMInSlot[3] = 1;
+                        bRAMInSlot[3] = 0;
+                        break;
+                    }
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
                     SaveRAM(3);
                     memset(pColecoMem+0xC000, 0xFF, 0x4000);
@@ -2383,6 +2510,322 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     }
 }
 
+
+// ------------------------------------------------------------------
+// SPECTRAVIDEO SVI 318/328 Port Handling...
+//80    98  W   VDP TMS9918A Writes a byte to VRAM, increases VRAM pointer
+//81    99  W   VDP TMS9918A Address / Register output
+//84    98  R   VDP TMS9918A Reads a byte from VRAM, increases VRAM pointer
+//85    99  R   VDP TMS9918A Status register    
+//88    A0  W   PSG AY-3-8910 Adress latch
+//8C    A1  W   PSG AY-3-8910 Data write
+//90    A2  R   PSG AY-3-8910 Data read
+//98    A8  R   PPI 8255 Port A
+//99    A9  R   PPI 8255 Port B
+//9A    AA  R   PPI 8255 Port C
+//9B    AB  R   PPI 8255 Mode select and I/O setup of A,B,C
+// ------------------------------------------------------------------
+unsigned char cpu_readport_svi(register unsigned short Port) 
+{
+  // SVI ports are 8-bit
+  Port &= 0x00FF; 
+
+  // Access to the VDP I/O ports.    
+  if      (Port == 0x84) return RdData9918();
+  else if (Port == 0x85) return RdCtrl9918(); 
+  else if (Port == 0x90)  // PSG Read... might be joypad data
+  {
+      // -------------------------------------------
+      // Only port 1 is used for the first Joystick
+      // -------------------------------------------
+      if (ay_reg_idx == 14)
+      {
+          u8 joy1 = 0x00;
+
+          if (myConfig.dpad == DPAD_JOYSTICK)
+          {
+              if (JoyState & JST_UP)    joy1 |= 0x01;
+              if (JoyState & JST_DOWN)  joy1 |= 0x02;
+              if (JoyState & JST_LEFT)  joy1 |= 0x04;
+              if (JoyState & JST_RIGHT) joy1 |= 0x08;
+          }
+          else if (myConfig.dpad == DPAD_DIAGONALS)
+          {
+              if (JoyState & JST_UP)    joy1 |= (0x01 | 0x08);
+              if (JoyState & JST_DOWN)  joy1 |= (0x02 | 0x04);
+              if (JoyState & JST_LEFT)  joy1 |= (0x04 | 0x01);
+              if (JoyState & JST_RIGHT) joy1 |= (0x08 | 0x02);
+          }
+
+          ay_reg[14] = ~joy1;
+      }      
+      return FakeAY_ReadData();
+  }    
+  else if (Port == 0x98) 
+  {
+      PortA8 |= 0x30;
+      if (JoyState & JST_FIREL) PortA8 &= ~0x10;
+      if (JoyState & JST_FIRER) PortA8 &= ~0x10;
+      
+      return PortA8;
+  }
+  else if (Port == 0x99)
+  {
+      // ------------------------------------------------------------------------
+      // SVI Keyboard Port:
+      //        bit7    bit6    bit5    bit4    bit3    bit2    bit1    bit0
+      // row 0  7&      6^      5%      4$      3#      2@      1!      0)
+      // row 1  /?      .>      =+      ,<      '"      ;:      9(      8*
+      // row 2  G       F       E       D       C       B       A       -_
+      // row 3  O       N       M       L       K       J       I       H
+      // row 4  W       V       U       T       S       R       Q       P
+      // row 5  ↑       BS      ]}      \~      [{      Z       Y       X
+      // row 6  ←       ENTER   STOP    ESC     GRAPR   GRAPL   CTRL    SHIFT
+      // row 7  ↓       INS     CLS     F5      F4      F3      F2      F1
+      // row 8  →       n/a     PRINT   SEL     CAPS    DEL     TAB     SPACE
+      // row 9  NUM7    NUM6    NUM5    NUM4    NUM3    NUM2    NUM1    NUM0
+      // row 10 NUM,    NUM.    NUM/    NUM*    NUM-    NUM+    NUM9    NUM8
+      // ------------------------------------------------------------------------
+      
+      u8 key1 = 0x00;
+      if ((PortAA & 0x0F) == 0)      // Row 0
+      {
+          // -----------------------------------------------------------
+          // We are at the top of the scan loop... if we have buffered 
+          // keys, we insert them into the stream now...
+          // -----------------------------------------------------------
+          if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
+          if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+          {
+              msx_key = BufferedKeys[BufferedKeysReadIdx];
+              BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
+              if (msx_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+          }
+          
+          if (msx_key)
+          {
+              if (msx_key == '0')           key1 = 0x01;
+              if (msx_key == '1')           key1 = 0x02;
+              if (msx_key == '2')           key1 = 0x04;
+              if (msx_key == '3')           key1 = 0x08;
+              if (msx_key == '4')           key1 = 0x10;
+              if (msx_key == '5')           key1 = 0x20;
+              if (msx_key == '6')           key1 = 0x40;
+              if (msx_key == '7')           key1 = 0x80;
+          }
+      }      
+      else if ((PortAA & 0x0F) == 1)
+      {
+          if (msx_key)
+          {
+              if (msx_key == '8')           key1 = 0x01;
+              if (msx_key == '9')           key1 = 0x02;
+              if (msx_key == ':')           key1 = 0x04;
+              if (msx_key == KBD_KEY_QUOTE) key1 = 0x08;
+              if (msx_key == ',')           key1 = 0x10;
+              if (msx_key == '=')           key1 = 0x20;
+              if (msx_key == '.')           key1 = 0x40;
+              if (msx_key == '/')           key1 = 0x80;
+          }
+      }
+      else if ((PortAA & 0x0F) == 2)  // Row 2
+      {
+          if (msx_key)
+          {
+              if (msx_key == '-')           key1 = 0x01;
+              if (msx_key == 'A')           key1 = 0x02;
+              if (msx_key == 'B')           key1 = 0x04;
+              if (msx_key == 'C')           key1 = 0x08;
+              if (msx_key == 'D')           key1 = 0x10;
+              if (msx_key == 'E')           key1 = 0x20;
+              if (msx_key == 'F')           key1 = 0x40;
+              if (msx_key == 'G')           key1 = 0x80;
+          }          
+      }
+      else if ((PortAA & 0x0F) == 3)  // Row 3
+      {
+          if (msx_key)
+          {
+              if (msx_key == 'H')           key1 = 0x01;
+              if (msx_key == 'I')           key1 = 0x02;
+              if (msx_key == 'J')           key1 = 0x04;
+              if (msx_key == 'K')           key1 = 0x08;
+              if (msx_key == 'L')           key1 = 0x10;
+              if (msx_key == 'M')           key1 = 0x20;
+              if (msx_key == 'N')           key1 = 0x40;
+              if (msx_key == 'O')           key1 = 0x80;
+          }          
+      }
+      else if ((PortAA & 0x0F) == 4)  // Row 4
+      {
+          if (msx_key)
+          {
+              if (msx_key == 'P')           key1 = 0x01;
+              if (msx_key == 'Q')           key1 = 0x02;
+              if (msx_key == 'R')           key1 = 0x04;
+              if (msx_key == 'S')           key1 = 0x08;
+              if (msx_key == 'T')           key1 = 0x10;
+              if (msx_key == 'U')           key1 = 0x20;
+              if (msx_key == 'V')           key1 = 0x40;
+              if (msx_key == 'W')           key1 = 0x80;
+          }          
+      }
+      else if ((PortAA & 0x0F) == 5)  // Row 5
+      {
+          if (myConfig.dpad == DPAD_MSX_KEYS)
+          {
+              if (JoyState & JST_UP)    key1 |= 0x80;  // KEY UP
+          }
+          if (msx_key)
+          {
+              if (msx_key == 'X')           key1 = 0x01;
+              if (msx_key == 'Y')           key1 = 0x02;
+              if (msx_key == 'Z')           key1 = 0x04;
+              if (msx_key == '[')           key1 = 0x08;
+              if (msx_key == ']')           key1 = 0x10;
+              if (msx_key == KBD_KEY_DEL)   key1 = 0x40;              
+              if (msx_key == KBD_KEY_UP)    key1 = 0x80;
+          }          
+      }      
+      else if ((PortAA & 0x0F) == 6) // Row 6
+      {
+          // Handle the Shift Key ... two ways
+          if (key_shift || (msx_key == KBD_KEY_SHIFT))  key1 = 0x01;
+          
+          if (myConfig.dpad == DPAD_MSX_KEYS)
+          {
+              if (JoyState & JST_LEFT)  key1 |= 0x80;  // KEY LEFT
+          }
+          if (msx_key)
+          {
+              if (msx_key == KBD_KEY_CTRL)  key1 = 0x02;
+              if (msx_key == KBD_KEY_ESC)   key1 = 0x10;
+              if (msx_key == KBD_KEY_STOP)  key1 = 0x20;
+              if (msx_key == KBD_KEY_RET)   key1 = 0x40;
+              if (msx_key == KBD_KEY_LEFT)  key1 = 0x80;
+          }          
+      }
+      else if ((PortAA & 0x0F) == 7) // Row 7
+      {
+          if (myConfig.dpad == DPAD_MSX_KEYS)
+          {
+              if (JoyState & JST_DOWN)  key1 |= 0x80;  // KEY DOWN
+          }
+          if (msx_key)
+          {
+              if (msx_key == KBD_KEY_F1)    key1 = 0x01;
+              if (msx_key == KBD_KEY_F2)    key1 = 0x02;
+              if (msx_key == KBD_KEY_F3)    key1 = 0x04;
+              if (msx_key == KBD_KEY_F4)    key1 = 0x08;
+              if (msx_key == KBD_KEY_F5)    key1 = 0x10;
+              if (msx_key == KBD_KEY_DOWN)  key1 = 0x80;              
+          }          
+      }
+      else if ((PortAA & 0x0F) == 8) // Row 8
+      {
+          if (JoyState == JST_STAR) key1 |= 0x01;  // SPACE
+          
+          if (myConfig.dpad == DPAD_MSX_KEYS)
+          {
+              if (JoyState & JST_RIGHT) key1 |= 0x80;  // KEY RIGHT          
+              if (JoyState & JST_FIREL) key1 |= 0x01;  // SPACE
+              if (JoyState & JST_FIRER) key1 |= 0x01;  // SPACE
+          }
+          if (msx_key)
+          {
+              if (msx_key == ' ')           key1 = 0x01;
+              if (msx_key == KBD_KEY_RIGHT) key1 = 0x80;
+              if (msx_key == KBD_KEY_CAPS)  key1 = 0x08;
+              
+          }          
+      }
+      return ~key1;
+  }
+  else if (Port == 0x9A) return PortAA;    
+    
+  // No such port
+  return(NORAM);
+}
+
+
+//94    A8  W   PPI 8255 Port A
+//95    A9  W   PPI 8255 Port B
+//96    AA  W   PPI 8255 Port C
+void cpu_writeport_svi(register unsigned short Port,register unsigned char Value) 
+{
+    // SVI ports are 8-bit
+    Port &= 0x00FF;
+
+    if      (Port == 0x80) WrData9918(Value);
+    else if (Port == 0x81) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT;}}
+    else if (Port == 0x88)    // PSG Area
+    {
+        FakeAY_WriteIndex(Value & 0x0F);
+    }
+    else if (Port == 0x8C) 
+    {
+        FakeAY_WriteData(Value);
+        if (ay_reg_idx == 15)
+        {
+            IOBYTE = ay_reg[ay_reg_idx] & 0x1F;
+
+            if (lastIOBYTE != IOBYTE)
+            {
+                lastIOBYTE = IOBYTE;
+                debug3 = IOBYTE;
+                
+                if (IOBYTE == 0x1F)   // Normal ROM + 32K Upper RAM
+                {
+                      extern u8 SVIBios[];
+                      memcpy(pColecoMem,SVIBios,0x8000);        // Restore SVI BIOS (ram is already saved in Slot3RAM[])
+                      pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
+                      pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
+                      pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
+                      pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
+                      pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
+                      pColecoMem[0x2073] = 0x01;
+                      pColecoMem[0x20D0] = 0x10; pColecoMem[0x20D1] = 0x00;  
+                      if (svi_RAM_start == 0xFFFF)
+                      {
+                        memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
+                      }
+                      svi_RAM_start = 0x8000;
+                    
+                }
+                else if (IOBYTE == 0x1D) // All 64K RAM
+                {
+                    if (svi_RAM_start == 0x8000)
+                    {
+                      memcpy(pColecoMem, Slot3RAM, 0x8000);     // Restore RAM in lower slot
+                    }
+                    else if (svi_RAM_start == 0xFFFF)
+                    {
+                      memcpy(pColecoMem, Slot3RAM, 0x10000);     // Restore RAM in both slots
+                    }
+                    svi_RAM_start = 0x0000;
+                }
+                else if (IOBYTE == 0x1E)   // Cart ROM (not present)
+                {
+                  memset(pColecoMem, 0xFF, 0x8000);     // Nothing in lower slot
+                  svi_RAM_start = 0x8000;
+                }
+                else    // No RAM avaialble for any other combinations...
+                {
+                    svi_RAM_start = 0xFFFF;
+                    memset(pColecoMem+0x8000, 0xFF, 0x8000);    // No RAM in upper slot
+                }                
+            }
+        }        
+    }
+    else if (Port == 0x95)  // PPI - Register B
+    {
+        PortA9 = Value;
+    }
+    else if (Port == 0x96)  // PPI - Register C
+    {
+        PortAA = Value;
+    }
+}
 
 // ------------------------------------------------------------------
 // Sord M5 IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
@@ -2537,6 +2980,21 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (JoyState & JST_LEFT)  joy1 |= 0x04;
           if (JoyState & JST_RIGHT) joy1 |= 0x08;
       }          
+
+      // -----------------------------------------------------------
+      // We are at the top of the scan loop... if we have buffered 
+      // keys, we insert them into the stream now...
+      // -----------------------------------------------------------
+      if (MTX_KBD_DRIVE == 0xFD)
+      {
+          if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
+          if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+          {
+              msx_key = BufferedKeys[BufferedKeysReadIdx];
+              BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
+              if (msx_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+          }
+      }
       
       if ((JoyState == 0) && (msx_key == 0) && (key_shift == 0)) return 0xFF;
       
@@ -2545,7 +3003,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_ESC)   key1 = 0x01;
+              if (msx_key == KBD_KEY_ESC)   key1 = 0x01;
               if (msx_key == '2')           key1 = 0x02;
               if (msx_key == '4')           key1 = 0x04;
               if (msx_key == '6')           key1 = 0x08;
@@ -2575,14 +3033,14 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (joy1 & 0x01)                  key1 = 0x80;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_CTRL)  key1 = 0x01;
+              if (msx_key == KBD_KEY_CTRL)  key1 = 0x01;
               if (msx_key == 'W')           key1 = 0x02;
               if (msx_key == 'R')           key1 = 0x04;
               if (msx_key == 'Y')           key1 = 0x08;
               if (msx_key == 'I')           key1 = 0x10;
               if (msx_key == 'P')           key1 = 0x20;
               if (msx_key == '[')           key1 = 0x40;
-              if (msx_key == MSX_KEY_UP)    key1 = 0x80;
+              if (msx_key == KBD_KEY_UP)    key1 = 0x80;
           }          
           return (~key1 & 0xFF);
       }
@@ -2598,7 +3056,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (msx_key == 'U')           key1 = 0x08;
               if (msx_key == 'O')           key1 = 0x10;
               if (msx_key == '@')           key1 = 0x20;
-              if (msx_key == MSX_KEY_LEFT)  key1 = 0x80;              
+              if (msx_key == KBD_KEY_LEFT)  key1 = 0x80;              
           }          
           return (~key1 & 0xFF);
       }
@@ -2610,14 +3068,14 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (joy1 & 0x08)                  key1 = 0x80;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_SHIFT) key1 = 0x01;
+              if (msx_key == KBD_KEY_SHIFT) key1 = 0x01;
               if (msx_key == 'S')           key1 = 0x02;
               if (msx_key == 'F')           key1 = 0x04;
               if (msx_key == 'H')           key1 = 0x08;
               if (msx_key == 'K')           key1 = 0x10;
               if (msx_key == ';')           key1 = 0x20;
               if (msx_key == ']')           key1 = 0x40;
-              if (msx_key == MSX_KEY_RIGHT) key1 = 0x80;              
+              if (msx_key == KBD_KEY_RIGHT) key1 = 0x80;              
           }          
           return (~key1 & 0xFF);
       }
@@ -2634,7 +3092,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (msx_key == 'J')           key1 = 0x08;
               if (msx_key == 'L')           key1 = 0x10;
               if (msx_key == ':')           key1 = 0x20;
-              if (msx_key == MSX_KEY_RET)   key1 = 0x40;
+              if (msx_key == KBD_KEY_RET)   key1 = 0x40;
           }          
           return (~key1 & 0xFF);
       }
@@ -2653,7 +3111,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (msx_key == 'N')           key1 = 0x08;
               if (msx_key == ',')           key1 = 0x10;
               if (msx_key == '/')           key1 = 0x20;
-              if (msx_key == MSX_KEY_DOWN)  key1 = 0x80;              
+              if (msx_key == KBD_KEY_DOWN)  key1 = 0x80;              
           }          
          return (~key1 & 0xFF);
       }
@@ -2678,8 +3136,8 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_STOP)              key1 = 0x01;    // Backspace key on Memotech
-              if (msx_key == MSX_KEY_M1 && key_shift)   key1 = 0x02;    // F5 (shift of F1)
+              if (msx_key == KBD_KEY_STOP)  key1 = 0x01;    // Backspace key on Memotech
+              if (msx_key == KBD_KEY_F5)    key1 = 0x02;    // F5
           }          
           return (~key1 & 0xFF);
       }
@@ -2688,8 +3146,8 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_CTRL)  key1 = 0x01;    // BREAK key on Memotech
-              if (msx_key == MSX_KEY_M1)    key1 = 0x02;    // F1
+              if (msx_key == KBD_KEY_CTRL)  key1 = 0x01;    // BREAK key on Memotech
+              if (msx_key == KBD_KEY_F1)    key1 = 0x02;    // F1
           }          
           return (~key1 & 0xFF);
       }
@@ -2699,7 +3157,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_M2)    key1 = 0x02;    // F2
+              if (msx_key == KBD_KEY_F2)    key1 = 0x02;    // F2
           }          
           return (~key1 & 0xFF);
       }
@@ -2708,7 +3166,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_M2 && key_shift)   key1 = 0x02;    // F6 (shift of F2)
+              if (msx_key == KBD_KEY_F6)    key1 = 0x02;    // F6
           }          
           return (~key1 & 0xFF);
       }
@@ -2719,7 +3177,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_M3 && key_shift)   key1 = 0x02;    // F7 (shift of F3)
+              if (msx_key == KBD_KEY_F7)   key1 = 0x02;    // F7
           }          
           return (~key1 & 0xFF);
       }
@@ -2728,7 +3186,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_M3)    key1 = 0x02;    // F3
+              if (msx_key == KBD_KEY_F3)    key1 = 0x02;    // F3
           }          
           return (~key1 & 0xFF);
       }
@@ -2739,7 +3197,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (msx_key)
           {
-              if (msx_key == MSX_KEY_M5)    key1 = 0x02;    // F8
+              if (msx_key == KBD_KEY_F8)    key1 = 0x02;    // F8
           }          
           return (~key1 & 0xFF);
       }
@@ -2751,7 +3209,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (msx_key)
           {
               if (msx_key == ' ')           key1 = 0x01;
-              if (msx_key == MSX_KEY_M4)    key1 = 0x02;    // F4
+              if (msx_key == KBD_KEY_F4)    key1 = 0x02;    // F4
           }          
           return (~key1 & 0xFF);
       }
@@ -2897,57 +3355,158 @@ void Z80CTC_Timer(void)
 
 void PatchZ80(register Z80 *r)
 {
-    if (memotech_mode != 2) return;
-    
-    if ( r->PC.W-2 == 0x0AAE )
+    if (msx_mode)
     {
-        word base   = r->HL.W;
-        word length = r->DE.W;
-        //word calcst = pColecoMem[0xfa81] + (pColecoMem[0xfa82] * 256);
-
-	    if ( pColecoMem[0xfd68] == 0 )
-		/* SAVE */
-		{
-		}
-	    else if ( pColecoMem[0xfd67] != 0 )
-		/* VERIFY.
-		   Normally, if verification fails, the MTX BASIC ROM
-		   stops the tape, cleans up and does rst 0x28.
-		   That rst instruction is at 0x0adb. */
-		{
-		    if ( base == 0xc011 && length == 18 )
-			{
-                tape_pos = 0;
-			}
-            tape_pos += length;
-		}
-        else
+        if (r->PC.W-2 == 0x00e1)
         {
-            /* LOAD */
-            if ( base == 0xc011 && length == 18 )
-            /* Load header, so read whole file */
+            u8 done = false;
+            // Find Header/Program
+            while (!done)
             {
-                // File is in romBuffer[]
-                tape_pos = 0;
+                if ((romBuffer[tape_pos] == 0xcc) && (romBuffer[tape_pos+1] == 0x13) && (romBuffer[tape_pos+2] == 0x7d) && (romBuffer[tape_pos+3] == 0x74))
+                {
+                    tape_pos++; tape_pos++; tape_pos++;
+                    break;
+                }
+                tape_pos++;
+                if (tape_pos >= tape_len)
+                    break;
             }
 
-            /* Then return chunks as requested */
-            memcpy(pColecoMem + base, romBuffer+tape_pos, length);
-            tape_pos += length;
+            if (tape_pos < tape_len)
+            {
+                r->AF.B.h = romBuffer[tape_pos++];
+                r->AF.B.l &= ~C_FLAG;
+            }
+            else
+            {
+                r->AF.B.l |= C_FLAG;
+            }
         }
+        else if (r->PC.W-2 == 0x00e4)
+        {
+            r->AF.B.l |= C_FLAG;
 
-        cpu_writeport_memotech(0x08, 0x00);
-        cpu_writeport_memotech(0x08, 0xf0);
-        cpu_writeport_memotech(0x08, 0x03);
-        cpu_writeport_memotech(0x09, 0x03);
-        cpu_writeport_memotech(0x0A, 0x03);
-        cpu_writeport_memotech(0x0B, 0x03);
+            // Read Data Byte from Cassette
+            if (tape_pos < tape_len)
+            {
+                r->AF.B.h = romBuffer[tape_pos++];
+                r->AF.B.l &= ~C_FLAG;
+            }        
+        }
+        else if (r->PC.W-2 == 0x00e7)   // Stop Tape
+        {
+            r->AF.B.l &= ~C_FLAG;
+        }
+        else {debug4 = r->PC.W-2;}
+    }
+    else if (svi_mode)
+    {        
+        // Spectravideo SVI Cassette patch:    
+        // BIOS Area:
+        //case 0x0069: tapion(ref, cpu); break; // CSRDON
+        //case 0x006C: tapin(ref, cpu);  break; // CASIN
+        //case 0x006F: tapiof(ref, cpu); break; // CTOFF
+        //case 0x0072: tapoon(ref, cpu); break; // CWRTON
+        //case 0x0075: tapout(ref, cpu); break; // CASOUT
+        //case 0x0078: tapoof(ref, cpu); break; // CTWOFF
+        if ( r->PC.W-2 == 0x210A || r->PC.W-2 == 0x0069)
+        {
+            u8 done = false;
+            // Find Header/Program
+            while (!done)
+            {
+                if ((romBuffer[tape_pos] == 0x55) && (romBuffer[tape_pos+1] == 0x55) && (romBuffer[tape_pos+2] == 0x7F))
+                {
+                    tape_pos++; tape_pos++;
+                    break;
+                }
+                tape_pos++;
+                if (tape_pos >= tape_len)
+                    break;
+            }
 
-        RdCtrl9918();
+            if (tape_pos < tape_len)
+            {
+                r->AF.B.h = romBuffer[tape_pos++];
+                r->AF.B.l &= ~C_FLAG;
+            }
+            else
+            {
+                r->AF.B.l |= C_FLAG;
+            }
+        }
+        else if ( r->PC.W-2 == 0x21A9 || r->PC.W-2 == 0x006C)
+        {
+            // Read Data Byte from Cassette
+            r->AF.B.l |= C_FLAG;
 
-        /* Then re-enables the video interrupt */
-        cpu_writeport_memotech(0x08, 0xa5);
-        cpu_writeport_memotech(0x08, 0x7d);    
+            if (tape_pos < tape_len)
+            {
+                r->AF.B.h = romBuffer[tape_pos++];
+                r->AF.B.l &= ~C_FLAG;
+            }        
+        }
+        else if (r->PC.W-2 == 0x006F)   // Stop Tape
+        {
+            r->AF.B.l &= ~C_FLAG;
+        }
+        else {debug4 = r->PC.W-2;}
+    }
+    else if (memotech_mode)
+    {    
+        // Memotech MTX Tape Patch
+        if ( r->PC.W-2 == 0x0AAE )
+        {
+            word base   = r->HL.W;
+            word length = r->DE.W;
+            //word calcst = pColecoMem[0xfa81] + (pColecoMem[0xfa82] * 256);
+
+            if ( pColecoMem[0xfd68] == 0 )
+            /* SAVE */
+            {
+                // Not supported yet...
+            }
+            else if ( pColecoMem[0xfd67] != 0 )
+            /* VERIFY.
+               Normally, if verification fails, the MTX BASIC ROM
+               stops the tape, cleans up and does rst 0x28.
+               That rst instruction is at 0x0adb. */
+            {
+                if ( base == 0xc011 && length == 18 )
+                {
+                    tape_pos = 0;
+                }
+                tape_pos += length;
+            }
+            else
+            {
+                /* LOAD */
+                if ( base == 0xc011 && length == 18 )
+                /* Load header, so read whole file */
+                {
+                    // File is in romBuffer[]
+                    tape_pos = 0;
+                }
+
+                /* Then return chunks as requested */
+                memcpy(pColecoMem + base, romBuffer+tape_pos, length);
+                tape_pos += length;
+            }
+
+            cpu_writeport_memotech(0x08, 0x00);
+            cpu_writeport_memotech(0x08, 0xf0);
+            cpu_writeport_memotech(0x08, 0x03);
+            cpu_writeport_memotech(0x09, 0x03);
+            cpu_writeport_memotech(0x0A, 0x03);
+            cpu_writeport_memotech(0x0B, 0x03);
+
+            RdCtrl9918();
+
+            /* Then re-enables the video interrupt */
+            cpu_writeport_memotech(0x08, 0xa5);
+            cpu_writeport_memotech(0x08, 0x7d);    
+        }
     }
 }
 
@@ -2975,7 +3534,7 @@ ITCM_CODE u32 LoopZ80()
   // NMI interrupt to occur), we check and adjust the spinners which 
   // can generate a lower priority interrupt to the running Z80 code.
   // ------------------------------------------------------------------
-  if (!msx_mode && !sordm5_mode && !memotech_mode)
+  if (!msx_mode && !sordm5_mode && !memotech_mode && !svi_mode) //TBD clean this up
   if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
   {
       if (spinX_left)
@@ -3024,7 +3583,7 @@ ITCM_CODE u32 LoopZ80()
       DrZ80_execute(TMS9918_LINE + timingAdjustment);
       
       // Refresh VDP 
-      if(Loop9918()) cpuirequest = ((msx_mode || sg1000_mode) ? Z80_IRQ_INT : Z80_NMI_INT);
+      if(Loop9918()) cpuirequest = ((svi_mode || msx_mode || sg1000_mode) ? Z80_IRQ_INT : Z80_NMI_INT);
       
       // Generate interrupt if called for
       if (cpuirequest)
@@ -3055,7 +3614,7 @@ ITCM_CODE u32 LoopZ80()
           if(Loop9918()) 
           {
               if (sordm5_mode) CPU.IRequest = sordm5_irq;   // Sord M5 and Memotech MTX only works with the CZ80 core
-              else CPU.IRequest = ((msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
+              else CPU.IRequest = ((svi_mode || msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
           }
 
           // -------------------------------------------------------------------------

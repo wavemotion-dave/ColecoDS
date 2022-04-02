@@ -416,6 +416,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".cas") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
         if ( (strcasecmp(strrchr(szFile, '.'), ".ddp") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -874,12 +880,17 @@ void SetDefaultGameConfig(void)
     if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
     if (memotech_mode)                          myConfig.cpuCore = 1;  // Memotech MTX always uses the CZ80 core
     if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
+    if (svi_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
     if (adam_mode)                              myConfig.cpuCore = 1;  // Adam defaults to CZ80 core - user can switch it out
+    if (msx_mode == 2)                          myConfig.msxBios = 1;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (adam_mode && !isDSiMode())              myConfig.frameSkip=1;  // If Adam and older DS-LITE, turn on light frameskip
     if (memotech_mode && !isDSiMode())          myConfig.frameSkip=1;  // If Memotech and older DS-LITE, turn on light frameskip
+    if (svi_mode && !isDSiMode())               myConfig.frameSkip=1;  // If SVI and older DS-LITE, turn on light frameskip
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
-    if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
+    if (memotech_mode)                          myConfig.overlay = 9;  // Memotech MTX default to full keyboard
+    if (svi_mode)                               myConfig.overlay = 9;  // SVI default to full keyboard    
+    if (msx_mode == 2)                          myConfig.overlay = 9;  // MSX with .cas defaults to full keyboard    
     
     if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 2;  // Rolla Ball needs full memory wipe
     if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 2;  // Surface Scanner needs full memory wipe
@@ -888,6 +899,7 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 2;  // Astro PAC needs full memory wipe
     if (file_crc == 0xf9934809)                 myConfig.memWipe = 2;  // Reveal needs full memory wipe
     if (file_crc == 0x8c96be92)                 myConfig.memWipe = 2;  // Turbo needs full memory wipe
+    if (file_crc == 0xaf23483f)                 myConfig.memWipe = 2;  // Aggrovator needs full memory wipe
     
     if (file_crc == 0x9d8fa05f)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo needs diagonals
     if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo2 needs diagonals    
@@ -914,6 +926,19 @@ void FindAndLoadConfig(void)
         fread(&AllConfigs, sizeof(AllConfigs), 1, fp);
         fclose(fp);
         
+        // -------------------------------------------------------------
+        // If we have the version 0004, we perform a one-time update...
+        // -------------------------------------------------------------
+        if (AllConfigs[0].config_ver == OLD_CONFIG_VER4)
+        {
+            for (u16 slot=0; slot<700; slot++)  // Old Config was only 700 entries long...
+            {
+                AllConfigs[slot].config_ver = CONFIG_VER;
+                if (AllConfigs[slot].overlay == 10) AllConfigs[slot].overlay = 9;   // Convert Adam Keyboard to 'Full Keyboard'
+                if (AllConfigs[slot].overlay == 11) AllConfigs[slot].overlay = 9;   // Convert SVI Keyboard to 'Full Keyboard'
+            }
+        }
+        
         if (AllConfigs[0].config_ver != CONFIG_VER)
         {
             memset(&AllConfigs, 0x00, sizeof(AllConfigs));
@@ -922,7 +947,7 @@ void FindAndLoadConfig(void)
         }
         else
         {
-            for (int slot=0; slot<MAX_CONFIGS; slot++)
+            for (u16 slot=0; slot<MAX_CONFIGS; slot++)
             {
                 if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
                 {
@@ -959,7 +984,7 @@ struct options_t
 u8 dev_z80_cycles = 0;
 const struct options_t Option_Table[] =
 {
-    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "MSX KEYBD", "ADAM KEYBD", "MEMOTECH KBD"},     &myConfig.overlay,    12},
+    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "FULL KEYBOARD"},                               &myConfig.overlay,    10},
     {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
     {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
     {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
@@ -1312,10 +1337,12 @@ void ReadFileCRCAndConfig(void)
 {    
     getfile_crc(gpFic[ucGameChoice].szName);
     
+    u8 cas_load = 0;
     sg1000_mode = 0;
     sordm5_mode = 0;
     memotech_mode = 0;
     msx_mode = 0;
+    svi_mode = 0;
     adam_mode = 0;
     
     CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
@@ -1332,10 +1359,37 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".RUN") != 0) memotech_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".MSX") != 0) msx_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".cas") != 0) cas_load = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".CAS") != 0) cas_load = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".ddp") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".DDP") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) adam_mode = 1;
+    
+    // --------------------------------------------------------------------------
+    // If a .cas file is picked, we need to figure out what machine it's for...
+    // --------------------------------------------------------------------------
+    if (cas_load)
+    {
+        FILE *fp;
+        
+        fp = fopen(gpFic[ucGameChoice].szName, "rb");
+        if (fp != NULL)
+        {
+            char headerBytes[32];
+            fread(headerBytes, 32, 1, fp);
+            for (u8 i=0; i<30; i++)
+            {
+                if ((headerBytes[i] == 0x55) && (headerBytes[i+2] == 0x55) && (headerBytes[i+2] == 0x55))
+                {
+                    svi_mode = 1;
+                    break;
+                }
+            }
+            fclose(fp);
+            if (svi_mode == 0) msx_mode = 2;        // if not SVI, assume MSX
+        }
+    }
     
     FindAndLoadConfig();    // Try to find keymap and config for this file...
 }

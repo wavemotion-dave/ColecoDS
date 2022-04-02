@@ -25,7 +25,6 @@ extern u8 mapperMask;
 #define AT8K        11
 #define LIN64       12
 
-
 #define MAX_MAPPERS 7
 
 extern u8 bROMInSlot[];
@@ -65,6 +64,7 @@ extern u8 colecoCartVerify(const u8 *cartData);
 extern void sgm_reset(void);
 extern void sordm5_reset(void);
 extern void memotech_reset(void);
+extern void svi_reset(void);
 extern void msx_reset(void);
 
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
@@ -72,4 +72,5 @@ extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 extern u32 LoopZ80();
 extern void BankSwitch(u8 bank);
 extern void CheckMSXHeaders(char *szGame);
+extern void BufferKey(u8 key);
 #endif
