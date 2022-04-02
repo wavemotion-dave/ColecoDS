@@ -30,6 +30,8 @@ and the emulator will use that instead.
 
 ADAM computer emulation requires eos.rom and writer.rom 
 
+Spectravideo SVI emulation requires svi.rom BIOS
+
 Features :
 -----------------------
 * Colecovision game support (.rom or .col files)
@@ -37,8 +39,9 @@ Features :
 * Megacart Bankswitching support (up to 512K).
 * Coleco ADAM game support (.ddp or .dsk files)
 * Sega SG-1000 game support (.sg roms)
-* Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS.
-* MSX1 game support (.msx or .rom) up to 512K 
+* Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
+* Spectravideo SVI support (.cas) - requires svi.rom BIOS
+* MSX1 game support (.msx or .rom or.cas) up to 512K 
 * Memotech MTX game support (.mtx or .run) - single loader games only.
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
@@ -120,6 +123,8 @@ the default MSX Mapper is set to "GUESS" which does a fairly good job loading th
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 98% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run.
 
+As of version 6.5, cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
+
 The MSX memory is laid out as follows:
 ```
  SLOT0:  MSX BIOS (first 32K... 0xFF after that)
@@ -135,6 +140,10 @@ The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5
 The MTX emulated is a base MTX-500 system with 32K of RAM... plus an extra 16K of ram in the 4000h bank. This isn't a "standard" MTX machine but it allows a few more playable games that need to load into the lower 16K of RAM (Mecha8, Zombie Near, Kung Fu 64, etc).
 
 Once the game is loaded into memory you will be sitting at the BASIC prompt. At this prompt you need to LOAD "" (if .MTX) or RUN the game (if .RUN). I've made this simple - just hit the DS **START** key to enter the proper command automatically.
+
+Spectravideo SVI Compatibility :
+-----------------------
+This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common bload and run commands.
 
 Controllers :
 -----------------------
@@ -210,6 +219,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.5: 02-Apr-2022 by wavemotion-dave
+* Spectravideo SVI (328) support added (.cas files auto-detected format)
+* MTX Cassette support added (.cas files auto-detected format)
+* Overhaul of full keyboard to support another row of characters and shoulder-button for SHIFT
+* Increased config database to 1400 entries (from 700 - this version will auto-update)
+
 V6.4: 29-Mar-2022 by wavemotion-dave
 * Memotech MTX support added (.mtx and .run files only)
 * Better load file handling so more games are recognized correctly.

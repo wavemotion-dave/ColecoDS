@@ -43,6 +43,7 @@ extern u8 adam_ram_hi_exp;
 extern u8 AdamRAM[];
 
 extern u16 memotech_RAM_start;
+extern u16 svi_RAM_start;
 
 // -----------------------------
 // Normal 8-bit Read... fast!
@@ -332,6 +333,18 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         if (address >= memotech_RAM_start)
         {
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+        }
+    }
+    // ----------------------------------------------------------------------------------
+    // For the Memotech MTX, allow anything in the upper 48K
+    // ----------------------------------------------------------------------------------
+    else if (svi_mode)
+    {
+        if (address >= svi_RAM_start) 
+        {
+            extern u8 Slot3RAM[];
+            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+            Slot3RAM[address]=value;
         }
     }
     // ----------------------------------------------------------------------------------------------------------
@@ -649,7 +662,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 // -----------------------------------------------------------------
 void ClearMSXInterrupt(void)
 {
-    if (msx_mode)
+    if (msx_mode || svi_mode)
     {
         if (!msx_auto_clear_irq && (CPU.IRequest == INT_RST38)) CPU.IRequest=INT_NONE;
     }
@@ -747,7 +760,7 @@ void DrZ80_InitHandlers() {
   drz80.z80_write8=cpu_writemem16;
   drz80.z80_write16=drz80MemWriteW;
     
-  if (msx_mode)
+  if (msx_mode || svi_mode)
   {
       drz80.z80_in=cpu_readport_msx;
       drz80.z80_out=cpu_writeport_msx;    

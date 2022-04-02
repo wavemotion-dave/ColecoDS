@@ -21,8 +21,9 @@ typedef struct {
   u32 uCrc;
 } FICcoleco;
 
-#define MAX_CONFIGS 700
-#define CONFIG_VER  0x0004
+#define MAX_CONFIGS         1400
+#define CONFIG_VER          0x0005
+#define OLD_CONFIG_VER4     0x0004      // we perform a one-time upgrade from this legacy version
 
 struct __attribute__((__packed__)) Config_t
 {
@@ -49,6 +50,7 @@ struct __attribute__((__packed__)) Config_t
     u32 reservedB;
     u32 reservedC;
 };
+
 
 extern struct Config_t myConfig;
 

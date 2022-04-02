@@ -5,9 +5,10 @@
 #include <string.h>
 #include "cpu/z80/Z80_interface.h"
 
-#define VERSIONCLDS "6.4"
+#define VERSIONCLDS "6.5"
 
 //#define DEBUG_Z80   YES
+//#define FULL_DEBUG
 extern u32 debug1;
 extern u32 debug2;
 extern u32 debug3;
@@ -49,22 +50,32 @@ extern u32 debug4;
 
 
 // For the MSX Full Keyboard...
-#define MSX_KEY_UP          1
-#define MSX_KEY_DOWN        2
-#define MSX_KEY_RIGHT       3
-#define MSX_KEY_LEFT        4
-#define MSX_KEY_M1          5
-#define MSX_KEY_M2          6
-#define MSX_KEY_M3          7
-#define MSX_KEY_M4          8
-#define MSX_KEY_M5          9
-#define MSX_KEY_CTRL        10
-#define MSX_KEY_SHIFT       11
-#define MSX_KEY_ESC         12
-#define MSX_KEY_STOP        13
-#define MSX_KEY_SEL         14
-#define MSX_KEY_RET         15
-#define MSX_KEY_DEL         16
+#define KBD_KEY_UP          1
+#define KBD_KEY_DOWN        2
+#define KBD_KEY_RIGHT       3
+#define KBD_KEY_LEFT        4
+#define KBD_KEY_F1          5
+#define KBD_KEY_F2          6
+#define KBD_KEY_F3          7
+#define KBD_KEY_F4          8
+#define KBD_KEY_F5          9
+#define KBD_KEY_F6          10
+#define KBD_KEY_F7          11
+#define KBD_KEY_F8          12
+#define KBD_KEY_F9          13
+#define KBD_KEY_F10         14
+#define KBD_KEY_CTRL        15
+#define KBD_KEY_SHIFT       16
+#define KBD_KEY_ESC         17
+#define KBD_KEY_STOP        18
+#define KBD_KEY_SEL         19
+#define KBD_KEY_RET         20
+#define KBD_KEY_DEL         21
+#define KBD_KEY_BRK         21
+#define KBD_KEY_HOME        21
+#define KBD_KEY_QUOTE       22
+#define KBD_KEY_CAPS        23
+#define KBD_KEY_CAS         255
 
 extern u16 emuFps;
 extern u16 emuActFrames;
@@ -79,6 +90,7 @@ extern u8 sg1000_mode;
 extern u8 sordm5_mode;
 extern u8 memotech_mode;
 extern u8 msx_mode;
+extern u8 svi_mode;
 extern u8 adam_mode;
 extern u8 msx_key;
 
