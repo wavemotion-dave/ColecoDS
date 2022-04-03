@@ -266,6 +266,23 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 }
 
 
+void SVI_PatchBIOS(void)
+{
+    //patchAddressSVI[] = {0x006C,0x006F,0x0072,0x0075,0x0078,0x210A,0x21A9,0}; // 0x0069
+    pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
+    pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
+    //pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
+    pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
+    pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
+    pColecoMem[0x0072] = 0xed; pColecoMem[0x0073] = 0xfe; pColecoMem[0x0074] = 0xc9; 
+    pColecoMem[0x0075] = 0xed; pColecoMem[0x0076] = 0xfe; pColecoMem[0x0077] = 0xc9; 
+    pColecoMem[0x0078] = 0xed; pColecoMem[0x0079] = 0xfe; pColecoMem[0x007A] = 0xc9; 
+    pColecoMem[0x2073] = 0x01;
+    pColecoMem[0x20D0] = 0x10; pColecoMem[0x20D1] = 0x00;  
+    pColecoMem[0x20E3]=0x00; pColecoMem[0x20E4]=0x00; pColecoMem[0x20E5]=0x00; pColecoMem[0x20E6]=0xed; pColecoMem[0x20E7]=0xfe;
+}
+
+
 //94    A8  W   PPI 8255 Port A
 //95    A9  W   PPI 8255 Port B
 //96    AA  W   PPI 8255 Port C
@@ -310,19 +327,8 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 
                 if (IOBYTE == 0x1F)   // Normal ROM + 32K Upper RAM
                 {
-                      extern u8 SVIBios[];
                       memcpy(pColecoMem,SVIBios,0x8000);        // Restore SVI BIOS (ram is already saved in Slot3RAM[])
-                      pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
-                      pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
-                      pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
-                      pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
-                      pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
-                      pColecoMem[0x0072] = 0xed; pColecoMem[0x0073] = 0xfe; pColecoMem[0x0074] = 0xc9; 
-                      pColecoMem[0x0075] = 0xed; pColecoMem[0x0076] = 0xfe; pColecoMem[0x0077] = 0xc9; 
-                      pColecoMem[0x0078] = 0xed; pColecoMem[0x0079] = 0xfe; pColecoMem[0x007A] = 0xc9; 
-                      pColecoMem[0x2073] = 0x01;
-                      pColecoMem[0x20D0] = 0x10; pColecoMem[0x20D1] = 0x00;  
-                      pColecoMem[0x20E3]=0x00; pColecoMem[0x20E4]=0x00; pColecoMem[0x20E5]=0x00; pColecoMem[0x20E6]=0xED; pColecoMem[0x20E7]=0xFE;      
+                      SVI_PatchBIOS();
                       if (svi_RAM_start == 0xFFFF)
                       {
                         memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot

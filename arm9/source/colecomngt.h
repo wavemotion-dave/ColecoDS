@@ -174,4 +174,6 @@ extern ITCM_CODE void RestoreRAM(u8 slot);
 extern void MSX_HandleCassette(register Z80 *r);
 extern void MTX_HandleCassette(register Z80 *r);
 extern void SVI_HandleCassette(register Z80 *r);
+extern void SVI_PatchBIOS(void);
+
 #endif

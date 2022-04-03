@@ -462,14 +462,7 @@ void ResetColecovision(void)
   {
       colecoWipeRAM();                          // Wipe main RAM area
       memcpy(pColecoMem,SVIBios,0x8000);        // Restore SVI BIOS
-      pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
-      pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
-      pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
-      pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
-      pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
-      pColecoMem[0x2073] = 0x01;
-      pColecoMem[0x20D0] = 0x10; pColecoMem[0x20D1] = 0x00;      
-      /// TBD Patch it....
+      SVI_PatchBIOS();                          // And Patch the BIOS
   }
   else if (adam_mode)
   {
@@ -1858,19 +1851,9 @@ void colecoDSInitCPU(void)
     memcpy(pColecoMem,Slot0BIOS,0x8000);
   }
   else if (svi_mode)
-  {
-      memcpy(pColecoMem,SVIBios,0x8000);
-      pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
-      pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
-      pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
-      pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
-      pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
-      pColecoMem[0x0072] = 0xed; pColecoMem[0x0073] = 0xfe; pColecoMem[0x0074] = 0xc9; 
-      pColecoMem[0x0075] = 0xed; pColecoMem[0x0076] = 0xfe; pColecoMem[0x0077] = 0xc9; 
-      pColecoMem[0x0078] = 0xed; pColecoMem[0x0079] = 0xfe; pColecoMem[0x007A] = 0xc9; 
-      pColecoMem[0x2073] = 0x01;
-      pColecoMem[0x20D0] = 0x10; pColecoMem[0x20D1] = 0x00;  
-      pColecoMem[0x20E3]=0x00; pColecoMem[0x20E4]=0x00; pColecoMem[0x20E5]=0x00; pColecoMem[0x20E6]=0xED; pColecoMem[0x20E7]=0xFE;      
+  { 
+      memcpy(pColecoMem,SVIBios,0x8000);        // Copy BIOS into place
+      SVI_PatchBIOS();                          // And Patch the BIOS
   }
   else  // Finally we get to the Coleco BIOS
   {
