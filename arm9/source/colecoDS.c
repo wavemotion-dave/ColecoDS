@@ -66,6 +66,7 @@ u32 debug6=0;
 extern u8 adam_ram_lo, adam_ram_hi;
 extern u8 io_show_status;
 u8 adam_CapsLock = 0;
+u8 adam_unsaved_data = 0;
 u8 key_shift = false;
 
 
@@ -434,6 +435,7 @@ void ResetColecovision(void)
   msx_reset();                          // Reset the MSX specific vars
 
   adam_CapsLock = 0;
+  adam_unsaved_data = 0;
     
   if (sg1000_mode)
   {
@@ -721,6 +723,7 @@ void SaveAdamTapeOrDisk(void)
     else
         SaveFDI(&Disks[0], lastAdamDataPath, FMT_ADMDSK);
     AffChaine(12,0,6, "      ");
+    adam_unsaved_data = 0;
 }
 
 
@@ -796,6 +799,10 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
         AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DDP/DSK  ");  cassete_menu_items++;
         AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DDP/DSK  ");  cassete_menu_items++;
         AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU     ");  cassete_menu_items++;
+        if (adam_unsaved_data)
+        {
+            AffChaine(3, 15, 0, "DDP/DSK HAS UNSAVED DATA!");
+        }
     }
     else
     {
@@ -854,6 +861,7 @@ void CassetteMenu(void)
                     fwrite(romBuffer, tape_len, 1, fp);
                     fclose(fp);
                 }
+                CassetteMenuShow(true, menuSelection);
             }
             if (menuSelection == 1) // SWAP
             {
