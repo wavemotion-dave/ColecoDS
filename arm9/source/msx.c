@@ -397,6 +397,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     else if (Port == 0xA1) FakeAY_WriteData(Value);
     else if (Port == 0xA8) // Slot system for MSX
     {
+        debug1++;
         if (PortA8 != Value)
         {
             // ---------------------------------------------------------------------
@@ -1029,6 +1030,9 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     }
 }
 
+/*********************************************************************************
+ * A few ZX Speccy ports utilize the MSX beeper to "simulate" the sound...
+ ********************************************************************************/
 void MSX_HandleBeeper(void)
 {
     if (++msx_beeper_process & 1)
