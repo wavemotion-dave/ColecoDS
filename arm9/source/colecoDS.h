@@ -93,6 +93,7 @@ extern u8 svi_mode;
 extern u8 adam_mode;
 extern u8 msx_key;
 extern u8 adam_CapsLock;
+extern u8 adam_unsaved_data;
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 

@@ -306,6 +306,7 @@ u8 colecoInit(char *szGame)
   {
       sgm_reset();                       // Make sure the super game module is disabled to start
       adam_CapsLock = 0;
+      adam_unsaved_data = 0;
       colecoWipeRAM();
       RetFct = loadrom(szGame,pColecoMem,0x10000);  
   }
