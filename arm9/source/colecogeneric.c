@@ -285,7 +285,6 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
 {
   u16 ucBcl,ucGame;
   u8 maxLen;
-  char szName[80];
   char szName2[80];
   
   AffChaine(30,8,0,(NoDebGame>0 ? "<" : " "));
@@ -1296,11 +1295,14 @@ void DisplayFileName(void)
     siprintf(szName,"%s",gpFic[ucGameChoice].szName);
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
-    AffChaine((16 - (strlen(szName)/2)),22,0,szName);
-#if 1 // Display CRC... for now 
-    siprintf(szName, "      [%08X]      ", (int)file_crc);
-    AffChaine(5,21,0,szName);
-#endif    
+    AffChaine((16 - (strlen(szName)/2)),21,0,szName);
+    if (strlen(gpFic[ucGameChoice].szName) >= 35)   // If there is more than a few characters left, show it on the 2nd line
+    {
+        siprintf(szName,"%s",gpFic[ucGameChoice].szName+30);
+        for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
+        if (strlen(szName)>30) szName[30]='\0';
+        AffChaine((16 - (strlen(szName)/2)),22,0,szName);
+    }
 }
 
 //*****************************************************************************
@@ -1313,7 +1315,7 @@ void affInfoOptions(u32 uY)
     AffChaine(2,12,(uY==12 ? 2 : 0),("     REDEFINE  KEYS         "));
     AffChaine(2,14,(uY==14 ? 2 : 0),("        GAME   OPTIONS      "));
     AffChaine(2,16,(uY==16 ? 2 : 0),("        QUIT   EMULATOR     "));
-    AffChaine(6,19,0,("USE D-PAD  A=SELECT"));
+    AffChaine(6,18,0,("USE D-PAD  A=SELECT"));
 }
 
 // --------------------------------------------------------------------
