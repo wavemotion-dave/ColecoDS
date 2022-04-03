@@ -374,6 +374,17 @@ static void UpdatePRN(byte Dev,int V)
   }
 }
 
+static void AdamFlushCache(void)
+{
+  for (word i=0; i<savedLEN; i++)
+  {
+      // Copy data from holding buffer...
+      pColecoMem[savedBUF] = HoldingBuf[i];
+      AdamRAM[savedBUF] = HoldingBuf[i];
+      savedBUF++;
+  }
+}
+
 static void UpdateDSK(byte N,byte Dev,int V)
 {
   static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 };
@@ -395,13 +406,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
           if (io_busy == 0 && last_command_read)
           {
               last_command_read=0;
-              for (word i=0; i<savedLEN; i++)
-              {
-                  // Copy data from holding buffer...
-                  pColecoMem[savedBUF] = HoldingBuf[i];
-                  AdamRAM[savedBUF] = HoldingBuf[i];
-                  savedBUF++;
-              }
+              AdamFlushCache();
           }
       }
       else
@@ -503,13 +508,8 @@ static void UpdateTAP(byte N,byte Dev,int V)
           SetDCB(Dev,DCB_CMD_STAT,0x00);
           if (io_busy == 0 && last_command_read)
           {
-              for (word i=0; i<savedLEN; i++)
-              {
-                  // Copy data from holding buffer...
-                  pColecoMem[savedBUF] = HoldingBuf[i];
-                  AdamRAM[savedBUF] = HoldingBuf[i];
-                  savedBUF++;
-              }
+              last_command_read = 0;
+              AdamFlushCache();
           }
       }
       else

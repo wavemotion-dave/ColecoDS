@@ -357,6 +357,8 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 }
                 else    // No RAM avaialble for any other combinations...
                 {
+                    debug1++;
+                    debug3 = IOBYTE;
                     svi_RAM_start = 0xFFFF;
                     memset(pColecoMem+0x8000, 0xFF, 0x8000);    // No RAM in upper slot
                 }                
