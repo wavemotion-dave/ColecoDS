@@ -48,7 +48,6 @@ extern u32 debug4;
 #define JOYMODE_JOYSTICK    0
 #define JOYMODE_KEYPAD      1
 
-
 // For the MSX Full Keyboard...
 #define KBD_KEY_UP          1
 #define KBD_KEY_DOWN        2
@@ -93,6 +92,7 @@ extern u8 msx_mode;
 extern u8 svi_mode;
 extern u8 adam_mode;
 extern u8 msx_key;
+extern u8 adam_CapsLock;
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
