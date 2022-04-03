@@ -841,7 +841,7 @@ void CassetteMenu(void)
         }
         if (keys_pressed & KEY_A)  
         {
-            if (menuSelection == 0) // SAVE 
+            if (menuSelection == 0) // SAVE CASSETTE
             {
                 if (adam_mode)
                 {
@@ -849,18 +849,21 @@ void CassetteMenu(void)
                 }
                 else
                 {
-                    AffChaine(12,0,6, "SAVING");
-                    FILE *fp;
-                    fp = fopen(gpFic[ucGameChoice].szName, "wb");
-                    fwrite(romBuffer, tape_len, 1, fp);
-                    fclose(fp);
-                    WAITVBL;WAITVBL;
-                    AffChaine(12,0,6, "      ");
-                    DisplayStatusLine(true);
+                    if (msx_mode || svi_mode)   // Not supporting Memotech MTX yet...
+                    {
+                        AffChaine(12,0,6, "SAVING");
+                        FILE *fp;
+                        fp = fopen(gpFic[ucGameChoice].szName, "wb");
+                        fwrite(romBuffer, tape_len, 1, fp);
+                        fclose(fp);
+                        WAITVBL;WAITVBL;
+                        AffChaine(12,0,6, "      ");
+                        DisplayStatusLine(true);
+                    }
                 }
                 CassetteMenuShow(true, menuSelection);
             }
-            if (menuSelection == 1) // SWAP
+            if (menuSelection == 1) // SWAP CASSETTE
             {
                 colecoDSLoadFile();
                 if (ucGameChoice >= 0)
@@ -1375,10 +1378,10 @@ void colecoDS_main(void)
                     else if ((iTx >= 101) && (iTx < 123))  adam_key = 'X';
                     else if ((iTx >= 123) && (iTx < 145))  adam_key = 'Y';
                     else if ((iTx >= 145) && (iTx < 167))  adam_key = 'Z';
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = ADAM_KEY_UP;
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = ADAM_KEY_DOWN;
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_LEFT;
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_RIGHT;
+                    else if ((iTx >= 167) && (iTx < 189))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_UP);
+                    else if ((iTx >= 189) && (iTx < 211))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_DOWN);
+                    else if ((iTx >= 211) && (iTx < 233))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_LEFT);
+                    else if ((iTx >= 233) && (iTx < 255))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_RIGHT);
                 }
                 else if ((iTy >= 123) && (iTy < 146)) // Row 5
                 {
