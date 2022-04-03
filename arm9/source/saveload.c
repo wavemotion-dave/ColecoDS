@@ -191,7 +191,8 @@ void colecoSaveState()
         if (uNbO) fwrite(&savedBUF, sizeof(savedBUF),1, handle);
         if (uNbO) fwrite(&savedLEN, sizeof(savedLEN),1, handle);
         if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
-        if (uNbO) fwrite(spare, 31,1, handle);        
+        if (uNbO) fwrite(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
+        if (uNbO) fwrite(spare, 30,1, handle);        
     }
       
     if (uNbO) 
@@ -374,7 +375,8 @@ void colecoLoadState()
                 if (uNbO) fread(&savedBUF, sizeof(savedBUF),1, handle);
                 if (uNbO) fread(&savedLEN, sizeof(savedLEN),1, handle);
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
-                if (uNbO) fread(spare, 31,1, handle);                
+                if (uNbO) fread(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
+                if (uNbO) fread(spare, 30,1, handle);                
             }
             
             // Fix up transparency
