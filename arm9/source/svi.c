@@ -274,7 +274,7 @@ void SVI_PatchBIOS(void)
     //patchAddressSVI[] = {0x006C,0x006F,0x0072,0x0075,0x0078,0x210A,0x21A9,0}; // 0x0069
     pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
     pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
-    //pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
+    pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
     pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
     pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
     pColecoMem[0x0072] = 0xed; pColecoMem[0x0073] = 0xfe; pColecoMem[0x0074] = 0xc9; 
@@ -326,7 +326,6 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
             if (lastIOBYTE != IOBYTE)
             {
                 lastIOBYTE = IOBYTE;
-                debug3 = IOBYTE;
                 
                 if (IOBYTE == 0x1F)   // Normal ROM + 32K Upper RAM
                 {
@@ -472,6 +471,7 @@ void SVI_HandleCassette(register Z80 *r)
     {
         r->AF.B.l |= C_FLAG;
     }
+    else {debug4 = r->PC.W-2;}
 }
 
 // End of file
