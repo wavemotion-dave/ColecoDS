@@ -35,7 +35,7 @@ word savedLEN = 0;
 byte last_command_read=false;
 byte io_show_status=0;
 
-#define DELAY_IO 10
+#define DELAY_IO 50
 
 /** RAM Access Macro *****************************************/
 #define RAM(A)         (pColecoMem[A])
