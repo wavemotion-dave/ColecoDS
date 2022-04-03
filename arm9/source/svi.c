@@ -314,7 +314,6 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                       memcpy(pColecoMem,SVIBios,0x8000);        // Restore SVI BIOS (ram is already saved in Slot3RAM[])
                       pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
                       pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
-                      pColecoMem[0x20E6] = 0xed; pColecoMem[0x20E7] = 0xfe; pColecoMem[0x20E8] = 0xc9; 
                       pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
                       pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
                       pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
@@ -431,13 +430,8 @@ void SVI_HandleCassette(register Z80 *r)
     {
         if (tape_pos >= tape_len) {r->AF.B.l |= C_FLAG;return;}
         // Read Data Byte from Cassette
-        r->AF.B.l |= C_FLAG;
-
-        if (tape_pos < tape_len)
-        {
-            r->AF.B.h = romBuffer[tape_pos++];
-            r->AF.B.l &= ~C_FLAG;
-        }        
+        r->AF.B.h = romBuffer[tape_pos++];
+        r->AF.B.l &= ~C_FLAG;
     }
     else if (r->PC.W-2 == 0x006F)   // Stop Tape
     {
