@@ -314,11 +314,16 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                       memcpy(pColecoMem,SVIBios,0x8000);        // Restore SVI BIOS (ram is already saved in Slot3RAM[])
                       pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
                       pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
+                      pColecoMem[0x20E6] = 0xed; pColecoMem[0x20E7] = 0xfe; pColecoMem[0x20E8] = 0xc9; 
                       pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
                       pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
                       pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
+                      pColecoMem[0x0072] = 0xed; pColecoMem[0x0073] = 0xfe; pColecoMem[0x0074] = 0xc9; 
+                      pColecoMem[0x0075] = 0xed; pColecoMem[0x0076] = 0xfe; pColecoMem[0x0077] = 0xc9; 
+                      pColecoMem[0x0078] = 0xed; pColecoMem[0x0079] = 0xfe; pColecoMem[0x007A] = 0xc9; 
                       pColecoMem[0x2073] = 0x01;
                       pColecoMem[0x20D0] = 0x10; pColecoMem[0x20D1] = 0x00;  
+                      pColecoMem[0x20E3]=0x00; pColecoMem[0x20E4]=0x00; pColecoMem[0x20E5]=0x00; pColecoMem[0x20E6]=0xED; pColecoMem[0x20E7]=0xFE;      
                       if (svi_RAM_start == 0xFFFF)
                       {
                         memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
@@ -389,16 +394,15 @@ void svi_reset(void)
 //case 0x0072: tapoon(ref, cpu); break; // CWRTON
 //case 0x0075: tapout(ref, cpu); break; // CASOUT
 //case 0x0078: tapoof(ref, cpu); break; // CTWOFF
+// SVI-328 BASIC:
+//case 0x20E6: casout(ref, cpu); break; // CASOUT
+//case 0x210A: tapion(ref, cpu); break; // CSRDON
+//case 0x21A9: tapin(ref, cpu); break;  // CASIN
 void SVI_HandleCassette(register Z80 *r)
 {
-    if (tape_pos >= tape_len)
-    {
-        r->AF.B.l |= C_FLAG;
-        return;
-    }
-    
     if ( r->PC.W-2 == 0x210A || r->PC.W-2 == 0x0069)
     {
+        if (tape_pos >= tape_len) {r->AF.B.l |= C_FLAG;return;}
         u8 done = false;
         // Find Header/Program
         while (!done)
@@ -425,6 +429,7 @@ void SVI_HandleCassette(register Z80 *r)
     }
     else if ( r->PC.W-2 == 0x21A9 || r->PC.W-2 == 0x006C)
     {
+        if (tape_pos >= tape_len) {r->AF.B.l |= C_FLAG;return;}
         // Read Data Byte from Cassette
         r->AF.B.l |= C_FLAG;
 
@@ -438,8 +443,32 @@ void SVI_HandleCassette(register Z80 *r)
     {
         r->AF.B.l &= ~C_FLAG;
     }
-    else {debug4 = r->PC.W-2;}
-
+    else if (r->PC.W-2 == 0x0072)   // CWRTON
+    {
+        for (u8 i=0; i<17; i++)
+        {
+            romBuffer[tape_pos++] = header_SVI[i];
+        }
+        if (tape_pos > tape_len)  tape_len=tape_pos;
+        r->AF.B.l &= ~C_FLAG;
+    }
+    else if (r->PC.W-2 == 0x0075)   // TAPOUT
+    {
+        romBuffer[tape_pos++] = r->AF.B.h;
+        if (tape_pos > tape_len)  tape_len=tape_pos;
+        r->AF.B.l &= ~C_FLAG;
+    }
+    else if (r->PC.W-2 == 0x20E6)   // CASOUT
+    {
+        romBuffer[tape_pos++] = r->AF.B.h;
+        if (tape_pos > tape_len)  tape_len=tape_pos;
+        r->AF.B.l &= ~C_FLAG;
+        r->PC.W = 0x20ED;
+    }    
+    else if (r->PC.W-2 == 0x0078)   // CTWOFF
+    {
+        r->AF.B.l |= C_FLAG;
+    }
 }
 
 // End of file
