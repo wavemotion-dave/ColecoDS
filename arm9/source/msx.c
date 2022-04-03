@@ -397,7 +397,6 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     else if (Port == 0xA1) FakeAY_WriteData(Value);
     else if (Port == 0xA8) // Slot system for MSX
     {
-        debug1++;
         if (PortA8 != Value)
         {
             // ---------------------------------------------------------------------
