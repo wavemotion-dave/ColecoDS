@@ -28,8 +28,8 @@
 #include "cpu/tms9918a/tms9918a.h"
 #include "intro.h"
 #include "ecranBas.h"
-#include "adam.h"
-#include "msx.h"
+#include "adam_sm.h"
+#include "msx_sm.h"
 #include "msx_full.h"
 #include "adam_full.h"
 #include "ecranDebug.h"
@@ -52,6 +52,8 @@
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 #include "cpu/z80/Z80_interface.h"
+
+extern char lastAdamDataPath[];
 
 extern Z80 CPU;
 extern u8 Slot0BIOS[];
@@ -431,6 +433,8 @@ void ResetColecovision(void)
   svi_reset();                          // Reset the SVI specific vars
   msx_reset();                          // Reset the MSX specific vars
 
+  adam_CapsLock = 0;
+    
   if (sg1000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
@@ -598,6 +602,7 @@ void ShowDebugZ80(void)
 // ------------------------------------------------------------
 void DisplayStatusLine(bool bForce)
 {
+    if (bForce) last_tape_pos = 999999;
     if (sg1000_mode)
     {
         if ((last_sg1000_mode != sg1000_mode) || bForce)
@@ -633,7 +638,6 @@ void DisplayStatusLine(bool bForce)
     {
         if ((last_msx_mode != msx_mode) || bForce)
         {
-            extern u32 LastROMSize;
             char tmp[12];
             last_msx_mode = msx_mode;
             siprintf(tmp, "MSX %dK ", (int)(LastROMSize/1024));
@@ -652,7 +656,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_svi_mode != svi_mode) || bForce)
         {
             last_svi_mode = svi_mode;
-            AffChaine(19,0,6, "SPECTRAVIDEO");
+            AffChaine(18,0,6, "SPECTRAVIDEO");
         }
         if ((last_tape_pos != tape_pos))
         {
@@ -702,22 +706,273 @@ void DisplayStatusLine(bool bForce)
     }
 }
 
+
+
 // ------------------------------------------------------------------------
 // Save out the ADAM .ddp or .dsk file and show 'SAVING' on screen
 // ------------------------------------------------------------------------
 void SaveAdamTapeOrDisk(void)
 {
-    extern char lastPath[];
-    
     if (io_show_status) return; // Don't save while io status
     
     AffChaine(12,0,6, "SAVING");
-    if (strstr(lastPath, ".ddp") != 0)
-        SaveFDI(&Tapes[0], lastPath, FMT_DDP);
+    if (strstr(lastAdamDataPath, ".ddp") != 0)
+        SaveFDI(&Tapes[0], lastAdamDataPath, FMT_DDP);
     else
-        SaveFDI(&Disks[0], lastPath, FMT_ADMDSK);
+        SaveFDI(&Disks[0], lastAdamDataPath, FMT_ADMDSK);
     AffChaine(12,0,6, "      ");
 }
+
+
+void DigitalDataInsert(char *filename)
+{
+    FILE *fp;
+    
+    // --------------------------------------------
+    // Read the .DDP or .DSK into the romBuffer[]
+    // --------------------------------------------
+    fp = fopen(filename, "rb");
+    fseek(fp, 0, SEEK_END);
+    LastROMSize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    memset(romBuffer, 0xFF, (512 * 1024));
+    fread(romBuffer, tape_len, 1, fp);
+    fclose(fp);
+     
+    // --------------------------------------------
+    // And set it as the active ddp or dsk...
+    // --------------------------------------------
+    strcpy(lastAdamDataPath, filename);
+    if (strstr(lastAdamDataPath, ".ddp") != 0)
+    {
+        ChangeTape(0, lastAdamDataPath);  
+    }
+    else
+    {
+        ChangeDisk(0, lastAdamDataPath);
+    }    
+}
+
+// ------------------------------------------------------------------------
+// Swap in a new .cas Cassette/Tape - reset position counter to zero.
+// ------------------------------------------------------------------------
+void CassetteInsert(char *filename)
+{
+    FILE *fp;
+    
+    fp = fopen(filename, "rb");
+    fseek(fp, 0, SEEK_END);
+    LastROMSize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    memset(romBuffer, 0xFF, (512 * 1024));
+    fread(romBuffer, tape_len, 1, fp);
+    tape_pos = 0;    
+    tape_len = LastROMSize;
+    fclose(fp);
+}
+
+
+// ------------------------------------------------------------------------
+// Show the Cassette Menu text - highlight the selected row.
+// ------------------------------------------------------------------------
+u8 cassete_menu_items = 0;
+void CassetteMenuShow(bool bClearScreen, u8 sel)
+{
+    cassete_menu_items = 0;
+    if (bClearScreen)
+    {
+      // ---------------------------------------------------    
+      // Put up a generic background for this mini-menu...
+      // ---------------------------------------------------    
+      dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
+      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); 
+      dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
+      swiWaitForVBlank();
+    }
+    
+    if (adam_mode)
+    {
+        AffChaine(8,8,6,                    "DIGITAL DATA MENU");
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DDP/DSK  ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DDP/DSK  ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU     ");  cassete_menu_items++;
+    }
+    else
+    {
+        AffChaine(9,8,6,                    "CASSETTE MENU");
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE CASSETTE   ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP CASSETTE   ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " REWIND CASSETTE ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " CLOAD  RUN      ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " BLOAD 'CAS:',R  ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN   'CAS:'    ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " LOAD  ''        ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU       ");  cassete_menu_items++;
+    }
+    DisplayFileName();
+}
+
+// ------------------------------------------------------------------------
+// Handle Cassette mini-menu interface...
+// ------------------------------------------------------------------------
+void CassetteMenu(void)
+{
+  u8 menuSelection = 0;
+
+  SoundPause();
+  while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
+
+  CassetteMenuShow(true, menuSelection);
+
+  while (true) 
+  {
+    int keys_pressed = keysCurrent();
+    if (keys_pressed)
+    {
+        if (keys_pressed & KEY_UP)  
+        {
+            menuSelection = (menuSelection > 0) ? (menuSelection-1):(cassete_menu_items-1);
+            CassetteMenuShow(false, menuSelection);
+        }
+        if (keys_pressed & KEY_DOWN)  
+        {
+            menuSelection = (menuSelection+1) % cassete_menu_items;
+            CassetteMenuShow(false, menuSelection);
+        }
+        if (keys_pressed & KEY_A)  
+        {
+            if (menuSelection == 0) // SAVE 
+            {
+                if (adam_mode)
+                {
+                    SaveAdamTapeOrDisk();
+                }
+                else
+                {
+                    FILE *fp;
+                    fp = fopen(gpFic[ucGameChoice].szName, "wb");
+                    fwrite(romBuffer, tape_len, 1, fp);
+                    fclose(fp);
+                }
+            }
+            if (menuSelection == 1) // SWAP
+            {
+                colecoDSLoadFile();
+                if (ucGameChoice >= 0)
+                {
+                    if (adam_mode)
+                    {
+                        DigitalDataInsert(gpFic[ucGameChoice].szName);
+                    }
+                    else
+                    {
+                        CassetteInsert(gpFic[ucGameChoice].szName);
+                    }
+                    break;
+                }
+                else
+                {
+                    CassetteMenuShow(true, menuSelection);
+                }
+            }
+            if (menuSelection == 2) // REWIND (ADAM = EXIT)
+            {
+                  if (adam_mode) break;
+                  else
+                  {
+                      tape_pos = 0;
+                      break;
+                  }
+            }
+            if (menuSelection == 3)
+            {
+                  BufferKey('C');
+                  BufferKey('L');
+                  BufferKey('O');
+                  BufferKey('A');
+                  BufferKey('D');
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_RET);
+                  BufferKey('R');
+                  BufferKey('U');
+                  BufferKey('N');
+                  BufferKey(KBD_KEY_RET);
+                  break;
+            }
+            if (menuSelection == 4)
+            {
+                  BufferKey('B');
+                  BufferKey('L');
+                  BufferKey('O');
+                  BufferKey('A');
+                  BufferKey('D');
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey('C');
+                  BufferKey('A');
+                  BufferKey('S');
+                  if (msx_mode) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(':');
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(',');
+                  BufferKey('R');
+                  BufferKey(KBD_KEY_RET);
+                  break;
+            }
+            if (menuSelection == 5)
+            {
+                  BufferKey('R');
+                  BufferKey('U');
+                  BufferKey('N');
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey('C');
+                  BufferKey('A');
+                  BufferKey('S');
+                  if (msx_mode) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(':');
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(KBD_KEY_RET);
+                  break;
+            }
+            if (menuSelection == 6)
+            {
+                  BufferKey('L');
+                  BufferKey('O');
+                  BufferKey('A');
+                  BufferKey('D');
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey('2');
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_SHIFT);
+                  BufferKey('2');
+                  BufferKey(KBD_KEY_RET);
+                  break;
+            }
+            if (menuSelection == 7)
+            {
+                break;
+            }
+        }
+        if (keys_pressed & KEY_B)  
+        {
+            break;
+        }
+        
+        while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
+        WAITVBL;WAITVBL;
+    }
+  }
+  
+  InitBottomScreen();  // Could be generic or overlay...
+  DisplayStatusLine(true);
+  SoundUnPause();
+}
+
 
 // ------------------------------------------------------------------------
 // Return 1 if we are showing full keyboard... otherwise 0
@@ -948,7 +1203,7 @@ void colecoDS_main(void)
         {
             if ((iTy >= 9) && (iTy < 30) && (iTx >= 120) && (iTx <= 155))
             {
-                SaveAdamTapeOrDisk();
+                CassetteMenu();
             }
         }
           
@@ -1048,7 +1303,7 @@ void colecoDS_main(void)
                 }
                 else if ((iTy >= 169) && (iTy < 192)) // Row 7
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   msx_key = KBD_KEY_CAS;
+                    if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
                     else if ((iTx >= 35)  && (iTx < 57))   msx_key = KBD_KEY_CAPS;
                     else if ((iTx >= 57)  && (iTx < 79))   msx_key = KBD_KEY_CAPS;
                     else if ((iTx >= 79)  && (iTx < 101))  msx_key = KBD_KEY_DEL;
@@ -1150,7 +1405,7 @@ void colecoDS_main(void)
                 }
                 else if ((iTy >= 169) && (iTy < 192)) // Row 7
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   SaveAdamTapeOrDisk();
+                    if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
                     else if ((iTx >= 35)  && (iTx < 57))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
                     else if ((iTx >= 57)  && (iTx < 79))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
                     else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_BS;
@@ -1533,18 +1788,18 @@ void InitBottomScreen(void)
       if (msx_mode)
       {
           //  Init bottom screen
-          decompress(msxTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(msxMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          decompress(msx_smTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(msx_smMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) msxPal,(void*) BG_PALETTE_SUB,256*2);
+          dmaCopy((void*) msx_smPal,(void*) BG_PALETTE_SUB,256*2);
       }
       else if (adam_mode)
       {
           //  Init bottom screen
-          decompress(adamTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(adamMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          decompress(adam_smTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(adam_smMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) adamPal,(void*) BG_PALETTE_SUB,256*2);
+          dmaCopy((void*) adam_smPal,(void*) BG_PALETTE_SUB,256*2);
       }
       else
       {
