@@ -656,7 +656,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_svi_mode != svi_mode) || bForce)
         {
             last_svi_mode = svi_mode;
-            AffChaine(18,0,6, "SPECTRAVIDEO");
+            AffChaine(19,0,6, "SPECTRAVIDEO");
         }
         if ((last_tape_pos != tape_pos))
         {
@@ -1854,7 +1854,6 @@ void colecoDSInitCPU(void)
       memcpy(pColecoMem,SVIBios,0x8000);
       pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
       pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
-      pColecoMem[0x20E6] = 0xed; pColecoMem[0x20E7] = 0xfe; pColecoMem[0x20E8] = 0xc9; 
       pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
       pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
       pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
