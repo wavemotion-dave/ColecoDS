@@ -849,10 +849,14 @@ void CassetteMenu(void)
                 }
                 else
                 {
+                    AffChaine(12,0,6, "SAVING");
                     FILE *fp;
                     fp = fopen(gpFic[ucGameChoice].szName, "wb");
                     fwrite(romBuffer, tape_len, 1, fp);
                     fclose(fp);
+                    WAITVBL;WAITVBL;
+                    AffChaine(12,0,6, "      ");
+                    DisplayStatusLine(true);
                 }
                 CassetteMenuShow(true, menuSelection);
             }
