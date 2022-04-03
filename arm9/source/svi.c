@@ -266,6 +266,9 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 }
 
 
+// --------------------------------------------------------------------
+// Patch the SVI bios so that we can intercept cassette read/writes...
+// --------------------------------------------------------------------
 void SVI_PatchBIOS(void)
 {
     //patchAddressSVI[] = {0x006C,0x006F,0x0072,0x0075,0x0078,0x210A,0x21A9,0}; // 0x0069
