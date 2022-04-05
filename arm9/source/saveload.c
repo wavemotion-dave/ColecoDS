@@ -206,7 +206,8 @@ void colecoSaveState()
       strcpy(szCh1,"ERR");
      AffChaine(15,0,0,szCh1);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-    AffChaine(6,0,0,"             ");  
+    AffChaine(6,0,0,"             "); 
+    DisplayStatusLine(true);
   }
   else {
     strcpy(szCh1,"Error opening SAV file ...");
@@ -413,6 +414,7 @@ void colecoLoadState()
         
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         AffChaine(6,0,0,"             ");  
+        DisplayStatusLine(true);
       }
 
     fclose(handle);
