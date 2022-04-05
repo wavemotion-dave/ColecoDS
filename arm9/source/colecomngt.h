@@ -37,7 +37,6 @@ extern u8 romBuffer[];
 
 extern u8 bROMInSlot[4];
 extern u8 bRAMInSlot[4];
-extern u8 PortA8;
 extern u8 *Slot1ROMPtr[8];
 
 extern u8 AdamRAM[0x20000];
@@ -101,9 +100,9 @@ extern u32 tape_len;
 extern u8 key_shift_hold;
 extern u8 msx_beeper_enabled;
 
-extern u8 PortA8;
-extern u8 PortA9;
-extern u8 PortAA;
+extern u8 Port_PPI_A;
+extern u8 Port_PPI_B;
+extern u8 Port_PPI_C;
 extern u8 msx_auto_clear_irq;
 
 

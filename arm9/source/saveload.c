@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fat.h>
+#include <dirent.h>
 
 #include "colecoDS.h"
 #include "AdamNet.h"
@@ -41,7 +42,11 @@ void colecoSaveState()
   char szCh1[32];
     
   // Init filename = romname and STA in place of ROM
-  strcpy(szFile,gpFic[ucGameAct].szName);
+    DIR* dir = opendir("sav");
+    if (dir) closedir(dir);  // Directory exists... close it out and move on.
+    else mkdir("sav", 0777);   // Otherwise create the directory...
+    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+  
   szFile[strlen(szFile)-3] = 's';
   szFile[strlen(szFile)-2] = 'a';
   szFile[strlen(szFile)-1] = 'v';
@@ -149,9 +154,9 @@ void colecoSaveState()
     if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
     if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
     if (uNbO) fwrite(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
-    if (uNbO) fwrite(&PortA8, sizeof(PortA8),1, handle);
-    if (uNbO) fwrite(&PortA9, sizeof(PortA9),1, handle);
-    if (uNbO) fwrite(&PortAA, sizeof(PortAA),1, handle);
+    if (uNbO) fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
+    if (uNbO) fwrite(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
+    if (uNbO) fwrite(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
     if (uNbO) fwrite(&Port53, sizeof(Port53),1, handle);
     if (uNbO) fwrite(&Port60, sizeof(Port60),1, handle);
       
@@ -161,7 +166,7 @@ void colecoSaveState()
     if (uNbO) fwrite(ctc_vector, sizeof(ctc_vector),1, handle);
     if (uNbO) fwrite(ctc_latch, sizeof(ctc_latch),1, handle);
     if (uNbO) fwrite(&sordm5_irq, sizeof(sordm5_irq),1, handle);
-      
+    
     if (msx_mode)   // Big enough that we will not write this if we are not MSX
     {
         memcpy(Slot3RAM, Slot3RAMPtr, 0x10000);
@@ -221,7 +226,7 @@ void colecoLoadState()
     char szCh1[32];
 
     // Init filename = romname and .SAV in place of ROM
-    strcpy(szFile,gpFic[ucGameAct].szName);
+    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
     szFile[strlen(szFile)-3] = 's';
     szFile[strlen(szFile)-2] = 'a';
     szFile[strlen(szFile)-1] = 'v';
@@ -333,9 +338,9 @@ void colecoLoadState()
             if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
             if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
             if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
-            if (uNbO) fread(&PortA8, sizeof(PortA8),1, handle);
-            if (uNbO) fread(&PortA9, sizeof(PortA9),1, handle);
-            if (uNbO) fread(&PortAA, sizeof(PortAA),1, handle);
+            if (uNbO) fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
+            if (uNbO) fread(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
+            if (uNbO) fread(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
             if (uNbO) fread(&Port53, sizeof(Port53),1, handle);
             if (uNbO) fread(&Port60, sizeof(Port60),1, handle);
 

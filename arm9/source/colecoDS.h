@@ -119,5 +119,6 @@ extern void UnPauseSound(void);
 extern void ResetStatusFlags(void);
 extern void ReadFileCRCAndConfig(void);
 extern void SetupAdam(bool);
-
+extern void DisplayStatusLine(bool bForce);
+    
 #endif

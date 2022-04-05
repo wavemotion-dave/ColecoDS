@@ -14,6 +14,10 @@
 #define TMS9918_LINE        ((TMS9918_BASE/(3*60*262)))
 #define TMS9918_LINE_MTX    ((TMS9918_BASE_MTX/(3*60*262)))
 
+#define TMS9918_LINES       262
+#define TMS9918_START_LINE  (3+13+27)
+#define TMS9918_END_LINE    (TMS9918_START_LINE+192)
+
 #define TMS9918_REG1_RAM16K 0x80 /* 1: 16kB VRAM (0=4kB)     */
 #define TMS9918_REG1_SCREEN 0x40 /* 1: Enable display        */
 #define TMS9918_REG1_IRQ    0x20 /* 1: IRQs on VBlanks       */
@@ -25,9 +29,20 @@
 #define TMS9918_STAT_OVRLAP 0x20 /* 1: Sprites overlap       */
 #define TMS9918_STAT_5THNUM 0x1F /* Number of the 5th sprite */
 
-#define TMS9918_LINES       262
-#define TMS9918_START_LINE  (3+13+27)
-#define TMS9918_END_LINE    (TMS9918_START_LINE+192)
+// ---------------------------------------------------
+// For the PAL machine, the frames, number of lines 
+// and start/end lines are different.
+// ---------------------------------------------------
+#define TMS9929_FRAMES      50
+#define TMS9929_CLOCK       (TMS9918_BASE/3)
+#define TMS9929_FRAME       (TMS9918_BASE/(3*50))
+#define TMS9929_LINE        ((TMS9918_BASE/(3*50*313)))
+#define TMS9929_LINE_MTX    ((TMS9918_BASE_MTX/(3*50*313)))
+
+#define TMS9929_LINES       313
+#define TMS9929_START_LINE  (3+13+27+8)
+#define TMS9929_END_LINE    (TMS9929_START_LINE+192)
+
 
 #define TMS9918_Mode      (((VDP[0]&0x02)>>1)|(((VDP[1]&0x18)>>2)))
 #define TMS9918_VRAMMask  (VDP[1]&TMS9918_REG1_RAM16K ? 0x3FFF:0x0FFF)
@@ -86,5 +101,9 @@ inline void WrData9918(byte V)  // This one is used frequently so we try to inli
     VDPCtrlLatch = 0;
 }
 
+extern u16 tms_num_lines;
+extern u16 tms_start_line;
+extern u16 tms_end_line;
+extern u16 tms_cpu_line;
 
 #endif

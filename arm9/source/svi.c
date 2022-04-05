@@ -80,11 +80,11 @@ unsigned char cpu_readport_svi(register unsigned short Port)
   }    
   else if (Port == 0x98) 
   {
-      PortA8 |= 0x30;
-      if (JoyState & JST_FIREL) PortA8 &= ~0x10;
-      if (JoyState & JST_FIRER) PortA8 &= ~0x10;
+      Port_PPI_A |= 0x30;
+      if (JoyState & JST_FIREL) Port_PPI_A &= ~0x10;
+      if (JoyState & JST_FIRER) Port_PPI_A &= ~0x10;
       
-      return PortA8;
+      return Port_PPI_A;
   }
   else if (Port == 0x99)
   {
@@ -105,7 +105,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       // ------------------------------------------------------------------------
       
       u8 key1 = 0x00;
-      if ((PortAA & 0x0F) == 0)      // Row 0
+      if ((Port_PPI_C & 0x0F) == 0)      // Row 0
       {
           // -----------------------------------------------------------
           // We are at the top of the scan loop... if we have buffered 
@@ -131,7 +131,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == '7')           key1 = 0x80;
           }
       }      
-      else if ((PortAA & 0x0F) == 1)
+      else if ((Port_PPI_C & 0x0F) == 1)
       {
           if (msx_key)
           {
@@ -145,7 +145,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == '/')           key1 = 0x80;
           }
       }
-      else if ((PortAA & 0x0F) == 2)  // Row 2
+      else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
       {
           if (msx_key)
           {
@@ -159,7 +159,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == 'G')           key1 = 0x80;
           }          
       }
-      else if ((PortAA & 0x0F) == 3)  // Row 3
+      else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
       {
           if (msx_key)
           {
@@ -173,7 +173,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == 'O')           key1 = 0x80;
           }          
       }
-      else if ((PortAA & 0x0F) == 4)  // Row 4
+      else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
       {
           if (msx_key)
           {
@@ -187,7 +187,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == 'W')           key1 = 0x80;
           }          
       }
-      else if ((PortAA & 0x0F) == 5)  // Row 5
+      else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
       {
           if (myConfig.dpad == DPAD_MSX_KEYS)
           {
@@ -204,7 +204,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == KBD_KEY_UP)    key1 = 0x80;
           }          
       }      
-      else if ((PortAA & 0x0F) == 6) // Row 6
+      else if ((Port_PPI_C & 0x0F) == 6) // Row 6
       {
           // Handle the Shift Key ... two ways
           if (key_shift || (msx_key == KBD_KEY_SHIFT))  key1 = 0x01;
@@ -222,7 +222,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == KBD_KEY_LEFT)  key1 = 0x80;
           }          
       }
-      else if ((PortAA & 0x0F) == 7) // Row 7
+      else if ((Port_PPI_C & 0x0F) == 7) // Row 7
       {
           if (myConfig.dpad == DPAD_MSX_KEYS)
           {
@@ -238,11 +238,11 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == KBD_KEY_DOWN)  key1 = 0x80;              
           }          
       }
-      else if ((PortAA & 0x0F) == 8) // Row 8
+      else if ((Port_PPI_C & 0x0F) == 8) // Row 8
       {
           if (JoyState == JST_STAR)  key1 |= 0x01;  // SPACE
           if (JoyState & JST_PURPLE) key1 |= 0x01;  // SPACE
-          if (JoyState & JST_BLUE)   key1 |= 0x01;  // SPACE
+//          if (JoyState & JST_BLUE)   key1 |= 0x01;  // SPACE
           
           if (myConfig.dpad == DPAD_MSX_KEYS)
           {
@@ -257,9 +257,13 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (msx_key == KBD_KEY_CAPS)  key1 = 0x08;              
           }          
       }
+      else if ((Port_PPI_C & 0x0F) == 9) // Row 9
+      {
+          if (JoyState & JST_BLUE)   key1 |= 0x08;  // NUM3
+      }
       return ~key1;
   }
-  else if (Port == 0x9A) return PortAA;    
+  else if (Port == 0x9A) return Port_PPI_C;    
     
   // No such port
   return(NORAM);
@@ -329,7 +333,8 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 
                 if (IOBYTE == 0x1F)   // Normal ROM + 32K Upper RAM
                 {
-                      memcpy(pColecoMem,SVIBios,0x8000);        // Restore SVI BIOS (ram is already saved in Slot3RAM[])
+                      debug1++;
+                      FastMemCopy(pColecoMem, (u8 *)0x6820000, 0x8000); // Restore SVI BIOS (ram is already saved in Slot3RAM[])                      
                       SVI_PatchBIOS();
                       if (svi_RAM_start == 0xFFFF)
                       {
@@ -342,10 +347,12 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 {
                     if (svi_RAM_start == 0x8000)
                     {
+                      debug2++;
                       memcpy(pColecoMem, Slot3RAM, 0x8000);     // Restore RAM in lower slot
                     }
                     else if (svi_RAM_start == 0xFFFF)
                     {
+                      debug3++;
                       memcpy(pColecoMem, Slot3RAM, 0x10000);     // Restore RAM in both slots
                     }
                     svi_RAM_start = 0x0000;
@@ -357,7 +364,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 }
                 else    // No RAM avaialble for any other combinations...
                 {
-                    debug1++;
+                    debug4++;
                     debug3 = IOBYTE;
                     svi_RAM_start = 0xFFFF;
                     memset(pColecoMem+0x8000, 0xFF, 0x8000);    // No RAM in upper slot
@@ -367,11 +374,11 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     }
     else if (Port == 0x95)  // PPI - Register B
     {
-        PortA9 = Value;
+        Port_PPI_B = Value;
     }
     else if (Port == 0x96)  // PPI - Register C
     {
-        PortAA = Value;
+        Port_PPI_C = Value;
     }
 }
 
@@ -389,9 +396,9 @@ void svi_reset(void)
 
         svi_RAM_start = 0x8000;
         
-        PortA8 = 0x00;
-        PortA9 = 0x00;
-        PortAA = 0x00;       
+        Port_PPI_A = 0x00;
+        Port_PPI_B = 0x00;       
+        Port_PPI_C = 0x00;       
     }
 }
 

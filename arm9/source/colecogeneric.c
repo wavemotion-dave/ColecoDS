@@ -757,7 +757,7 @@ void SetDefaultGameConfig(void)
     myConfig.frameBlend  = 0;
     myConfig.msxMapper   = GUESS;
     myConfig.autoFire1   = 0;
-    myConfig.autoFire2   = 0;
+    myConfig.isPAL       = 0;
     myConfig.overlay     = 0;
     myConfig.maxSprites  = 0;
     myConfig.vertSync    = (isDSiMode() ? 1:0);    // Default is Vertical Sync ON for DSi and OFF for DS-LITE
@@ -768,7 +768,10 @@ void SetDefaultGameConfig(void)
     myConfig.msxKey5     = 0;   // Default key map
     myConfig.dpad        = DPAD_JOYSTICK;   // Normal DPAD use - mapped to joystick
     myConfig.memWipe     = 0;    
-    myConfig.reservedA   = 0;    
+    myConfig.reservedA0  = 0;    
+    myConfig.reservedA1  = 0;    
+    myConfig.reservedA2  = 0;    
+    myConfig.reservedA3  = 0;    
     myConfig.reservedB   = 0;    
     myConfig.reservedC   = 0;    
     
@@ -890,6 +893,9 @@ void SetDefaultGameConfig(void)
     if (memotech_mode)                          myConfig.overlay = 9;  // Memotech MTX default to full keyboard
     if (svi_mode)                               myConfig.overlay = 9;  // SVI default to full keyboard    
     if (msx_mode == 2)                          myConfig.overlay = 9;  // MSX with .cas defaults to full keyboard    
+    if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
+    
+    if (myConfig.isPAL)                         myConfig.vertSync= 0;  // If we are PAL, we can't sync to the DS 60Hz
     
     if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 2;  // Rolla Ball needs full memory wipe
     if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 2;  // Surface Scanner needs full memory wipe
@@ -987,18 +993,19 @@ const struct options_t Option_Table[] =
     {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
     {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
     {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
+    {"SVI/MTX VID",    {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
     {"MAX SPRITES",    {"32",  "4"},                                                                                                                                                        &myConfig.maxSprites, 2},
     {"VERT SYNC",      {"OFF", "ON"},                                                                                                                                                       &myConfig.vertSync,   2},    
-    {"AUTO FIRE B1",   {"OFF", "ON"},                                                                                                                                                       &myConfig.autoFire1,  2},
-    {"AUTO FIRE B2",   {"OFF", "ON"},                                                                                                                                                       &myConfig.autoFire2,  2},
+    {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire1,  4},
     {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
     {"NDS DPAD",       {"NORMAL", "KEYBD ARROWS", "DIAGONALS"},                                                                                                                             &myConfig.dpad,       3},   
     {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                    &myConfig.spinSpeed,  5},
-    {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Slower)"},                                                                                                                                 &myConfig.cpuCore,    2},    
+    {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    
     {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
     {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
     {"MSX KEY 5",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
     {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL"},                                                                                                                                     &myConfig.memWipe,    3},
+    
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
 #endif    
@@ -1130,6 +1137,8 @@ void colecoDSGameOptions(void)
     else if (dev_z80_cycles == 14) timingAdjustment = -4;
     else if (dev_z80_cycles == 15) timingAdjustment = -5;
     else  timingAdjustment = dev_z80_cycles;
+    
+    if (myConfig.isPAL) myConfig.vertSync = 0; ///TBD
     
     return;
 }
