@@ -1197,11 +1197,22 @@ void colecoDS_main(void)
         {
           if  (!SaveNow) 
           {
-            // Stop sound
-            SoundPause();
-            SaveNow = 1;
-            colecoSaveState();
-            SoundUnPause();
+              // Stop sound
+              SoundPause();
+              if (IsFullKeyboard())
+              {
+                  if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES) 
+                  {                      
+                    SaveNow = 1;
+                    colecoSaveState();
+                  }
+              }
+              else
+              {
+                    SaveNow = 1;
+                    colecoSaveState();
+              }
+              SoundUnPause();
           }
         }
         else
@@ -1215,9 +1226,20 @@ void colecoDS_main(void)
           {
             // Stop sound
             SoundPause();
-            LoadNow = 1;
-            colecoLoadState();
-            SoundUnPause();
+              if (IsFullKeyboard())
+              {
+                  if  (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES) 
+                  {                      
+                    LoadNow = 1;
+                    colecoLoadState();
+                  }
+              }
+              else
+              {
+                    LoadNow = 1;
+                    colecoLoadState();
+              }
+             SoundUnPause();
           }
         }
         else
