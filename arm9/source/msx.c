@@ -107,7 +107,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       }
       return FakeAY_ReadData();
   }
-  else if (Port == 0xA8) return PortA8;
+  else if (Port == 0xA8) return Port_PPI_A;
   else if (Port == 0xA9)
   {
       // ----------------------------------------------------------
@@ -125,7 +125,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       // ----------------------------------------------------------
       
       u8 key1 = 0x00;
-      if ((PortAA & 0x0F) == 0)      // Row 0
+      if ((Port_PPI_C & 0x0F) == 0)      // Row 0
       {
           // ---------------------------------------------------
           // At the top of the scan loop, handle the key buffer
@@ -161,7 +161,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == '7')           key1 = 0x80;
           }
       }
-      else if ((PortAA & 0x0F) == 1)  // Row 1
+      else if ((Port_PPI_C & 0x0F) == 1)  // Row 1
       {
           if (JoyState == JST_5)
           {
@@ -181,7 +181,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           
       }
-      else if ((PortAA & 0x0F) == 2)  // Row 2
+      else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
       {
           if (JoyState == JST_5)
           {
@@ -199,7 +199,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == 'B')           key1 = 0x80;
           }          
       }
-      else if ((PortAA & 0x0F) == 3)  // Row 3
+      else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
       {
           if (JoyState == JST_5)
           {
@@ -224,7 +224,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == 'J')           key1 = 0x80;
           }          
       }
-      else if ((PortAA & 0x0F) == 4)  // Row 4
+      else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
       {
           if (JoyState == JST_5)
           {
@@ -249,7 +249,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == 'R')           key1 = 0x80;
           }          
       }
-      else if ((PortAA & 0x0F) == 5)  // Row 5
+      else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
       {
           if (JoyState == JST_5)
           {
@@ -274,7 +274,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == 'Z')           key1 = 0x80;
           }          
       }      
-      else if ((PortAA & 0x0F) == 6) // Row 6
+      else if ((Port_PPI_C & 0x0F) == 6) // Row 6
       {
           if (JoyState == JST_7) key1 |= 0x20;    // F1
           if (JoyState == JST_8) key1 |= 0x40;    // F2
@@ -295,7 +295,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }          
           if (key_shift)                    key1 |= 0x01;  // SHIFT
       }
-      else if ((PortAA & 0x0F) == 7) // Row 7
+      else if ((Port_PPI_C & 0x0F) == 7) // Row 7
       {
           if (JoyState == JST_6)     key1 |= 0x10;  // STOP
           if (JoyState == JST_POUND) key1 |= 0x80;  // RETURN
@@ -316,7 +316,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (msx_key == KBD_KEY_ESC)   key1 = 0x04;
           }          
       }
-      else if ((PortAA & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
+      else if ((Port_PPI_C & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
       {
           if (JoyState == JST_STAR) key1 |= 0x01;  // SPACE
           
@@ -341,7 +341,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       }
       return ~key1;
   }
-  else if (Port == 0xAA) return PortAA;
+  else if (Port == 0xAA) return Port_PPI_C;
     
   // No such port
   return(NORAM);
@@ -397,7 +397,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     else if (Port == 0xA1) FakeAY_WriteData(Value);
     else if (Port == 0xA8) // Slot system for MSX
     {
-        if (PortA8 != Value)
+        if (Port_PPI_A != Value)
         {
             // ---------------------------------------------------------------------
             // bits 7-6     bits 5-4     bits 3-2      bits 1-0
@@ -408,7 +408,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             // Slot 2 is empty (0xFF always)
             // Slot 3 is our main RAM. We emulate 64K of RAM
             // ---------------------------------------------------------------------
-            if (((Value>>0) & 0x03) != ((PortA8>>0) & 0x03))
+            if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
             switch ((Value>>0) & 0x03)  // Main Memory - Slot 0 [0x0000~0x3FFF]
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
@@ -439,7 +439,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
             }
             
-            if (((Value>>2) & 0x03) != ((PortA8>>2) & 0x03))
+            if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
             switch ((Value>>2) & 0x03)  // Main Memory - Slot 1  [0x4000~0x7FFF]
             {
                 case 0x00:  // Slot 0:  Maps to BIOS Rom
@@ -471,7 +471,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
             }
             
-            if (((Value>>4) & 0x03) != ((PortA8>>4) & 0x03))
+            if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
             switch ((Value>>4) & 0x03)  // Main Memory - Slot 2  [0x8000~0xBFFF]
             {
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
@@ -503,7 +503,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
             }
             
-            if (((Value>>6) & 0x03) != ((PortA8>>6) & 0x03))
+            if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
             switch ((Value>>6) & 0x03)  // Main Memory - Slot 3  [0xC000~0xFFFF]
             {
                 case 0x00:  // Slot 0:  Maps to nothing... 0xFF
@@ -535,20 +535,20 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     break;
             }
             
-            PortA8 = Value;             // Useful when read back
+            Port_PPI_A = Value;             // Useful when read back
         }
     }
     else if (Port == 0xA9)  // PPI - Register B
     {
-        PortA9 = Value;
+        Port_PPI_B = Value;
     }
     else if (Port == 0xAA)  // PPI - Register C
     {
         if (Value & 0x80)  // Beeper ON
         {
-            if ((PortAA & 0x80) == 0) beeperFreq++;
+            if ((Port_PPI_C & 0x80) == 0) beeperFreq++;
         }
-        PortAA = Value;
+        Port_PPI_C = Value;
     }
     else if (Port == 0xAB)  // PPI - Register C Fast Modify
     {
@@ -556,14 +556,13 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
         {
             if (Value & 1)  // Beeper ON
             {
-                if ((PortAA & 0x80) == 0) beeperFreq++;
-                PortAA |= 0x80; // Set bit
+                if ((Port_PPI_C & 0x80) == 0) beeperFreq++;
+                Port_PPI_C |= 0x80; // Set bit
             }
             else
             {
-                PortAA &= 0x7F; // Clear bit
+                Port_PPI_C &= 0x7F; // Clear bit
             }
-            
         }
     }
 }
@@ -678,9 +677,9 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     // -------------------------------------
     // Make sure the MSX ports are clear
     // -------------------------------------
-    PortA8 = 0x00;
-    PortA9 = 0x00;
-    PortAA = 0x00;      
+    Port_PPI_A = 0x00;
+    Port_PPI_B = 0x00;
+    Port_PPI_C = 0x00;      
     
     // ---------------------------------------------
     // Start with reset memory - fill in MSX slots

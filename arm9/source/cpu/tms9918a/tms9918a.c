@@ -645,6 +645,12 @@ ITCM_CODE byte RdCtrl9918(void)
 /*************************************************************/
 u8 frameSkipIdx __attribute__((section(".dtcm"))) = 0;
 u8 frameSkip[3] __attribute__((section(".dtcm"))) = {0xFF, 0x03, 0x01};   // Frameskip OFF, Light, Agressive
+
+u16 tms_num_lines  __attribute__((section(".dtcm"))) = TMS9918_LINES;
+u16 tms_start_line __attribute__((section(".dtcm"))) = TMS9918_START_LINE;
+u16 tms_end_line   __attribute__((section(".dtcm"))) = TMS9918_END_LINE;
+u16 tms_cpu_line   __attribute__((section(".dtcm"))) = TMS9918_LINE;
+
 byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
@@ -654,18 +660,18 @@ byte Loop9918(void)
   bIRQ=0;
 
   /* Increment scanline */
-  if(++CurLine>=TMS9918_LINES) CurLine=0;
+  if (++CurLine >= tms_num_lines) CurLine=0;
 
   /* If refreshing display area, call scanline handler */
-  if((CurLine>=TMS9918_START_LINE)&&(CurLine<TMS9918_END_LINE))
+  if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
   {
       if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
-          ScanSprites(CurLine-TMS9918_START_LINE,0);    // Skip rendering - but still scan sprites for collisions
+          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for collisions
       else
-         (SCR[ScrMode].Refresh)(CurLine-TMS9918_START_LINE);
+         (SCR[ScrMode].Refresh)(CurLine - tms_start_line);
   }
   /* If time for emulated VBlank... */
-  else if(CurLine==TMS9918_END_LINE) 
+  else if (CurLine == tms_end_line)
   {
       // --------------------------------------------------------------------
       // !!!Into the Vertical Blank!!!
@@ -728,6 +734,17 @@ void Reset9918(void)
     SprTabM = 0x3FFF;                   // Full mask
     
     BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
+    
+    tms_start_line = (myConfig.isPAL ? TMS9929_START_LINE   :   TMS9918_START_LINE);
+    tms_end_line   = (myConfig.isPAL ? TMS9929_END_LINE     :   TMS9918_END_LINE);
+    tms_num_lines  = (myConfig.isPAL ? TMS9929_LINES        :   TMS9918_LINES);
+    
+    if (memotech_mode)
+        tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE_MTX :   TMS9918_LINE_MTX);
+    else
+        tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE     :   TMS9918_LINE);
+    
+    
     
     // ---------------------------------------------------------------
     // Our background/foreground color table makes computations FAST!

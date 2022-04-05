@@ -55,9 +55,9 @@ u8 bDontResetEnvelope __attribute__((section(".dtcm"))) = false;
 // --------------------------------------------------
 // Some special ports for the MSX machine emu
 // --------------------------------------------------
-u8 PortA8 __attribute__((section(".dtcm"))) = 0x00;
-u8 PortA9 __attribute__((section(".dtcm"))) = 0x00;
-u8 PortAA __attribute__((section(".dtcm"))) = 0x00;
+u8 Port_PPI_A __attribute__((section(".dtcm"))) = 0x00;
+u8 Port_PPI_B __attribute__((section(".dtcm"))) = 0x00;
+u8 Port_PPI_C __attribute__((section(".dtcm"))) = 0x00;
 
 u8 msx_auto_clear_irq __attribute__((section(".dtcm"))) = 0;
 
@@ -296,6 +296,8 @@ u8 colecoInit(char *szGame)
   }
   else if (svi_mode)  // Load MSX cartridge ... 
   {
+      memcpy((u8 *)0x6820000+0x0000, SVIBios, 0x8000);  // Fast copy buffer for BIOS
+          
       // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
       RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);  
       
@@ -360,7 +362,7 @@ u8 colecoInit(char *szGame)
       
     ResetStatusFlags();                 // Some status flags for the UI mostly
   }
-  
+    
   // Return with result
   return (RetFct);
 }
@@ -1030,7 +1032,7 @@ ITCM_CODE u32 LoopZ80()
   if (myConfig.cpuCore == 0) // DrZ80 Core ... faster but lower accuracy
   {
       // Execute 1 scanline worth of CPU instructions
-      DrZ80_execute(TMS9918_LINE + timingAdjustment);
+      DrZ80_execute(tms_cpu_line + timingAdjustment);
       
       // Refresh VDP 
       if(Loop9918()) cpuirequest = ((svi_mode || msx_mode || sg1000_mode) ? Z80_IRQ_INT : Z80_NMI_INT);
@@ -1046,19 +1048,19 @@ ITCM_CODE u32 LoopZ80()
       if (memotech_mode)
       {
           // Execute 1 scanline worth of CPU instructions
-          cycle_deficit = ExecZ80(TMS9918_LINE_MTX + cycle_deficit);
+          cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
 
           // Refresh VDP 
           if(Loop9918()) 
           {
               CPU.IRequest = sordm5_irq;   // Sord M5 and Memotech MTX only works with the CZ80 core
           }
-          Z80CTC_Timer();          
+          else Z80CTC_Timer();          
       }
       else
       {
           // Execute 1 scanline worth of CPU instructions
-          cycle_deficit = ExecZ80(TMS9918_LINE + cycle_deficit);
+          cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
 
           // Refresh VDP 
           if(Loop9918()) 
@@ -1071,7 +1073,7 @@ ITCM_CODE u32 LoopZ80()
           // The Sord M5 has a CTC timer circuit that needs attention - this isnt 
           // timing accurate but it's good enough to allow those timers to trigger.
           // -------------------------------------------------------------------------
-          if (sordm5_mode) Z80CTC_Timer();
+          else if (sordm5_mode) Z80CTC_Timer();
       }
 
       // Generate an interrupt if called for...
@@ -1085,7 +1087,7 @@ ITCM_CODE u32 LoopZ80()
   }
   
   // Drop out unless end of screen is reached 
-  if (CurLine == TMS9918_END_LINE)
+  if (CurLine == tms_end_line)
   {
       // ------------------------------------------------------------------------------------
       // If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it), 

@@ -41,8 +41,6 @@ extern u8 adam_ram_hi;
 extern u8 adam_ram_lo_exp;
 extern u8 adam_ram_hi_exp;
 extern u8 AdamRAM[];
-
-extern u16 memotech_RAM_start;
 extern u16 svi_RAM_start;
 
 // -----------------------------
@@ -332,11 +330,11 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     {
         if (address >= memotech_RAM_start)
         {
-            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+            pColecoMem[address] = value;      // Allow pretty much anything above the base ROM area
         }
     }
     // ----------------------------------------------------------------------------------
-    // For the Memotech MTX, allow anything in the upper 48K
+    // For the Spectravideo SVI - we allow anything above the base ROM area
     // ----------------------------------------------------------------------------------
     else if (svi_mode)
     {
@@ -344,7 +342,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         {
             extern u8 Slot3RAM[];
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
-            Slot3RAM[address]=value;
+            Slot3RAM[address]=value;    // Plus shadow copy to improve bank switching
         }
     }
     // ----------------------------------------------------------------------------------------------------------

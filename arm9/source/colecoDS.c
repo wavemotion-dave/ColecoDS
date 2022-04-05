@@ -595,9 +595,11 @@ void ShowDebugZ80(void)
 // AY sound chip support and MegaCart support.  Game players
 // probably don't care, but it's really helpful for devs.
 // ------------------------------------------------------------
+u8 last_pal_mode = 99;
 void DisplayStatusLine(bool bForce)
 {
     if (bForce) last_tape_pos = 999999;
+    if (bForce) last_pal_mode = 99;
     if (sg1000_mode)
     {
         if ((last_sg1000_mode != sg1000_mode) || bForce)
@@ -620,6 +622,7 @@ void DisplayStatusLine(bool bForce)
         {
             last_memotech_mode = memotech_mode;
             AffChaine(20,0,6, "MEMOTECH MTX");
+            last_pal_mode = 99;
         }
         if ((memotech_mode == 2) && (last_tape_pos != tape_pos))
         {
@@ -627,6 +630,11 @@ void DisplayStatusLine(bool bForce)
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             AffChaine(8,0,6, tmp);
+        }
+        if (last_pal_mode != myConfig.isPAL)
+        {
+            last_pal_mode = myConfig.isPAL;
+            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (msx_mode)
@@ -651,7 +659,8 @@ void DisplayStatusLine(bool bForce)
         if ((last_svi_mode != svi_mode) || bForce)
         {
             last_svi_mode = svi_mode;
-            AffChaine(19,0,6, "SPECTRAVIDEO");
+            AffChaine(20,0,6, "SPECTRAVIDEO");
+            last_pal_mode = 99;
         }
         if ((last_tape_pos != tape_pos))
         {
@@ -659,6 +668,11 @@ void DisplayStatusLine(bool bForce)
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             AffChaine(8,0,6, tmp);
+        }
+        if (last_pal_mode != myConfig.isPAL)
+        {
+            last_pal_mode = myConfig.isPAL;
+            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (adam_mode)
@@ -716,6 +730,7 @@ void SaveAdamTapeOrDisk(void)
     else
         SaveFDI(&Disks[0], lastAdamDataPath, FMT_ADMDSK);
     AffChaine(12,0,6, "      ");
+    DisplayStatusLine(true);
     adam_unsaved_data = 0;
 }
 
@@ -977,7 +992,7 @@ void CassetteMenu(void)
   }
   
   InitBottomScreen();  // Could be generic or overlay...
-  DisplayStatusLine(true);
+
   SoundUnPause();
 }
 
@@ -1067,6 +1082,8 @@ void colecoDS_main(void)
             }
             DisplayStatusLine(false);
             emuActFrames = 0;
+            
+            if (myConfig.isPAL) myConfig.vertSync = 0; ///TBD
         }
         emuActFrames++;
 
@@ -1088,7 +1105,7 @@ void colecoDS_main(void)
             // We only support NTSC 60 frames... there are PAL colecovisions
             // but the games really don't adjust well and so we stick to basics.
             // -------------------------------------------------------------------
-            if (++timingFrames == 60)
+            if (++timingFrames == (myConfig.isPAL ? 50:60))
             {
                 TIMER2_CR=0;
                 TIMER2_DATA=0;
@@ -1101,7 +1118,7 @@ void colecoDS_main(void)
             // This is how we time frame-to frame
             // to keep the game running at 60FPS
             // --------------------------------------------
-            while(TIMER2_DATA < (546*(timingFrames+1)))
+            while(TIMER2_DATA < ((myConfig.isPAL ? 656:546)*(timingFrames+1)))
             {
                 if (myConfig.showFPS == 2) break;   // If Full Speed, break out...
             }
@@ -1633,11 +1650,11 @@ void colecoDS_main(void)
       // Handle Auto-Fire if enabled in configuration...
       // --------------------------------------------------
       static u8 autoFireTimer[2]={0,0};
-      if (myConfig.autoFire1 && (JoyState & JST_FIRER))  // Fire Button 1
+      if ((myConfig.autoFire1 & 0x01) && (JoyState & JST_FIRER))  // Fire Button 1
       {
          if ((++autoFireTimer[0] & 7) > 4)  JoyState &= ~JST_FIRER;
       }
-      if (myConfig.autoFire2 && (JoyState & JST_FIREL))  // Fire Button 2
+      if ((myConfig.autoFire1 & 0x02) && (JoyState & JST_FIREL))  // Fire Button 2
       {
           if ((++autoFireTimer[1] & 7) > 4) JoyState &= ~JST_FIREL;
       }
@@ -1822,6 +1839,8 @@ void InitBottomScreen(void)
     
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
+    
+    DisplayStatusLine(true);
 }
 
 /*********************************************************************************

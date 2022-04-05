@@ -35,7 +35,7 @@ struct __attribute__((__packed__)) Config_t
     u8  frameBlend;
     u8  msxMapper;
     u8  autoFire1;
-    u8  autoFire2;
+    u8  isPAL;
     u8  overlay;
     u8  maxSprites;
     u8  vertSync;
@@ -46,7 +46,10 @@ struct __attribute__((__packed__)) Config_t
     u8  msxKey5;
     u8  dpad;
     u8  memWipe;
-    u32 reservedA;
+    u8 reservedA0;
+    u8 reservedA1;
+    u8 reservedA2;
+    u8 reservedA3;
     u32 reservedB;
     u32 reservedC;
 };

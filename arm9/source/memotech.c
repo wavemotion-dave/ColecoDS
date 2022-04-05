@@ -26,7 +26,6 @@
 #include "MTX_BIOS.h"
 #define NORAM 0xFF
 
-
 // ---------------------------------------------------------------------
 // Memotech MTX IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
 // ---------------------------------------------------------------------
@@ -308,13 +307,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
   return(NORAM);
 }
 
-// ------------------------------------------------------------------------------------
 
-// Sord Memotech MTX IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
+// ------------------------------------------------------------------------------------
+// Memotech MTX IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
 // ------------------------------------------------------------------------------------
 void cpu_writeport_memotech(register unsigned short Port,register unsigned char Value) 
 {
-    // M5 ports are 8-bit
+    // MTX ports are 8-bit
     Port &= 0x00FF;
 
     if (Port == 0x00)   // This is where the memory bank map magic happens for the MTX
@@ -323,36 +322,40 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
         if (lastIOBYTE != IOBYTE)
         {
             // -----------------------------------------------------------------------
-            // We are using very simplified logic for the MTX... real bank handling 
-            // is more complex than is required just to play a few more games...
+            // We are using simplified logic for the MTX... this should provide
+            // a simple 64K machine roughly the same as a Memotech MTX-512 
             // -----------------------------------------------------------------------
             if ((IOBYTE & 0x80) == 0)  // ROM Mode...
             {
-                if (memotech_RAM_start == 0x0000)
-                {
-                    FastMemCopy(pColecoMem+0x0000, (u8 *)(0x6820000+0x0000), 0x2000);   // Copy mtx_os[] rom into memory
-                    pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
-                }
+                FastMemCopy(pColecoMem+0x0000, (u8 *)(0x6820000+0x0000), 0x2000);                 // Copy mtx_os[] rom into memory
+                pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
                 
-                if ((IOBYTE & 0x70) == 0x00)       
+                if ((IOBYTE & 0x70) == 0x00)   // BASIC ROM ENABLED + 48K Normal RAM
                 {
                     FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x2000), 0x2000);   // Copy mtx_basic[] rom into memory
-                    memotech_RAM_start = 0x4000;
+                    memotech_RAM_start = 0x4000;                                        // Allow access to RAM above base memory
                 }
-                else if ((IOBYTE & 0x70) == 0x10)  
+                else if ((IOBYTE & 0x70) == 0x10)  // ASSEMBLY ROM ENABLED + nothing but common area
                 {
                     FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x4000), 0x2000);   // Copy mtx_assem[] rom into memory
-                    memotech_RAM_start = 0xC000;                                        // We only allow access to upper RAM here
+                    memotech_RAM_start = 0xC000;                                        // Just the common RAM enabled
                 }
                 else 
                 {
-                    memset(pColecoMem+0x2000,0xFF,0x2000);      // Nothing lives here...
-                    memotech_RAM_start = 0xC000;
+                    memset(pColecoMem+0x2000, 0xFF, 0x2000);    // Nothing lives here...
+                    memotech_RAM_start = 0xC000;                // Just the common RAM enabled
                 }
             }
-            else                      // RAM Mode
+            else  // RAM Mode
             {
-                memotech_RAM_start = 0x0000;        // We're emulating a 64K machine
+                if ((IOBYTE & 0x0F) == 0x00)   // All 64K enabled
+                {
+                    memotech_RAM_start = 0x0000;         // We're emulating a 64K machine
+                }
+                else    // Just the upper RAM enabled
+                {
+                    memotech_RAM_start = 0xC000;         // Just the common RAM enabled
+                }
             }
             lastIOBYTE = IOBYTE;
         }
@@ -463,8 +466,11 @@ void MTX_HandleCassette(register Z80 *r)
             }
 
             /* Then return chunks as requested */
-            memcpy(pColecoMem + base, romBuffer+tape_pos, length);
-            tape_pos += length;
+            for (u16 i=0; i<length; i++)
+            {
+                extern void cpu_writemem16(u8, u16);
+                cpu_writemem16(romBuffer[tape_pos++], base+i);
+            }
         }
 
         cpu_writeport_memotech(0x08, 0x00);
