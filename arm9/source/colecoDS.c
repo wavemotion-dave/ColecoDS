@@ -427,7 +427,6 @@ void ResetColecovision(void)
   DrZ80_Reset();                        // Reset the Z80 CPU Core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
     
-  sg1000_reset();                       // Reset the SG-1000
   sordm5_reset();                       // Reset the Sord M5 specific vars
   memotech_reset();                     // Reset the memotech MTX specific vars
   svi_reset();                          // Reset the SVI specific vars
@@ -439,6 +438,7 @@ void ResetColecovision(void)
   if (sg1000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
+      sg1000_reset();                           // Reset the SG-1000 to restore memory
   }
   else if (sordm5_mode)
   {

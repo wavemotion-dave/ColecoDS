@@ -270,9 +270,9 @@ u8 colecoInit(char *szGame)
 
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
-      sg1000_reset();                               // Reset the SG-1000
       colecoWipeRAM();                              // Wipe RAM
       RetFct = loadrom(szGame,pColecoMem,0xC000);   // Load up to 48K
+      sg1000_reset();                               // Reset the SG-1000
   }
   else if (sordm5_mode)  // Load Sord M5 cartridge
   {
