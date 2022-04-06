@@ -31,6 +31,7 @@
 // ------------------------------------------------
 u8 AdamRAM[0x20000]   = {0x00};
 u8 adam_128k_mode     = 0;
+u8 sg1000_double_reset = false;
 
 // -------------------------------------
 // Some IO Port and Memory Map vars...
@@ -166,11 +167,11 @@ void colecoWipeRAM(void)
 {
   if (sg1000_mode)
   {
-    memset(pColecoMem+0xC000, 0x00, 0x4000);   
+      for (int i=0x8000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (sordm5_mode)
   {
-    memset(pColecoMem+0x7000, 0x00, 0x9000);   
+      for (int i=0x7000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (memotech_mode)
   {
@@ -270,17 +271,16 @@ u8 colecoInit(char *szGame)
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
       sg1000_reset();                               // Reset the SG-1000
-      memset(pColecoMem, 0x00, 0x10000);            // Wipe Memory
+      colecoWipeRAM();                              // Wipe RAM
       RetFct = loadrom(szGame,pColecoMem,0xC000);   // Load up to 48K
   }
   else if (sordm5_mode)  // Load Sord M5 cartridge
   {
-      memset(pColecoMem+0x2000, 0x00, 0xE000);            // Wipe Memory above BIOS
+      colecoWipeRAM();
       RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
   }
   else if (memotech_mode)  // Load Memotech MTX file
   {
-      
       memcpy((u8 *)0x6820000+0x0000, mtx_os,    0x2000);  // Fast copy buffer
       memcpy((u8 *)0x6820000+0x2000, mtx_basic, 0x2000);  // Fast copy buffer
       memcpy((u8 *)0x6820000+0x4000, mtx_assem, 0x2000);  // Fast copy buffer
@@ -550,6 +550,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     
     fseek(handle, 0, SEEK_END);                     // Figure out how big the file is
     int iSSize = ftell(handle);
+    sg1000_double_reset = false;
       
     if (sg1000_mode && (iSSize == (2048 * 1024)))   // Look for .sc megacart
     {
@@ -558,6 +559,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         fclose(handle);
         strcpy(lastAdamDataPath, path);
+        sg1000_double_reset = true;
         return bOK;
     }
     if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
