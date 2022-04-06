@@ -27,7 +27,7 @@
 #include "MTX_BIOS.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0011        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x0012        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 
 /*********************************************************************************
@@ -42,14 +42,25 @@ void colecoSaveState()
   char szCh1[32];
     
   // Init filename = romname and STA in place of ROM
-    DIR* dir = opendir("sav");
-    if (dir) closedir(dir);  // Directory exists... close it out and move on.
-    else mkdir("sav", 0777);   // Otherwise create the directory...
-    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
-  
-  szFile[strlen(szFile)-3] = 's';
-  szFile[strlen(szFile)-2] = 'a';
-  szFile[strlen(szFile)-1] = 'v';
+  DIR* dir = opendir("sav");
+  if (dir) closedir(dir);  // Directory exists... close it out and move on.
+  else mkdir("sav", 0777);   // Otherwise create the directory...
+  siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+
+  int len = strlen(szFile);
+  if (szFile[len-3] == '.') // In case of .sg or .sc
+  {
+      szFile[len-2] = 's';
+      szFile[len-1] = 'a';
+      szFile[len-0] = 'v';
+      szFile[len+1] = 0;
+  }
+  else
+  {
+      szFile[len-3] = 's';
+      szFile[len-2] = 'a';
+      szFile[len-1] = 'v';
+  }
   strcpy(szCh1,"SAVING...");
   AffChaine(6,0,0,szCh1);
   
@@ -72,16 +83,13 @@ void colecoSaveState()
 
     u32 z80PCOffset = (u32) (drz80.Z80PC - drz80.Z80PC_BASE);
     if (uNbO) uNbO = fwrite(&z80PCOffset, sizeof(z80PCOffset),1, handle);
+      
+    // Deficit Z80 CPU Cycle counter
+    if (uNbO) uNbO = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
 
     // Save Coleco Memory (yes, all of it!)
     if (uNbO) uNbO = fwrite(pColecoMem, 0x10000,1, handle); 
       
-    // Write XBuf Video Buffer (yes all of it!)
-    if (uNbO) uNbO = fwrite(XBuf, sizeof(XBuf),1, handle); 
-      
-    // Write look-up-table
-    if (uNbO) uNbO = fwrite(lutTablehh, 16*1024,1, handle);      
-
     // Write the Super Game Module and AY sound core 
     if (uNbO) uNbO = fwrite(ay_reg, 16, 1, handle);      
     if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
@@ -98,9 +106,6 @@ void colecoSaveState()
     // A few frame counters
     if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
     if (uNbO) uNbO = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
-      
-    // Deficit Z80 CPU Cycle counter
-    if (uNbO) uNbO = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
       
     // Some Memotech MTX stuff...
     if (uNbO) uNbO = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
@@ -145,15 +150,7 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
     if (uNbO) uNbO = fwrite(&aycol, sizeof(aycol),1, handle);       
       
-    // Write the SGM low memory
-    if (uNbO) fwrite(sgm_low_mem, 0x2000,1, handle);      
-      
     // Write stuff for MSX, SordM5 and SG-1000
-    if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
-    if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
-    if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
-    if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
-    if (uNbO) fwrite(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
     if (uNbO) fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
     if (uNbO) fwrite(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
     if (uNbO) fwrite(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
@@ -167,19 +164,22 @@ void colecoSaveState()
     if (uNbO) fwrite(ctc_latch, sizeof(ctc_latch),1, handle);
     if (uNbO) fwrite(&sordm5_irq, sizeof(sordm5_irq),1, handle);
     
-    if (msx_mode)   // Big enough that we will not write this if we are not MSX
+    if (msx_mode || svi_mode)   // Big enough that we will not write this if we are not MSX or SVI
     {
+        if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
+        if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
+        if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
+        if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+        if (uNbO) fwrite(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
         memcpy(Slot3RAM, Slot3RAMPtr, 0x10000);
         if (uNbO) fwrite(Slot3RAM, 0x10000,1, handle);
-        if (uNbO) fwrite(msx_SRAM, 0x4000,1, handle);
+        if (uNbO) fwrite(msx_SRAM, 0x2000,1, handle);    // No game uses more than 8K
         if (uNbO) fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
     }
-      
-    if (adam_mode)  // Big enough that we will not write this if we are not ADAM
+    else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
-        if (uNbO) fwrite(AdamRAM, 0x20000,1, handle);
-        if (uNbO) fwrite(PCBTable, 0x10000,1, handle);
-        if (uNbO) fwrite(HoldingBuf, 0x4000,1, handle);
+        if (uNbO) fwrite(PCBTable+0x8000, 0x8000,1, handle);
+        if (uNbO) fwrite(HoldingBuf, 0x2000,1, handle);
         if (uNbO) fwrite(Tapes, sizeof(Tapes),1, handle);
         if (uNbO) fwrite(Disks, sizeof(Disks),1, handle);
         if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);
@@ -198,6 +198,13 @@ void colecoSaveState()
         if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
         if (uNbO) fwrite(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
         if (uNbO) fwrite(spare, 30,1, handle);        
+        if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
+        if (uNbO) fwrite(AdamRAM, (adam_128k_mode ? 0x20000:0x10000),1, handle);
+    }
+    else if (!memotech_mode && !sordm5_mode && !sg1000_mode)
+    {
+        // Write the SGM low memory
+        if (uNbO) fwrite(sgm_low_mem, 0x2000,1, handle);      
     }
       
     if (uNbO) 
@@ -228,9 +235,20 @@ void colecoLoadState()
 
     // Init filename = romname and .SAV in place of ROM
     siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
-    szFile[strlen(szFile)-3] = 's';
-    szFile[strlen(szFile)-2] = 'a';
-    szFile[strlen(szFile)-1] = 'v';
+    int len = strlen(szFile);
+    if (szFile[len-3] == '.') // In case of .sg or .sc
+    {
+      szFile[len-2] = 's';
+      szFile[len-1] = 'a';
+      szFile[len-0] = 'v';
+      szFile[len+1] = 0;
+    }
+    else
+    {
+      szFile[len-3] = 's';
+      szFile[len-2] = 'a';
+      szFile[len-1] = 'v';
+    }
     FILE* handle = fopen(szFile, "rb"); 
     if (handle != NULL) 
     {    
@@ -257,15 +275,12 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&z80Offset, sizeof(z80Offset),1, handle);
             z80_rebasePC(z80Offset);                  
 
+            // Deficit Z80 CPU Cycle counter
+            if (uNbO) uNbO = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
+            
             // Load Coleco Memory (yes, all of it!)
             if (uNbO) uNbO = fread(pColecoMem, 0x10000,1, handle); 
 
-            // Load XBuf video buffer (yes, all of it!)
-            if (uNbO) uNbO = fread(XBuf, sizeof(XBuf),1, handle); 
-
-            // Load look-up-table
-            if (uNbO) uNbO = fread(lutTablehh, 16*1024,1, handle);         
-            
             // Load the Super Game Module stuff
             if (uNbO) uNbO = fread(ay_reg, 16, 1, handle);      
             if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
@@ -282,9 +297,6 @@ void colecoLoadState()
             // A few frame counters
             if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
             if (uNbO) uNbO = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
-            
-            // Deficit Z80 CPU Cycle counter
-            if (uNbO) uNbO = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
             
             // Some Memotech MTX stuff...
             if (uNbO) uNbO = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
@@ -330,15 +342,7 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&sncol, sizeof(sncol),1, handle); 
             if (uNbO) uNbO = fread(&aycol, sizeof(aycol),1, handle);
             
-            // Load the SGM low memory
-            if (uNbO) uNbO = fread(sgm_low_mem, 0x2000,1, handle);
-            
             // Load stuff for MSX, SordM5 and SG-1000
-            if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
-            if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
-            if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
-            if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
-            if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
             if (uNbO) fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
             if (uNbO) fread(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
             if (uNbO) fread(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
@@ -352,19 +356,22 @@ void colecoLoadState()
             if (uNbO) fread(ctc_latch, sizeof(ctc_latch),1, handle);
             if (uNbO) fread(&sordm5_irq, sizeof(sordm5_irq),1, handle);
             
-            if (msx_mode)   // Big enough that we will not read this if we are not MSX
+            if (msx_mode || svi_mode)   // Big enough that we will not read this if we are not MSX or SVI
             {
+                if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
+                if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
+                if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
+                if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+                if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
                 if (uNbO) fread(Slot3RAM, 0x10000,1, handle);
                 memcpy(Slot3RAMPtr, Slot3RAM, 0x10000);
-                if (uNbO) fread(msx_SRAM, 0x4000,1, handle);
+                if (uNbO) fread(msx_SRAM, 0x2000,1, handle);    // No game uses more than 8K
                 if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
             }
-            
-            if (adam_mode)  // Big enough that we will not write this if we are not ADAM
+            else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {
-                if (uNbO) fread(AdamRAM, 0x20000,1, handle);
-                if (uNbO) fread(PCBTable, 0x10000,1, handle);
-                if (uNbO) fread(HoldingBuf, 0x4000,1, handle);
+                if (uNbO) fread(PCBTable+0x8000, 0x8000,1, handle);
+                if (uNbO) fread(HoldingBuf, 0x2000,1, handle);
                 if (uNbO) fread(Tapes, sizeof(Tapes),1, handle);
                 if (uNbO) fread(Disks, sizeof(Disks),1, handle);
                 if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
@@ -383,6 +390,13 @@ void colecoLoadState()
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
                 if (uNbO) fread(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
                 if (uNbO) fread(spare, 30,1, handle);                
+                if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
+                if (uNbO) fread(AdamRAM, (adam_128k_mode ? 0x20000:0x10000),1, handle);
+            }
+            else if (!memotech_mode && !sordm5_mode && !sg1000_mode)
+            {
+                // Load the SGM low memory
+                if (uNbO) uNbO = fread(sgm_low_mem, 0x2000,1, handle);
             }
             
             // Fix up transparency
@@ -397,9 +411,6 @@ void colecoLoadState()
             {
                BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
             }
-            
-            // Restore the screen as it was...
-            dmaCopyWords(2, (u32*)XBuf, (u32*)pVidFlipBuf, 256*192);
             
             lastBank = 199;  // Force load of bank if needed
             last_tape_pos = 9999;   // Force tape position to show

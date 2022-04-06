@@ -32,7 +32,6 @@ u8 msx_sram_at_8000 __attribute__((section(".dtcm"))) = 0;
 u8 msx_scc_enable   __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
-extern u8 romBuffer[];
 extern u8 Slot1ROM[];
 extern u8 msx_SRAM[];
 extern u8 PCBTable[];

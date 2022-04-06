@@ -53,8 +53,6 @@
 #include "cpu/sn76496/Fake_AY.h"
 #include "cpu/z80/Z80_interface.h"
 
-extern char lastAdamDataPath[];
-
 extern Z80 CPU;
 extern u8 Slot0BIOS[];
 u32 debug1=0;
@@ -429,6 +427,7 @@ void ResetColecovision(void)
   DrZ80_Reset();                        // Reset the Z80 CPU Core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
     
+  sg1000_reset();                       // Reset the SG-1000
   sordm5_reset();                       // Reset the Sord M5 specific vars
   memotech_reset();                     // Reset the memotech MTX specific vars
   svi_reset();                          // Reset the SVI specific vars
@@ -467,6 +466,7 @@ void ResetColecovision(void)
   else if (adam_mode)
   {
       colecoWipeRAM();
+      adam_128k_mode = 0;                       // Normal 64K ADAM to start
       SetupAdam(false);
   }
   else
@@ -605,7 +605,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_sg1000_mode != sg1000_mode) || bForce)
         {
             last_sg1000_mode = sg1000_mode;
-            AffChaine(23,0,6, "SG-1000");
+            AffChaine(23,0,6, (sg1000_mode == 2 ? "SC-3000":"SG-1000"));
         }
     }
     else if (sordm5_mode)
@@ -1337,8 +1337,8 @@ void colecoDS_main(void)
                 else if ((iTy >= 146) && (iTy < 169)) // Row 6
                 {
                     if      ((iTx >= 1)   && (iTx < 35))   msx_key = KBD_KEY_ESC;
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = KBD_KEY_STOP;
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = KBD_KEY_STOP;
+                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = KBD_KEY_BRK;
+                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = KBD_KEY_BRK;
                     else if ((iTx >= 79)  && (iTx < 101))  msx_key = KBD_KEY_F1;
                     else if ((iTx >= 101) && (iTx < 123))  msx_key = KBD_KEY_F2;
                     else if ((iTx >= 123) && (iTx < 145))  msx_key = KBD_KEY_F3;
@@ -1542,7 +1542,6 @@ void colecoDS_main(void)
           }
           else if (memotech_mode && (keys_pressed & KEY_START))
           {
-              extern u8 romBuffer[];
               if (memotech_mode == 2)   // .MTX file: enter LOAD "" into the keyboard buffer
               {
                   BufferKey('L');

@@ -40,6 +40,7 @@ extern u8 bRAMInSlot[4];
 extern u8 *Slot1ROMPtr[8];
 
 extern u8 AdamRAM[0x20000];
+extern u8 adam_128k_mode;
 
 extern SN76496 sncol;
 extern SN76496 aycol;
@@ -154,6 +155,7 @@ extern void colecoWipeRAM(void);
 
 extern u8 colecoCartVerify(const u8 *cartData);
 extern void sgm_reset(void);
+extern void sg1000_reset(void);
 extern void sordm5_reset(void);
 extern void memotech_reset(void);
 extern void svi_reset(void);

@@ -441,7 +441,6 @@ void MTX_HandleCassette(register Z80 *r)
         /* SAVE */
         {
             // Not supported yet...
-            debug1++;
         }
         else if ( pColecoMem[0xfd67] != 0 )
         /* VERIFY.

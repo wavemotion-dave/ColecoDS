@@ -30,6 +30,7 @@
 // Adam RAM is 128K (64K Intrinsic, 64K Expanded)
 // ------------------------------------------------
 u8 AdamRAM[0x20000]   = {0x00};
+u8 adam_128k_mode     = 0;
 
 // -------------------------------------
 // Some IO Port and Memory Map vars...
@@ -268,6 +269,7 @@ u8 colecoInit(char *szGame)
 
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
+      sg1000_reset();                               // Reset the SG-1000
       memset(pColecoMem, 0x00, 0x10000);            // Wipe Memory
       RetFct = loadrom(szGame,pColecoMem,0xC000);   // Load up to 48K
   }
@@ -544,12 +546,23 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   FILE* handle = fopen(path, "rb");  
   if (handle != NULL) 
   {
-    fseek(handle, 0, SEEK_END);
+    memset(romBuffer, 0xFF, (512 * 1024));          // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
+    
+    fseek(handle, 0, SEEK_END);                     // Figure out how big the file is
     int iSSize = ftell(handle);
-    fseek(handle, 0, SEEK_SET);
+      
+    if (sg1000_mode && (iSSize == (2048 * 1024)))   // Look for .sc megacart
+    {
+        fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
+        fread((void*) romBuffer, 0x8000, 1, handle);  // Read 32K from that last block
+        memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
+        fclose(handle);
+        strcpy(lastAdamDataPath, path);
+        return bOK;
+    }
     if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
     {
-        memset(romBuffer, 0xFF, (512 * 1024));
+        fseek(handle, 0, SEEK_SET);
         fread((void*) romBuffer, iSSize, 1, handle); 
         fclose(handle);
         
@@ -575,6 +588,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         {
             Port60 = 0x00;               // Adam Memory default
             Port20 = 0x00;               // Adam Net default
+            adam_128k_mode = 0;          // Normal 64K ADAM to start
             SetupAdam(false);
             // The .ddp is now in romBuffer[]
             if (strstr(path, ".ddp") != 0)
@@ -757,6 +771,7 @@ void SetupAdam(bool bResetAdamNet)
     }
     else                                // Expanded RAM
     {
+        adam_128k_mode = 1;
         adam_ram_lo = false;
         adam_ram_lo_exp = true;
         memcpy(pColecoMem+0x0000, AdamRAM+0x10000, 0x8000);
@@ -774,6 +789,7 @@ void SetupAdam(bool bResetAdamNet)
     }
     else if ((Port60 & 0x0C) == 0x08)    // Expanded RAM
     {
+        adam_128k_mode = 1;
         adam_ram_hi = false;
         adam_ram_hi_exp = true;
         memcpy(pColecoMem+0x8000, AdamRAM+0x18000, 0x8000);
