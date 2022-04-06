@@ -32,6 +32,7 @@ void sg1000_reset(void)
 {
     Port_PPI_C = 0xFF;
     Port_PPI_CTRL = 0xFF;
+    memcpy(pColecoMem, romBuffer, 0x8000);
 }
 
 
