@@ -1084,6 +1084,12 @@ void colecoDS_main(void)
             emuActFrames = 0;
             
             if (myConfig.isPAL) myConfig.vertSync = 0; ///TBD
+            extern u8 sg1000_double_reset;
+            if (sg1000_double_reset)
+            {
+                sg1000_double_reset=false; 
+                ResetColecovision();
+            }
         }
         emuActFrames++;
 
