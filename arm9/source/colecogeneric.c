@@ -879,6 +879,7 @@ void SetDefaultGameConfig(void)
     }
     
     if (sg1000_mode)                            myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
+    if (sg1000_mode == 2)                       myConfig.overlay = 9;  // SC-3000 uses the keyboard
     if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
     if (memotech_mode)                          myConfig.cpuCore = 1;  // Memotech MTX always uses the CZ80 core
     if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
@@ -1358,10 +1359,10 @@ void ReadFileCRCAndConfig(void)
     
     CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
 
-    if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".SC") != 0) sg1000_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;    // SG-1000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 2;    // SC-3000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".SC") != 0) sg1000_mode = 2;    // SC-3000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".M5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".mtx") != 0) memotech_mode = 2;

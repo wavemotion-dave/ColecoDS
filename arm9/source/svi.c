@@ -333,7 +333,6 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 
                 if (IOBYTE == 0x1F)   // Normal ROM + 32K Upper RAM
                 {
-                      debug1++;
                       FastMemCopy(pColecoMem, (u8 *)0x6820000, 0x8000); // Restore SVI BIOS (ram is already saved in Slot3RAM[])                      
                       SVI_PatchBIOS();
                       if (svi_RAM_start == 0xFFFF)
@@ -347,12 +346,10 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 {
                     if (svi_RAM_start == 0x8000)
                     {
-                      debug2++;
                       memcpy(pColecoMem, Slot3RAM, 0x8000);     // Restore RAM in lower slot
                     }
                     else if (svi_RAM_start == 0xFFFF)
                     {
-                      debug3++;
                       memcpy(pColecoMem, Slot3RAM, 0x10000);     // Restore RAM in both slots
                     }
                     svi_RAM_start = 0x0000;
@@ -364,7 +361,6 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 }
                 else    // No RAM avaialble for any other combinations...
                 {
-                    debug4++;
                     debug3 = IOBYTE;
                     svi_RAM_start = 0xFFFF;
                     memset(pColecoMem+0x8000, 0xFF, 0x8000);    // No RAM in upper slot

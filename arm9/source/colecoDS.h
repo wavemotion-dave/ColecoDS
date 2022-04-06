@@ -95,6 +95,8 @@ extern u8 msx_key;
 extern u8 adam_CapsLock;
 extern u8 adam_unsaved_data;
 
+extern char lastAdamDataPath[];
+
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
 #define MAX_KEY_OPTIONS  44
