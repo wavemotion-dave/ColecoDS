@@ -145,6 +145,10 @@ Spectravideo SVI Compatibility :
 -----------------------
 This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common bload and run commands.
 
+Sega SC-3000 Compatibility :
+-----------------------
+This emulator supports .sc files as ROM only (not cassettes) but ColecoDS will support the amazing SC-3000 Survivors Multi-Cart and MEGA-Cart. Strongly prefer the Multi-Cart as it's smaller and contains the same selection of tape games. Just rename the 2MB or 4MB binary as .sc to load in ColecoDS.
+
 Controllers :
 -----------------------
 You can map buttons to either P1 or P2 controllers. 
@@ -219,6 +223,13 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.6: 07-Apr-2022 by wavemotion-dave
+* CAS icon implemented to provide a menu of cassette-based actions including swapping tape/disk for multi-load games.
+* SC-3000 emulated more fully with support for the SC-3000 Survivors Multi-Cart.
+* PAL vs NTSC now supported for the Memotech MTX, Spectravideo SVI and SC-3000.
+* SAV files have been streamlined and are now smaller/faster. Old saves won't work. Sorry.
+* Better overall memory handling to keep the program size managable.
+
 V6.5: 02-Apr-2022 by wavemotion-dave
 * Spectravideo SVI (328) support added (.cas files auto-detected format)
 * MTX Cassette support added (.cas files auto-detected format)
