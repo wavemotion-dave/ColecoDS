@@ -139,7 +139,8 @@ extern u32 last_tape_pos;
 extern u8* Slot3RAMPtr;
 extern u8* Slot0BIOSPtr;
 extern u32 LastROMSize;
-
+extern u8 Port_PPI_CTRL;
+extern u8 OldPortC;
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);

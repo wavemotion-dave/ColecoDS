@@ -552,16 +552,30 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     int iSSize = ftell(handle);
     sg1000_double_reset = false;
       
-    if (sg1000_mode && (iSSize == (2048 * 1024)))   // Look for .sc megacart
+    if (sg1000_mode && (iSSize == (2048 * 1024)))   // Look for .sc Multicart
     {
         fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
         fread((void*) romBuffer, 0x8000, 1, handle);  // Read 32K from that last block
         memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         fclose(handle);
         strcpy(lastAdamDataPath, path);
+        romBankMask = 0x3F;
         sg1000_double_reset = true;
         return bOK;
     }
+    else
+    if (sg1000_mode && (iSSize == (4096 * 1024)))   // Look for .sc Megacart
+    {
+        fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
+        fread((void*) romBuffer, 0x8000, 1, handle);  // Read 32K from that last block
+        memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
+        fclose(handle);
+        strcpy(lastAdamDataPath, path);
+        romBankMask = 0x7F;
+        sg1000_double_reset = true;
+        return bOK;
+    }
+    else        
     if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
     {
         fseek(handle, 0, SEEK_SET);
