@@ -33,7 +33,7 @@
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
-u8  spare[495] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
+u8  spare[493] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
 void colecoSaveState() 
 {
   u32 uNbO;
@@ -118,6 +118,10 @@ void colecoSaveState()
       
     // Some SVI stuff...
     if (uNbO) uNbO = fwrite(&svi_RAM_start, sizeof(svi_RAM_start), 1, handle); 
+      
+    // Some SG-1000 / SC-3000 stuff...
+    if (uNbO) uNbO = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
+    if (uNbO) uNbO = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
       
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
@@ -309,6 +313,10 @@ void colecoLoadState()
             
             // Some SVI stuff...
             if (uNbO) uNbO = fread(&svi_RAM_start, sizeof(svi_RAM_start), 1, handle); 
+            
+            // Some SG-1000 / SC-3000 stuff...
+            if (uNbO) uNbO = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
+            if (uNbO) uNbO = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
             
             // Load spare memory for future use
             if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 

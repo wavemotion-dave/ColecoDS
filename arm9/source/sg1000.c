@@ -27,11 +27,16 @@
 #define NORAM 0xFF
 
 u8 Port_PPI_CTRL = 0xFF;
+u8 OldPortC=0xFF;
 
+// ------------------------------------------------------------------
+// SG-1000 IO Port Read - just VDP and Joystick to contend with...
+// ------------------------------------------------------------------
 void sg1000_reset(void)
 {
     Port_PPI_C = 0xFF;
     Port_PPI_CTRL = 0xFF;
+    OldPortC=0xFF;
     memcpy(pColecoMem, romBuffer, 0x8000);
 }
 
@@ -72,7 +77,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (msx_key == 'Q')       joy1 |= 0x02;
           if (msx_key == 'A')       joy1 |= 0x04;
           if (msx_key == 'Z')       joy1 |= 0x08;
-
+          if (msx_key == KBD_KEY_ESC) joy1 |= 0x10;
           if (msx_key == ',')       joy1 |= 0x20;
           if (msx_key == 'K')       joy1 |= 0x40;
           if (msx_key == 'I')       joy1 |= 0x80;
@@ -246,8 +251,13 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
     // ------------------------
     if (Port >= 0xE0) 
     {
-        int game_no = (Value & 0x80) ? ((Value & 0x1f) | ((Value & 0x40) ? 0x20 : 0x00)) : 0x3F;
-        if (game_no == 63)
+        int game_no;
+        
+        if (romBankMask == 0x3F)
+            game_no = (Value & 0x80) ? ((Value & 0x1f) | ((Value & 0x40) ? 0x20 : 0x00)) : 0x3F;
+        else
+            game_no = (Value & 0x1f) | (Value & 0xc0) >> 1;
+        if (game_no == romBankMask)
         {
             memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         }
@@ -279,7 +289,6 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
     }
     else if ((Port == 0xDF) || (Port == 0xC3)) 
     {
-        static u8 OldPortC=0xFF;
         if (Value & 0x01)   // If PortC is input...
         {
             // If switching from output to input... save
