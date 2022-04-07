@@ -910,6 +910,9 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x9d8fa05f)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo needs diagonals
     if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo2 needs diagonals    
     if (file_crc == 0xf9934809)                 myConfig.dpad = DPAD_DIAGONALS;  // Reveal needs diagonals    
+    
+    if (file_crc == 0x0084b239)                 myConfig.isPAL = 1;     // Survivors Multi-Cart is PAL
+    if (file_crc == 0x76a3d2e2)                 myConfig.isPAL = 1;     // Survivors MEGA-Cart is PAL
 }
 
 // -------------------------------------------------------------------------

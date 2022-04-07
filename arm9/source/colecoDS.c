@@ -606,6 +606,12 @@ void DisplayStatusLine(bool bForce)
         {
             last_sg1000_mode = sg1000_mode;
             AffChaine(23,0,6, (sg1000_mode == 2 ? "SC-3000":"SG-1000"));
+            last_pal_mode = 99;
+        }
+        if (last_pal_mode != myConfig.isPAL)
+        {
+            last_pal_mode = myConfig.isPAL;
+            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (sordm5_mode)
@@ -1082,8 +1088,8 @@ void colecoDS_main(void)
             }
             DisplayStatusLine(false);
             emuActFrames = 0;
-            
-            if (myConfig.isPAL) myConfig.vertSync = 0; ///TBD
+
+            // A bit of a hack for the SC-3000 Survivors Multi-Cart
             extern u8 sg1000_double_reset;
             if (sg1000_double_reset)
             {

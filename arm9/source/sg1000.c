@@ -60,6 +60,16 @@ unsigned char cpu_readport_sg(register unsigned short Port)
 
       if (sg1000_mode == 2) // SC-3000 mode
       {
+          if (myConfig.dpad == DPAD_MSX_KEYS)
+          {
+              if (JoyState & JST_UP)    msx_key = KBD_KEY_UP;
+              if (JoyState & JST_DOWN)  msx_key = KBD_KEY_DOWN;
+              if (JoyState & JST_LEFT)  msx_key = KBD_KEY_LEFT;
+              if (JoyState & JST_RIGHT) msx_key = KBD_KEY_RIGHT;
+              if (JoyState & JST_FIREL) msx_key = ' ';
+              if (JoyState & JST_FIRER) msx_key = ' ';
+          }
+          
         //      Port A                          Port B
         // Row  D0  D1  D2  D3  D4  D5  D6  D7  D0  D1  D2  D3
         //  -   ------------------------------- ---------------
@@ -119,6 +129,10 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (msx_key == 'O')       joy1 |= 0x80;
         }
 
+        //  4   '5' 'T' 'G' 'B' --- DA  ']' '[' '^' --- --- ---
+        //  5   '6' 'Y' 'H' 'N' --- LA  CR  --- YEN --- --- FNC
+        //  6   '7' 'U' 'J' 'M' --- RA  UA  --- BRK GRP CTL SHF
+          
         if ((Port_PPI_C & 0x07) == 0x04)  // Row 4
         {
           if (msx_key == '5')       joy1 |= 0x01;
@@ -126,6 +140,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (msx_key == 'G')       joy1 |= 0x04;
           if (msx_key == 'B')       joy1 |= 0x08;
 
+          if (msx_key == KBD_KEY_DOWN) joy1 |= 0x20;
           if (msx_key == ']')       joy1 |= 0x40;
           if (msx_key == '[')       joy1 |= 0x80;
         }
@@ -136,7 +151,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (msx_key == 'Y')       joy1 |= 0x02;
           if (msx_key == 'H')       joy1 |= 0x04;
           if (msx_key == 'N')       joy1 |= 0x08;
-
+          if (msx_key == KBD_KEY_LEFT) joy1 |= 0x20;
           if (msx_key == KBD_KEY_RET) joy1 |= 0x40;
         }
 
@@ -146,6 +161,8 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (msx_key == 'U')       joy1 |= 0x02;
           if (msx_key == 'J')       joy1 |= 0x04;
           if (msx_key == 'M')       joy1 |= 0x08;
+          if (msx_key == KBD_KEY_RIGHT) joy1 |= 0x20;
+          if (msx_key == KBD_KEY_UP) joy1 |= 0x40;
         }
 
         if ((Port_PPI_C & 0x07) == 0x07)  // Row 7 (joystick)
