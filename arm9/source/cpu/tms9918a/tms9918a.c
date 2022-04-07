@@ -735,6 +735,9 @@ void Reset9918(void)
     
     BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
     
+    // ------------------------------------------------------------
+    // Determine if we are PAL vs NTSC and adjust line timing...
+    // ------------------------------------------------------------
     tms_start_line = (myConfig.isPAL ? TMS9929_START_LINE   :   TMS9918_START_LINE);
     tms_end_line   = (myConfig.isPAL ? TMS9929_END_LINE     :   TMS9918_END_LINE);
     tms_num_lines  = (myConfig.isPAL ? TMS9929_LINES        :   TMS9918_LINES);
@@ -743,8 +746,6 @@ void Reset9918(void)
         tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE_MTX :   TMS9918_LINE_MTX);
     else
         tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE     :   TMS9918_LINE);
-    
-    
     
     // ---------------------------------------------------------------
     // Our background/foreground color table makes computations FAST!
