@@ -20,7 +20,7 @@ If you want to play Sord M5 games, you will
 also need an 8k sordm5.rom bios in the same
 directory as the coleco.rom BIOS.
 
-SG-1000 emulation does not need a BIOS.
+SG-1000/SC-3000 emulation does not need a BIOS.
 
 Memotech MTX emulation has a built-in BIOS.
 
@@ -39,6 +39,7 @@ Features :
 * Megacart Bankswitching support (up to 512K).
 * Coleco ADAM game support (.ddp or .dsk files)
 * Sega SG-1000 game support (.sg roms)
+* Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
 * Spectravideo SVI support (.cas) - requires svi.rom BIOS
 * MSX1 game support (.msx or .rom or.cas) up to 512K 
