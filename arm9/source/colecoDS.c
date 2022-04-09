@@ -32,6 +32,7 @@
 #include "msx_sm.h"
 #include "msx_full.h"
 #include "adam_full.h"
+#include "pv2000_sm.h"
 #include "ecranDebug.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
@@ -67,7 +68,6 @@ u8 adam_CapsLock = 0;
 u8 adam_unsaved_data = 0;
 u8 key_shift = false;
 
-
 u32 last_tape_pos = 9999;
 
 extern u32 tape_pos, tape_len;
@@ -83,6 +83,7 @@ extern u32 tape_pos, tape_len;
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             
 u8 ColecoBios[0x2000] = {0};  // We keep the Coleco  8K BIOS around to swap in/out
 u8 SordM5Bios[0x2000] = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
+u8 PV2000Bios[0x4000] = {0};  // We keep the Casio PV-2000 16K BIOS around to swap in/out
 u8 MSXBios[0x8000]    = {0};  // We keep the MSX 32K BIOS around to swap in/out
 u8 AdamEOS[0x2000]    = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
 u8 AdamWRITER[0x8000] = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
@@ -114,6 +115,7 @@ u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pau
 
 u8 sg1000_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
 u8 sordm5_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
+u8 pv2000_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
 u8 memotech_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .mtx or .run game is loaded for Memotech MTX support 
 u8 msx_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
 u8 svi_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support 
@@ -382,6 +384,7 @@ static u8 last_sgm_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
+static u8 last_pv2000_mode = 0;
 static u8 last_sordm5_mode = 0;
 static u8 last_memotech_mode = 0;
 static u8 last_msx_mode = 0;
@@ -397,6 +400,7 @@ void ResetStatusFlags(void)
   last_ay_mode  = false;
   last_mc_mode  = 0;
   last_sg1000_mode = 0;
+  last_pv2000_mode = 0;
   last_sordm5_mode = 0;
   last_memotech_mode = 0;
   last_msx_mode = 0;
@@ -431,6 +435,7 @@ void ResetColecovision(void)
   memotech_reset();                     // Reset the memotech MTX specific vars
   svi_reset();                          // Reset the SVI specific vars
   msx_reset();                          // Reset the MSX specific vars
+  pv2000_reset();                       // Reset the PV2000 stuff
 
   adam_CapsLock = 0;
   adam_unsaved_data = 0;
@@ -439,6 +444,11 @@ void ResetColecovision(void)
   {
       colecoWipeRAM();                          // Wipe main RAM area
       sg1000_reset();                           // Reset the SG-1000 to restore memory
+  }
+  else if (pv2000_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+      memcpy(pColecoMem,PV2000Bios,0x4000);     // Restore the Casio PV-2000 BIOS
   }
   else if (sordm5_mode)
   {
@@ -612,6 +622,14 @@ void DisplayStatusLine(bool bForce)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+        }
+    }
+    else if (pv2000_mode)
+    {
+        if ((last_pv2000_mode != pv2000_mode) || bForce)
+        {
+            last_pv2000_mode = pv2000_mode;
+            AffChaine(23,0,6, "PV-2000");
         }
     }
     else if (sordm5_mode)
@@ -1859,6 +1877,14 @@ void InitBottomScreen(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) adam_smPal,(void*) BG_PALETTE_SUB,256*2);
       }
+      else if (pv2000_mode)
+      {
+          //  Init bottom screen
+          decompress(pv2000_smTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(pv2000_smMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) pv2000_smPal,(void*) BG_PALETTE_SUB,256*2);
+      }
       else
       {
           //  Init bottom screen
@@ -1898,6 +1924,10 @@ void colecoDSInitCPU(void)
   if (sordm5_mode)
   {
     memcpy(pColecoMem,SordM5Bios,0x2000);
+  }
+  else if (pv2000_mode)
+  {
+    memcpy(pColecoMem,PV2000Bios,0x4000);
   }
   else if (memotech_mode)
   {
@@ -1959,6 +1989,18 @@ void LoadBIOSFiles(void)
         fclose(fp);
     }
 
+    // -----------------------------------------------------------
+    // Try to load the Casio PV-2000 ROM BIOS
+    // -----------------------------------------------------------
+    fp = fopen("pv2000.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv2000.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv2000.rom", "rb");
+    if (fp != NULL)
+    {
+        fread(PV2000Bios, 0x4000, 1, fp);
+        fclose(fp);
+    }
+    
     // -----------------------------------------------------------
     // Next try to load the MSX.ROM - if this fails we still
     // have the C-BIOS as a good built-in backup.

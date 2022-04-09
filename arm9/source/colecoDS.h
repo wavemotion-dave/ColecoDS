@@ -87,6 +87,7 @@ extern u8 spinY_right;
 
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
+extern u8 pv2000_mode;
 extern u8 memotech_mode;
 extern u8 msx_mode;
 extern u8 svi_mode;

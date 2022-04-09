@@ -63,6 +63,8 @@ u8 Port_PPI_C __attribute__((section(".dtcm"))) = 0x00;
 
 u8 msx_auto_clear_irq __attribute__((section(".dtcm"))) = 0;
 
+u8 bIsComplicatedRAM __attribute__((section(".dtcm"))) = 0;   // Set to 1 if we have hotspots or other RAM needs
+
 char lastAdamDataPath[256];
 
 // --------------------------------------------------------------------------------------
@@ -168,6 +170,11 @@ void colecoWipeRAM(void)
   if (sg1000_mode)
   {
       for (int i=0x8000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+  }
+  else if (pv2000_mode)
+  {
+      memset(pColecoMem+0x4000, 0xFF, 0xC000);
+      for (int i=0x7000; i<0x8000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (sordm5_mode)
   {
@@ -279,6 +286,11 @@ u8 colecoInit(char *szGame)
       colecoWipeRAM();
       RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
   }
+  else if (pv2000_mode)  // Casio PV-2000 cartridge loads at C000
+  {
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,pColecoMem+0xC000,0x4000);  // Load up to 16K
+  }
   else if (memotech_mode)  // Load Memotech MTX file
   {
       memcpy((u8 *)0x6820000+0x0000, mtx_os,    0x2000);  // Fast copy buffer
@@ -355,10 +367,9 @@ u8 colecoInit(char *szGame)
     Reset9918();                        // Reset the VDP
       
     sordm5_reset();                     // Reset the Sord M5 CTC stuff
-      
     memotech_reset();                   // Reset the Memotech MTX stuff
-      
     svi_reset();                        // Reset the SVI stuff
+    pv2000_reset();                     // Reset the PV2000 stuff
       
     XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
       
@@ -687,6 +698,12 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         bOK = 1;
     }
     else fclose(handle);
+      
+    // -------------------------------------------------------------------------  
+    // For some combinations, we have hotspots or other memory stuff that 
+    // needs to be more complicated than simply returning pColecoMem[].
+    // -------------------------------------------------------------------------  
+    bIsComplicatedRAM = (bMagicMegaCart || adam_mode || pv2000_mode) ? 1:0;                          // Assume RAM is complicated until told otherweise
   }
   return bOK;
 }
@@ -829,6 +846,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 {
   if (sg1000_mode)   {return cpu_readport_sg(Port);}    
   if (sordm5_mode)   {return cpu_readport_m5(Port);}    
+  if (pv2000_mode)   {return cpu_readport_pv2000(Port);}    
   if (memotech_mode) {return cpu_readport_memotech(Port);}    
   if (msx_mode)      {return cpu_readport_msx(Port);}
   if (svi_mode)      {return cpu_readport_svi(Port);}
@@ -878,6 +896,7 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 {
   if      (sg1000_mode)   {cpu_writeport_sg(Port, Value); return;}
   else if (sordm5_mode)   {cpu_writeport_m5(Port, Value); return;}
+  else if (pv2000_mode)   {cpu_writeport_pv2000(Port, Value); return;}
   else if (memotech_mode) {cpu_writeport_memotech(Port, Value); return;}
   else if (svi_mode)      {return cpu_writeport_svi(Port, Value); return;}
   //if (msx_mode)    {cpu_writeport_msx(Port, Value); return;}      // This is now handled in DrZ80 and CZ80 directly
@@ -1115,6 +1134,11 @@ ITCM_CODE u32 LoopZ80()
 #ifdef DEBUG_Z80 
           CPU.User++;   // Track Interrupt Requests
 #endif          
+          if (pv2000_mode) 
+          {
+              extern void pv2000_check_kbd(void);
+              pv2000_check_kbd();
+          }
       }
   }
   

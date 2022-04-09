@@ -160,6 +160,7 @@ extern void sg1000_reset(void);
 extern void sordm5_reset(void);
 extern void memotech_reset(void);
 extern void svi_reset(void);
+extern void pv2000_reset(void);
 extern void msx_reset(void);
 extern void MSX_HandleBeeper(void);
 
