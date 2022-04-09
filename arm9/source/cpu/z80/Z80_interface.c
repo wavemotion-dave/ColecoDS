@@ -85,7 +85,7 @@ ITCM_CODE void BankSwitch(u8 bank)
 // -------------------------------------------------
 // 8-bit read with bankswitch support... slower...
 // -------------------------------------------------
-ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
+u8 cpu_readmem16_banked (u16 address) 
 {
   if (bMagicMegaCart) // Handle Megacart Hot Spots
   {
@@ -95,6 +95,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
       }
   }    
   else if ((adam_mode) && PCBTable[address]) ReadPCB(address);
+  else if (pv2000_mode) return cpu_readmem_pv2000(address);
     
   return (pColecoMem[address]);
 }
@@ -321,6 +322,10 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         {
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
         }
+    }
+    else if (pv2000_mode)
+    {
+        cpu_writemem_pv2000(value, address);
     }
     // ----------------------------------------------------------------------------------
     // For the Memotech MTX, allow anything in the upper 48K

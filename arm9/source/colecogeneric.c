@@ -391,6 +391,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".pv") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
         if ( (strcasecmp(strrchr(szFile, '.'), ".m5") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -885,6 +891,7 @@ void SetDefaultGameConfig(void)
     if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
     if (svi_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
     if (adam_mode)                              myConfig.cpuCore = 1;  // Adam defaults to CZ80 core - user can switch it out
+    if (pv2000_mode)                            myConfig.cpuCore = 1;  // PV-2000 only supports DrZ80 core
     if (msx_mode == 2)                          myConfig.msxBios = 1;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (adam_mode && !isDSiMode())              myConfig.frameSkip=1;  // If Adam and older DS-LITE, turn on light frameskip
@@ -1354,6 +1361,7 @@ void ReadFileCRCAndConfig(void)
     
     u8 cas_load = 0;
     sg1000_mode = 0;
+    pv2000_mode = 0;
     sordm5_mode = 0;
     memotech_mode = 0;
     msx_mode = 0;
@@ -1366,6 +1374,8 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 2;    // SC-3000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".SC") != 0) sg1000_mode = 2;    // SC-3000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".pv") != 0) pv2000_mode = 2;    // SC-3000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".PV") != 0) pv2000_mode = 2;    // SC-3000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".M5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".mtx") != 0) memotech_mode = 2;
