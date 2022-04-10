@@ -108,6 +108,7 @@ u8 bSordBiosFound = false;
 u8 bMSXBiosFound = false;
 u8 bSVIBiosFound = false;
 u8 bAdamBiosFound = false;
+u8 bPV2000BiosFound = false;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
@@ -1756,10 +1757,6 @@ void colecoDSInit(void)
   dmaVal  = *(bgGetMapPtr(bg0b)+24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
     
-  //  Put out the initial messages looking for a file system
-  AffChaine(2,6,0,"SEARCH FAT SYSTEM   ...   ");
-  AffChaine(2,7,0,"FAT  SYSTEM FOUND   !");
-
   //  Find the files
   colecoDSFindFiles();
 }
@@ -1975,6 +1972,7 @@ void LoadBIOSFiles(void)
     bMSXBiosFound = false;
     bSVIBiosFound = false;
     bAdamBiosFound = false;
+    bPV2000BiosFound = false;
     
     // -----------------------------------------------------------
     // First load Sord M5 bios - don't really care if this fails
@@ -1997,6 +1995,7 @@ void LoadBIOSFiles(void)
     if (fp == NULL) fp = fopen("/data/bios/pv2000.rom", "rb");
     if (fp != NULL)
     {
+        bPV2000BiosFound = true;
         fread(PV2000Bios, 0x4000, 1, fp);
         fclose(fp);
     }
@@ -2157,13 +2156,15 @@ int main(int argc, char **argv)
     // ---------------------------------------------------------------
     if (bColecoBiosFound)
     {
-        u8 idx = 9;
+        u8 idx = 6;
         AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
         AffChaine(2,idx++,0,"coleco.rom BIOS FOUND"); idx++;
         if (bMSXBiosFound) {AffChaine(2,idx++,0,"msx.rom BIOS FOUND"); idx++;}
         if (bSVIBiosFound) {AffChaine(2,idx++,0,"svi.rom BIOS FOUND"); idx++;}
         if (bSordBiosFound) {AffChaine(2,idx++,0,"sordm5.rom BIOS FOUND"); idx++;}
+        if (bPV2000BiosFound) {AffChaine(2,idx++,0,"pv2000.rom BIOS FOUND"); idx++;}        
         if (bAdamBiosFound) {AffChaine(2,idx++,0,"eos.rom and writer.rom FOUND"); idx++;}
+        AffChaine(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
         
         AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
         
