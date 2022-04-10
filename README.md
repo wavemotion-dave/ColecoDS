@@ -13,8 +13,8 @@ to be very close to the CV in terms of hardware.
 Often only the IO/Memory was different. As such,
 ColecoDS also allows cartridge and sometimes tape
 games from "cousin" systems to be played - 
-namely the Sord M5, the Memotech MTX, the SG-1000
-and the MSX1.
+namely the Sord M5, the Memotech MTX, the SG-1000/3000,
+the Casio PV-2000 and the venerable MSX1.
 
 If you want to play Sord M5 games, you will
 also need an 8k sordm5.rom bios in the same
@@ -32,6 +32,8 @@ ADAM computer emulation requires eos.rom and writer.rom
 
 Spectravideo SVI emulation requires svi.rom BIOS
 
+Casio PV-2000 requires pv2000.rom BIOS
+
 Features :
 -----------------------
 * Colecovision game support (.rom or .col files)
@@ -42,6 +44,7 @@ Features :
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
 * Spectravideo SVI support (.cas) - requires svi.rom BIOS
+* Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * MSX1 game support (.msx or .rom or.cas) up to 512K 
 * Memotech MTX game support (.mtx or .run) - single loader games only.
 * Full Controller button mapping and touch-screen input.
@@ -150,6 +153,10 @@ Sega SC-3000 Compatibility :
 -----------------------
 This emulator supports .sc files as ROM only (not cassettes) but ColecoDS will support the amazing SC-3000 Survivors Multi-Cart and MEGA-Cart. Strongly prefer the Multi-Cart as it's smaller and contains the same selection of tape games. Just rename the 2MB or 4MB binary as .sc to load in ColecoDS.
 
+Casio PV-2000 Compatibility :
+-----------------------
+This emulator supports .pv files as ROM only (not cassettes).  Rename any .bin files you find as .pv so the emulator will load them correctly.
+
 Controllers :
 -----------------------
 You can map buttons to either P1 or P2 controllers. 
@@ -224,6 +231,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.7: 10-Apr-2022 by wavemotion-dave
+* Casio PV-2000 support (.pv rom files) - all 11 games run fine.
+* Improved emulated memory access to gain almost 1 frame of performance.
+* Numerous small cleanups under the hood.
+
 V6.6: 07-Apr-2022 by wavemotion-dave
 * CAS icon implemented to provide a menu of cassette-based actions including swapping tape/disk for multi-load games.
 * SC-3000 emulated more fully with support for the SC-3000 Survivors Multi-Cart.
