@@ -14,7 +14,7 @@ Often only the IO/Memory was different. As such,
 ColecoDS also allows cartridge and sometimes tape
 games from "cousin" systems to be played - 
 namely the Sord M5, the Memotech MTX, the SG-1000/3000,
-the Casio PV-2000 and the venerable MSX1.
+the Spectravision 3x8 SVI, Casio PV-2000 and the venerable MSX1.
 
 If you want to play Sord M5 games, you will
 also need an 8k sordm5.rom bios in the same
