@@ -345,7 +345,7 @@ void ITCM_CODE RefreshSprites(register byte Y) {
 /** Refresh line Y (0..191) of SCREEN0, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE RefreshLine0(u8 Y) 
+void RefreshLine0(u8 Y) 
 {
   register byte *T,X,K,Offset;
   register byte *P,FC,BC;

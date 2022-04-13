@@ -88,6 +88,7 @@ u8 MSXBios[0x8000]    = {0};  // We keep the MSX 32K BIOS around to swap in/out
 u8 AdamEOS[0x2000]    = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
 u8 AdamWRITER[0x8000] = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
 u8 SVIBios[0x8000]    = {0};  // We keep the SVI 32K BIOS around to swap in/out
+u8 Pencil2Bios[0x2000]= {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -121,6 +122,7 @@ u8 memotech_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a
 u8 msx_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
 u8 svi_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support 
 u8 adam_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
+u8 pencil2_mode  __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pii Pencil 2 ROM is loaded (only one known to exist!)
 u8 msx_key       __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
@@ -382,6 +384,7 @@ void dsInstallSoundEmuFIFO(void)
 // Reset the Colecovision - mostly CPU, Super Game Module and memory...
 //*****************************************************************************
 static u8 last_sgm_mode = false;
+static u8 last_pencil_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
@@ -400,6 +403,7 @@ void ResetStatusFlags(void)
   last_sgm_mode = false;
   last_ay_mode  = false;
   last_mc_mode  = 0;
+  last_pencil_mode = 0;
   last_sg1000_mode = 0;
   last_pv2000_mode = 0;
   last_sordm5_mode = 0;
@@ -479,6 +483,11 @@ void ResetColecovision(void)
       colecoWipeRAM();
       adam_128k_mode = 0;                       // Normal 64K ADAM to start
       SetupAdam(false);
+  }
+  else if (pencil2_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+      memcpy(pColecoMem,Pencil2Bios,0x2000);
   }
   else
   {
@@ -718,8 +727,16 @@ void DisplayStatusLine(bool bForce)
         else
             AffChaine(30,0,6, "  ");
     }
+    else if (pencil2_mode)
+    {
+        if ((pencil2_mode != last_pencil_mode) || bForce)
+        {
+            last_pencil_mode = pencil2_mode;
+            AffChaine(22,0,6, "PENCIL II");
+        }
+    }
     else    // Various Colecovision Possibilities 
-    {    
+    {   
         if ((last_sgm_mode != sgm_enable) || bForce)
         {
             last_sgm_mode = sgm_enable;
@@ -1941,6 +1958,10 @@ void colecoDSInitCPU(void)
       memcpy(pColecoMem,SVIBios,0x8000);        // Copy BIOS into place
       SVI_PatchBIOS();                          // And Patch the BIOS
   }
+  else if (pencil2_mode)
+  {
+      memcpy(pColecoMem,Pencil2Bios,0x2000);
+  }
   else  // Finally we get to the Coleco BIOS
   {
     memcpy(pColecoMem,ColecoBios,0x2000);
@@ -2033,6 +2054,18 @@ void LoadBIOSFiles(void)
     {
         bSVIBiosFound = true;
         fread(SVIBios, 0x8000, 1, fp);
+        fclose(fp);
+    }
+    
+    // -----------------------------------------------------------
+    // Next try to load the SVI.ROM
+    // -----------------------------------------------------------
+    fp = fopen("pencil2.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pencil2.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pencil2.rom", "rb");
+    if (fp != NULL)
+    {
+        fread(Pencil2Bios, 0x2000, 1, fp);
         fclose(fp);
     }
 

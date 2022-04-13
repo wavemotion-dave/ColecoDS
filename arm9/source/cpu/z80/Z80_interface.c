@@ -636,9 +636,16 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     }    
     else if((address>0x5FFF)&&(address<0x8000)) // Normal memory RAM write... with mirrors...
     {
-        address&=0x03FF;
-        pColecoMem[0x6000+address]=pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x6C00+address]=
-        pColecoMem[0x7000+address]=pColecoMem[0x7400+address]=pColecoMem[0x7800+address]=pColecoMem[0x7C00+address]=value;
+        if (pencil2_mode)
+        {
+            address&=0x07FF;
+        }
+        else
+        {
+            address&=0x03FF;
+            pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x7400+address]=pColecoMem[0x7C00+address]=value;
+        }
+        pColecoMem[0x6000+address]=pColecoMem[0x6800+address]=pColecoMem[0x7000+address]=pColecoMem[0x7800+address]=value;
     }
     else if ((address >= 0xE000) && (address < 0xE800)) // Allow SRAM if cart doesn't extend this high...
     {

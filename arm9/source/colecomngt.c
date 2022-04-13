@@ -326,6 +326,16 @@ u8 colecoInit(char *szGame)
       colecoWipeRAM();
       RetFct = loadrom(szGame,pColecoMem,0x10000);  
   }
+  else if (pencil2_mode)
+  {
+      // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
+      memset(pColecoMem+0x2000, 0xFF, 0xE000);
+
+      // Wipe RAM to Random Values
+      colecoWipeRAM();
+
+      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
+  }
   else  // Load coleco cartridge
   {
       // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
