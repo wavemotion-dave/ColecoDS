@@ -439,6 +439,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".pen") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
       }
     }
   }
@@ -1364,6 +1370,7 @@ void ReadFileCRCAndConfig(void)
     pv2000_mode = 0;
     sordm5_mode = 0;
     memotech_mode = 0;
+    pencil2_mode = 0;
     msx_mode = 0;
     svi_mode = 0;
     adam_mode = 0;
@@ -1390,6 +1397,8 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".DDP") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) adam_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".pen") != 0) pencil2_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".PEN") != 0) pencil2_mode = 1;
     
     // --------------------------------------------------------------------------
     // If a .cas file is picked, we need to figure out what machine it's for...

@@ -130,6 +130,7 @@ extern u8 lastBank;
 extern u8 MSXBios[];
 extern u8 CBios[];
 extern u8 SVIBios[];
+extern u8 Pencil2Bios[];
 extern u8 AdamEOS[];
 extern u8 AdamWRITER[];
 extern u8 Slot3RAM[0x10000];
