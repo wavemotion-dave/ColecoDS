@@ -133,9 +133,9 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
           if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
           {
-              msx_key = BufferedKeys[BufferedKeysReadIdx];
+              kbd_key = BufferedKeys[BufferedKeysReadIdx];
               BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
-              if (msx_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+              if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
           }
           
           if (JoyState == JST_0)   key1 |= 0x01;  // '0'
@@ -149,16 +149,16 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 6) key1 |= 0x40;  // '6'
               if (myConfig.msxKey5 == 7) key1 |= 0x80;  // '7'
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == '0')           key1 = 0x01;
-              if (msx_key == '1')           key1 = 0x02;
-              if (msx_key == '2')           key1 = 0x04;
-              if (msx_key == '3')           key1 = 0x08;
-              if (msx_key == '4')           key1 = 0x10;
-              if (msx_key == '5')           key1 = 0x20;
-              if (msx_key == '6')           key1 = 0x40;
-              if (msx_key == '7')           key1 = 0x80;
+              if (kbd_key == '0')           key1 = 0x01;
+              if (kbd_key == '1')           key1 = 0x02;
+              if (kbd_key == '2')           key1 = 0x04;
+              if (kbd_key == '3')           key1 = 0x08;
+              if (kbd_key == '4')           key1 = 0x10;
+              if (kbd_key == '5')           key1 = 0x20;
+              if (kbd_key == '6')           key1 = 0x40;
+              if (kbd_key == '7')           key1 = 0x80;
           }
       }
       else if ((Port_PPI_C & 0x0F) == 1)  // Row 1
@@ -168,16 +168,16 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 8) key1 |= 0x01;  // '8'
               if (myConfig.msxKey5 == 9) key1 |= 0x02;  // '9'
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == '8')           key1 = 0x01;
-              if (msx_key == '9')           key1 = 0x02;
-              if (msx_key == '-')           key1 = 0x04;
-              if (msx_key == '=')           key1 = 0x08;
-              if (msx_key == '\\')          key1 = 0x10;
-              if (msx_key == ']')           key1 = 0x20;
-              if (msx_key == '[')           key1 = 0x40;
-              if (msx_key == ':')           key1 = 0x80;
+              if (kbd_key == '8')           key1 = 0x01;
+              if (kbd_key == '9')           key1 = 0x02;
+              if (kbd_key == '-')           key1 = 0x04;
+              if (kbd_key == '=')           key1 = 0x08;
+              if (kbd_key == '\\')          key1 = 0x10;
+              if (kbd_key == ']')           key1 = 0x20;
+              if (kbd_key == '[')           key1 = 0x40;
+              if (kbd_key == ':')           key1 = 0x80;
           }
           
       }
@@ -188,15 +188,15 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 10) key1 |= 0x40;  // 'A'
               if (myConfig.msxKey5 == 11) key1 |= 0x80;  // 'B'
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_QUOTE) key1 = 0x01;
-              if (msx_key == '#')           key1 = 0x02;
-              if (msx_key == ',')           key1 = 0x04;
-              if (msx_key == '.')           key1 = 0x08;
-              if (msx_key == '/')           key1 = 0x10;
-              if (msx_key == 'A')           key1 = 0x40;
-              if (msx_key == 'B')           key1 = 0x80;
+              if (kbd_key == KBD_KEY_QUOTE) key1 = 0x01;
+              if (kbd_key == '#')           key1 = 0x02;
+              if (kbd_key == ',')           key1 = 0x04;
+              if (kbd_key == '.')           key1 = 0x08;
+              if (kbd_key == '/')           key1 = 0x10;
+              if (kbd_key == 'A')           key1 = 0x40;
+              if (kbd_key == 'B')           key1 = 0x80;
           }          
       }
       else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
@@ -212,16 +212,16 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 18) key1 |= 0x40;  // 'I'
               if (myConfig.msxKey5 == 19) key1 |= 0x80;  // 'J'
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == 'C')           key1 = 0x01;
-              if (msx_key == 'D')           key1 = 0x02;
-              if (msx_key == 'E')           key1 = 0x04;
-              if (msx_key == 'F')           key1 = 0x08;
-              if (msx_key == 'G')           key1 = 0x10;
-              if (msx_key == 'H')           key1 = 0x20;
-              if (msx_key == 'I')           key1 = 0x40;
-              if (msx_key == 'J')           key1 = 0x80;
+              if (kbd_key == 'C')           key1 = 0x01;
+              if (kbd_key == 'D')           key1 = 0x02;
+              if (kbd_key == 'E')           key1 = 0x04;
+              if (kbd_key == 'F')           key1 = 0x08;
+              if (kbd_key == 'G')           key1 = 0x10;
+              if (kbd_key == 'H')           key1 = 0x20;
+              if (kbd_key == 'I')           key1 = 0x40;
+              if (kbd_key == 'J')           key1 = 0x80;
           }          
       }
       else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
@@ -237,16 +237,16 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 26) key1 |= 0x40;  // 'Q'
               if (myConfig.msxKey5 == 27) key1 |= 0x80;  // 'R'
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == 'K')           key1 = 0x01;
-              if (msx_key == 'L')           key1 = 0x02;
-              if (msx_key == 'M')           key1 = 0x04;
-              if (msx_key == 'N')           key1 = 0x08;
-              if (msx_key == 'O')           key1 = 0x10;
-              if (msx_key == 'P')           key1 = 0x20;
-              if (msx_key == 'Q')           key1 = 0x40;
-              if (msx_key == 'R')           key1 = 0x80;
+              if (kbd_key == 'K')           key1 = 0x01;
+              if (kbd_key == 'L')           key1 = 0x02;
+              if (kbd_key == 'M')           key1 = 0x04;
+              if (kbd_key == 'N')           key1 = 0x08;
+              if (kbd_key == 'O')           key1 = 0x10;
+              if (kbd_key == 'P')           key1 = 0x20;
+              if (kbd_key == 'Q')           key1 = 0x40;
+              if (kbd_key == 'R')           key1 = 0x80;
           }          
       }
       else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
@@ -262,16 +262,16 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (myConfig.msxKey5 == 34) key1 |= 0x40;  // 'Y'
               if (myConfig.msxKey5 == 35) key1 |= 0x80;  // 'Z'
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == 'S')           key1 = 0x01;
-              if (msx_key == 'T')           key1 = 0x02;
-              if (msx_key == 'U')           key1 = 0x04;
-              if (msx_key == 'V')           key1 = 0x08;
-              if (msx_key == 'W')           key1 = 0x10;
-              if (msx_key == 'X')           key1 = 0x20;
-              if (msx_key == 'Y')           key1 = 0x40;
-              if (msx_key == 'Z')           key1 = 0x80;
+              if (kbd_key == 'S')           key1 = 0x01;
+              if (kbd_key == 'T')           key1 = 0x02;
+              if (kbd_key == 'U')           key1 = 0x04;
+              if (kbd_key == 'V')           key1 = 0x08;
+              if (kbd_key == 'W')           key1 = 0x10;
+              if (kbd_key == 'X')           key1 = 0x20;
+              if (kbd_key == 'Y')           key1 = 0x40;
+              if (kbd_key == 'Z')           key1 = 0x80;
           }          
       }      
       else if ((Port_PPI_C & 0x0F) == 6) // Row 6
@@ -284,14 +284,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
             if (myConfig.msxKey5 == 1) key1 |= 0x01;  // SHIFT
             if (myConfig.msxKey5 == 2) key1 |= 0x02;  // CTRL
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_SHIFT) key1 = 0x01;
-              if (msx_key == KBD_KEY_CTRL)  key1 = 0x02;
-              if (msx_key == KBD_KEY_CAPS)  key1 = 0x08;
-              if (msx_key == KBD_KEY_F1)    key1 = 0x20;
-              if (msx_key == KBD_KEY_F2)    key1 = 0x40;
-              if (msx_key == KBD_KEY_F3)    key1 = 0x80;
+              if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
+              if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
+              if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;
+              if (kbd_key == KBD_KEY_F1)    key1 = 0x20;
+              if (kbd_key == KBD_KEY_F2)    key1 = 0x40;
+              if (kbd_key == KBD_KEY_F3)    key1 = 0x80;
           }          
           if (key_shift)                    key1 |= 0x01;  // SHIFT
       }
@@ -305,22 +305,22 @@ unsigned char cpu_readport_msx(register unsigned short Port)
             if (myConfig.msxKey5 == 5) key1 |= 0x02;  // F5
             if (myConfig.msxKey5 == 3) key1 |= 0x04;  // ESC
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_F4)    key1 = 0x01;
-              if (msx_key == KBD_KEY_F5)    key1 = 0x02;
-              if (msx_key == KBD_KEY_STOP)  key1 = 0x10;
-              if (msx_key == KBD_KEY_DEL)   key1 = 0x20;
-              if (msx_key == KBD_KEY_RET)   key1 = 0x80;
-              if (msx_key == KBD_KEY_SEL)   key1 = 0x40;
-              if (msx_key == KBD_KEY_ESC)   key1 = 0x04;
+              if (kbd_key == KBD_KEY_F4)    key1 = 0x01;
+              if (kbd_key == KBD_KEY_F5)    key1 = 0x02;
+              if (kbd_key == KBD_KEY_STOP)  key1 = 0x10;
+              if (kbd_key == KBD_KEY_DEL)   key1 = 0x20;
+              if (kbd_key == KBD_KEY_RET)   key1 = 0x80;
+              if (kbd_key == KBD_KEY_SEL)   key1 = 0x40;
+              if (kbd_key == KBD_KEY_ESC)   key1 = 0x04;
           }          
       }
       else if ((Port_PPI_C & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
       {
           if (JoyState == JST_STAR) key1 |= 0x01;  // SPACE
           
-          if (myConfig.dpad == DPAD_MSX_KEYS)
+          if (myConfig.dpad == DPAD_kbd_keyS)
           {
               if (JoyState & JST_UP)    key1 |= 0x20;  // KEY UP
               if (JoyState & JST_DOWN)  key1 |= 0x40;  // KEY DOWN
@@ -329,14 +329,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (JoyState & JST_FIREL) key1 |= 0x01;  // SPACE
               if (JoyState & JST_FIRER) key1 |= 0x01;  // SPACE
           }
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == ' ')           key1 = 0x01;
-              if (msx_key == KBD_KEY_UP)    key1 = 0x20;
-              if (msx_key == KBD_KEY_DOWN)  key1 = 0x40;
-              if (msx_key == KBD_KEY_LEFT)  key1 = 0x10;
-              if (msx_key == KBD_KEY_RIGHT) key1 = 0x80;
-              if (msx_key == KBD_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the seldom used SEL key
+              if (kbd_key == ' ')           key1 = 0x01;
+              if (kbd_key == KBD_KEY_UP)    key1 = 0x20;
+              if (kbd_key == KBD_KEY_DOWN)  key1 = 0x40;
+              if (kbd_key == KBD_KEY_LEFT)  key1 = 0x10;
+              if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
+              if (kbd_key == KBD_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the seldom used SEL key
           }          
       }
       return ~key1;

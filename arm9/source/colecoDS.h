@@ -16,6 +16,13 @@ extern u32 debug4;
 
 #define JST_NONE            0x0000
 #define JST_KEYPAD          0x000F
+
+// ------------------------------------------------------------------------------
+// Joystick UP, RIGHT, LEFT, DOWN and the two FIRE buttons are independent...
+// but all other keypad buttons (including the PURPLE and BLUE butotns on
+// the super action controller) are shared on the bottom of this 16-bit word.
+// This is how a real Colecovision deals with it.
+// ------------------------------------------------------------------------------
 #define JST_UP              0x0100
 #define JST_RIGHT           0x0200
 #define JST_DOWN            0x0400
@@ -39,7 +46,9 @@ extern u32 debug4;
 #define JST_RED             JST_FIRER
 #define JST_YELLOW          JST_FIREL
 
+// -------------------------------------------------------------------------------
 // These 4 are not actual Colecovision key maps... they trigger the spinner logic.
+// -------------------------------------------------------------------------------
 #define META_SPINX_LEFT     0xFFFF0001
 #define META_SPINX_RIGHT    0xFFFF0002
 #define META_SPINY_LEFT     0xFFFF0003
@@ -48,7 +57,9 @@ extern u32 debug4;
 #define JOYMODE_JOYSTICK    0
 #define JOYMODE_KEYPAD      1
 
-// For the MSX Full Keyboard...
+// -----------------------------
+// For the Full Keyboard...
+// -----------------------------
 #define KBD_KEY_UP          1
 #define KBD_KEY_DOWN        2
 #define KBD_KEY_RIGHT       3
@@ -87,13 +98,14 @@ extern u8 spinY_right;
 
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
+extern u8 einstein_mode;
 extern u8 pv2000_mode;
 extern u8 memotech_mode;
 extern u8 pencil2_mode;
 extern u8 msx_mode;
 extern u8 svi_mode;
 extern u8 adam_mode;
-extern u8 msx_key;
+extern u8 kbd_key;
 extern u8 adam_CapsLock;
 extern u8 adam_unsaved_data;
 

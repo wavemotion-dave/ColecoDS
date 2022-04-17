@@ -89,6 +89,7 @@ u8 AdamEOS[0x2000]    = {0};  // We keep the ADAM EOS.ROM bios around to swap in
 u8 AdamWRITER[0x8000] = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
 u8 SVIBios[0x8000]    = {0};  // We keep the SVI 32K BIOS around to swap in/out
 u8 Pencil2Bios[0x2000]= {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
+u8 EinsteinBios[0x2000]={0};  // We keep the 8k Einstein BIOS around
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -123,7 +124,8 @@ u8 msx_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a
 u8 svi_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support 
 u8 adam_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
 u8 pencil2_mode  __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pii Pencil 2 ROM is loaded (only one known to exist!)
-u8 msx_key       __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
+u8 einstein_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
+u8 kbd_key       __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
@@ -241,7 +243,7 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
     }
     else
     {
-        if (msx_mode || svi_mode)   // If we are an MSX or SVI, we can just use the one AY sound core
+        if (msx_mode || svi_mode || einstein_mode)   // If we are an MSX or SVI, we can just use the one AY sound core
         {
             ay76496Mixer(len*4, dest, &aycol);
         }
@@ -441,6 +443,7 @@ void ResetColecovision(void)
   svi_reset();                          // Reset the SVI specific vars
   msx_reset();                          // Reset the MSX specific vars
   pv2000_reset();                       // Reset the PV2000 stuff
+  einstein_reset();
 
   adam_CapsLock = 0;
   adam_unsaved_data = 0;
@@ -489,6 +492,11 @@ void ResetColecovision(void)
       colecoWipeRAM();                          // Wipe main RAM area
       memcpy(pColecoMem,Pencil2Bios,0x2000);
   }
+  else if (einstein_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+      memcpy(pColecoMem,EinsteinBios,0x2000);
+  }    
   else
   {
       memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
@@ -734,6 +742,11 @@ void DisplayStatusLine(bool bForce)
             last_pencil_mode = pencil2_mode;
             AffChaine(22,0,6, "PENCIL II");
         }
+    }
+    else if (einstein_mode)
+    {
+        AffChaine(22,0,6, "EINSTEIN");
+        AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
     }
     else    // Various Colecovision Possibilities 
     {   
@@ -1181,7 +1194,7 @@ void colecoDS_main(void)
       // Handle any screen touch events
       // ------------------------------------------
       ucUN  = 0;
-      msx_key = 0;
+      kbd_key = 0;
       if  (keysCurrent() & KEY_TOUCH) {
         touchPosition touch;
         touchRead(&touch);
@@ -1313,102 +1326,102 @@ void colecoDS_main(void)
             {
                 if ((iTy >= 28) && (iTy < 51))        // Row 1 (top row)
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = '0';
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = '1';
-                    else if ((iTx >= 79)  && (iTx < 101))  msx_key = '2';
-                    else if ((iTx >= 101) && (iTx < 123))  msx_key = '3';
-                    else if ((iTx >= 123) && (iTx < 145))  msx_key = '4';
-                    else if ((iTx >= 145) && (iTx < 167))  msx_key = '5';
-                    else if ((iTx >= 167) && (iTx < 189))  msx_key = '6';
-                    else if ((iTx >= 189) && (iTx < 211))  msx_key = '7';
-                    else if ((iTx >= 211) && (iTx < 233))  msx_key = '8';
-                    else if ((iTx >= 233) && (iTx < 255))  msx_key = '9';
+                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '0';
+                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = '1';
+                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = '2';
+                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = '3';
+                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = '4';
+                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = '5';
+                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = '6';
+                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = '7';
+                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = '8';
+                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = '9';
 
                 }
                 else if ((iTy >= 51) && (iTy < 75))   // Row 2
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = 'A';
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = 'B';
-                    else if ((iTx >= 79)  && (iTx < 101))  msx_key = 'C';
-                    else if ((iTx >= 101) && (iTx < 123))  msx_key = 'D';
-                    else if ((iTx >= 123) && (iTx < 145))  msx_key = 'E';
-                    else if ((iTx >= 145) && (iTx < 167))  msx_key = 'F';
-                    else if ((iTx >= 167) && (iTx < 189))  msx_key = 'G';
-                    else if ((iTx >= 189) && (iTx < 211))  msx_key = 'H';
-                    else if ((iTx >= 211) && (iTx < 233))  msx_key = 'I';
-                    else if ((iTx >= 233) && (iTx < 255))  msx_key = 'J';
+                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'A';
+                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'B';
+                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'C';
+                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'D';
+                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'E';
+                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'F';
+                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'G';
+                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'H';
+                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'I';
+                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'J';
                 }
                 else if ((iTy >= 75) && (iTy < 99))  // Row 3
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = 'K';
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = 'L';
-                    else if ((iTx >= 79)  && (iTx < 101))  msx_key = 'M';
-                    else if ((iTx >= 101) && (iTx < 123))  msx_key = 'N';
-                    else if ((iTx >= 123) && (iTx < 145))  msx_key = 'O';
-                    else if ((iTx >= 145) && (iTx < 167))  msx_key = 'P';
-                    else if ((iTx >= 167) && (iTx < 189))  msx_key = 'Q';
-                    else if ((iTx >= 189) && (iTx < 211))  msx_key = 'R';
-                    else if ((iTx >= 211) && (iTx < 233))  msx_key = 'S';
-                    else if ((iTx >= 233) && (iTx < 255))  msx_key = 'T';
+                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'K';
+                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'L';
+                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'M';
+                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'N';
+                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'O';
+                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'P';
+                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'Q';
+                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'R';
+                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'S';
+                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'T';
                 }
                 else if ((iTy >= 99) && (iTy < 123)) // Row 4
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = 'U';
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = 'V';
-                    else if ((iTx >= 79)  && (iTx < 101))  msx_key = 'W';
-                    else if ((iTx >= 101) && (iTx < 123))  msx_key = 'X';
-                    else if ((iTx >= 123) && (iTx < 145))  msx_key = 'Y';
-                    else if ((iTx >= 145) && (iTx < 167))  msx_key = 'Z';
-                    else if ((iTx >= 167) && (iTx < 189))  msx_key = KBD_KEY_UP;
-                    else if ((iTx >= 189) && (iTx < 211))  msx_key = KBD_KEY_DOWN;
-                    else if ((iTx >= 211) && (iTx < 233))  msx_key = KBD_KEY_LEFT;
-                    else if ((iTx >= 233) && (iTx < 255))  msx_key = KBD_KEY_RIGHT;
+                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'U';
+                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'V';
+                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'W';
+                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'X';
+                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'Y';
+                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'Z';
+                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_UP;
+                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_DOWN;
+                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_LEFT;
+                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RIGHT;
                 }
                 else if ((iTy >= 123) && (iTy < 146)) // Row 5
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   msx_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = '.';
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = ',';
-                    else if ((iTx >= 79)  && (iTx < 101))  msx_key = ':';
-                    else if ((iTx >= 101) && (iTx < 123))  msx_key = '#';
-                    else if ((iTx >= 123) && (iTx < 145))  msx_key = '/';
-                    else if ((iTx >= 145) && (iTx < 167))  msx_key = KBD_KEY_QUOTE;
-                    else if ((iTx >= 167) && (iTx < 189))  msx_key = '=';
-                    else if ((iTx >= 189) && (iTx < 211))  msx_key = '[';
-                    else if ((iTx >= 211) && (iTx < 233))  msx_key = ']';
-                    else if ((iTx >= 233) && (iTx < 255))  msx_key = '-';
+                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '.';
+                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = ',';
+                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = ':';
+                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = '#';
+                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = '/';
+                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_QUOTE;
+                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = '=';
+                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = '[';
+                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = ']';
+                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = '-';
                 }
                 else if ((iTy >= 146) && (iTy < 169)) // Row 6
                 {
-                    if      ((iTx >= 1)   && (iTx < 35))   msx_key = KBD_KEY_ESC;
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = KBD_KEY_BRK;
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = KBD_KEY_BRK;
-                    else if ((iTx >= 79)  && (iTx < 101))  msx_key = KBD_KEY_F1;
-                    else if ((iTx >= 101) && (iTx < 123))  msx_key = KBD_KEY_F2;
-                    else if ((iTx >= 123) && (iTx < 145))  msx_key = KBD_KEY_F3;
-                    else if ((iTx >= 145) && (iTx < 167))  msx_key = KBD_KEY_F4;
-                    else if ((iTx >= 167) && (iTx < 189))  msx_key = KBD_KEY_F5;
-                    else if ((iTx >= 189) && (iTx < 211))  msx_key = KBD_KEY_F6;
-                    else if ((iTx >= 211) && (iTx < 233))  msx_key = KBD_KEY_F7;
-                    else if ((iTx >= 233) && (iTx < 255))  msx_key = KBD_KEY_F8;
+                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = KBD_KEY_ESC;
+                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_BRK;
+                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_BRK;
+                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_F1;
+                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_F2;
+                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_F3;
+                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_F4;
+                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_F5;
+                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_F6;
+                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_F7;
+                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_F8;
                 }
                 else if ((iTy >= 169) && (iTy < 192)) // Row 7
                 {
                     if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-                    else if ((iTx >= 35)  && (iTx < 57))   msx_key = KBD_KEY_CAPS;
-                    else if ((iTx >= 57)  && (iTx < 79))   msx_key = KBD_KEY_CAPS;
-                    else if ((iTx >= 79)  && (iTx < 101))  msx_key = KBD_KEY_DEL;
-                    else if ((iTx >= 101) && (iTx < 123))  msx_key = KBD_KEY_DEL;
-                    else if ((iTx >= 123) && (iTx < 145))  msx_key = KBD_KEY_HOME;
-                    else if ((iTx >= 145) && (iTx < 167))  msx_key = KBD_KEY_HOME;
-                    else if ((iTx >= 167) && (iTx < 189))  msx_key = ' ';
-                    else if ((iTx >= 189) && (iTx < 211))  msx_key = ' ';
-                    else if ((iTx >= 211) && (iTx < 233))  msx_key = KBD_KEY_RET;
-                    else if ((iTx >= 233) && (iTx < 255))  msx_key = KBD_KEY_RET;
+                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_CAPS;
+                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_CAPS;
+                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_DEL;
+                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_DEL;
+                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_HOME;
+                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_HOME;
+                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = ' ';
+                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = ' ';
+                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_RET;
+                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RET;
                 }
             }
             else // Adam Keyboard ~60 keys
@@ -1548,11 +1561,11 @@ void colecoDS_main(void)
           
         if (++dampenClick > 2)  // Make sure the key is pressed for an appreciable amount of time...
         {
-            if (((ucUN != 0) || (msx_key != 0)) && (lastUN == 0))
+            if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
             {
                 mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
             }
-            lastUN = (ucUN ? ucUN:msx_key);
+            lastUN = (ucUN ? ucUN:kbd_key);
         }
       } //  SCR_TOUCH
       else  
@@ -1587,6 +1600,24 @@ void colecoDS_main(void)
           if (IsFullKeyboard() && ((keys_pressed & KEY_L) || (keys_pressed & KEY_R)))
           {
               key_shift = true;
+          }
+          else if (einstein_mode && (keys_pressed & KEY_START)) // Load .COM file directly
+          {
+              extern u16 einstein_ram_start;
+              einstein_reset();
+              einstein_ram_start = 0x0000;
+              for (int i = 0x0000; i<0x10000; i++)
+              {
+                  pColecoMem[i] = rand() % 256;
+                  Slot3RAM[i] = pColecoMem[i];
+              }
+              memcpy(pColecoMem+0x100, romBuffer, tape_len);
+              memcpy(Slot3RAM+0x100, romBuffer, tape_len);
+              CPU.IRequest = INT_NONE;
+              CPU.PC.W = 0x100;
+              RdCtrl9918();
+              JumpZ80(CPU.PC.W);
+              WAITVBL;WAITVBL;WAITVBL;              
           }
           else if (memotech_mode && (keys_pressed & KEY_START))
           {
@@ -1624,8 +1655,8 @@ void colecoDS_main(void)
                       pColecoMem[i] = romBuffer[idx++];
                   }
                   CPU.PC.W = mtx_start;
-                  
                   RdCtrl9918();
+                  JumpZ80(CPU.PC.W);
               }
               WAITVBL;WAITVBL;WAITVBL;
           }
@@ -1700,7 +1731,7 @@ void colecoDS_main(void)
       // -------------------------------------------------------------------
       // If we are ADAM mode and we have configured joystick-keyboard map...
       // -------------------------------------------------------------------
-      if (adam_mode && myConfig.dpad == DPAD_MSX_KEYS)
+      if (adam_mode && myConfig.dpad == DPAD_kbd_keyS)
       {
           static u32 LastJoyState = 999;
           if (JoyState != LastJoyState)
@@ -1962,6 +1993,10 @@ void colecoDSInitCPU(void)
   {
       memcpy(pColecoMem,Pencil2Bios,0x2000);
   }
+  else if (einstein_mode)
+  {
+      memcpy(pColecoMem,EinsteinBios,0x2000);
+  }    
   else  // Finally we get to the Coleco BIOS
   {
     memcpy(pColecoMem,ColecoBios,0x2000);
@@ -2058,7 +2093,7 @@ void LoadBIOSFiles(void)
     }
     
     // -----------------------------------------------------------
-    // Next try to load the SVI.ROM
+    // Next try to load the PENCIL2.ROM
     // -----------------------------------------------------------
     fp = fopen("pencil2.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/pencil2.rom", "rb");
@@ -2066,6 +2101,18 @@ void LoadBIOSFiles(void)
     if (fp != NULL)
     {
         fread(Pencil2Bios, 0x2000, 1, fp);
+        fclose(fp);
+    }
+    
+    // -----------------------------------------------------------
+    // Next try to load the EINSTIEN.ROM
+    // -----------------------------------------------------------
+    fp = fopen("einstein.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/einstein.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/einstein.rom", "rb");
+    if (fp != NULL)
+    {
+        fread(EinsteinBios, 0x2000, 1, fp);
         fclose(fp);
     }
 

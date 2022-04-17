@@ -61,6 +61,9 @@ extern unsigned char cpu_readport_msx(register unsigned short Port);
 extern void cpu_writeport_svi(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport_svi(register unsigned short Port);
 
+extern void cpu_writeport_einstein(register unsigned short Port,register unsigned char Value);
+extern unsigned char cpu_readport_einstein(register unsigned short Port);
+
 extern u8 cpu_readmem_pv2000 (u16 address);
 extern void cpu_writemem_pv2000 (u8 value,u16 address);
 

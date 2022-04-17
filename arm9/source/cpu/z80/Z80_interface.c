@@ -338,6 +338,19 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         }
     }
     // ----------------------------------------------------------------------------------
+    // For the Memotech MTX, allow anything in the upper 48K
+    // ----------------------------------------------------------------------------------
+    else if (einstein_mode)
+    {
+        extern u8 Slot3RAM[];
+        extern u16 einstein_ram_start;
+        if (address >= einstein_ram_start)  //TBD variable
+        {
+            pColecoMem[address] = value;      // Allow pretty much anything above the base ROM area
+        }
+        Slot3RAM[address] = value;        // Plus shadow copy to improve bank switching
+    }
+    // ----------------------------------------------------------------------------------
     // For the Spectravideo SVI - we allow anything above the base ROM area
     // ----------------------------------------------------------------------------------
     else if (svi_mode)
@@ -671,7 +684,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
 // -----------------------------------------------------------------
 void ClearMSXInterrupt(void)
 {
-    if (msx_mode || svi_mode)
+    if (msx_mode || svi_mode || einstein_mode)
     {
         if (!msx_auto_clear_irq && (CPU.IRequest == INT_RST38)) CPU.IRequest=INT_NONE;
     }

@@ -78,25 +78,25 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
           if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
           {
-              msx_key = BufferedKeys[BufferedKeysReadIdx];
+              kbd_key = BufferedKeys[BufferedKeysReadIdx];
               BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
-              if (msx_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+              if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
           }
       }
       
-      if ((JoyState == 0) && (msx_key == 0) && (key_shift == 0)) return 0xFF;
+      if ((JoyState == 0) && (kbd_key == 0) && (key_shift == 0)) return 0xFF;
       
       if (MTX_KBD_DRIVE == 0xFD)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_ESC)   key1 = 0x01;
-              if (msx_key == '2')           key1 = 0x02;
-              if (msx_key == '4')           key1 = 0x04;
-              if (msx_key == '6')           key1 = 0x08;
-              if (msx_key == '8')           key1 = 0x10;
-              if (msx_key == '0')           key1 = 0x20;
+              if (kbd_key == KBD_KEY_ESC)   key1 = 0x01;
+              if (kbd_key == '2')           key1 = 0x02;
+              if (kbd_key == '4')           key1 = 0x04;
+              if (kbd_key == '6')           key1 = 0x08;
+              if (kbd_key == '8')           key1 = 0x10;
+              if (kbd_key == '0')           key1 = 0x20;
           }          
           return (~key1 & 0xFF);
       }
@@ -104,13 +104,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       if (MTX_KBD_DRIVE == 0xFE)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == '1')           key1 = 0x01;
-              if (msx_key == '3')           key1 = 0x02;
-              if (msx_key == '5')           key1 = 0x04;
-              if (msx_key == '7')           key1 = 0x08;
-              if (msx_key == '9')           key1 = 0x10;
+              if (kbd_key == '1')           key1 = 0x01;
+              if (kbd_key == '3')           key1 = 0x02;
+              if (kbd_key == '5')           key1 = 0x04;
+              if (kbd_key == '7')           key1 = 0x08;
+              if (kbd_key == '9')           key1 = 0x10;
               return (~key1 & 0xFF);
           }          
       }
@@ -119,16 +119,16 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       {
           u8 key1 = 0x00;
           if (joy1 & 0x01)                  key1 = 0x80;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_CTRL)  key1 = 0x01;
-              if (msx_key == 'W')           key1 = 0x02;
-              if (msx_key == 'R')           key1 = 0x04;
-              if (msx_key == 'Y')           key1 = 0x08;
-              if (msx_key == 'I')           key1 = 0x10;
-              if (msx_key == 'P')           key1 = 0x20;
-              if (msx_key == '[')           key1 = 0x40;
-              if (msx_key == KBD_KEY_UP)    key1 = 0x80;
+              if (kbd_key == KBD_KEY_CTRL)  key1 = 0x01;
+              if (kbd_key == 'W')           key1 = 0x02;
+              if (kbd_key == 'R')           key1 = 0x04;
+              if (kbd_key == 'Y')           key1 = 0x08;
+              if (kbd_key == 'I')           key1 = 0x10;
+              if (kbd_key == 'P')           key1 = 0x20;
+              if (kbd_key == '[')           key1 = 0x40;
+              if (kbd_key == KBD_KEY_UP)    key1 = 0x80;
           }          
           return (~key1 & 0xFF);
       }
@@ -136,15 +136,15 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       {
           u8 key1 = 0x00;
           if (joy1 & 0x04)                  key1 = 0x80;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == 'Q')           key1 = 0x01;
-              if (msx_key == 'E')           key1 = 0x02;
-              if (msx_key == 'T')           key1 = 0x04;
-              if (msx_key == 'U')           key1 = 0x08;
-              if (msx_key == 'O')           key1 = 0x10;
-              if (msx_key == '@')           key1 = 0x20;
-              if (msx_key == KBD_KEY_LEFT)  key1 = 0x80;              
+              if (kbd_key == 'Q')           key1 = 0x01;
+              if (kbd_key == 'E')           key1 = 0x02;
+              if (kbd_key == 'T')           key1 = 0x04;
+              if (kbd_key == 'U')           key1 = 0x08;
+              if (kbd_key == 'O')           key1 = 0x10;
+              if (kbd_key == '@')           key1 = 0x20;
+              if (kbd_key == KBD_KEY_LEFT)  key1 = 0x80;              
           }          
           return (~key1 & 0xFF);
       }
@@ -154,16 +154,16 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       {
           u8 key1 = 0x00;
           if (joy1 & 0x08)                  key1 = 0x80;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_SHIFT) key1 = 0x01;
-              if (msx_key == 'S')           key1 = 0x02;
-              if (msx_key == 'F')           key1 = 0x04;
-              if (msx_key == 'H')           key1 = 0x08;
-              if (msx_key == 'K')           key1 = 0x10;
-              if (msx_key == ';')           key1 = 0x20;
-              if (msx_key == ']')           key1 = 0x40;
-              if (msx_key == KBD_KEY_RIGHT) key1 = 0x80;              
+              if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
+              if (kbd_key == 'S')           key1 = 0x02;
+              if (kbd_key == 'F')           key1 = 0x04;
+              if (kbd_key == 'H')           key1 = 0x08;
+              if (kbd_key == 'K')           key1 = 0x10;
+              if (kbd_key == ';')           key1 = 0x20;
+              if (kbd_key == ']')           key1 = 0x40;
+              if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;              
           }          
           return (~key1 & 0xFF);
       }
@@ -172,15 +172,15 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (JoyState & JST_FIRER)         key1 = 0x80;
           if (JoyState & JST_FIREL)         key1 = 0x80;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == 'A')           key1 = 0x01;
-              if (msx_key == 'D')           key1 = 0x02;
-              if (msx_key == 'G')           key1 = 0x04;
-              if (msx_key == 'J')           key1 = 0x08;
-              if (msx_key == 'L')           key1 = 0x10;
-              if (msx_key == ':')           key1 = 0x20;
-              if (msx_key == KBD_KEY_RET)   key1 = 0x40;
+              if (kbd_key == 'A')           key1 = 0x01;
+              if (kbd_key == 'D')           key1 = 0x02;
+              if (kbd_key == 'G')           key1 = 0x04;
+              if (kbd_key == 'J')           key1 = 0x08;
+              if (kbd_key == 'L')           key1 = 0x10;
+              if (kbd_key == ':')           key1 = 0x20;
+              if (kbd_key == KBD_KEY_RET)   key1 = 0x40;
           }          
           return (~key1 & 0xFF);
       }
@@ -192,27 +192,27 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (joy1 & 0x02)                  key1 = 0x80;
           if (key_shift)                    key1 = 0x01;    // SHIFT key
           
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == 'X')           key1 = 0x02;
-              if (msx_key == 'V')           key1 = 0x04;
-              if (msx_key == 'N')           key1 = 0x08;
-              if (msx_key == ',')           key1 = 0x10;
-              if (msx_key == '/')           key1 = 0x20;
-              if (msx_key == KBD_KEY_DOWN)  key1 = 0x80;              
+              if (kbd_key == 'X')           key1 = 0x02;
+              if (kbd_key == 'V')           key1 = 0x04;
+              if (kbd_key == 'N')           key1 = 0x08;
+              if (kbd_key == ',')           key1 = 0x10;
+              if (kbd_key == '/')           key1 = 0x20;
+              if (kbd_key == KBD_KEY_DOWN)  key1 = 0x80;              
           }          
          return (~key1 & 0xFF);
       }
       if (MTX_KBD_DRIVE == 0x7F)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == 'Z')           key1 = 0x01;
-              if (msx_key == 'C')           key1 = 0x02;
-              if (msx_key == 'B')           key1 = 0x04;
-              if (msx_key == 'M')           key1 = 0x08;
-              if (msx_key == '.')           key1 = 0x10;
+              if (kbd_key == 'Z')           key1 = 0x01;
+              if (kbd_key == 'C')           key1 = 0x02;
+              if (kbd_key == 'B')           key1 = 0x04;
+              if (kbd_key == 'M')           key1 = 0x08;
+              if (kbd_key == '.')           key1 = 0x10;
           }          
           return (~key1 & 0xFF);
       }
@@ -222,20 +222,20 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       if (MTX_KBD_DRIVE == 0xFD)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_STOP)  key1 = 0x01;    // Backspace key on Memotech
-              if (msx_key == KBD_KEY_F5)    key1 = 0x02;    // F5
+              if (kbd_key == KBD_KEY_STOP)  key1 = 0x01;    // Backspace key on Memotech
+              if (kbd_key == KBD_KEY_F5)    key1 = 0x02;    // F5
           }          
           return (~key1 & 0xFF);
       }
       else if (MTX_KBD_DRIVE == 0xFE)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_CTRL)  key1 = 0x01;    // BREAK key on Memotech
-              if (msx_key == KBD_KEY_F1)    key1 = 0x02;    // F1
+              if (kbd_key == KBD_KEY_CTRL)  key1 = 0x01;    // BREAK key on Memotech
+              if (kbd_key == KBD_KEY_F1)    key1 = 0x02;    // F1
           }          
           return (~key1 & 0xFF);
       }
@@ -243,18 +243,18 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       else if (MTX_KBD_DRIVE == 0xFB)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_F2)    key1 = 0x02;    // F2
+              if (kbd_key == KBD_KEY_F2)    key1 = 0x02;    // F2
           }          
           return (~key1 & 0xFF);
       }
       else if (MTX_KBD_DRIVE == 0xF7)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_F6)    key1 = 0x02;    // F6
+              if (kbd_key == KBD_KEY_F6)    key1 = 0x02;    // F6
           }          
           return (~key1 & 0xFF);
       }
@@ -263,18 +263,18 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       else if (MTX_KBD_DRIVE == 0xEF)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_F7)   key1 = 0x02;    // F7
+              if (kbd_key == KBD_KEY_F7)   key1 = 0x02;    // F7
           }          
           return (~key1 & 0xFF);
       }
       else if (MTX_KBD_DRIVE == 0xDF)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_F3)    key1 = 0x02;    // F3
+              if (kbd_key == KBD_KEY_F3)    key1 = 0x02;    // F3
           }          
           return (~key1 & 0xFF);
       }
@@ -283,9 +283,9 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       else if (MTX_KBD_DRIVE == 0xBF)
       {
           u8 key1 = 0x00;
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == KBD_KEY_F8)    key1 = 0x02;    // F8
+              if (kbd_key == KBD_KEY_F8)    key1 = 0x02;    // F8
           }          
           return (~key1 & 0xFF);
       }
@@ -294,10 +294,10 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (JoyState & JST_BLUE)          key1 = 0x01;    // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
           if (JoyState & JST_PURPLE)        key1 = 0x01;          
-          if (msx_key)
+          if (kbd_key)
           {
-              if (msx_key == ' ')           key1 = 0x01;
-              if (msx_key == KBD_KEY_F4)    key1 = 0x02;    // F4
+              if (kbd_key == ' ')           key1 = 0x01;
+              if (kbd_key == KBD_KEY_F4)    key1 = 0x02;    // F4
           }          
           return (~key1 & 0xFF);
       }

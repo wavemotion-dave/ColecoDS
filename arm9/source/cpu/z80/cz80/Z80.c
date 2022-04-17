@@ -35,7 +35,7 @@ extern Z80 CPU;
 /*************************************************************/
 #define FAST_RDOP
 
-extern u8 msx_mode, msx_auto_clear_irq;
+extern u8 msx_mode, svi_mode, einstein_mode, msx_auto_clear_irq;
 
 // ------------------------------------------------------
 // These defines and inline functions are to map maximum
@@ -591,7 +591,17 @@ void IntZ80(Z80 *R,word Vector)
     /* Automatically reset IRequest if needed */
     if (CPU.IAutoReset && (Vector==CPU.IRequest))
     {
-        if (msx_mode && (CPU.IRequest == INT_RST38))
+#if 0
+        if ((einstein_mode) && (CPU.IRequest == INT_RST38 || CPU.IRequest == INT_RST30))
+        {
+            if (msx_auto_clear_irq)
+            {
+                CPU.IRequest=INT_NONE;      // For Einstien mode, we only auto-clear for special games
+            }
+        }
+        else 
+#endif            
+        if ((msx_mode || svi_mode) && (CPU.IRequest == INT_RST38))
         {
             if (msx_auto_clear_irq)
             {
