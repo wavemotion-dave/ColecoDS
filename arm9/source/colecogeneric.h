@@ -11,9 +11,8 @@
 #define ID_SHM_YES    0x01
 #define ID_SHM_NO     0x02
 
-#define DPAD_JOYSTICK   0
-#define DPAD_kbd_keyS   1
-#define DPAD_DIAGONALS  2
+#define DPAD_NORMAL     0
+#define DPAD_DIAGONALS  1
 
 typedef struct {
   char szName[MAX_ROM_LENGTH];

@@ -86,10 +86,60 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P2 KEYPAD #0",
   "P2 KEYPAD #*",
     
-  "SPIN X+",          
-  "SPIN X-",          
-  "SPIN Y+",
-  "SPIN Y-"
+  "SAC SPIN X+",          
+  "SAC SPIN X-",          
+  "SAC SPIN Y+",
+  "SAC SPIN Y-",
+  
+  "KEYBOARD A",
+  "KEYBOARD B",
+  "KEYBOARD C",
+  "KEYBOARD D",
+  "KEYBOARD E",
+  "KEYBOARD F",
+  "KEYBOARD G",
+  "KEYBOARD H",
+  "KEYBOARD I",
+  "KEYBOARD J",
+  "KEYBOARD K",
+  "KEYBOARD L",
+  "KEYBOARD M",
+  "KEYBOARD N",
+  "KEYBOARD O",
+  "KEYBOARD P",
+  "KEYBOARD Q",
+  "KEYBOARD R",
+  "KEYBOARD S",
+  "KEYBOARD T",
+  "KEYBOARD U",
+  "KEYBOARD V",
+  "KEYBOARD W",
+  "KEYBOARD X",
+  "KEYBOARD Y",
+  "KEYBOARD Z",
+  "KEYBOARD 0",
+  "KEYBOARD 1",
+  "KEYBOARD 2",
+  "KEYBOARD 3",
+  "KEYBOARD 4",
+  "KEYBOARD 5",
+  "KEYBOARD 6",
+  "KEYBOARD 7",
+  "KEYBOARD 8",
+  "KEYBOARD 9",
+  "KEYBOARD SPACE",
+  "KEYBOARD RETURN",
+  "KEYBOARD ESC",
+  "KEYBOARD SHIFT",
+  "KEYBOARD CTRL",
+  "KEYBOARD UP",
+  "KEYBOARD DOWN",
+  "KEYBOARD LEFT",
+  "KEYBOARD RIGHT",
+  "KEYBOARD .",
+  "KEYBAORD ,",
+  "KEYBOARD :",
+  "KEYBOARD /",
 };
 
 
@@ -784,7 +834,7 @@ void SetDefaultGameConfig(void)
     myConfig.cpuCore     = (isDSiMode() ? 1:0);    // Default is slower/accurate CZ80 for DSi and faster DrZ80 core for DS-LITE
     myConfig.msxBios     = 0;   // Default to the C-BIOS
     myConfig.msxKey5     = 0;   // Default key map
-    myConfig.dpad        = DPAD_JOYSTICK;   // Normal DPAD use - mapped to joystick
+    myConfig.dpad        = DPAD_NORMAL;   // Normal DPAD use - mapped to joystick
     myConfig.memWipe     = 0;    
     myConfig.reservedA0  = 0;    
     myConfig.reservedA1  = 0;    
@@ -983,6 +1033,7 @@ void FindAndLoadConfig(void)
                 if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
                 {
                     memcpy(&myConfig, &AllConfigs[slot], sizeof(struct Config_t));
+                    if (myConfig.dpad > DPAD_DIAGONALS) myConfig.dpad = DPAD_DIAGONALS; // We downgraded this one
                     break;                           
                 }
             }
@@ -1024,12 +1075,12 @@ const struct options_t Option_Table[] =
     {"VERT SYNC",      {"OFF", "ON"},                                                                                                                                                       &myConfig.vertSync,   2},    
     {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire1,  4},
     {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
-    {"NDS DPAD",       {"NORMAL", "KEYBD ARROWS", "DIAGONALS"},                                                                                                                             &myConfig.dpad,       3},   
+    {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
     {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                    &myConfig.spinSpeed,  5},
     {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    
     {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
     {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
-    {"MSX KEY 5",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
+    {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
     {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL"},                                                                                                                                     &myConfig.memWipe,    3},
     
 #if 0   // Developer use only   

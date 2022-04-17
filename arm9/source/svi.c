@@ -23,7 +23,6 @@
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
-#include "MTX_BIOS.h"
 #define NORAM 0xFF
 
 static u8 header_SVI[17] = { 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x7F};
@@ -59,7 +58,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       {
           u8 joy1 = 0x00;
 
-          if (myConfig.dpad == DPAD_JOYSTICK)
+          if (myConfig.dpad == DPAD_NORMAL)
           {
               if (JoyState & JST_UP)    joy1 |= 0x01;
               if (JoyState & JST_DOWN)  joy1 |= 0x02;
@@ -130,6 +129,20 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == '6')           key1 = 0x40;
               if (kbd_key == '7')           key1 = 0x80;
           }
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_0))   key1 |= 0x01;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_1))   key1 |= 0x02;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_2))   key1 |= 0x04;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_3))   key1 |= 0x08;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_4))   key1 |= 0x10;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_5))   key1 |= 0x20;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_6))   key1 |= 0x40;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_7))   key1 |= 0x80;
+              }
+          }
       }      
       else if ((Port_PPI_C & 0x0F) == 1)
       {
@@ -143,6 +156,18 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == '=')           key1 = 0x20;
               if (kbd_key == '.')           key1 = 0x40;
               if (kbd_key == '/')           key1 = 0x80;
+          }
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_8))      key1 |= 0x01;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_9))      key1 |= 0x02;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_COLON))  key1 |= 0x04;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_COMMA))  key1 |= 0x10;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_PERIOD)) key1 |= 0x40;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SLASH))  key1 |= 0x80;
+              }
           }
       }
       else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
@@ -158,6 +183,19 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == 'F')           key1 = 0x40;
               if (kbd_key == 'G')           key1 = 0x80;
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_A))   key1 |= 0x02;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_B))   key1 |= 0x04;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_C))   key1 |= 0x08;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_D))   key1 |= 0x10;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_E))   key1 |= 0x20;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F))   key1 |= 0x40;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_G))   key1 |= 0x80;
+              }
+          }
       }
       else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
       {
@@ -172,6 +210,20 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == 'N')           key1 = 0x40;
               if (kbd_key == 'O')           key1 = 0x80;
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_H))   key1 |= 0x01;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_I))   key1 |= 0x02;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_J))   key1 |= 0x04;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_K))   key1 |= 0x08;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_L))   key1 |= 0x10;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_M))   key1 |= 0x20;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_N))   key1 |= 0x40;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_O))   key1 |= 0x80;
+              }
+          }
       }
       else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
       {
@@ -186,13 +238,23 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == 'V')           key1 = 0x40;
               if (kbd_key == 'W')           key1 = 0x80;
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_P))   key1 |= 0x01;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Q))   key1 |= 0x02;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_R))   key1 |= 0x04;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_S))   key1 |= 0x08;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_T))   key1 |= 0x10;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_U))   key1 |= 0x20;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_V))   key1 |= 0x40;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_W))   key1 |= 0x80;
+              }
+          }
       }
       else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
       {
-          if (myConfig.dpad == DPAD_kbd_keyS)
-          {
-              if (JoyState & JST_UP)    key1 |= 0x80;  // KEY UP
-          }
           if (kbd_key)
           {
               if (kbd_key == 'X')           key1 = 0x01;
@@ -203,16 +265,22 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == KBD_KEY_DEL)   key1 = 0x40;              
               if (kbd_key == KBD_KEY_UP)    key1 = 0x80;
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_X))   key1 |= 0x01;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Y))   key1 |= 0x02;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Z))   key1 |= 0x04;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_UP))  key1 |= 0x80;
+              }
+          }
       }      
       else if ((Port_PPI_C & 0x0F) == 6) // Row 6
       {
           // Handle the Shift Key ... two ways
           if (key_shift || (kbd_key == KBD_KEY_SHIFT))  key1 = 0x01;
           
-          if (myConfig.dpad == DPAD_kbd_keyS)
-          {
-              if (JoyState & JST_LEFT)  key1 |= 0x80;  // KEY LEFT
-          }
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
@@ -221,13 +289,19 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == KBD_KEY_RET)   key1 = 0x40;
               if (kbd_key == KBD_KEY_LEFT)  key1 = 0x80;
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_CTRL))   key1 |= 0x02;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_ESC))    key1 |= 0x10;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)) key1 |= 0x40;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT))   key1 |= 0x80;
+              }
+          }
       }
       else if ((Port_PPI_C & 0x0F) == 7) // Row 7
       {
-          if (myConfig.dpad == DPAD_kbd_keyS)
-          {
-              if (JoyState & JST_DOWN)  key1 |= 0x80;  // KEY DOWN
-          }
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_F1)    key1 = 0x01;
@@ -237,29 +311,37 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == KBD_KEY_F5)    key1 = 0x10;
               if (kbd_key == KBD_KEY_DOWN)  key1 = 0x80;              
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_DOWN))   key1 |= 0x80;
+              }
+          }
       }
       else if ((Port_PPI_C & 0x0F) == 8) // Row 8
       {
-          if (JoyState == JST_STAR)  key1 |= 0x01;  // SPACE
-          if (JoyState & JST_PURPLE) key1 |= 0x01;  // SPACE
-//          if (JoyState & JST_BLUE)   key1 |= 0x01;  // SPACE
+          if ((JoyState & 0x0F) == JST_STAR)  key1 |= 0x01;  // SPACE
+          if (JoyState == JST_PURPLE)         key1 |= 0x01;  // SPACE
           
-          if (myConfig.dpad == DPAD_kbd_keyS)
-          {
-              if (JoyState & JST_RIGHT) key1 |= 0x80;  // KEY RIGHT          
-              if (JoyState & JST_FIREL) key1 |= 0x01;  // SPACE
-              if (JoyState & JST_FIRER) key1 |= 0x01;  // SPACE
-          }
           if (kbd_key)
           {
               if (kbd_key == ' ')           key1 = 0x01;
               if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
               if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;              
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE))   key1 |= 0x01;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT))   key1 |= 0x80;
+              }
+          }
       }
       else if ((Port_PPI_C & 0x0F) == 9) // Row 9
       {
-          if (JoyState & JST_BLUE)   key1 |= 0x08;  // NUM3
+          if (JoyState == JST_BLUE)   key1 |= 0x08;  // NUM3
       }
       return ~key1;
   }

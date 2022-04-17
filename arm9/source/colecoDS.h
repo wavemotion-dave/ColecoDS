@@ -54,6 +54,61 @@ extern u32 debug4;
 #define META_SPINY_LEFT     0xFFFF0003
 #define META_SPINY_RIGHT    0xFFFF0004
 
+// -----------------------------------------------------------------------------------
+// And these are meta keys for mapping NDS keys to keyboard keys (many of the computer
+// games don't use joystick inputs and so need to map to keyboard keys...)
+// -----------------------------------------------------------------------------------
+#define META_KBD_A          0xFFFF0005
+#define META_KBD_B          0xFFFF0006
+#define META_KBD_C          0xFFFF0007
+#define META_KBD_D          0xFFFF0008
+#define META_KBD_E          0xFFFF0009
+#define META_KBD_F          0xFFFF0010
+#define META_KBD_G          0xFFFF0011
+#define META_KBD_H          0xFFFF0012
+#define META_KBD_I          0xFFFF0013
+#define META_KBD_J          0xFFFF0014
+#define META_KBD_K          0xFFFF0015
+#define META_KBD_L          0xFFFF0016
+#define META_KBD_M          0xFFFF0017
+#define META_KBD_N          0xFFFF0018
+#define META_KBD_O          0xFFFF0019
+#define META_KBD_P          0xFFFF0020
+#define META_KBD_Q          0xFFFF0021
+#define META_KBD_R          0xFFFF0022
+#define META_KBD_S          0xFFFF0023
+#define META_KBD_T          0xFFFF0024
+#define META_KBD_U          0xFFFF0025
+#define META_KBD_V          0xFFFF0026
+#define META_KBD_W          0xFFFF0027
+#define META_KBD_X          0xFFFF0028
+#define META_KBD_Y          0xFFFF0029
+#define META_KBD_Z          0xFFFF0030
+#define META_KBD_0          0xFFFF0031
+#define META_KBD_1          0xFFFF0032
+#define META_KBD_2          0xFFFF0033
+#define META_KBD_3          0xFFFF0034
+#define META_KBD_4          0xFFFF0035
+#define META_KBD_5          0xFFFF0036
+#define META_KBD_6          0xFFFF0037
+#define META_KBD_7          0xFFFF0038
+#define META_KBD_8          0xFFFF0039
+#define META_KBD_9          0xFFFF0040
+#define META_KBD_SPACE      0xFFFF0041
+#define META_KBD_RETURN     0xFFFF0042
+#define META_KBD_ESC        0xFFFF0043
+#define META_KBD_SHIFT      0xFFFF0044
+#define META_KBD_CTRL       0xFFFF0045
+#define META_KBD_UP         0xFFFF0046
+#define META_KBD_DOWN       0xFFFF0047
+#define META_KBD_LEFT       0xFFFF0048
+#define META_KBD_RIGHT      0xFFFF0049
+#define META_KBD_PERIOD     0xFFFF0050
+#define META_KBD_COMMA      0xFFFF0051
+#define META_KBD_COLON      0xFFFF0052
+#define META_KBD_SLASH      0xFFFF0053
+
+
 #define JOYMODE_JOYSTICK    0
 #define JOYMODE_KEYPAD      1
 
@@ -96,6 +151,9 @@ extern u8 spinX_right;
 extern u8 spinY_left;
 extern u8 spinY_right;
 
+extern u16 nds_key;
+extern u8  kbd_key;
+
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
 extern u8 einstein_mode;
@@ -105,7 +163,6 @@ extern u8 pencil2_mode;
 extern u8 msx_mode;
 extern u8 svi_mode;
 extern u8 adam_mode;
-extern u8 kbd_key;
 extern u8 adam_CapsLock;
 extern u8 adam_unsaved_data;
 
@@ -113,11 +170,12 @@ extern char lastAdamDataPath[];
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
-#define MAX_KEY_OPTIONS  44
+#define MAX_KEY_OPTIONS  93
 
 extern volatile u16 vusCptVBL;                   // Video Management
 
 extern u32 keyCoresp[MAX_KEY_OPTIONS];
+extern u16 NDS_keyMap[12];
 
 extern u8 pColecoMem[0x10000];                   // Coleco Memory
 
