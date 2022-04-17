@@ -114,24 +114,26 @@ u8 bPV2000BiosFound = false;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
-u8 soundEmuPause __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
+u8 soundEmuPause     __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
+     
+u8 sg1000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
+u8 sordm5_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
+u8 pv2000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
+u8 memotech_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .mtx or .run game is loaded for Memotech MTX support 
+u8 msx_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
+u8 svi_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support 
+u8 adam_mode         __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
+u8 pencil2_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pii Pencil 2 ROM is loaded (only one known to exist!)
+u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
 
-u8 sg1000_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
-u8 sordm5_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
-u8 pv2000_mode   __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
-u8 memotech_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .mtx or .run game is loaded for Memotech MTX support 
-u8 msx_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
-u8 svi_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support 
-u8 adam_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
-u8 pencil2_mode  __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pii Pencil 2 ROM is loaded (only one known to exist!)
-u8 einstein_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
-u8 kbd_key       __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
+u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
+u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
 
 u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
 
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 
-u32 NDS_keyMap[12] = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
+u16 NDS_keyMap[12] = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
 
 // The key map for the Colecovision... mapped into the NDS controller
 u32 keyCoresp[MAX_KEY_OPTIONS] = {
@@ -177,11 +179,63 @@ u32 keyCoresp[MAX_KEY_OPTIONS] = {
     JST_0       << 16, 
     JST_STAR    << 16, 
     
-    META_SPINX_LEFT, META_SPINX_RIGHT, META_SPINY_LEFT, META_SPINY_RIGHT
+    META_SPINX_LEFT, 
+    META_SPINX_RIGHT, 
+    META_SPINY_LEFT,
+    META_SPINY_RIGHT,
+        
+    META_KBD_A,
+    META_KBD_B,
+    META_KBD_C,
+    META_KBD_D,
+    META_KBD_E,
+    META_KBD_F,
+    META_KBD_G,
+    META_KBD_H,
+    META_KBD_I,
+    META_KBD_J,
+    META_KBD_K,
+    META_KBD_L,
+    META_KBD_M,
+    META_KBD_N,
+    META_KBD_O,
+    META_KBD_P,
+    META_KBD_Q,
+    META_KBD_R,
+    META_KBD_S,
+    META_KBD_T,
+    META_KBD_U,
+    META_KBD_V,
+    META_KBD_W,
+    META_KBD_X,
+    META_KBD_Y,
+    META_KBD_Z,
+    META_KBD_0,
+    META_KBD_1,
+    META_KBD_2,
+    META_KBD_3,
+    META_KBD_4,
+    META_KBD_5,
+    META_KBD_6,
+    META_KBD_7,
+    META_KBD_8,
+    META_KBD_9,
+    META_KBD_SPACE,
+    META_KBD_RETURN,
+    META_KBD_ESC,
+    META_KBD_SHIFT,
+    META_KBD_CTRL,
+    META_KBD_UP,
+    META_KBD_DOWN,
+    META_KBD_LEFT,
+    META_KBD_RIGHT,
+    META_KBD_PERIOD,
+    META_KBD_COMMA,
+    META_KBD_COLON,
+    META_KBD_SLASH,
 };
 
 extern u8 msx_scc_enable;
-
 
 // --------------------------------------------------------------------------------
 // Spinners! X and Y taken together will actually replicate the roller controller.
@@ -746,7 +800,11 @@ void DisplayStatusLine(bool bForce)
     else if (einstein_mode)
     {
         AffChaine(22,0,6, "EINSTEIN");
-        AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+        if (last_pal_mode != myConfig.isPAL)
+        {
+            last_pal_mode = myConfig.isPAL;
+            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+        }
     }
     else    // Various Colecovision Possibilities 
     {   
@@ -896,20 +954,20 @@ void CassetteMenu(void)
 
   while (true) 
   {
-    int keys_pressed = keysCurrent();
-    if (keys_pressed)
+    nds_key = keysCurrent();
+    if (nds_key)
     {
-        if (keys_pressed & KEY_UP)  
+        if (nds_key & KEY_UP)  
         {
             menuSelection = (menuSelection > 0) ? (menuSelection-1):(cassete_menu_items-1);
             CassetteMenuShow(false, menuSelection);
         }
-        if (keys_pressed & KEY_DOWN)  
+        if (nds_key & KEY_DOWN)  
         {
             menuSelection = (menuSelection+1) % cassete_menu_items;
             CassetteMenuShow(false, menuSelection);
         }
-        if (keys_pressed & KEY_A)  
+        if (nds_key & KEY_A)  
         {
             if (menuSelection == 0) // SAVE CASSETTE
             {
@@ -1036,7 +1094,7 @@ void CassetteMenu(void)
                 break;
             }
         }
-        if (keys_pressed & KEY_B)  
+        if (nds_key & KEY_B)  
         {
             break;
         }
@@ -1062,7 +1120,6 @@ inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9) ? 1:0);}
 // ------------------------------------------------------------------------
 void colecoDS_main(void) 
 {
-  u32 keys_pressed;
   u16 iTx,  iTy;
   u16 ResetNow  = 0, SaveNow = 0, LoadNow = 0;
   u32 ucUN, ucDEUX;
@@ -1588,23 +1645,25 @@ void colecoDS_main(void)
       // ------------------------------------------------------------------------
       key_shift = false;
       ucDEUX  = 0;  
-      keys_pressed  = keysCurrent();
-      if ((keys_pressed & KEY_L) && (keys_pressed & KEY_R) && (keys_pressed & KEY_X)) 
+      nds_key  = keysCurrent();
+      if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X)) 
       {
             lcdSwap();
             WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
       }
       else        
-      if  (keys_pressed & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
+      if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
-          if (IsFullKeyboard() && ((keys_pressed & KEY_L) || (keys_pressed & KEY_R)))
+          if (IsFullKeyboard() && ((nds_key & KEY_L) || (nds_key & KEY_R)))
           {
               key_shift = true;
           }
-          else if (einstein_mode && (keys_pressed & KEY_START)) // Load .COM file directly
+          else if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
           {
               extern u16 einstein_ram_start;
               einstein_reset();
+              DrZ80_Reset();                        // Reset the DrZ80 core
+              ResetZ80(&CPU);                       // Reset the CZ80 core CPU
               einstein_ram_start = 0x0000;
               for (int i = 0x0000; i<0x10000; i++)
               {
@@ -1613,13 +1672,13 @@ void colecoDS_main(void)
               }
               memcpy(pColecoMem+0x100, romBuffer, tape_len);
               memcpy(Slot3RAM+0x100, romBuffer, tape_len);
-              CPU.IRequest = INT_NONE;
+              z80_rebasePC(0x100);
               CPU.PC.W = 0x100;
               RdCtrl9918();
               JumpZ80(CPU.PC.W);
               WAITVBL;WAITVBL;WAITVBL;              
           }
-          else if (memotech_mode && (keys_pressed & KEY_START))
+          else if (memotech_mode && (nds_key & KEY_START))
           {
               if (memotech_mode == 2)   // .MTX file: enter LOAD "" into the keyboard buffer
               {
@@ -1637,6 +1696,8 @@ void colecoDS_main(void)
               }
               else  // .RUN file: load and jump to program
               {
+                  DrZ80_Reset();                        // Reset the DrZ80 core
+                  ResetZ80(&CPU);                       // Reset the CZ80 core CPU
                   memotech_reset();
                   if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
                   {
@@ -1657,12 +1718,13 @@ void colecoDS_main(void)
                   CPU.PC.W = mtx_start;
                   RdCtrl9918();
                   JumpZ80(CPU.PC.W);
+                  z80_rebasePC(mtx_start);
               }
               WAITVBL;WAITVBL;WAITVBL;
           }
-          else if ((svi_mode || (msx_mode==2)) && ((keys_pressed & KEY_START) || (keys_pressed & KEY_SELECT)))
+          else if ((svi_mode || (msx_mode==2)) && ((nds_key & KEY_START) || (nds_key & KEY_SELECT)))
           {
-              if (keys_pressed & KEY_START)
+              if (nds_key & KEY_START)
               {
                   BufferKey('B');
                   BufferKey('L');
@@ -1706,7 +1768,7 @@ void colecoDS_main(void)
           // --------------------------------------------------------------------------------------------------
           for (u8 i=0; i<12; i++)
           {
-              if (keys_pressed & NDS_keyMap[i])
+              if (nds_key & NDS_keyMap[i])
               {
                   if (keyCoresp[myConfig.keymap[i]] < 0xFFFF0000)   // Normal key map
                   {
@@ -1731,19 +1793,22 @@ void colecoDS_main(void)
       // -------------------------------------------------------------------
       // If we are ADAM mode and we have configured joystick-keyboard map...
       // -------------------------------------------------------------------
-      if (adam_mode && myConfig.dpad == DPAD_kbd_keyS)
+      if (adam_mode)
       {
-          static u32 LastJoyState = 999;
-          if (JoyState != LastJoyState)
+          static u16 LastNdsState = 999;
+          if (nds_key != LastNdsState)
           {
-              if (JoyState & JST_UP)         PutKBD(ADAM_KEY_UP);
-              else if (JoyState & JST_DOWN)  PutKBD(ADAM_KEY_DOWN);
-              else if (JoyState & JST_LEFT)  PutKBD(ADAM_KEY_LEFT);
-              else if (JoyState & JST_RIGHT) PutKBD(ADAM_KEY_RIGHT);
-              else if (JoyState & JST_FIREL) PutKBD(' ');
-              else if (JoyState & JST_FIRER) PutKBD(' ');
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_UP))     PutKBD(ADAM_KEY_UP);
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_DOWN))   PutKBD(ADAM_KEY_DOWN);
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT))   PutKBD(ADAM_KEY_LEFT);
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT))  PutKBD(ADAM_KEY_RIGHT);
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)) PutKBD(ADAM_KEY_ENTER);
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE))  PutKBD(' ');
+              }
           }
-          LastJoyState = JoyState;
+          LastNdsState = nds_key;
       }          
         
       // --------------------------------------------------

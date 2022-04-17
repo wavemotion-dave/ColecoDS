@@ -37,7 +37,7 @@ u16 keyboard_interrupt=0;
 
 void scan_keyboard(void)
 {
-    if ((JoyState == 0) && (kbd_key == 0))
+    if ((nds_key == 0) && (kbd_key == 0))
     {
         // Nothing pressed... short-circut    
         myKeyData = 0x00;
@@ -54,11 +54,12 @@ void scan_keyboard(void)
           if (kbd_key == KBD_KEY_RET)   myKeyData |= 0x20;
           if (kbd_key == ' ')           myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_ESC)   myKeyData |= 0x80;
-          if (myConfig.dpad == DPAD_kbd_keyS)
+          for (u8 i=0; i<12; i++)
           {
-              if (JoyState & JST_FIREL) myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)) myKeyData |= 0x20;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE))  myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_ESC))    myKeyData |= 0x80;
           }
-
       }
       if (!(keyboard_w & 0x02))
       {
@@ -71,13 +72,17 @@ void scan_keyboard(void)
           if (kbd_key == '-')           myKeyData |= 0x10;
           if (kbd_key == KBD_KEY_DOWN)  myKeyData |= 0x20;
           if (kbd_key == '0')           myKeyData |= 0x80;
-          if (myConfig.dpad == DPAD_kbd_keyS)
+          for (u8 i=0; i<12; i++)
           {
-              if (JoyState & JST_LEFT)  myKeyData |= 0x08;
-              if (JoyState & JST_DOWN)  myKeyData |= 0x20;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_I))      myKeyData |= 0x01;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_O))      myKeyData |= 0x02;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_P))      myKeyData |= 0x04;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT))   myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_DOWN))   myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_0))      myKeyData |= 0x80;
           }
-
       }
+        
       if (!(keyboard_w & 0x04))
       {
           if (kbd_key == 'K')           myKeyData |= 0x01;
@@ -87,11 +92,16 @@ void scan_keyboard(void)
           if (kbd_key == KBD_KEY_RIGHT) myKeyData |= 0x10;
           if (kbd_key == '9')           myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x80;
-          if (myConfig.dpad == DPAD_kbd_keyS)
+          for (u8 i=0; i<12; i++)
           {
-              if (JoyState & JST_RIGHT) myKeyData |= 0x10;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_K))      myKeyData |= 0x01;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_L))      myKeyData |= 0x02;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_COLON))  myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT))  myKeyData |= 0x10;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_9))      myKeyData |= 0x40;
           }
       }
+        
       if (!(keyboard_w & 0x08))
       {
           if ((JoyState&0x0F) == JST_PURPLE) myKeyData |= 0x40;  // Same as UP
@@ -104,9 +114,12 @@ void scan_keyboard(void)
           if (kbd_key == '=')           myKeyData |= 0x20;
           if (kbd_key == KBD_KEY_UP)    myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_F4)    myKeyData |= 0x80;
-          if (myConfig.dpad == DPAD_kbd_keyS)
+          for (u8 i=0; i<12; i++)
           {
-              if (JoyState & JST_UP)    myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_PERIOD)) myKeyData |= 0x02;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SLASH))  myKeyData |= 0x04;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_8))      myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_UP))     myKeyData |= 0x40;
           }
       }
 
@@ -120,6 +133,16 @@ void scan_keyboard(void)
           if (kbd_key == '2')           myKeyData |= 0x20;
           if (kbd_key == '1')           myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_F3)    myKeyData |= 0x80;
+          for (u8 i=0; i<12; i++)
+          {
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_7))  myKeyData |= 0x01;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_6))  myKeyData |= 0x02;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_5))  myKeyData |= 0x04;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_4))  myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_3))  myKeyData |= 0x10;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_2))  myKeyData |= 0x20;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_1))  myKeyData |= 0x40;
+          }
       }
       if (!(keyboard_w & 0x20))
       {
@@ -131,6 +154,16 @@ void scan_keyboard(void)
           if (kbd_key == 'W')           myKeyData |= 0x20;
           if (kbd_key == 'Q')           myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_F2)    myKeyData |= 0x80;
+          for (u8 i=0; i<12; i++)
+          {
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_U))  myKeyData |= 0x01;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Y))  myKeyData |= 0x02;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_T))  myKeyData |= 0x04;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_R))  myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_E))  myKeyData |= 0x10;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_W))  myKeyData |= 0x20;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Q))  myKeyData |= 0x40;
+          }
       }
       if (!(keyboard_w & 0x40))
       {
@@ -142,6 +175,16 @@ void scan_keyboard(void)
           if (kbd_key == 'S')           myKeyData |= 0x20;
           if (kbd_key == 'A')           myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_F1)    myKeyData |= 0x80;
+          for (u8 i=0; i<12; i++)
+          {
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_J))  myKeyData |= 0x01;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_H))  myKeyData |= 0x02;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_G))  myKeyData |= 0x04;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F))  myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_D))  myKeyData |= 0x10;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_S))  myKeyData |= 0x20;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_A))  myKeyData |= 0x40;
+          }
       }
       if (!(keyboard_w & 0x80))
       {
@@ -153,6 +196,16 @@ void scan_keyboard(void)
           if (kbd_key == 'X')           myKeyData |= 0x20;
           if (kbd_key == 'Z')           myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_F6)    myKeyData |= 0x80;
+          for (u8 i=0; i<12; i++)
+          {
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_M))  myKeyData |= 0x01;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_N))  myKeyData |= 0x02;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_B))  myKeyData |= 0x04;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_V))  myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_C))  myKeyData |= 0x10;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_X))  myKeyData |= 0x20;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Z))  myKeyData |= 0x40;
+          }
       }
     }
     myKeyData = ~myKeyData;
