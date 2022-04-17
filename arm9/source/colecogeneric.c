@@ -445,6 +445,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".com") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
       }
     }
   }
@@ -898,6 +904,7 @@ void SetDefaultGameConfig(void)
     if (svi_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
     if (adam_mode)                              myConfig.cpuCore = 1;  // Adam defaults to CZ80 core - user can switch it out
     if (pv2000_mode)                            myConfig.cpuCore = 1;  // PV-2000 only supports DrZ80 core
+    if (einstein_mode)                          myConfig.cpuCore = 1;  // Tatung Einstein only supports DrZ80 core
     if (msx_mode == 2)                          myConfig.msxBios = 1;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (adam_mode && !isDSiMode())              myConfig.frameSkip=1;  // If Adam and older DS-LITE, turn on light frameskip
@@ -907,6 +914,8 @@ void SetDefaultGameConfig(void)
     if (memotech_mode)                          myConfig.overlay = 9;  // Memotech MTX default to full keyboard
     if (svi_mode)                               myConfig.overlay = 9;  // SVI default to full keyboard    
     if (msx_mode == 2)                          myConfig.overlay = 9;  // MSX with .cas defaults to full keyboard    
+    if (einstein_mode)                          myConfig.overlay = 9;  // Tatung Einstein defaults to full keyboard
+    if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     
     if (myConfig.isPAL)                         myConfig.vertSync= 0;  // If we are PAL, we can't sync to the DS 60Hz
@@ -1371,6 +1380,7 @@ void ReadFileCRCAndConfig(void)
     sordm5_mode = 0;
     memotech_mode = 0;
     pencil2_mode = 0;
+    einstein_mode = 0;
     msx_mode = 0;
     svi_mode = 0;
     adam_mode = 0;
@@ -1399,6 +1409,8 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".pen") != 0) pencil2_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".PEN") != 0) pencil2_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".com") != 0) einstein_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".COM") != 0) einstein_mode = 1;    
     
     // --------------------------------------------------------------------------
     // If a .cas file is picked, we need to figure out what machine it's for...

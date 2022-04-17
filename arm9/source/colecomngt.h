@@ -84,6 +84,11 @@ extern u8 AY_NeverEnable;
 extern u8 SGM_NeverEnable;
 extern u8 AY_EnvelopeOn;
 
+extern u16 einstein_ram_start;
+extern u8 keyboard_w;
+extern u8 key_int_mask;
+
+
 // -------------------------------
 // A few misc externs needed...
 // -------------------------------
@@ -160,10 +165,12 @@ extern void sgm_reset(void);
 extern void sg1000_reset(void);
 extern void sordm5_reset(void);
 extern void memotech_reset(void);
+extern void einstein_reset(void);
 extern void svi_reset(void);
 extern void pv2000_reset(void);
 extern void msx_reset(void);
 extern void MSX_HandleBeeper(void);
+extern void einstein_handle_interrupts(void);
 
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 

@@ -60,14 +60,14 @@ unsigned char cpu_readport_sg(register unsigned short Port)
 
       if (sg1000_mode == 2) // SC-3000 mode
       {
-          if (myConfig.dpad == DPAD_MSX_KEYS)
+          if (myConfig.dpad == DPAD_kbd_keyS)
           {
-              if (JoyState & JST_UP)    msx_key = KBD_KEY_UP;
-              if (JoyState & JST_DOWN)  msx_key = KBD_KEY_DOWN;
-              if (JoyState & JST_LEFT)  msx_key = KBD_KEY_LEFT;
-              if (JoyState & JST_RIGHT) msx_key = KBD_KEY_RIGHT;
-              if (JoyState & JST_FIREL) msx_key = ' ';
-              if (JoyState & JST_FIRER) msx_key = ' ';
+              if (JoyState & JST_UP)    kbd_key = KBD_KEY_UP;
+              if (JoyState & JST_DOWN)  kbd_key = KBD_KEY_DOWN;
+              if (JoyState & JST_LEFT)  kbd_key = KBD_KEY_LEFT;
+              if (JoyState & JST_RIGHT) kbd_key = KBD_KEY_RIGHT;
+              if (JoyState & JST_FIREL) kbd_key = ' ';
+              if (JoyState & JST_FIRER) kbd_key = ' ';
           }
           
         //      Port A                          Port B
@@ -83,50 +83,50 @@ unsigned char cpu_readport_sg(register unsigned short Port)
         //  7   1U  1D  1L  1R  1TL 1TR 2U  2D  2L  2R  2TL 2TR
         if ((Port_PPI_C & 0x07) == 0x00)  // Row 0
         {
-          if (msx_key == '1')       joy1 |= 0x01;
-          if (msx_key == 'Q')       joy1 |= 0x02;
-          if (msx_key == 'A')       joy1 |= 0x04;
-          if (msx_key == 'Z')       joy1 |= 0x08;
-          if (msx_key == KBD_KEY_ESC) joy1 |= 0x10;
-          if (msx_key == ',')       joy1 |= 0x20;
-          if (msx_key == 'K')       joy1 |= 0x40;
-          if (msx_key == 'I')       joy1 |= 0x80;
+          if (kbd_key == '1')       joy1 |= 0x01;
+          if (kbd_key == 'Q')       joy1 |= 0x02;
+          if (kbd_key == 'A')       joy1 |= 0x04;
+          if (kbd_key == 'Z')       joy1 |= 0x08;
+          if (kbd_key == KBD_KEY_ESC) joy1 |= 0x10;
+          if (kbd_key == ',')       joy1 |= 0x20;
+          if (kbd_key == 'K')       joy1 |= 0x40;
+          if (kbd_key == 'I')       joy1 |= 0x80;
         }
 
         if ((Port_PPI_C & 0x07) == 0x01)  // Row 1
         {
-          if (msx_key == '2')       joy1 |= 0x01;
-          if (msx_key == 'W')       joy1 |= 0x02;
-          if (msx_key == 'S')       joy1 |= 0x04;
-          if (msx_key == 'X')       joy1 |= 0x08;
+          if (kbd_key == '2')       joy1 |= 0x01;
+          if (kbd_key == 'W')       joy1 |= 0x02;
+          if (kbd_key == 'S')       joy1 |= 0x04;
+          if (kbd_key == 'X')       joy1 |= 0x08;
 
-          if (msx_key == ' ')       joy1 |= 0x10;
-          if (msx_key == '.')       joy1 |= 0x20;
-          if (msx_key == 'L')       joy1 |= 0x40;
-          if (msx_key == 'O')       joy1 |= 0x80;
+          if (kbd_key == ' ')       joy1 |= 0x10;
+          if (kbd_key == '.')       joy1 |= 0x20;
+          if (kbd_key == 'L')       joy1 |= 0x40;
+          if (kbd_key == 'O')       joy1 |= 0x80;
         }
 
         if ((Port_PPI_C & 0x07) == 0x02)  // Row 2
         {
-          if (msx_key == '3')       joy1 |= 0x01;
-          if (msx_key == 'E')       joy1 |= 0x02;
-          if (msx_key == 'D')       joy1 |= 0x04;
-          if (msx_key == 'C')       joy1 |= 0x08;
-          if (msx_key == KBD_KEY_HOME) joy1 |= 0x10;            
-          if (msx_key == '/')       joy1 |= 0x20;
-          if (msx_key == ';')       joy1 |= 0x40;
-          if (msx_key == 'P')       joy1 |= 0x80;
+          if (kbd_key == '3')       joy1 |= 0x01;
+          if (kbd_key == 'E')       joy1 |= 0x02;
+          if (kbd_key == 'D')       joy1 |= 0x04;
+          if (kbd_key == 'C')       joy1 |= 0x08;
+          if (kbd_key == KBD_KEY_HOME) joy1 |= 0x10;            
+          if (kbd_key == '/')       joy1 |= 0x20;
+          if (kbd_key == ';')       joy1 |= 0x40;
+          if (kbd_key == 'P')       joy1 |= 0x80;
         }
 
         if ((Port_PPI_C & 0x07) == 0x03)  // Row 3
         {
-          if (msx_key == '4')       joy1 |= 0x01;
-          if (msx_key == 'R')       joy1 |= 0x02;
-          if (msx_key == 'F')       joy1 |= 0x04;
-          if (msx_key == 'V')       joy1 |= 0x08;
-          if (msx_key == KBD_KEY_DEL) joy1 |= 0x10;            
-          if (msx_key == ':')       joy1 |= 0x40;
-          if (msx_key == 'O')       joy1 |= 0x80;
+          if (kbd_key == '4')       joy1 |= 0x01;
+          if (kbd_key == 'R')       joy1 |= 0x02;
+          if (kbd_key == 'F')       joy1 |= 0x04;
+          if (kbd_key == 'V')       joy1 |= 0x08;
+          if (kbd_key == KBD_KEY_DEL) joy1 |= 0x10;            
+          if (kbd_key == ':')       joy1 |= 0x40;
+          if (kbd_key == 'O')       joy1 |= 0x80;
         }
 
         //  4   '5' 'T' 'G' 'B' --- DA  ']' '[' '^' --- --- ---
@@ -135,34 +135,34 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           
         if ((Port_PPI_C & 0x07) == 0x04)  // Row 4
         {
-          if (msx_key == '5')       joy1 |= 0x01;
-          if (msx_key == 'T')       joy1 |= 0x02;
-          if (msx_key == 'G')       joy1 |= 0x04;
-          if (msx_key == 'B')       joy1 |= 0x08;
+          if (kbd_key == '5')       joy1 |= 0x01;
+          if (kbd_key == 'T')       joy1 |= 0x02;
+          if (kbd_key == 'G')       joy1 |= 0x04;
+          if (kbd_key == 'B')       joy1 |= 0x08;
 
-          if (msx_key == KBD_KEY_DOWN) joy1 |= 0x20;
-          if (msx_key == ']')       joy1 |= 0x40;
-          if (msx_key == '[')       joy1 |= 0x80;
+          if (kbd_key == KBD_KEY_DOWN) joy1 |= 0x20;
+          if (kbd_key == ']')       joy1 |= 0x40;
+          if (kbd_key == '[')       joy1 |= 0x80;
         }
 
         if ((Port_PPI_C & 0x07) == 0x05)  // Row 5
         {
-          if (msx_key == '6')       joy1 |= 0x01;
-          if (msx_key == 'Y')       joy1 |= 0x02;
-          if (msx_key == 'H')       joy1 |= 0x04;
-          if (msx_key == 'N')       joy1 |= 0x08;
-          if (msx_key == KBD_KEY_LEFT) joy1 |= 0x20;
-          if (msx_key == KBD_KEY_RET) joy1 |= 0x40;
+          if (kbd_key == '6')       joy1 |= 0x01;
+          if (kbd_key == 'Y')       joy1 |= 0x02;
+          if (kbd_key == 'H')       joy1 |= 0x04;
+          if (kbd_key == 'N')       joy1 |= 0x08;
+          if (kbd_key == KBD_KEY_LEFT) joy1 |= 0x20;
+          if (kbd_key == KBD_KEY_RET) joy1 |= 0x40;
         }
 
         if ((Port_PPI_C & 0x07) == 0x06)  // Row 6
         {
-          if (msx_key == '7')       joy1 |= 0x01;
-          if (msx_key == 'U')       joy1 |= 0x02;
-          if (msx_key == 'J')       joy1 |= 0x04;
-          if (msx_key == 'M')       joy1 |= 0x08;
-          if (msx_key == KBD_KEY_RIGHT) joy1 |= 0x20;
-          if (msx_key == KBD_KEY_UP) joy1 |= 0x40;
+          if (kbd_key == '7')       joy1 |= 0x01;
+          if (kbd_key == 'U')       joy1 |= 0x02;
+          if (kbd_key == 'J')       joy1 |= 0x04;
+          if (kbd_key == 'M')       joy1 |= 0x08;
+          if (kbd_key == KBD_KEY_RIGHT) joy1 |= 0x20;
+          if (kbd_key == KBD_KEY_UP) joy1 |= 0x40;
         }
 
         if ((Port_PPI_C & 0x07) == 0x07)  // Row 7 (joystick)
@@ -214,35 +214,35 @@ unsigned char cpu_readport_sg(register unsigned short Port)
       u8 joy2 = 0x00;
       if ((Port_PPI_C & 0x07) == 0x00)  // Row 0
       {
-          if (msx_key == '8')             joy2 |= 0x01;
+          if (kbd_key == '8')             joy2 |= 0x01;
       }
 
       if ((Port_PPI_C & 0x07) == 0x01)  // Row 1
       {
-          if (msx_key == '9')             joy2 |= 0x01;
+          if (kbd_key == '9')             joy2 |= 0x01;
       }
       
       if ((Port_PPI_C & 0x07) == 0x02)  // Row 2
       {
-          if (msx_key == '0')             joy2 |= 0x01;
+          if (kbd_key == '0')             joy2 |= 0x01;
       }
 
       if ((Port_PPI_C & 0x07) == 0x03)  // Row 3
       {
-          if (msx_key == '-')             joy2 |= 0x01;
+          if (kbd_key == '-')             joy2 |= 0x01;
       }
 
       if ((Port_PPI_C & 0x07) == 0x04)  // Row 4
       {
-          if (msx_key == '#')             joy2 |= 0x01;
+          if (kbd_key == '#')             joy2 |= 0x01;
       }
 
       if ((Port_PPI_C & 0x07) == 0x06)  // Row 6
       {
-          if (msx_key == KBD_KEY_BRK)     joy2 |= 0x01;
+          if (kbd_key == KBD_KEY_BRK)     joy2 |= 0x01;
           if (key_shift)                  joy2 |= 0x04;
-          if (msx_key == KBD_KEY_SHIFT)   joy2 |= 0x04;
-          if (msx_key == KBD_KEY_CTRL)    joy2 |= 0x08;
+          if (kbd_key == KBD_KEY_SHIFT)   joy2 |= 0x04;
+          if (kbd_key == KBD_KEY_CTRL)    joy2 |= 0x08;
       }
       if ((Port_PPI_C & 0x07) == 0x07)  // Row 7 (joystick)
       {

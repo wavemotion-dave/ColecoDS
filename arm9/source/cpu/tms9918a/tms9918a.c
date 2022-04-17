@@ -38,6 +38,9 @@ u8 *XBuf __attribute__((section(".dtcm"))) = XBuf_A;
 // Look up table for colors - pre-generated and in VRAM for maximum speed!
 u32 (*lutTablehh)[16][16] __attribute__((section(".dtcm"))) = (void*)0x068A0000;
 
+// For 16K only VDP modes
+u8 vdp_16k_mode_only __attribute__((section(".dtcm"))) = 0;
+
 // ---------------------------------------------------------------------------------------
 // Screen handlers and masks for VDP table address registers. 
 // Screen modes are confusing as different documentation (MSX, Coleco, VDP manuals, etc)
@@ -491,7 +494,7 @@ byte Write9918(u8 iReg, u8 value)
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
 
   /* VRAM can either be 4kB or 16kB - this checks if the bit has changed on this call which will force the logic in case 1 below */
-  if (msx_mode || adam_mode || svi_mode) VRAMMask = 0x3FFF;    // For these machines, we only support 16K
+  if (vdp_16k_mode_only) VRAMMask = 0x3FFF;    // For these machines, we only support 16K
   else VRAMMask = (iReg==1) && ( (VDP[1]^value) & TMS9918_REG1_RAM16K ) ? 0 : TMS9918_VRAMMask;  
 
   /* Store value into the register */
@@ -742,10 +745,14 @@ void Reset9918(void)
     tms_end_line   = (myConfig.isPAL ? TMS9929_END_LINE     :   TMS9918_END_LINE);
     tms_num_lines  = (myConfig.isPAL ? TMS9929_LINES        :   TMS9918_LINES);
     
-    if (memotech_mode)
+    if (memotech_mode || einstein_mode) // These machines run at 4MHz
         tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE_MTX :   TMS9918_LINE_MTX);
     else
         tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE     :   TMS9918_LINE);
+    
+    // Some machines only support a 16K VDP memory mode...
+    if (msx_mode || adam_mode || svi_mode) vdp_16k_mode_only = 1;
+    else vdp_16k_mode_only = 0;
     
     // ---------------------------------------------------------------
     // Our background/foreground color table makes computations FAST!

@@ -199,6 +199,10 @@ void colecoWipeRAM(void)
     for (int i=0; i< 0x20000; i++) AdamRAM[i] = (myConfig.memWipe ? 0x02:  (rand() & 0xFF));   // This pattern tends to make most things start up properly...
     memset(pColecoMem, 0xFF, 0x10000);
   }
+  else if (einstein_mode)
+  {
+      for (int i=0x8000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+  }
   else
   {
       for (int i=0; i<0x400; i++)
@@ -244,8 +248,9 @@ u8 colecoInit(char *szGame)
   memset(romBuffer, 0xFF, (512 * 1024));
   
   if (bForceMSXLoad) msx_mode = 1;
-  if (msx_mode) AY_Enable=true;
-  if (svi_mode) AY_Enable=true;
+  if (msx_mode)      AY_Enable=true;
+  if (svi_mode)      AY_Enable=true;
+  if (einstein_mode) AY_Enable=true;
   if (msx_mode) InitBottomScreen();  // Could Need to ensure the MSX layout is shown
     
   // -----------------------------------------------------------------
@@ -308,7 +313,7 @@ u8 colecoInit(char *szGame)
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
   }
-  else if (svi_mode)  // Load MSX cartridge ... 
+  else if (svi_mode)  // Load SVI ROM ... 
   {
       memcpy((u8 *)0x6820000+0x0000, SVIBios, 0x8000);  // Fast copy buffer for BIOS
           
@@ -335,6 +340,11 @@ u8 colecoInit(char *szGame)
       colecoWipeRAM();
 
       RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
+  }
+  else if (einstein_mode)  // Load Einstein COM file
+  {
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,pColecoMem+0x4000,0xC000);  // Load up to 48K
   }
   else  // Load coleco cartridge
   {
@@ -380,6 +390,7 @@ u8 colecoInit(char *szGame)
     memotech_reset();                   // Reset the Memotech MTX stuff
     svi_reset();                        // Reset the SVI stuff
     pv2000_reset();                     // Reset the PV2000 stuff
+    einstein_reset();
       
     XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
       
@@ -645,6 +656,16 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             tape_pos = 0;
             last_tape_pos = 9999;
         }
+        else if (einstein_mode)
+        {
+            strcpy(lastAdamDataPath, path);
+            tape_len = iSSize;  
+            sordm5_irq = INT_RST38;
+            if (iSSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
+            {
+                memcpy(pColecoMem+0x4000, romBuffer, iSSize);   // only for Diagnostics ROM
+            }
+        }
         else
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
@@ -860,6 +881,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
   if (memotech_mode) {return cpu_readport_memotech(Port);}    
   if (msx_mode)      {return cpu_readport_msx(Port);}
   if (svi_mode)      {return cpu_readport_svi(Port);}
+  if (einstein_mode) {return cpu_readport_einstein(Port);}
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
@@ -908,7 +930,8 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
   else if (sordm5_mode)   {cpu_writeport_m5(Port, Value); return;}
   else if (pv2000_mode)   {cpu_writeport_pv2000(Port, Value); return;}
   else if (memotech_mode) {cpu_writeport_memotech(Port, Value); return;}
-  else if (svi_mode)      {return cpu_writeport_svi(Port, Value); return;}
+  else if (svi_mode)      {cpu_writeport_svi(Port, Value); return;}
+  else if (einstein_mode) {cpu_writeport_einstein(Port, Value); return;}
   //if (msx_mode)    {cpu_writeport_msx(Port, Value); return;}      // This is now handled in DrZ80 and CZ80 directly
     
   // Colecovision ports are 8-bit
@@ -981,32 +1004,41 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 // ----------------------------------------------------------------
 void Z80CTC_Timer(void)
 {
-    if (CPU.IRequest == INT_NONE)
+    if (einstein_mode)
     {
-        if (memotech_mode)
+        for (u8 i=0; i<2; i++)  // Channel 3+4 are only used for the Real-Time Clock which we don't emulate...
         {
-            for (u8 i=1; i<4; i++)
+            if (--ctc_timer[i] <= 0)
             {
-                if (--ctc_timer[i] <= 0)
-                {
-                    ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / MTX_CTC_SOUND_DIV) + 1;
-                    if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
-                }
+                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / MTX_CTC_SOUND_DIV) + 1;
+                if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
             }
         }
-        else
+    }
+    else
+    if (memotech_mode)
+    {
+        for (u8 i=1; i<4; i++)
         {
-            // -----------------------------------------------------------------------------------------
-            // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
-            // Originally we were handling channels 0, 1 and 2 but there was never any program usage
-            // of channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which 
-            // are not supported by ColecoDS.  So we save time and effort here and only deal with Port1.
-            // -----------------------------------------------------------------------------------------
-            if (--ctc_timer[1] <= 0)
+            if (--ctc_timer[i] <= 0)
             {
-                ctc_timer[1] = ((((ctc_control[1] & 0x20) ? 256 : 16) * (ctc_time[1] ? ctc_time[1]:256)) / CTC_SOUND_DIV) + 1;
-                if (ctc_control[1] & 0x80)  CPU.IRequest = ctc_vector[1];
+                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / MTX_CTC_SOUND_DIV) + 1;
+                if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
             }
+        }
+    }
+    else    // Sord M5 mode
+    {
+        // -----------------------------------------------------------------------------------------
+        // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
+        // Originally we were handling channels 0, 1 and 2 but there was never any program usage
+        // of channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which 
+        // are not supported by ColecoDS.  So we save time and effort here and only deal with Port1.
+        // -----------------------------------------------------------------------------------------
+        if (--ctc_timer[1] <= 0)
+        {
+            ctc_timer[1] = ((((ctc_control[1] & 0x20) ? 256 : 16) * (ctc_time[1] ? ctc_time[1]:256)) / CTC_SOUND_DIV) + 1;
+            if (ctc_control[1] & 0x80)  CPU.IRequest = ctc_vector[1];
         }
     }
 }
@@ -1106,7 +1138,7 @@ ITCM_CODE u32 LoopZ80()
   }
   else  // CZ80 core from fMSX()... slower but higher accuracy
   {
-      if (memotech_mode)
+      if (memotech_mode || einstein_mode || sordm5_mode)
       {
           // Execute 1 scanline worth of CPU instructions
           cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
@@ -1116,7 +1148,24 @@ ITCM_CODE u32 LoopZ80()
           {
               CPU.IRequest = sordm5_irq;   // Sord M5 and Memotech MTX only works with the CZ80 core
           }
-          else Z80CTC_Timer();          
+          else 
+          {
+              // -------------------------------------------------------------------------
+              // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer 
+              // circuit that needs attention - this isnt timing accurate but it's good
+              // enough to allow those timers to trigger and the games to be played.
+              // -------------------------------------------------------------------------
+              if (CPU.IRequest == INT_NONE)
+              {
+                  Z80CTC_Timer();    
+              }
+              if (einstein_mode && (CPU.IRequest == INT_NONE))  // If the keyboard is generating an interrupt...
+              {
+                  extern u16 keyboard_interrupt;
+                  einstein_handle_interrupts();
+                  if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+              }
+          }
       }
       else
       {
@@ -1126,15 +1175,8 @@ ITCM_CODE u32 LoopZ80()
           // Refresh VDP 
           if(Loop9918()) 
           {
-              if (sordm5_mode) CPU.IRequest = sordm5_irq;   // Sord M5 and Memotech MTX only works with the CZ80 core
-              else CPU.IRequest = ((svi_mode || msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
+              CPU.IRequest = ((svi_mode || msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
           }
-
-          // -------------------------------------------------------------------------
-          // The Sord M5 has a CTC timer circuit that needs attention - this isnt 
-          // timing accurate but it's good enough to allow those timers to trigger.
-          // -------------------------------------------------------------------------
-          else if (sordm5_mode) Z80CTC_Timer();
       }
 
       // Generate an interrupt if called for...

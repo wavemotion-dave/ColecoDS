@@ -12,7 +12,7 @@
 #define ID_SHM_NO     0x02
 
 #define DPAD_JOYSTICK   0
-#define DPAD_MSX_KEYS   1
+#define DPAD_kbd_keyS   1
 #define DPAD_DIAGONALS  2
 
 typedef struct {

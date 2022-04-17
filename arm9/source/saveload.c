@@ -33,7 +33,7 @@
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
-u8  spare[493] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
+u8  spare[489] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
 void colecoSaveState() 
 {
   u32 uNbO;
@@ -122,9 +122,16 @@ void colecoSaveState()
     // Some SG-1000 / SC-3000 stuff...
     if (uNbO) uNbO = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
     if (uNbO) uNbO = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
+
+    // Some Tatung Einstein stuff...
+    if (uNbO) uNbO = fwrite(&einstein_ram_start, sizeof(einstein_ram_start), 1, handle);                        
+    if (uNbO) uNbO = fwrite(&keyboard_w, sizeof(keyboard_w), 1, handle);                        
+    if (uNbO) uNbO = fwrite(&key_int_mask, sizeof(key_int_mask), 1, handle);                        
       
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
+      
+      
       
     // Write VDP
     if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
@@ -317,6 +324,11 @@ void colecoLoadState()
             // Some SG-1000 / SC-3000 stuff...
             if (uNbO) uNbO = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
             if (uNbO) uNbO = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
+            
+            // Some Tatung Einstein stuff...
+            if (uNbO) uNbO = fread(&einstein_ram_start, sizeof(einstein_ram_start), 1, handle);                        
+            if (uNbO) uNbO = fread(&keyboard_w, sizeof(keyboard_w), 1, handle);                        
+            if (uNbO) uNbO = fread(&key_int_mask, sizeof(key_int_mask), 1, handle);                        
             
             // Load spare memory for future use
             if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 
