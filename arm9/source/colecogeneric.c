@@ -1081,7 +1081,7 @@ const struct options_t Option_Table[] =
     {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
     {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
     {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
-    {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL"},                                                                                                                                     &myConfig.memWipe,    3},
+    {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE"},                                                                                                               &myConfig.memWipe,    4},
     
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
@@ -1215,7 +1215,7 @@ void colecoDSGameOptions(void)
     else if (dev_z80_cycles == 15) timingAdjustment = -5;
     else  timingAdjustment = dev_z80_cycles;
     
-    if (myConfig.isPAL) myConfig.vertSync = 0; ///TBD
+    if (myConfig.isPAL) myConfig.vertSync = 0;
     
     return;
 }

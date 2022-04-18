@@ -745,7 +745,7 @@ void Reset9918(void)
     tms_end_line   = (myConfig.isPAL ? TMS9929_END_LINE     :   TMS9918_END_LINE);
     tms_num_lines  = (myConfig.isPAL ? TMS9929_LINES        :   TMS9918_LINES);
     
-    if (memotech_mode || einstein_mode) // These machines run at 4MHz
+    if (memotech_mode) // This machine runs at 4MHz
         tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE_MTX :   TMS9918_LINE_MTX);
     else
         tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE     :   TMS9918_LINE);
