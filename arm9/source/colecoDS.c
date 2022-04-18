@@ -441,6 +441,7 @@ void dsInstallSoundEmuFIFO(void)
 //*****************************************************************************
 static u8 last_sgm_mode = false;
 static u8 last_pencil_mode = false;
+static u8 last_einstein_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
@@ -799,7 +800,11 @@ void DisplayStatusLine(bool bForce)
     }
     else if (einstein_mode)
     {
-        AffChaine(22,0,6, "EINSTEIN");
+        if ((einstein_mode != last_einstein_mode) || bForce)
+        {
+            AffChaine(22,0,6, "EINSTEIN");
+            last_pal_mode = 99;
+        }
         if (last_pal_mode != myConfig.isPAL)
         {
             last_pal_mode = myConfig.isPAL;
@@ -1665,13 +1670,17 @@ void colecoDS_main(void)
               extern u16 einstein_ram_start;
               einstein_reset();
               einstein_ram_start = 0x0000;
-              for (int i = 0x0000; i<0x10000; i++)
+              if (myConfig.memWipe == 0)    // Random Wipe
               {
-                  pColecoMem[i] = rand() % 256;
-                  Slot3RAM[i] = pColecoMem[i];
+                  for (int i = 0x0000; i<0x10000; i++)
+                  {
+                      pColecoMem[i] = rand() % 256;
+                      Slot3RAM[i] = pColecoMem[i];
+                  }
               }
               memcpy(pColecoMem+0x100, romBuffer, tape_len);
               memcpy(Slot3RAM+0x100, romBuffer, tape_len);
+              CPU.IFF &= 0xFE;   // Disable Interrupts
               z80_rebasePC(0x100);
               CPU.PC.W = 0x100;
               RdCtrl9918();
