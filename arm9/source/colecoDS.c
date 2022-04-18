@@ -1202,6 +1202,8 @@ void colecoDS_main(void)
                 sg1000_double_reset=false; 
                 ResetColecovision();
             }
+            
+            if (myConfig.isPAL) myConfig.vertSync=0;    // Force Sync OFF always in PAL mode            
         }
         emuActFrames++;
 
@@ -1662,8 +1664,6 @@ void colecoDS_main(void)
           {
               extern u16 einstein_ram_start;
               einstein_reset();
-              DrZ80_Reset();                        // Reset the DrZ80 core
-              ResetZ80(&CPU);                       // Reset the CZ80 core CPU
               einstein_ram_start = 0x0000;
               for (int i = 0x0000; i<0x10000; i++)
               {
@@ -1696,13 +1696,15 @@ void colecoDS_main(void)
               }
               else  // .RUN file: load and jump to program
               {
-                  DrZ80_Reset();                        // Reset the DrZ80 core
-                  ResetZ80(&CPU);                       // Reset the CZ80 core CPU
                   memotech_reset();
                   if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
                   {
                     memset(pColecoMem, 0x00, 0x10000);
                     cpu_writeport_memotech(0x00, 0x80);                    
+                  }
+                  else if (myConfig.memWipe == 3)    // Random MSX Memory Wipe
+                  {
+                      for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (rand() & 0xFF);   // This pattern tends to make most things start up properly...
                   }
                   
                   pColecoMem[0x3627] = 0xd3;
@@ -1716,9 +1718,8 @@ void colecoDS_main(void)
                       pColecoMem[i] = romBuffer[idx++];
                   }
                   CPU.PC.W = mtx_start;
+                  
                   RdCtrl9918();
-                  JumpZ80(CPU.PC.W);
-                  z80_rebasePC(mtx_start);
               }
               WAITVBL;WAITVBL;WAITVBL;
           }

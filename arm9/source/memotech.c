@@ -98,6 +98,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == '8')           key1 = 0x10;
               if (kbd_key == '0')           key1 = 0x20;
           }
+          
           if (nds_key)
           {
               for (u8 i=0; i<12; i++)
