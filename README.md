@@ -7,32 +7,11 @@ To run requires a coleco.rom BIOS to
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
 
-Because the chips used in the Colecovision Hardware 
-were so common in that era, other systems tended
-to be very close to the CV in terms of hardware. 
-Often only the IO/Memory was different. As such,
-ColecoDS also allows cartridge and sometimes tape
-games from "cousin" systems to be played - 
-namely the Sord M5, the Memotech MTX, the SG-1000/3000,
-the Spectravision 3x8 SVI, Casio PV-2000 and the venerable MSX1.
-
-If you want to play Sord M5 games, you will
-also need an 8k sordm5.rom bios in the same
-directory as the coleco.rom BIOS.
-
-SG-1000/SC-3000 emulation does not need a BIOS.
-
-Memotech MTX emulation has a built-in BIOS.
-
-MSX emulation does not need a BIOS (C-BIOS used) 
-but you can put the 32k msx.rom in /roms/bios or /data/bios 
-and the emulator will use that instead.
-
-ADAM computer emulation requires eos.rom and writer.rom 
-
-Spectravideo SVI emulation requires svi.rom BIOS
-
-Casio PV-2000 requires pv2000.rom BIOS
+Because the chips used in the Colecovision Hardware were so common in that era, other systems tended
+to be very close to the CV in terms of hardware. Often only the IO/Memory was different. As such,
+ColecoDS also allows cartridge and sometimes tapegames from "cousin" systems to be played - namely 
+the Sord M5, the Memotech MTX, the SG-1000/3000, the Spectravision 3x8 SVI, Casio PV-2000, Hanimex 
+Pencil II, the Tatung Einstein and the venerable MSX1.
 
 Features :
 -----------------------
@@ -142,7 +121,7 @@ Memotech MTX Compatibility :
 -----------------------
 The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound is not perfect due to some CTC chip timing differences from real hardware. Also, only about 65% of the games load and run properly - some games use more complex loaders and are not well supported by ColecoDS. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  Of the two types (.mtx and .run), the .RUN files are generally better supported - seek those out (the excellent MEMU MTX emulator has a good selection).
 
-The MTX emulated is a base MTX-500 system with 32K of RAM... plus an extra 16K of ram in the 4000h bank. This isn't a "standard" MTX machine but it allows a few more playable games that need to load into the lower 16K of RAM (Mecha8, Zombie Near, Kung Fu 64, etc).
+The MTX emulated is a base MTX-512 system with 64K of RAM... This should allow most games to run.
 
 Once the game is loaded into memory you will be sitting at the BASIC prompt. At this prompt you need to LOAD "" (if .MTX) or RUN the game (if .RUN). I've made this simple - just hit the DS **START** key to enter the proper command automatically.
 
@@ -177,7 +156,7 @@ This should leave you with a 12k ROM called TreasureHunt.pen which is now playab
 
 Tatung Einstein Compatibility :
 -----------------------
-Only .COM files for now.
+The base 64K machine is emulated. The compatibility on this one isn't too great. Only .COM files for now and only about 16 of the games currently work. But some of them are great games: Jet Set Willy, Manic Miner, Chuckie Egg, Mayham and Killer Tomatoes are among those that work well.
 
 Controllers :
 -----------------------
@@ -253,6 +232,14 @@ would personally try them:
 
 Versions :
 -----------------------
+V6.8: 20-Apr-2022 by wavemotion-dave
+* Hanimex Pencil II support. Only one game dumped - Treasure Hunter!
+* Tatung Einstein support. Only .COM files run and requires einstein.rom BIOS
+* Key map overhaul - you can now map any keyboard key to any NDS button.
+* Improved configuration of various machines - more games run including massive MTX improvements.
+* Improved SVI emulation so games like Super Cross Force don't hang.
+* Numerous small cleanups under the hood.
+
 V6.7: 10-Apr-2022 by wavemotion-dave
 * Casio PV-2000 support (.pv rom files) - all 11 games run fine.
 * Improved emulated memory access to gain almost 1 frame of performance.
