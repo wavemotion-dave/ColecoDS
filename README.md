@@ -36,16 +36,18 @@ Casio PV-2000 requires pv2000.rom BIOS
 
 Features :
 -----------------------
-* Colecovision game support (.rom or .col files)
+* Colecovision game support (.rom or .col files). Requires coleco.rom BIOS.
 * Super Game Module support including AY sound chip.
 * Megacart Bankswitching support (up to 512K).
-* Coleco ADAM game support (.ddp or .dsk files)
+* Coleco ADAM game support (.ddp or .dsk files). Requires eos.rom and writer.rom
 * Sega SG-1000 game support (.sg roms)
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
+* MSX1 game support (.msx or .rom or.cas) up to 512K 
 * Spectravideo SVI support (.cas) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
-* MSX1 game support (.msx or .rom or.cas) up to 512K 
+* Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
+* Tatung Einstein support (.com run-time files only) - requires einstein.rom BIOS
 * Memotech MTX game support (.mtx or .run) - single loader games only.
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
@@ -100,8 +102,7 @@ Known Issues :
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * 64K Activision PCB carts have no EEPROM support (Black Onyx, Boxxle - both playable without saves).
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
-* Sord M5 games are not sound accurate due to CTC emulation issues.
-* MSX envelope sound and noise emulation is not perfectly accurate (but close enough).
+* MSX envelope and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
 * MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music)
 
 ADAM Compatibility :
@@ -156,6 +157,27 @@ This emulator supports .sc files as ROM only (not cassettes) but ColecoDS will s
 Casio PV-2000 Compatibility :
 -----------------------
 This emulator supports .pv files as ROM only (not cassettes).  Rename any .bin files you find as .pv so the emulator will load them correctly.
+
+Hanimex Pencil II Compatibility :
+-----------------------
+There is only one known game dumped at this time:  Treasure Hunt. Fortunately it's a fun game!  Unfortunately, came on 2 ROM chips. So you have to "glue" the two ROMs together. If you can find a late MAME "Software List" from 2020 or later, you will find treasure.zip which contains two ROM files:
+pen702a.bin (8k)
+pen702b.bin (4k)
+You need to glue these together. 
+
+In windows use the command line:
+
+copy /b pen702a.bin + pen702b.bin TreasureHunt.pen
+
+or in Linux:
+
+cat pen702a.bin pen702b.bin > TreasureHunt.pen
+
+This should leave you with a 12k ROM called TreasureHunt.pen which is now playable on your ColecoDS system!
+
+Tatung Einstein Compatibility :
+-----------------------
+Only .COM files for now.
 
 Controllers :
 -----------------------
