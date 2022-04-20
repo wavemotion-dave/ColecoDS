@@ -27,7 +27,7 @@
 #include "MTX_BIOS.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0012        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x0013        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 
 /*********************************************************************************
@@ -116,6 +116,10 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&tape_len, sizeof(tape_len), 1, handle); 
     if (uNbO) uNbO = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
       
+    if (uNbO) uNbO = fwrite(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
+    if (uNbO) uNbO = fwrite(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
+    if (uNbO) uNbO = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);       
+      
     // Some SVI stuff...
     if (uNbO) uNbO = fwrite(&svi_RAM_start, sizeof(svi_RAM_start), 1, handle); 
       
@@ -130,8 +134,6 @@ void colecoSaveState()
       
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
-      
-      
       
     // Write VDP
     if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
@@ -173,9 +175,9 @@ void colecoSaveState()
     if (uNbO) fwrite(ctc_timer, sizeof(ctc_timer),1, handle);
     if (uNbO) fwrite(ctc_vector, sizeof(ctc_vector),1, handle);
     if (uNbO) fwrite(ctc_latch, sizeof(ctc_latch),1, handle);
-    if (uNbO) fwrite(&sordm5_irq, sizeof(sordm5_irq),1, handle);
+    if (uNbO) fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
     
-    if (msx_mode || svi_mode)   // Big enough that we will not write this if we are not MSX or SVI
+    if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
     {
         if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
         if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
@@ -318,6 +320,10 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&tape_len, sizeof(tape_len), 1, handle); 
             if (uNbO) uNbO = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
             
+            if (uNbO) uNbO = fread(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
+            if (uNbO) uNbO = fread(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
+            if (uNbO) uNbO = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle); 
+            
             // Some SVI stuff...
             if (uNbO) uNbO = fread(&svi_RAM_start, sizeof(svi_RAM_start), 1, handle); 
             
@@ -374,9 +380,9 @@ void colecoLoadState()
             if (uNbO) fread(ctc_timer, sizeof(ctc_timer),1, handle);
             if (uNbO) fread(ctc_vector, sizeof(ctc_vector),1, handle);
             if (uNbO) fread(ctc_latch, sizeof(ctc_latch),1, handle);
-            if (uNbO) fread(&sordm5_irq, sizeof(sordm5_irq),1, handle);
+            if (uNbO) fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
             
-            if (msx_mode || svi_mode)   // Big enough that we will not read this if we are not MSX or SVI
+            if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
             {
                 if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
                 if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
@@ -384,7 +390,7 @@ void colecoLoadState()
                 if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
                 if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
                 if (uNbO) fread(Slot3RAM, 0x10000,1, handle);
-                memcpy(Slot3RAMPtr, Slot3RAM, 0x10000);
+                if (msx_mode) memcpy(Slot3RAMPtr, Slot3RAM, 0x10000);
                 if (uNbO) fread(msx_SRAM, 0x2000,1, handle);    // No game uses more than 8K
                 if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
             }

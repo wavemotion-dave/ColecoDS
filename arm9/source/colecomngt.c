@@ -61,8 +61,6 @@ u8 Port_PPI_A __attribute__((section(".dtcm"))) = 0x00;
 u8 Port_PPI_B __attribute__((section(".dtcm"))) = 0x00;
 u8 Port_PPI_C __attribute__((section(".dtcm"))) = 0x00;
 
-u8 msx_auto_clear_irq __attribute__((section(".dtcm"))) = 0;
-
 u8 bIsComplicatedRAM __attribute__((section(".dtcm"))) = 0;   // Set to 1 if we have hotspots or other RAM needs
 
 char lastAdamDataPath[256];
@@ -78,13 +76,11 @@ extern const unsigned char sprPause_Bitmap[2560];
 // interrupts. This chip is only used on the Sord M5 (not the Colecovision
 // nor the SG-1000 which just ties interrupts directly between VDP and CPU).
 // ----------------------------------------------------------------------------
-u8 ctc_control[4] __attribute__((section(".dtcm"))) = {0x02, 0x02, 0x02, 0x02};
-u8 ctc_time[4]    __attribute__((section(".dtcm"))) = {0};
-u16 ctc_timer[4]  __attribute__((section(".dtcm"))) = {0};
-u8 ctc_vector[4]  __attribute__((section(".dtcm"))) = {0};
-u8 ctc_latch[4]   __attribute__((section(".dtcm"))) = {0};
-u8 sordm5_irq     __attribute__((section(".dtcm"))) = 0xFF;
-
+u8 ctc_control[4]   __attribute__((section(".dtcm"))) = {0x02, 0x02, 0x02, 0x02};
+u8 ctc_time[4]      __attribute__((section(".dtcm"))) = {0};
+u16 ctc_timer[4]    __attribute__((section(".dtcm"))) = {0};
+u8 ctc_vector[4]    __attribute__((section(".dtcm"))) = {0};
+u8 ctc_latch[4]     __attribute__((section(".dtcm"))) = {0}; 
 
 // ----------------------------------------------------------------------
 // Our "massive" ROM buffer - we support MegaCarts up to 512k but 
@@ -530,21 +526,6 @@ void getfile_crc(const char *path)
     if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
     
     // ---------------------------------------------------------------------------------
-    // A few games don't work well with the clearing of interrupts on VDP and run 
-    // better with auto-clear.  So we adjust those here...
-    // ---------------------------------------------------------------------------------
-    msx_auto_clear_irq = false;
-    if (file_crc == 0xef339b82) msx_auto_clear_irq = true; // Ninja Kun - Bouken
-    if (file_crc == 0xc9bcbe5a) msx_auto_clear_irq = true; // Ghostbusters
-    if (file_crc == 0x9814c355) msx_auto_clear_irq = true; // Ghostbusters    
-    if (file_crc == 0x90530889) msx_auto_clear_irq = true; // Soul of a Robot
-    if (file_crc == 0x33221ad9) msx_auto_clear_irq = true; // Time Bandits    
-    if (file_crc == 0x9dbdd4bc) msx_auto_clear_irq = true; // GP World (Sega)    
-    if (file_crc == 0x7820e86c) msx_auto_clear_irq = true; // GP World (Sega)   
-    if (file_crc == 0x6e8bb5fa) msx_auto_clear_irq = true; // Seleniak - Mark II
-    
-    
-    // ---------------------------------------------------------------------------------
     // A few of the ZX Spectrum ports actually use the MSX beeper for sound. Go figure!
     // ---------------------------------------------------------------------------------
     msx_beeper_enabled = 0;
@@ -660,7 +641,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         {
             strcpy(lastAdamDataPath, path);
             tape_len = iSSize;  
-            sordm5_irq = INT_RST38;
             if (iSSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
             {
                 memcpy(pColecoMem+0x4000, romBuffer, iSSize);   // only for Diagnostics ROM
@@ -1138,7 +1118,7 @@ ITCM_CODE u32 LoopZ80()
   }
   else  // CZ80 core from fMSX()... slower but higher accuracy
   {
-      if (memotech_mode || einstein_mode || sordm5_mode)
+      if (memotech_mode || einstein_mode || sordm5_mode)    // All of these have CTC Timers to deal with... 
       {
           // Execute 1 scanline worth of CPU instructions
           cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
@@ -1146,7 +1126,7 @@ ITCM_CODE u32 LoopZ80()
           // Refresh VDP 
           if(Loop9918()) 
           {
-              CPU.IRequest = sordm5_irq;   // Sord M5 and Memotech MTX only works with the CZ80 core
+              CPU.IRequest = vdp_int_source;   // Sord M5 and Memotech MTX only works with the CZ80 core
           }
           else 
           {
@@ -1175,7 +1155,7 @@ ITCM_CODE u32 LoopZ80()
           // Refresh VDP 
           if(Loop9918()) 
           {
-              CPU.IRequest = ((svi_mode || msx_mode || sg1000_mode) ? INT_RST38 : INT_NMI);
+              CPU.IRequest = vdp_int_source;
           }
       }
 

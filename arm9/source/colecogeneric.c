@@ -132,6 +132,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD ESC",
   "KEYBOARD SHIFT",
   "KEYBOARD CTRL",
+  "KEYBOARD HOME",
   "KEYBOARD UP",
   "KEYBOARD DOWN",
   "KEYBOARD LEFT",
@@ -836,11 +837,14 @@ void SetDefaultGameConfig(void)
     myConfig.msxKey5     = 0;   // Default key map
     myConfig.dpad        = DPAD_NORMAL;   // Normal DPAD use - mapped to joystick
     myConfig.memWipe     = 0;    
-    myConfig.reservedA0  = 0;    
+    myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY;
     myConfig.reservedA1  = 0;    
     myConfig.reservedA2  = 0;    
     myConfig.reservedA3  = 0;    
-    myConfig.reservedB   = 0;    
+    myConfig.reservedB0  = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reservedB1  = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reservedB2  = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reservedB3  = 0;    
     myConfig.reservedC   = 0;    
     
     // And a few odd defaults 
@@ -968,23 +972,72 @@ void SetDefaultGameConfig(void)
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     
-    if (myConfig.isPAL)                         myConfig.vertSync= 0;  // If we are PAL, we can't sync to the DS 60Hz
+    if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 2;  // MTX Rolla Ball needs full memory wipe
+    if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 2;  // MTX Surface Scanner needs full memory wipe
+    if (file_crc == 0xe8bceb5c)                 myConfig.memWipe = 2;  // MTX Surface Scanner needs full memory wipe
+    if (file_crc == 0x018f0e13)                 myConfig.memWipe = 2;  // MTX SMG needs full memory wipe
+    if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 2;  // MTX Astro PAC needs full memory wipe
+    if (file_crc == 0xf9934809)                 myConfig.memWipe = 2;  // MTX Reveal needs full memory wipe
+    if (file_crc == 0x8c96be92)                 myConfig.memWipe = 2;  // MTX Turbo needs full memory wipe
+    if (file_crc == 0xaf23483f)                 myConfig.memWipe = 2;  // MTX Aggrovator needs full memory wipe
+    if (file_crc == 0x9168207e)                 myConfig.memWipe = 3;  // MTX Blobbo wants a special Random memory wipe
+    if (file_crc == 0xbf543b19)                 myConfig.memWipe = 3;  // MTX Kilopede wants a special Random memory wipe
+    if (file_crc == 0x635064bc)                 myConfig.memWipe = 3;  // MTX Toado wants a special Random memory wipe
+    if (file_crc == 0x3c8500af)                 myConfig.memWipe = 3;  // MTX Target Zone wants a special Random memory wipe
     
-    if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 2;  // Rolla Ball needs full memory wipe
-    if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 2;  // Surface Scanner needs full memory wipe
-    if (file_crc == 0xe8bceb5c)                 myConfig.memWipe = 2;  // Surface Scanner needs full memory wipe
-    if (file_crc == 0x018f0e13)                 myConfig.memWipe = 2;  // SMG needs full memory wipe
-    if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 2;  // Astro PAC needs full memory wipe
-    if (file_crc == 0xf9934809)                 myConfig.memWipe = 2;  // Reveal needs full memory wipe
-    if (file_crc == 0x8c96be92)                 myConfig.memWipe = 2;  // Turbo needs full memory wipe
-    if (file_crc == 0xaf23483f)                 myConfig.memWipe = 2;  // Aggrovator needs full memory wipe
+    // ----------------------------------------------------------------------------
+    // For these machines, we default to clearing interrupts only on VDP read...
+    // ----------------------------------------------------------------------------
+    if (msx_mode || einstein_mode || svi_mode || memotech_mode) myConfig.clearInt = CPU_CLEAR_INT_ON_VDP_READ;
     
-    if (file_crc == 0x9d8fa05f)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo needs diagonals
-    if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // Qogo2 needs diagonals    
+    // ---------------------------------------------------------------------------------
+    // A few games don't work well with the clearing of interrupts on VDP and run 
+    // better with auto-clear.  So we adjust those here...
+    // ---------------------------------------------------------------------------------
+    if (file_crc == 0xef339b82)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Ninja Kun - Bouken
+    if (file_crc == 0xc9bcbe5a)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Ghostbusters
+    if (file_crc == 0x9814c355)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Ghostbusters    
+    if (file_crc == 0x90530889)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Soul of a Robot
+    if (file_crc == 0x33221ad9)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Time Bandits    
+    if (file_crc == 0x9dbdd4bc)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX GP World (Sega)    
+    if (file_crc == 0x7820e86c)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX GP World (Sega)   
+    if (file_crc == 0x6e8bb5fa)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Seleniak - Mark II
+    if (file_crc == 0xb8ca3108)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Quazzia
+    if (file_crc == 0xbd285566)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Caves of Orb
+    if (file_crc == 0xe30fb8f7)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Pac Manor Rescue
+    if (file_crc == 0xa2db030e)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Revenge of the Chamberoids    
+    if (file_crc == 0x3c8500af)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Target Zone
+    if (file_crc == 0xbde21de8)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Target Zone
+    if (file_crc == 0x8f9f902e)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Target Zone    
+    if (file_crc == 0xe3f495c4)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MAGROM
+    if (file_crc == 0x98240ee9)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MAGROM
+    
+    
+    // ------------------------------------------------------
+    // A few games really want diagonal inputs enabled...
+    // ------------------------------------------------------
+    if (file_crc == 0x9d8fa05f)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO  needs diagonals
+    if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO2 needs diagonals    
+    if (file_crc == 0x154702b2)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGS2 needs diagonals    
+    if (file_crc == 0x71600e71)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO  needs diagonals    
+    
     if (file_crc == 0xf9934809)                 myConfig.dpad = DPAD_DIAGONALS;  // Reveal needs diagonals    
     
     if (file_crc == 0x0084b239)                 myConfig.isPAL = 1;     // Survivors Multi-Cart is PAL
     if (file_crc == 0x76a3d2e2)                 myConfig.isPAL = 1;     // Survivors MEGA-Cart is PAL
+    
+    if (file_crc == 0x07056b00)                 myConfig.isPAL   = 0;   // Memotech Pacman is an NTSC conversion
+    if (file_crc == 0x8b28101a)                 myConfig.isPAL   = 0;   // Memotech Pacman is an NTSC conversion    
+    if (file_crc == 0x87b9b54e)                 myConfig.isPAL   = 0;   // Memotech PowerPac is an NTSC conversion
+    if (file_crc == 0xb8ed9f9e)                 myConfig.isPAL   = 0;   // Memotech PowerPac is an NTSC conversion    
+    if (file_crc == 0xcac1f237)                 myConfig.isPAL   = 0;   // Memotech Telebunny is an NTSC conversion
+    if (file_crc == 0xbd0e4513)                 myConfig.isPAL   = 0;   // Memotech Telebunny is an NTSC conversion
+    if (file_crc == 0x24ae8ac0)                 myConfig.isPAL   = 0;   // Memotech Hustle Chummy is an NTSC conversion
+    if (file_crc == 0x31ff229b)                 myConfig.isPAL   = 0;   // Memotech Hustle Chummy is an NTSC conversion
+    if (file_crc == 0x025e77dc)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
+    if (file_crc == 0x95e71c67)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
+
+    if (myConfig.isPAL)                         myConfig.vertSync= 0;   // If we are PAL, we can't sync to the DS 60Hz
 }
 
 // -------------------------------------------------------------------------
@@ -1006,19 +1059,6 @@ void FindAndLoadConfig(void)
     {
         fread(&AllConfigs, sizeof(AllConfigs), 1, fp);
         fclose(fp);
-        
-        // -------------------------------------------------------------
-        // If we have the version 0004, we perform a one-time update...
-        // -------------------------------------------------------------
-        if (AllConfigs[0].config_ver == OLD_CONFIG_VER4)
-        {
-            for (u16 slot=0; slot<700; slot++)  // Old Config was only 700 entries long...
-            {
-                AllConfigs[slot].config_ver = CONFIG_VER;
-                if (AllConfigs[slot].overlay == 10) AllConfigs[slot].overlay = 9;   // Convert Adam Keyboard to 'Full Keyboard'
-                if (AllConfigs[slot].overlay == 11) AllConfigs[slot].overlay = 9;   // Convert SVI Keyboard to 'Full Keyboard'
-            }
-        }
         
         if (AllConfigs[0].config_ver != CONFIG_VER)
         {
@@ -1082,7 +1122,7 @@ const struct options_t Option_Table[] =
     {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
     {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
     {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE"},                                                                                                               &myConfig.memWipe,    4},
-    
+    {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
 #if 0   // Developer use only   
     {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
 #endif    

@@ -14,15 +14,17 @@
 #define DPAD_NORMAL     0
 #define DPAD_DIAGONALS  1
 
+#define CPU_CLEAR_INT_ON_VDP_READ   0
+#define CPU_CLEAR_INT_AUTOMATICALLY 1
+
 typedef struct {
   char szName[MAX_ROM_LENGTH];
   u8 uType;
   u32 uCrc;
 } FICcoleco;
 
-#define MAX_CONFIGS         1400
-#define CONFIG_VER          0x0005
-#define OLD_CONFIG_VER4     0x0004      // we perform a one-time upgrade from this legacy version
+#define MAX_CONFIGS         1360
+#define CONFIG_VER          0x0008
 
 struct __attribute__((__packed__)) Config_t
 {
@@ -45,11 +47,16 @@ struct __attribute__((__packed__)) Config_t
     u8  msxKey5;
     u8  dpad;
     u8  memWipe;
-    u8 reservedA0;
-    u8 reservedA1;
-    u8 reservedA2;
-    u8 reservedA3;
-    u32 reservedB;
+    u8  clearInt;
+    u8  unused_render;
+    u8  reservedA0;
+    u8  reservedA1;
+    u8  reservedA2;
+    u8  reservedA3;
+    u8  reservedB0;
+    u8  reservedB1;
+    u8  reservedB2;
+    u8  reservedB3;
     u32 reservedC;
 };
  

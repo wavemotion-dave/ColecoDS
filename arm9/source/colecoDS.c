@@ -111,6 +111,8 @@ u8 bMSXBiosFound = false;
 u8 bSVIBiosFound = false;
 u8 bAdamBiosFound = false;
 u8 bPV2000BiosFound = false;
+u8 bPencilBiosFound = false;
+u8 bEinsteinBiosFound = false;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
@@ -225,6 +227,7 @@ u32 keyCoresp[MAX_KEY_OPTIONS] = {
     META_KBD_ESC,
     META_KBD_SHIFT,
     META_KBD_CTRL,
+    META_KBD_HOME,
     META_KBD_UP,
     META_KBD_DOWN,
     META_KBD_LEFT,
@@ -940,6 +943,7 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
         AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " BLOAD 'CAS:',R  ");  cassete_menu_items++;
         AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN   'CAS:'    ");  cassete_menu_items++;
         AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " LOAD  ''        ");  cassete_menu_items++;
+        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN             ");  cassete_menu_items++;
         AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU       ");  cassete_menu_items++;
     }
     DisplayFileName();
@@ -1095,6 +1099,14 @@ void CassetteMenu(void)
                   break;
             }
             if (menuSelection == 7)
+            {
+                  BufferKey('R');
+                  BufferKey('U');
+                  BufferKey('N');
+                  BufferKey(KBD_KEY_RET);
+                  break;
+            }
+            if (menuSelection == 8)
             {
                 break;
             }
@@ -1689,8 +1701,31 @@ void colecoDS_main(void)
           }
           else if (memotech_mode && (nds_key & KEY_START))
           {
+              extern u8 memotech_magrom_present;
+              
+              if (memotech_magrom_present)
+              {
+                  BufferKey('R');
+                  BufferKey('O');
+                  BufferKey('M');
+                  BufferKey(' ');
+                  BufferKey('7');
+                  BufferKey(KBD_KEY_RET);
+              }
+              else
               if (memotech_mode == 2)   // .MTX file: enter LOAD "" into the keyboard buffer
               {
+                  if (memotech_mtx_500_only)
+                  {
+                      pColecoMem[0xFA7A] = 0x00;
+
+                      BufferKey('N');
+                      BufferKey('E');
+                      BufferKey('W');
+                      BufferKey(KBD_KEY_RET);
+                      BufferKey(KBD_KEY_RET);
+                  }
+                  
                   BufferKey('L');
                   BufferKey('O');
                   BufferKey('A');
@@ -1705,7 +1740,8 @@ void colecoDS_main(void)
               }
               else  // .RUN file: load and jump to program
               {
-                  memotech_reset();
+                  vdp_int_source = INT_NONE;    // Needed when we wipe and run in this mode
+
                   if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
                   {
                     memset(pColecoMem, 0x00, 0x10000);
@@ -2104,6 +2140,8 @@ void LoadBIOSFiles(void)
     bSVIBiosFound = false;
     bAdamBiosFound = false;
     bPV2000BiosFound = false;
+    bPencilBiosFound = false;
+    bEinsteinBiosFound = false;
     
     // -----------------------------------------------------------
     // First load Sord M5 bios - don't really care if this fails
@@ -2175,6 +2213,7 @@ void LoadBIOSFiles(void)
     if (fp == NULL) fp = fopen("/data/bios/pencil2.rom", "rb");
     if (fp != NULL)
     {
+        bPencilBiosFound = true;
         fread(Pencil2Bios, 0x2000, 1, fp);
         fclose(fp);
     }
@@ -2187,6 +2226,7 @@ void LoadBIOSFiles(void)
     if (fp == NULL) fp = fopen("/data/bios/einstein.rom", "rb");
     if (fp != NULL)
     {
+        bEinsteinBiosFound = true;
         fread(EinsteinBios, 0x2000, 1, fp);
         fclose(fp);
     }
@@ -2313,14 +2353,16 @@ int main(int argc, char **argv)
     {
         u8 idx = 6;
         AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
-        AffChaine(2,idx++,0,"coleco.rom BIOS FOUND"); idx++;
-        if (bMSXBiosFound) {AffChaine(2,idx++,0,"msx.rom BIOS FOUND"); idx++;}
-        if (bSVIBiosFound) {AffChaine(2,idx++,0,"svi.rom BIOS FOUND"); idx++;}
-        if (bSordBiosFound) {AffChaine(2,idx++,0,"sordm5.rom BIOS FOUND"); idx++;}
-        if (bPV2000BiosFound) {AffChaine(2,idx++,0,"pv2000.rom BIOS FOUND"); idx++;}        
-        if (bAdamBiosFound) {AffChaine(2,idx++,0,"eos.rom and writer.rom FOUND"); idx++;}
+                                AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND"); 
+        if (bMSXBiosFound)     {AffChaine(2,idx++,0,"msx.rom        BIOS FOUND"); }
+        if (bSVIBiosFound)     {AffChaine(2,idx++,0,"svi.rom        BIOS FOUND"); }
+        if (bSordBiosFound)    {AffChaine(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
+        if (bPV2000BiosFound)  {AffChaine(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
+        if (bPencilBiosFound)  {AffChaine(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
+        if (bEinsteinBiosFound){AffChaine(2,idx++,0,"einstein.rom   BIOS FOUND"); }
+        if (bAdamBiosFound)    {AffChaine(2,idx++,0,"eos.rom        BIOS FOUND"); }
+        if (bAdamBiosFound)    {AffChaine(2,idx++,0,"writer.rom     BIOS FOUND"); }
         AffChaine(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
-        
         AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
         
         while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
