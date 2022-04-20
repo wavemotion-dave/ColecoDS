@@ -35,8 +35,6 @@ extern Z80 CPU;
 /*************************************************************/
 #define FAST_RDOP
 
-extern u8 msx_mode, svi_mode, einstein_mode, msx_auto_clear_irq;
-
 // ------------------------------------------------------
 // These defines and inline functions are to map maximum
 // speed/efficiency onto the memory system we have.
@@ -48,7 +46,8 @@ extern byte cpu_readmem16 (u16 address);
 extern void cpu_writeport16(unsigned short Port, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
-extern u8 bIsComplicatedRAM;
+extern u8 bIsComplicatedRAM, msx_mode, my_config_clear_int;
+extern u16 vdp_int_source;
 #define OpZ80(A)            pColecoMem[A]
 #define WrZ80(A,V)          cpu_writemem16(V,A)
 #define OutZ80(P,V)         (msx_mode ? cpu_writeport_msx(P,V) : cpu_writeport16(P,V))
@@ -591,23 +590,10 @@ void IntZ80(Z80 *R,word Vector)
     /* Automatically reset IRequest if needed */
     if (CPU.IAutoReset && (Vector==CPU.IRequest))
     {
-#if 0
-        if ((einstein_mode) && (CPU.IRequest == INT_RST38 || CPU.IRequest == INT_RST30))
+        if ((my_config_clear_int == 0) && (Vector == vdp_int_source))   
         {
-            if (msx_auto_clear_irq)
-            {
-                CPU.IRequest=INT_NONE;      // For Einstien mode, we only auto-clear for special games
-            }
-        }
-        else 
-#endif            
-        if ((msx_mode || svi_mode) && (CPU.IRequest == INT_RST38))
-        {
-            if (msx_auto_clear_irq)
-            {
-                CPU.IRequest=INT_NONE;      // For MSX mode, we only auto-clear for special games
-            }
-        }
+            // Don't clear it... this will be cleared in RdCtrl9918()   
+        }            
         else
         {
             CPU.IRequest=INT_NONE;

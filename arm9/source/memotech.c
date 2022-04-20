@@ -26,8 +26,12 @@
 #include "MTX_BIOS.h"
 #define NORAM 0xFF
 
+u8 memotech_magrom_present = 0;
+u8 memotech_mtx_500_only = 0;
+u8 memotech_lastMagROMPage = 0xFF;
+
 // ---------------------------------------------------------------------
-// Memotech MTX IO Port Read - just VDP, Joystick/Keyboard and Z80-CTC
+// Memotech MTX IO Port Read - VDP, Joystick/Keyboard and Z80-CTC
 // ---------------------------------------------------------------------
 unsigned char cpu_readport_memotech(register unsigned short Port) 
 {
@@ -67,6 +71,11 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (JoyState & JST_DOWN)  joy1 |= 0x02;
           if (JoyState & JST_LEFT)  joy1 |= 0x04;
           if (JoyState & JST_RIGHT) joy1 |= 0x08;
+          
+          if (JoyState & (JST_UP<<16))    joy1 |= 0x10;
+          if (JoyState & (JST_DOWN<<16))  joy1 |= 0x20;
+          if (JoyState & (JST_LEFT<<16))  joy1 |= 0x40;
+          if (JoyState & (JST_RIGHT<<16)) joy1 |= 0x80;
       }          
 
       // -----------------------------------------------------------
@@ -84,7 +93,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }
       }
       
-      if ((JoyState == 0) && (kbd_key == 0) && (key_shift == 0)) return 0xFF;
+      if ((JoyState == 0) && (kbd_key == 0) && (key_shift == 0) && (nds_key == 0)) return 0xFF;
       
       if (MTX_KBD_DRIVE == 0xFD)
       {
@@ -232,8 +241,8 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       if (MTX_KBD_DRIVE == 0xDF)
       {
           u8 key1 = 0x00;
-          if (JoyState & JST_FIRER)         key1 = 0x80;
-          if (JoyState & JST_FIREL)         key1 = 0x80;
+          if (JoyState & JST_FIRER)         key1 = 0x80;    // HOME
+          if (JoyState & JST_FIREL)         key1 = 0x80;    // HOME
           if (kbd_key)
           {
               if (kbd_key == 'A')           key1 = 0x01;
@@ -243,6 +252,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == 'L')           key1 = 0x10;
               if (kbd_key == ':')           key1 = 0x20;
               if (kbd_key == KBD_KEY_RET)   key1 = 0x40;
+              if (kbd_key == KBD_KEY_HOME)  key1 = 0x80;
           }          
           if (nds_key)
           {
@@ -255,6 +265,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
                   if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_L))   key1 |= 0x10;
                   if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_COLON))  key1 |= 0x20;
                   if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)) key1 |= 0x40;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_HOME))   key1 |= 0x80;
               }
           }
           return (~key1 & 0xFF);
@@ -293,6 +304,12 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       if (MTX_KBD_DRIVE == 0x7F)
       {
           u8 key1 = 0x00;
+          //"B", "M", "Z", "C" and <space>  are the 2P "left" joystick
+          if (joy1 & 0x10)                  key1 = 0x04;
+          if (joy1 & 0x20)                  key1 = 0x08;
+          if (joy1 & 0x40)                  key1 = 0x01;
+          if (joy1 & 0x80)                  key1 = 0x02;
+          
           if (kbd_key)
           {
               if (kbd_key == 'Z')           key1 = 0x01;
@@ -322,7 +339,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (kbd_key)
           {
-              if (kbd_key == KBD_KEY_STOP)  key1 = 0x01;    // Backspace key on Memotech
+              if (kbd_key == KBD_KEY_DEL)   key1 = 0x01;    // Backspace key on Memotech
               if (kbd_key == KBD_KEY_F5)    key1 = 0x02;    // F5
           }          
           return (~key1 & 0xFF);
@@ -332,7 +349,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           u8 key1 = 0x00;
           if (kbd_key)
           {
-              if (kbd_key == KBD_KEY_CTRL)  key1 = 0x01;    // BREAK key on Memotech
+              if (kbd_key == KBD_KEY_BRK)   key1 = 0x01;    // BREAK key on Memotech
               if (kbd_key == KBD_KEY_F1)    key1 = 0x02;    // F1
           }          
           if (nds_key)
@@ -401,7 +418,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (JoyState == JST_PURPLE)        key1 = 0x01;          
           if (kbd_key)
           {
-              if (kbd_key == ' ')           key1 = 0x01;
+              if (kbd_key == ' ')           key1 = 0x01;    // Space
               if (kbd_key == KBD_KEY_F4)    key1 = 0x02;    // F4
           }          
           if (nds_key)
@@ -422,13 +439,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
 
 
 // ------------------------------------------------------------------------------------
-// Memotech MTX IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
+// Memotech MTX IO Port Write - Need to handle SN sound, KBD, VDP and the Z80-CTC chip
 // ------------------------------------------------------------------------------------
 void cpu_writeport_memotech(register unsigned short Port,register unsigned char Value) 
 {
     // MTX ports are 8-bit
     Port &= 0x00FF;
-
+    
     if (Port == 0x00)   // This is where the memory bank map magic happens for the MTX
     {
         IOBYTE = Value;
@@ -437,36 +454,80 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
             // -----------------------------------------------------------------------
             // We are using simplified logic for the MTX... this should provide
             // a simple 64K machine roughly the same as a Memotech MTX-512 
+            // We don't bother to emulate the delta bank of 16k which can swap
+            // between the start of RAM at 0000h and RAM at 8000-BFFF. Virtually
+            // no games use that technique and it's not worth the effort.
             // -----------------------------------------------------------------------
             if ((IOBYTE & 0x80) == 0)  // ROM Mode...
             {
-                FastMemCopy(pColecoMem+0x0000, (u8 *)(0x6820000+0x0000), 0x2000);                 // Copy mtx_os[] rom into memory
-                pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
-                
-                if ((IOBYTE & 0x70) == 0x00)   // BASIC ROM ENABLED + 48K Normal RAM
+                // --------------------------------------------
+                // See if the ROM area needs to be updated...
+                // --------------------------------------------
+                if ((lastIOBYTE&0x70) != (IOBYTE & 0x70))
                 {
-                    FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x2000), 0x2000);   // Copy mtx_basic[] rom into memory
-                    memotech_RAM_start = 0x4000;                                        // Allow access to RAM above base memory
+                    // -------------------------------------------------------------------
+                    // No matter the ROM paging, the basic mtx_os[] BIOS is present...
+                    // -------------------------------------------------------------------
+                    FastMemCopy(pColecoMem+0x0000, (u8 *)(0x6820000+0x0000), 0x2000);                 // Copy mtx_os[] rom into memory
+                    pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
+
+                    if ((IOBYTE & 0x70) == 0x00)        // BASIC ROM ENABLED
+                    {
+                        FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x2000), 0x2000);   // Copy mtx_basic[] rom into memory
+                        memotech_lastMagROMPage = 0xFF;
+                    }
+                    else if ((IOBYTE & 0x70) == 0x10)   // ASSEMBLY ROM ENABLED
+                    {
+                        FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x4000), 0x2000);   // Copy mtx_assem[] rom into memory
+                        memotech_lastMagROMPage = 0xFF;
+                    }
+                    else if (((IOBYTE & 0x70) == 0x70) && memotech_magrom_present)   // ROM7 - MAGROM (if present)
+                    {
+                        memcpy(pColecoMem+0x2000, romBuffer+0x2000, 0x2000); // Copy MAGROM to page 7
+                    }
+                    else                                // Nothing else is supported fill ROM above BIOS with 0xFF
+                    {
+                        memset(pColecoMem+0x2000, 0xFF, 0x2000);    // Nothing lives here...
+                        memotech_lastMagROMPage = 0xFF;
+                    }
                 }
-                else if ((IOBYTE & 0x70) == 0x10)  // ASSEMBLY ROM ENABLED + nothing but common area
+
+                // --------------------------------------------
+                // See if the RAM area needs to be updated...
+                // --------------------------------------------
+                if ((lastIOBYTE&0x0F) != (IOBYTE & 0x0F))
                 {
-                    FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x4000), 0x2000);   // Copy mtx_assem[] rom into memory
-                    memotech_RAM_start = 0xC000;                                        // Just the common RAM enabled
-                }
-                else 
-                {
-                    memset(pColecoMem+0x2000, 0xFF, 0x2000);    // Nothing lives here...
-                    memotech_RAM_start = 0xC000;                // Just the common RAM enabled
+                    // Now look at the Page value to see how to map the memory from 0x4000 onwards is mapped
+                    if ((IOBYTE & 0x0F) == 0x00)   // Page 0:  48K enabled from 4000-FFFF
+                    {
+                        memcpy (pColecoMem+0x4000, Slot3RAM+0x4000, 0x8000);                // Don't need to fool with the upper block as that's common
+                        memotech_RAM_start = 0x4000;                                        // Allow access to RAM above base memory
+                        memotech_lastMagROMPage = 0xFF;
+                    }
+                    else if ((IOBYTE & 0x0F) == 0x01)   // Page 1:  32K enabled from 8000-FFFF with the RAM at 0x8000 being the first page block
+                    {
+                        memset(pColecoMem+0x4000, 0xFF, 0x4000);
+                        memcpy (pColecoMem+0x8000, Slot3RAM+0x0000, 0x4000);                // Move first slot into memory position at 0x8000
+                        memotech_RAM_start = 0x8000;                                        // Allow access to RAM above base memory
+                    }
+                    else    // Only the common RAM is available
+                    {
+                        memset(pColecoMem+0x4000, 0xFF, 0x8000);
+                        memotech_RAM_start = 0xC000;                                        // Just the common RAM enabled
+                        memotech_lastMagROMPage = 0xFF;
+                    }
                 }
             }
             else  // RAM Mode
             {
                 if ((IOBYTE & 0x0F) == 0x00)   // All 64K enabled
                 {
+                    memcpy (pColecoMem+0x0000, Slot3RAM+0x0000, 0xC000); 
                     memotech_RAM_start = 0x0000;         // We're emulating a 64K machine
                 }
-                else    // Just the upper RAM enabled
+                else    // Only the common RAM is available
                 {
+                    memset(pColecoMem+0x0000, 0xFF, 0xC000);
                     memotech_RAM_start = 0xC000;         // Just the common RAM enabled
                 }
             }
@@ -504,7 +565,7 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                     ctc_vector[1] = (Value & 0xf8) | 2;     // 
                     ctc_vector[2] = (Value & 0xf8) | 4;     // 
                     ctc_vector[3] = (Value & 0xf8) | 6;     // 
-                    sordm5_irq = ctc_vector[0];             // When the VDP interrupts the CPU, it's channel 0 on the CTC
+                    vdp_int_source = ctc_vector[0];         // When the VDP interrupts the CPU, it's channel 0 on the CTC
                 }
             }
         }
@@ -512,10 +573,21 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
     else if ((Port == 0x01) || (Port == 0x02))  // VDP Area
     {
         if ((Port & 1) != 0) WrData9918(Value);
-        else if (WrCtrl9918(Value)) CPU.IRequest=sordm5_irq;    // Memotech MTX must get vector from the Z80-CTC. Only the CZ80 core works with this.
+        else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;    // Memotech MTX must get vector from the Z80-CTC. Only the CZ80 core works with this.
     }
     else if (Port == 0x05) MTX_KBD_DRIVE = Value;
     else if (Port == 0x06) sn76496W(Value, &sncol);
+    else if (Port == 0xFB || Port == 0xFF) // MAGROM paging
+    {
+        if (memotech_RAM_start >= 0x8000)
+        {
+            if (memotech_lastMagROMPage != Value)
+            {
+                memcpy(pColecoMem+0x4000, romBuffer+(0x4000 * Value), 0x4000);
+                memotech_lastMagROMPage = Value;
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------
@@ -531,13 +603,19 @@ void memotech_reset(void)
         memset(ctc_timer, 0x00, 8);         // No timer value set
         memset(ctc_vector, 0x00, 4);        // No vectors set
         memset(ctc_latch, 0x00, 4);         // No latch set
-        sordm5_irq = 0xFF;                  // No IRQ set
+        vdp_int_source = INT_NONE;          // No IRQ set to start (CRC writes this)
 
-        memotech_RAM_start = 0x4000;
-        IOBYTE = 0x00;
-        MTX_KBD_DRIVE = 0x00;
-        lastIOBYTE = 99;
-        tape_pos = 0;
+        memotech_RAM_start = 0x4000;        // Default is ROM below 4000h and RAM above.
+        IOBYTE = 0x00;                      // Used for ROM-RAM bankswitch
+        MTX_KBD_DRIVE = 0x00;               // Used to determine which Keybaord scanrow to use
+        lastIOBYTE = 99;                    // To save time
+        tape_pos = 0;                       // Start at the front of a cassette
+        
+        memotech_magrom_present = (((file_crc == 0xe3f495c4) || (file_crc == 0x98240ee9)) ? 1:0);       // The MAGROM 1.05 and 1.05a
+        memotech_mtx_500_only = (((file_crc == 0x9a0461db) ||               // Duckybod
+                                  (file_crc == 0xd1cd3e62) ||               // Soldier Sam
+                                  (file_crc == 0x93556570) ||               // TNT Tim                                  
+                                  (file_crc == 0xa1d594fb)) ? 1:0);         // Dragon's Ring won't run on MTX512
     }
 }
 
@@ -548,7 +626,6 @@ void MTX_HandleCassette(register Z80 *r)
     {
         word base   = r->HL.W;
         word length = r->DE.W;
-        //word calcst = pColecoMem[0xfa81] + (pColecoMem[0xfa82] * 256);
 
         if ( pColecoMem[0xfd68] == 0 )
         /* SAVE */

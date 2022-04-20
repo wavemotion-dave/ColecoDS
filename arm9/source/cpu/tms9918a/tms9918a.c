@@ -41,6 +41,10 @@ u32 (*lutTablehh)[16][16] __attribute__((section(".dtcm"))) = (void*)0x068A0000;
 // For 16K only VDP modes
 u8 vdp_16k_mode_only __attribute__((section(".dtcm"))) = 0;
 
+u16 vdp_int_source       __attribute__((section(".dtcm"))) = 0;
+u16 my_config_clear_int  __attribute__((section(".dtcm"))) = 0;
+
+
 // ---------------------------------------------------------------------------------------
 // Screen handlers and masks for VDP table address registers. 
 // Screen modes are confusing as different documentation (MSX, Coleco, VDP manuals, etc)
@@ -635,7 +639,10 @@ ITCM_CODE byte RdCtrl9918(void)
   VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
   VDPCtrlLatch = 0;
     
-  ClearMSXInterrupt();
+  if (myConfig.clearInt == CPU_CLEAR_INT_ON_VDP_READ)
+  {
+    if (CPU.IRequest == vdp_int_source) CPU.IRequest=INT_NONE;
+  }
 
   return(data);
 }
@@ -753,6 +760,16 @@ void Reset9918(void)
     // Some machines only support a 16K VDP memory mode...
     if (msx_mode || adam_mode || svi_mode) vdp_16k_mode_only = 1;
     else vdp_16k_mode_only = 0;
+    
+    if (msx_mode || svi_mode || sordm5_mode || einstein_mode || memotech_mode || sg1000_mode)
+    {
+        vdp_int_source = INT_RST38;
+    }
+    else    // Pretty much just the colecovision and ADAM plus Pencil II
+    {
+        vdp_int_source = INT_NMI;
+    }
+    my_config_clear_int = myConfig.clearInt;
     
     // ---------------------------------------------------------------
     // Our background/foreground color table makes computations FAST!

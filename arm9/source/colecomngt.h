@@ -98,6 +98,10 @@ extern u8 msx_sram_at_8000;
 extern u16 svi_RAM_start;
 extern u16 memotech_RAM_start;
 
+extern u8 memotech_magrom_present;
+extern u8 memotech_mtx_500_only;
+extern u8 memotech_lastMagROMPage;
+
 extern u8 IOBYTE;
 extern u8 MTX_KBD_DRIVE;
 extern u8 lastIOBYTE;
@@ -117,7 +121,7 @@ extern u8 ctc_time[4];
 extern u16 ctc_timer[4]; 
 extern u8 ctc_vector[4]; 
 extern u8 ctc_latch[4];  
-extern u8 sordm5_irq;    
+extern u16 vdp_int_source;    
 
 extern u8 BufferedKeys[32];
 extern u8 BufferedKeysWriteIdx;

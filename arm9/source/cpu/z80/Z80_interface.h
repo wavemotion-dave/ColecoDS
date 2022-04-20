@@ -29,7 +29,7 @@ extern u16 cpuirequest;
 extern struct DrZ80 drz80;
 extern Z80 CPU;
 
-extern void ClearMSXInterrupt(void);
+extern void ClearCPUInterrupt(void);
 
 extern void DrZ80_Cause_Interrupt(int type);
 extern void DrZ80_Interrupt(void);

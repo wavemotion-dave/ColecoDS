@@ -440,7 +440,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     else if ((Port >= 0x08) && (Port <= 0x0F))  // VDP Area
     {
         if ((Port & 1) == 0) WrData9918(Value);
-        else if (WrCtrl9918(Value)) CPU.IRequest=sordm5_irq;    // Memotech MTX must get vector from the Z80-CTC. Only the CZ80 core works with this.
+        else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;
     }
     else if (Port == 0x02 || Port == 0x04 || Port == 0x06) 
     {
@@ -480,7 +480,6 @@ void einstein_reset(void)
         memset(ctc_timer, 0x00, 8);         // No timer value set
         memset(ctc_vector, 0x00, 4);        // No vectors set
         memset(ctc_latch, 0x00, 4);         // No latch set
-        sordm5_irq = INT_RST38;
         
         einstein_ram_start = 0x8000;
         keyboard_w = 0x00;

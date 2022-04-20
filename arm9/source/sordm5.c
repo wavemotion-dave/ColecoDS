@@ -122,7 +122,7 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
                     ctc_vector[1] = (Value & 0xf8) | 2;     // Usually used for PSG sound generation which we must deal with
                     ctc_vector[2] = (Value & 0xf8) | 4;     // Usually used for SIO which is not emulated here
                     ctc_vector[3] = (Value & 0xf8) | 6;     // Used for the VDP interrupt - this one is crucial!
-                    sordm5_irq = ctc_vector[3];             // When the VDP interrupts the CPU, it's channel 3 on the CTC
+                    vdp_int_source = ctc_vector[3];         // When the VDP interrupts the CPU, it's channel 3 on the CTC
                 }
             }
         }
@@ -130,7 +130,7 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
     else if ((Port == 0x10) || (Port == 0x11))  // VDP Area
     {
         if ((Port & 1) == 0) WrData9918(Value);
-        else if (WrCtrl9918(Value)) CPU.IRequest=sordm5_irq;    // Sord M5 must get vector from the Z80-CTC. Only the CZ80 core works with this.
+        else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;    // Sord M5 must get vector from the Z80-CTC. Only the CZ80 core works with this.
     }
     else if (Port == 0x20) sn76496W(Value, &sncol);
 }
@@ -149,7 +149,7 @@ void sordm5_reset(void)
         memset(ctc_vector, 0x00, 4);        // No vectors set
         memset(ctc_latch, 0x00, 4);         // No latch set
         memset(ctc_timer, 0x00, 8);         // No timer value set
-        sordm5_irq = 0xFF;                  // No IRQ set
+        vdp_int_source = INT_NONE;          // No IRQ set to start (part of CRC writes)
     }
 }
 

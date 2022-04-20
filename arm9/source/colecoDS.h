@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/Z80_interface.h"
 
-#define VERSIONCLDS "6.7"
+#define VERSIONCLDS "6.8"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG
@@ -99,14 +99,17 @@ extern u32 debug4;
 #define META_KBD_ESC        0xFFFF0043
 #define META_KBD_SHIFT      0xFFFF0044
 #define META_KBD_CTRL       0xFFFF0045
-#define META_KBD_UP         0xFFFF0046
-#define META_KBD_DOWN       0xFFFF0047
-#define META_KBD_LEFT       0xFFFF0048
-#define META_KBD_RIGHT      0xFFFF0049
-#define META_KBD_PERIOD     0xFFFF0050
-#define META_KBD_COMMA      0xFFFF0051
-#define META_KBD_COLON      0xFFFF0052
-#define META_KBD_SLASH      0xFFFF0053
+#define META_KBD_HOME       0xFFFF0046
+#define META_KBD_UP         0xFFFF0047
+#define META_KBD_DOWN       0xFFFF0048
+#define META_KBD_LEFT       0xFFFF0049
+#define META_KBD_RIGHT      0xFFFF0050
+#define META_KBD_PERIOD     0xFFFF0051
+#define META_KBD_COMMA      0xFFFF0052
+#define META_KBD_COLON      0xFFFF0053
+#define META_KBD_SLASH      0xFFFF0054
+
+#define MAX_KEY_OPTIONS     94
 
 
 #define JOYMODE_JOYSTICK    0
@@ -169,8 +172,6 @@ extern u8 adam_unsaved_data;
 extern char lastAdamDataPath[];
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
-
-#define MAX_KEY_OPTIONS  93
 
 extern volatile u16 vusCptVBL;                   // Video Management
 

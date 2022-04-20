@@ -335,6 +335,15 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         if (address >= memotech_RAM_start)
         {
             pColecoMem[address] = value;      // Allow pretty much anything above the base ROM area
+            
+            if (memotech_RAM_start == 0x8000) // Special handling as the first block of RAM is at 0x8000
+            {
+                if (address >= 0x8000 && address < 0xC000)
+                    Slot3RAM[address&0x3FFF] = value; // Backing RAM always updated to assist in bank swap
+                else
+                    Slot3RAM[address] = value;        // Backing RAM always updated to assist in bank swap
+            }
+            else Slot3RAM[address] = value;           // Backing RAM always updated to assist in bank swap
         }
     }
     // ----------------------------------------------------------------------------------
@@ -344,9 +353,9 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     {
         extern u8 Slot3RAM[];
         extern u16 einstein_ram_start;
-        if (address >= einstein_ram_start)  //TBD variable
+        if (address >= einstein_ram_start)
         {
-            pColecoMem[address] = value;      // Allow pretty much anything above the base ROM area
+            pColecoMem[address] = value;  // Allow pretty much anything above the base ROM area
         }
         Slot3RAM[address] = value;        // Plus shadow copy to improve bank switching
     }
@@ -675,18 +684,6 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
       {
           BankSwitch((address>>4) & romBankMask);
       }
-    }
-}
-
-
-// -----------------------------------------------------------------
-// If we are MSX mode and this is the VDP interrupt, we clear it
-// -----------------------------------------------------------------
-void ClearMSXInterrupt(void)
-{
-    if (msx_mode || svi_mode || einstein_mode)
-    {
-        if (!msx_auto_clear_irq && (CPU.IRequest == INT_RST38)) CPU.IRequest=INT_NONE;
     }
 }
 
