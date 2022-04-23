@@ -422,7 +422,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             ctc_latch[Port] = 0x00;     // Reset the latch - we're back to looking for control words
             
             if (Port < 3)
-                ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / 130) + 1;
+                ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / 170) + 1;
             else
                 ctc_timer[3] = ((((ctc_control[3] & 0x20) ? 256 : 16) * (ctc_time[3] ? ctc_time[3]:256)) / 60) + 1;
             

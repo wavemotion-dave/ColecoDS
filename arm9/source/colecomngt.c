@@ -991,7 +991,7 @@ void Z80CTC_Timer(void)
         {
             if (--ctc_timer[i] <= 0 && !keyboard_interrupt)
             {
-                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / 130) + 1;
+                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / 170) + 1;
                 if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
                 if (i==2) // Channel 2 clocks Channel 3 for RTC
                 {
