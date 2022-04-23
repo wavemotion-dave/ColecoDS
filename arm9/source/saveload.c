@@ -176,6 +176,15 @@ void colecoSaveState()
     if (uNbO) fwrite(ctc_vector, sizeof(ctc_vector),1, handle);
     if (uNbO) fwrite(ctc_latch, sizeof(ctc_latch),1, handle);
     if (uNbO) fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
+    if (einstein_mode)
+    {
+        if (uNbO) fwrite(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
+        if (uNbO) fwrite(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
+        if (uNbO) fwrite(&keyboard_w, sizeof(keyboard_w),1, handle);      
+        if (uNbO) fwrite(&key_int_mask, sizeof(key_int_mask),1, handle);      
+        if (uNbO) fwrite(&myKeyData, sizeof(myKeyData),1, handle);      
+        if (uNbO) fwrite(&adc_mux, sizeof(adc_mux),1, handle);      
+    }
     
     if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
     {
@@ -381,7 +390,16 @@ void colecoLoadState()
             if (uNbO) fread(ctc_vector, sizeof(ctc_vector),1, handle);
             if (uNbO) fread(ctc_latch, sizeof(ctc_latch),1, handle);
             if (uNbO) fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
-            
+		    if (einstein_mode)
+		    {
+	            if (uNbO) fread(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
+                if (uNbO) fread(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
+                if (uNbO) fread(&keyboard_w, sizeof(keyboard_w),1, handle);      
+                if (uNbO) fread(&key_int_mask, sizeof(key_int_mask),1, handle);      
+                if (uNbO) fread(&myKeyData, sizeof(myKeyData),1, handle);      
+                if (uNbO) fread(&adc_mux, sizeof(adc_mux),1, handle);      
+    		}
+    		
             if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
             {
                 if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);

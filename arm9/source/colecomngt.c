@@ -78,7 +78,7 @@ extern const unsigned char sprPause_Bitmap[2560];
 // ----------------------------------------------------------------------------
 u8 ctc_control[4]   __attribute__((section(".dtcm"))) = {0x02, 0x02, 0x02, 0x02};
 u8 ctc_time[4]      __attribute__((section(".dtcm"))) = {0};
-u16 ctc_timer[4]    __attribute__((section(".dtcm"))) = {0};
+u32 ctc_timer[4]    __attribute__((section(".dtcm"))) = {0};
 u8 ctc_vector[4]    __attribute__((section(".dtcm"))) = {0};
 u8 ctc_latch[4]     __attribute__((section(".dtcm"))) = {0}; 
 
@@ -197,6 +197,7 @@ void colecoWipeRAM(void)
   }
   else if (einstein_mode)
   {
+      memset(pColecoMem+0x2000,0xFF, 0x6000);
       for (int i=0x8000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else
@@ -977,21 +978,29 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 
 
 // ----------------------------------------------------------------
-// Fires every scanline if we are in Sord M5 mode - this provides
+// Fires every scanline if we are in CTC mode - this provides
 // some rough timing for the Z80-CTC chip. It's not perfectly
 // accurate but it's good enough for our purposes.  Many of the
 // M5 games use the CTC timers to generate sound/music.
 // ----------------------------------------------------------------
 void Z80CTC_Timer(void)
 {
-    if (einstein_mode)
+    if (einstein_mode) // Called every scanline... 313 * 50Hz = 15,650 times per second or 15.65KHz
     {
-        for (u8 i=0; i<2; i++)  // Channel 3+4 are only used for the Real-Time Clock which we don't emulate...
+        for (u8 i=0; i<3; i++)  
         {
-            if (--ctc_timer[i] <= 0)
+            if (--ctc_timer[i] <= 0 && !keyboard_interrupt)
             {
-                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / MTX_CTC_SOUND_DIV) + 1;
+                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / 130) + 1;
                 if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
+                if (i==2) // Channel 2 clocks Channel 3 for RTC
+                {
+                    if (--ctc_timer[3] <= 0)
+                    {
+                        ctc_timer[3] = ((((ctc_control[3] & 0x20) ? 256 : 16) * (ctc_time[3] ? ctc_time[3]:256)) / 60) + 1;
+                        if (ctc_control[3] & 0x80)  CPU.IRequest = ctc_vector[3];
+                    }
+                }
             }
         }
     }
@@ -1128,7 +1137,7 @@ ITCM_CODE u32 LoopZ80()
           {
               CPU.IRequest = vdp_int_source;   // Sord M5 and Memotech MTX only works with the CZ80 core
           }
-          else 
+          else
           {
               // -------------------------------------------------------------------------
               // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer 
@@ -1141,7 +1150,6 @@ ITCM_CODE u32 LoopZ80()
               }
               if (einstein_mode && (CPU.IRequest == INT_NONE))  // If the keyboard is generating an interrupt...
               {
-                  extern u16 keyboard_interrupt;
                   einstein_handle_interrupts();
                   if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
               }

@@ -641,7 +641,7 @@ ITCM_CODE byte RdCtrl9918(void)
     
   if (myConfig.clearInt == CPU_CLEAR_INT_ON_VDP_READ)
   {
-    if (CPU.IRequest == vdp_int_source) CPU.IRequest=INT_NONE;
+    if ((CPU.IRequest == vdp_int_source)) CPU.IRequest=INT_NONE;
   }
 
   return(data);
@@ -712,6 +712,8 @@ byte Loop9918(void)
       if(!(VDPStatus&TMS9918_STAT_OVRLAP))
         if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP;
   }
+    
+  if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
 
   /* Done */
   return(bIRQ);
@@ -761,9 +763,13 @@ void Reset9918(void)
     if (msx_mode || adam_mode || svi_mode) vdp_16k_mode_only = 1;
     else vdp_16k_mode_only = 0;
     
-    if (msx_mode || svi_mode || sordm5_mode || einstein_mode || memotech_mode || sg1000_mode)
+    if (msx_mode || svi_mode || sordm5_mode || memotech_mode || sg1000_mode)
     {
         vdp_int_source = INT_RST38;
+    }
+    else if (einstein_mode)
+    {
+        vdp_int_source = INT_NONE;  // Einstein does NOT interrupt via VDP!
     }
     else    // Pretty much just the colecovision and ADAM plus Pencil II
     {

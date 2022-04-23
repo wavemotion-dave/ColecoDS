@@ -294,8 +294,8 @@ void PutKBD(unsigned int Key)
   Mode = Key & ~0xFF;
   Key  = Key & 0xFF;
   Key  = (Key>='A')&&(Key<='Z')? Key+'a'-'A':Key;
-  Key  = (Mode&ADAM_KEY_CONTROL) && (CtrlKey[Key]!=Key)?  CtrlKey[Key]
-       : (Mode&ADAM_KEY_SHIFT)   && (ShiftKey[Key]!=Key)? ShiftKey[Key]
+  Key  = (Mode&ADAM_KEY_CONTROL || key_ctrl) && (CtrlKey[Key]!=Key)?  CtrlKey[Key]
+       : (Mode&ADAM_KEY_SHIFT || key_shift)  && (ShiftKey[Key]!=Key)? ShiftKey[Key]
        : Key;
   Key  = (Mode&ADAM_KEY_CAPS)&&(Key>='a')&&(Key<='z')? Key+'A'-'a':Key;
 
