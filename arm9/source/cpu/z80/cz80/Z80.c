@@ -46,8 +46,8 @@ extern byte cpu_readmem16 (u16 address);
 extern void cpu_writeport16(unsigned short Port, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
-extern u8 bIsComplicatedRAM, msx_mode, my_config_clear_int;
-extern u16 vdp_int_source;
+extern u8 bIsComplicatedRAM, msx_mode, my_config_clear_int, einstein_mode;
+extern u16 vdp_int_source, keyboard_interrupt;
 #define OpZ80(A)            pColecoMem[A]
 #define WrZ80(A,V)          cpu_writemem16(V,A)
 #define OutZ80(P,V)         (msx_mode ? cpu_writeport_msx(P,V) : cpu_writeport16(P,V))
@@ -593,7 +593,11 @@ void IntZ80(Z80 *R,word Vector)
         if ((my_config_clear_int == 0) && (Vector == vdp_int_source))   
         {
             // Don't clear it... this will be cleared in RdCtrl9918()   
-        }            
+        }
+        else if (einstein_mode && (Vector == keyboard_interrupt))
+        {
+            // Don't clear it... will be cleared when program reads the keyboard in einstein.c IO
+        }
         else
         {
             CPU.IRequest=INT_NONE;

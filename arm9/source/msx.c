@@ -358,6 +358,8 @@ unsigned char cpu_readport_msx(register unsigned short Port)
             if (myConfig.msxKey5 == 1) key1 |= 0x01;  // SHIFT
             if (myConfig.msxKey5 == 2) key1 |= 0x02;  // CTRL
           }
+          if (key_shift)  key1 |= 0x01;  // SHIFT
+          if (key_ctrl)   key1 |= 0x02;  // CTRL
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;

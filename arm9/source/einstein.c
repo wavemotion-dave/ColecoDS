@@ -28,12 +28,12 @@
 
 u16 einstein_ram_start = 0x8000;
 u8 keyboard_w = 0x00;
-u8 key_int_mask = 0x00;
+u8 key_int_mask = 0xFF;
 u8 myKeyData = 0xFF;
 u8 adc_mux = 0x00;
 u16 keyboard_interrupt=0;
 
-#define KEYBOARD_VECTOR  INT_RST38
+#define KEYBOARD_VECTOR  0xF7
 
 void scan_keyboard(void)
 {
@@ -229,6 +229,7 @@ void einstein_swap_memory(void)
     {
         einstein_ram_start = 0x8000;
         memcpy(pColecoMem,EinsteinBios,0x2000);
+        memset(pColecoMem+0x2000,0xFF, 0x6000);
         if (tape_len == 1626) // A bit of a hack... the size of the Diagnostic ROM
         {
             memcpy(pColecoMem+0x4000, romBuffer, tape_len);   // only for Diagnostics ROM
@@ -258,11 +259,11 @@ void einstein_swap_memory(void)
 unsigned char cpu_readport_einstein(register unsigned short Port) 
 {
   // MTX ports are 8-bit
-  Port &= 0x00FF; 
+  Port &= 0x003F; 
 
-  if (Port == 0x00 || Port == 0x01) // Reset port
+  if (Port == 0x00 || Port == 0x01 || Port==0x04 || Port== 0x05) // Reset port
   {
-      einstein_reset();
+      memset(ay_reg, 0x00, 16);    // Clear the AY registers...
   }
   else if (Port == 0x24)
   {
@@ -313,12 +314,12 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
   {
       return ctc_timer[Port & 0x03];
   }
-  else if ((Port >= 0x08) && (Port <= 0x0F))  // VDP Area
+  else if ((Port == 0x08) || (Port == 0x09) || (Port == 0x0E) || (Port == 0x0F))  // VDP Area
   {
       if ((Port & 1)==0) return(RdData9918());
       return(RdCtrl9918());
   }
-  else if (Port == 0x02 || Port == 0x04 || Port == 0x06)  // PSG Read... might be joypad data
+  else if (Port == 0x02 || Port == 0x06)  // PSG Read... might be joypad data
   {
       // --------------
       // Port A Read
@@ -349,7 +350,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
       
       if (JoyState & JST_FIREL) key_port &= ~0x01;
       
-      //if (key_shift) key_port &= ~0x40;  // CTRL key for now...
+      if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
       if (key_shift) key_port &= ~0x80;  // SHIFT KEY
       
       return key_port;
@@ -369,25 +370,28 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
 void cpu_writeport_einstein(register unsigned short Port,register unsigned char Value) 
 {
     // MTX ports are 8-bit
-    Port &= 0x00FF;
+    Port &= 0x003F;
     
-    if (Port == 0x00 || Port == 0x01) // Reset port
+    if (Port == 0x00 || Port == 0x01 || Port==0x04 || Port== 0x05) // Reset port
     {
-        einstein_reset();
+        memset(ay_reg, 0x00, 16);    // Clear the AY registers...
     }
     else if (Port == 0x20)  // KEYBOARD INT MASK
     {
+        debug3++;
         key_int_mask = Value;   
     }
     else if (Port == 0x21)  // ADC INT MASK
     {
+        debug4++;
         //key_int_mask = Value;   
     }
     else if (Port == 0x25)  // JOYSTICK INT MASK
     {
+        debug4++;
         //key_int_mask = Value;   
     }
-    else if (Port == 0x23)  // Drive Select
+    else if (Port == 0x25)  // Drive Select
     {
         //if (Value & 1) zzz();
     }
@@ -415,8 +419,13 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
         if (ctc_latch[Port])    // If latched, we now have the countdown timer value
         {
             ctc_time[Port] = Value;     // Latch the time constant and compute the countdown timer directly below.
-            ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / MTX_CTC_SOUND_DIV) + 1;
             ctc_latch[Port] = 0x00;     // Reset the latch - we're back to looking for control words
+            
+            if (Port < 3)
+                ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / 130) + 1;
+            else
+                ctc_timer[3] = ((((ctc_control[3] & 0x20) ? 256 : 16) * (ctc_time[3] ? ctc_time[3]:256)) / 60) + 1;
+            
         }
         else
         {
@@ -437,16 +446,16 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             }
         }
     }
-    else if ((Port >= 0x08) && (Port <= 0x0F))  // VDP Area
+    else if ((Port == 0x08) || (Port == 0x09) || (Port == 0x0E) || (Port == 0x0F))  // VDP Area
     {
         if ((Port & 1) == 0) WrData9918(Value);
         else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;
     }
-    else if (Port == 0x02 || Port == 0x04 || Port == 0x06) 
+    else if (Port == 0x02 || Port == 0x06) 
     {
         FakeAY_WriteIndex(Value & 0x0F);
     }
-    else if (Port == 0x03 || Port == 0x05 || Port == 0x07) 
+    else if (Port == 0x03 || Port == 0x07) 
     {
         FakeAY_WriteData(Value);
         if (ay_reg_idx == 14) 
@@ -485,6 +494,7 @@ void einstein_reset(void)
         keyboard_w = 0x00;
         myKeyData = 0xFF;
         keyboard_interrupt=0;
+        key_int_mask = 0xFF;
         
         memset(ay_reg, 0x00, 16);    // Clear the AY registers...
         
@@ -494,7 +504,11 @@ void einstein_reset(void)
 
 void einstein_handle_interrupts(void)
 {
-  if (CPU.IRequest == INT_NONE)
+  static u8 ein_key_dampen=0;
+    
+  if (++ein_key_dampen < 100) return;
+  ein_key_dampen=0;
+  if ((CPU.IRequest == INT_NONE) && (keyboard_interrupt != KEYBOARD_VECTOR))
   {
       if ((key_int_mask&1) == 0)
       {

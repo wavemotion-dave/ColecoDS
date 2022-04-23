@@ -67,6 +67,7 @@ extern u8 io_show_status;
 u8 adam_CapsLock = 0;
 u8 adam_unsaved_data = 0;
 u8 key_shift = false;
+u8 key_ctrl = false;
 
 u32 last_tape_pos = 9999;
 
@@ -1663,6 +1664,7 @@ void colecoDS_main(void)
       //  Test DS keypresses (ABXY, L/R) and map to corresponding Coleco keys
       // ------------------------------------------------------------------------
       key_shift = false;
+      key_ctrl = false;
       ucDEUX  = 0;  
       nds_key  = keysCurrent();
       if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X)) 
@@ -1675,27 +1677,17 @@ void colecoDS_main(void)
       {
           if (IsFullKeyboard() && ((nds_key & KEY_L) || (nds_key & KEY_R)))
           {
-              key_shift = true;
+              if (nds_key & KEY_L) key_shift = true;
+              if (nds_key & KEY_R) key_ctrl = true;
           }
           else if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
           {
-              extern u16 einstein_ram_start;
-              einstein_reset();
+              memcpy(pColecoMem, Slot3RAM, 0x8000);
               einstein_ram_start = 0x0000;
-              if (myConfig.memWipe == 0)    // Random Wipe
-              {
-                  for (int i = 0x0000; i<0x10000; i++)
-                  {
-                      pColecoMem[i] = rand() % 256;
-                      Slot3RAM[i] = pColecoMem[i];
-                  }
-              }
               memcpy(pColecoMem+0x100, romBuffer, tape_len);
               memcpy(Slot3RAM+0x100, romBuffer, tape_len);
-              CPU.IFF &= 0xFE;   // Disable Interrupts
               z80_rebasePC(0x100);
               CPU.PC.W = 0x100;
-              RdCtrl9918();
               JumpZ80(CPU.PC.W);
               WAITVBL;WAITVBL;WAITVBL;              
           }

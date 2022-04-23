@@ -59,7 +59,6 @@ extern u8 lastBank;
 extern u8 romBankMask;
 extern u32 file_crc;
 extern u8 AY_EnvelopeOn;
-extern u8 msx_auto_clear_irq;
 
 extern u8 adam_ram_lo;
 extern u8 adam_ram_hi;
@@ -113,12 +112,11 @@ extern u8 msx_beeper_enabled;
 extern u8 Port_PPI_A;
 extern u8 Port_PPI_B;
 extern u8 Port_PPI_C;
-extern u8 msx_auto_clear_irq;
 
 
 extern u8 ctc_control[4];
 extern u8 ctc_time[4];
-extern u16 ctc_timer[4]; 
+extern u32 ctc_timer[4]; 
 extern u8 ctc_vector[4]; 
 extern u8 ctc_latch[4];  
 extern u16 vdp_int_source;    
@@ -126,7 +124,7 @@ extern u16 vdp_int_source;
 extern u8 BufferedKeys[32];
 extern u8 BufferedKeysWriteIdx;
 extern u8 BufferedKeysReadIdx;
-
+extern u16 keyboard_interrupt;
 
 // --------------------------------------------------
 // Some CPU and VDP and SGM stuff that we need
@@ -145,12 +143,15 @@ extern u8 AdamWRITER[];
 extern u8 Slot3RAM[0x10000];
 extern u8 msx_SRAM[0x4000];
 extern u8 key_shift;
+extern u8 key_ctrl;
 extern u32 last_tape_pos;
 extern u8* Slot3RAMPtr;
 extern u8* Slot0BIOSPtr;
 extern u32 LastROMSize;
 extern u8 Port_PPI_CTRL;
 extern u8 OldPortC;
+extern u8 myKeyData;
+extern u8 adc_mux;
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);
