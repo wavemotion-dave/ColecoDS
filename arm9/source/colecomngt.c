@@ -276,6 +276,8 @@ u8 colecoInit(char *szGame)
      uVide=(uBcl/12);
      dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
   }
+    
+  write_EE_counter=0;
 
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
@@ -360,38 +362,9 @@ u8 colecoInit(char *szGame)
   if (RetFct) 
   {
     RetFct = colecoCartVerify(pColecoMem+0x8000);
-    
-    sgm_reset();                       // Make sure the super game module is disabled to start
-
-    JoyMode=JOYMODE_JOYSTICK;          // Joystick mode key
-    JoyState = 0x0000;                 // Nothing pressed to start
-
-    sn76496Reset(1, &sncol);           // Reset the SN sound chip
-    sn76496W(0x90 | 0x0F ,&sncol);     // Write new Volume for Channel A  
-    sn76496W(0xB0 | 0x0F ,&sncol);     // Write new Volume for Channel B
-    sn76496W(0xD0 | 0x0F ,&sncol);     // Write new Volume for Channel C  
-    u16 tmp_samples[32];
-    sn76496Mixer(32, tmp_samples, &sncol);
-
-    ay76496Reset(2, &aycol);           // Reset the SN sound chip
-    ay76496W(0x90 | 0x0F ,&aycol);     // Write new Volume for Channel A  
-    ay76496W(0xB0 | 0x0F ,&aycol);     // Write new Volume for Channel B
-    ay76496W(0xD0 | 0x0F ,&aycol);     // Write new Volume for Channel C  
-    sn76496Mixer(32, tmp_samples, &aycol);
       
-    DrZ80_Reset();                      // Reset the DrZ80 core CPU
-    ResetZ80(&CPU);                     // Reset the CZ80 core CPU
-    Reset9918();                        // Reset the VDP
-      
-    sordm5_reset();                     // Reset the Sord M5 CTC stuff
-    memotech_reset();                   // Reset the Memotech MTX stuff
-    svi_reset();                        // Reset the SVI stuff
-    pv2000_reset();                     // Reset the PV2000 stuff
-    einstein_reset();
-      
-    XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
-      
-    ResetStatusFlags();                 // Some status flags for the UI mostly
+    // Perform a standard system RESET
+    ResetColecovision();
   }
     
   // Return with result
@@ -692,7 +665,6 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(ptr, romBuffer, 0x4000);                     // bank 0
                 memcpy(ptr+0x4000, romBuffer+0x4000, 0x4000);       // bank 1
                 romBankMask = 0x03;
-                // TODO: Eventually handle EEPROM for these PCBs...
             }
             else    // We will assume Megacart then...
             {
@@ -715,7 +687,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     // For some combinations, we have hotspots or other memory stuff that 
     // needs to be more complicated than simply returning pColecoMem[].
     // -------------------------------------------------------------------------  
-    bIsComplicatedRAM = (bMagicMegaCart || adam_mode || pv2000_mode) ? 1:0;                          // Assume RAM is complicated until told otherweise
+    bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || adam_mode || pv2000_mode) ? 1:0;                          // Assume RAM is complicated until told otherweise
   }
   return bOK;
 }

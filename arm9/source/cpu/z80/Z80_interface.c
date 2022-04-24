@@ -14,6 +14,7 @@
 #include "../../colecoDS.h"
 #include "../../colecomngt.h"
 #include "../../AdamNet.h"
+#include "../../C24XX.h"
 
 #define DR_INT_IRQ 0x01
 #define DR_NMI_IRQ 0x02
@@ -94,6 +95,14 @@ u8 cpu_readmem16_banked (u16 address)
           BankSwitch(address & romBankMask);
       }
   }    
+  else if (bActivisionPCB)
+  {
+      if (address==0xFF80)
+      {
+        /* Return EEPROM output bit */
+        return(Read24XX(&EEPROM));
+      }
+  }
   else if ((adam_mode) && PCBTable[address]) ReadPCB(address);
   else if (pv2000_mode) return cpu_readmem_pv2000(address);
     
@@ -223,6 +232,60 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
     }
 }    
     
+void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
+{
+    // --------------------------------------------------------
+    // Konami 8K mapper with SCC 
+    //	Bank 1: 4000h - 5FFFh - mapped via writes to 5000h
+    //	Bank 2: 6000h - 7FFFh - mapped via writes to 7000h
+    //	Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
+    //	Bank 4: A000h - BFFFh - mapped via writes to B000h
+    // --------------------------------------------------------
+    if (bROMInSlot[1] && (address == 0x5000))
+    {
+        if (lastBlock[0] != block)
+        {
+            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[6] = (u8*)src;  // Mirror
+            MSXBlockCopy(src, (u32*)(pColecoMem+0x4000), 0x2000);
+            lastBlock[0] = block;
+        }
+    }
+    else if (bROMInSlot[1] && (address == 0x7000))
+    {
+        if (lastBlock[1] != block)
+        {
+            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[7] = (u8*)src;  // Mirror
+            MSXBlockCopy(src, (u32*)(pColecoMem+0x6000), 0x2000);
+            lastBlock[1] = block;
+        }
+    }
+    else if (bROMInSlot[2] && (address == 0x9000))
+    {
+        if ((value&0x3F) == 0x3F) {msx_scc_enable=true; return;}       // SCC sound isn't supported - set a flag for now and just return and save the CPU cycles
+
+        if (lastBlock[2] != block)
+        {
+            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[0] = (u8*)src;  // Mirror
+            MSXBlockCopy(src, (u32*)(pColecoMem+0x8000), 0x2000);
+            lastBlock[2] = block;
+        }
+    }
+    else if (bROMInSlot[2] && (address == 0xB000))
+    {
+        if (lastBlock[3] != block)
+        {
+            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
+            Slot1ROMPtr[1] = (u8*)src;  // Mirror
+            MSXBlockCopy(src, (u32*)(pColecoMem+0xA000), 0x2000);
+            lastBlock[3] = block;
+        }
+    }                        
+}
+
+
 // -------------------------------------------------------------------------
 // The ASCII 16K Mapper:
 // 4000h~7FFFh 	via writes to 6000h
@@ -281,6 +344,20 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
         }
     }
 }
+
+void activision_pcb_write(u16 address)
+{
+  if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
+  {
+      BankSwitch((address>>4) & romBankMask);
+  }
+
+  if (address == 0xFFC0) Write24XX(&EEPROM,EEPROM.Pins&~C24XX_SCL);
+  if (address == 0xFFD0) Write24XX(&EEPROM,EEPROM.Pins|C24XX_SCL);
+  if (address == 0xFFE0) Write24XX(&EEPROM,EEPROM.Pins&~C24XX_SDA);
+  if (address == 0xFFF0) Write24XX(&EEPROM,EEPROM.Pins|C24XX_SDA);
+}
+
 
 // ------------------------------------------------------------------
 // Write memory handles both normal writes and bankswitched since
@@ -571,56 +648,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 else if (mapperType == SCC8)
                 {
                     if ((address & 0x0FFF) != 0) return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes which are not yet supported
-                    
-                    // --------------------------------------------------------
-                    // Konami 8K mapper with SCC 
-                    //	Bank 1: 4000h - 5FFFh - mapped via writes to 5000h
-                    //	Bank 2: 6000h - 7FFFh - mapped via writes to 7000h
-                    //	Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
-                    //	Bank 4: A000h - BFFFh - mapped via writes to B000h
-                    // --------------------------------------------------------
-                    if (bROMInSlot[1] && (address == 0x5000))
-                    {
-                        if (lastBlock[0] != block)
-                        {
-                            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[6] = (u8*)src;  // Mirror
-                            MSXBlockCopy(src, (u32*)(pColecoMem+0x4000), 0x2000);
-                            lastBlock[0] = block;
-                        }
-                    }
-                    else if (bROMInSlot[1] && (address == 0x7000))
-                    {
-                        if (lastBlock[1] != block)
-                        {
-                            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[7] = (u8*)src;  // Mirror
-                            MSXBlockCopy(src, (u32*)(pColecoMem+0x6000), 0x2000);
-                            lastBlock[1] = block;
-                        }
-                    }
-                    else if (bROMInSlot[2] && (address == 0x9000))
-                    {
-                        if ((value&0x3F) == 0x3F) {msx_scc_enable=true; return;}       // SCC sound isn't supported - set a flag for now and just return and save the CPU cycles
-                        
-                        if (lastBlock[2] != block)
-                        {
-                            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[0] = (u8*)src;  // Mirror
-                            MSXBlockCopy(src, (u32*)(pColecoMem+0x8000), 0x2000);
-                            lastBlock[2] = block;
-                        }
-                    }
-                    else if (bROMInSlot[2] && (address == 0xB000))
-                    {
-                        if (lastBlock[3] != block)
-                        {
-                            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[1] = (u8*)src;  // Mirror
-                            MSXBlockCopy(src, (u32*)(pColecoMem+0xA000), 0x2000);
-                            lastBlock[3] = block;
-                        }
-                    }                        
+                    HandleKonamiSCC8(src, block, address, value);
                 }
                 else if (mapperType == ASC16)
                 {
@@ -673,17 +701,14 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     {
         if (sRamAtE000_OK) pColecoMem[address+0x800]=value;
     }
-    else if (address >= 0xFFC0)
-    {
-        if (bMagicMegaCart) BankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
-    }
     /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
     else if (bActivisionPCB)
     {
-      if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
-      {
-          BankSwitch((address>>4) & romBankMask);
-      }
+        activision_pcb_write(address);
+    }
+    else if (address >= 0xFFC0)
+    {
+        BankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
     }
 }
 

@@ -41,7 +41,7 @@ void colecoSaveState()
   char szFile[128];
   char szCh1[32];
     
-  // Init filename = romname and STA in place of ROM
+  // Init filename = romname and SAV in place of ROM
   DIR* dir = opendir("sav");
   if (dir) closedir(dir);  // Directory exists... close it out and move on.
   else mkdir("sav", 0777);   // Otherwise create the directory...
@@ -227,6 +227,11 @@ void colecoSaveState()
     {
         // Write the SGM low memory
         if (uNbO) fwrite(sgm_low_mem, 0x2000,1, handle);      
+    }
+    else if (bActivisionPCB)
+    {
+        // Write the EEPROM and memory
+        if (uNbO) fwrite(&EEPROM, sizeof(EEPROM),1, handle);      
     }
       
     if (uNbO) 
@@ -442,6 +447,11 @@ void colecoLoadState()
                 // Load the SGM low memory
                 if (uNbO) uNbO = fread(sgm_low_mem, 0x2000,1, handle);
             }
+            else if (bActivisionPCB)
+            {
+                // Write the EEPROM and memory
+                if (uNbO) fread(&EEPROM, sizeof(EEPROM),1, handle);      
+            }
             
             // Fix up transparency
             if (BGColor)
@@ -474,5 +484,60 @@ void colecoLoadState()
 
     fclose(handle);
 }
+
+
+void colecoSaveEEPROM(void) 
+{
+  char szFile[128];
+    
+  // Init filename = romname and EE in place of ROM
+  DIR* dir = opendir("sav");
+  if (dir) closedir(dir);  // Directory exists... close it out and move on.
+  else mkdir("sav", 0777);   // Otherwise create the directory...
+  siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+
+  int len = strlen(szFile);
+  szFile[len-3] = 'e';
+  szFile[len-2] = 'e';
+  szFile[len-1] = 0;
+
+  AffChaine(6,0,0,"SAVING...");
+  
+  FILE *handle = fopen(szFile, "wb+");  
+  if (handle != NULL) 
+  {
+      fwrite(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
+      fclose(handle);
+  }
+  AffChaine(6,0,0,"         ");
+}
+
+void colecoLoadEEPROM(void)
+{
+  char szFile[128];
+    
+  // Init filename = romname and EE in place of ROM
+  DIR* dir = opendir("sav");
+  if (dir) closedir(dir);  // Directory exists... close it out and move on.
+  else mkdir("sav", 0777);   // Otherwise create the directory...
+  siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+
+  int len = strlen(szFile);
+  szFile[len-3] = 'e';
+  szFile[len-2] = 'e';
+  szFile[len-1] = 0;
+
+  FILE *handle = fopen(szFile, "rb+");
+  if (handle != NULL) 
+  {
+      fread(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
+      fclose(handle);
+  }
+  else
+  {
+      memset(EEPROM.Data, 0xFF, 0x8000);
+  }
+}
+
 
 // End of file

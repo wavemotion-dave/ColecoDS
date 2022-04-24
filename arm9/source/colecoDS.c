@@ -49,6 +49,7 @@
 #include "soundbank_bin.h"
 #include "MSX_CBIOS.h"
 #include "MTX_BIOS.h"
+#include "C24XX.h"
 
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
@@ -68,6 +69,7 @@ u8 adam_CapsLock = 0;
 u8 adam_unsaved_data = 0;
 u8 key_shift = false;
 u8 key_ctrl = false;
+u8 write_EE_counter=0;
 
 u32 last_tape_pos = 9999;
 
@@ -91,6 +93,8 @@ u8 AdamWRITER[0x8000] = {0};  // We keep the ADAM WRITER.ROM bios around to swap
 u8 SVIBios[0x8000]    = {0};  // We keep the SVI 32K BIOS around to swap in/out
 u8 Pencil2Bios[0x2000]= {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
 u8 EinsteinBios[0x2000]={0};  // We keep the 8k Einstein BIOS around
+
+C24XX EEPROM;                 // For Activision PCBs we have up to 32K of EEPROM
 
 // Various sound chips in the system
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -507,6 +511,8 @@ void ResetColecovision(void)
   adam_CapsLock = 0;
   adam_unsaved_data = 0;
     
+  write_EE_counter=0;
+    
   if (sg1000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
@@ -561,6 +567,11 @@ void ResetColecovision(void)
       memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
       colecoWipeRAM();                          // Wipe main RAM area
       memcpy(pColecoMem,ColecoBios,0x2000);     // Restore Coleco BIOS
+      if (bActivisionPCB)
+      {
+          Reset24XX(&EEPROM, myConfig.cvEESize); 
+          colecoLoadEEPROM();
+      }
   }
   
   // -----------------------------------------------------------
@@ -578,7 +589,9 @@ void ResetColecovision(void)
   TIMER2_CR=TIMER_ENABLE  | TIMER_DIV_1024;
   timingFrames  = 0;
   emuFps=0;
-
+    
+  XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
+    
   ResetStatusFlags();   // Some static status flags for the UI mostly
     
   debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0;
@@ -833,6 +846,17 @@ void DisplayStatusLine(bool bForce)
         {
             last_mc_mode = romBankMask;
             AffChaine(22,0,6, (romBankMask ? "MC":"  "));
+        }
+        
+        if (write_EE_counter > 0)
+        {
+            --write_EE_counter;
+            if (write_EE_counter == 0)
+            {
+                // Save EE now!
+                colecoSaveEEPROM();
+            }
+            AffChaine(30,0,6, (write_EE_counter ? "EE":"  "));            
         }
     }
 }
