@@ -936,16 +936,18 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     }
     else
     {
-        AffChaine(9,8,6,                    "CASSETTE MENU");
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE CASSETTE   ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP CASSETTE   ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " REWIND CASSETTE ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " CLOAD  RUN      ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " BLOAD 'CAS:',R  ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN   'CAS:'    ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " LOAD  ''        ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN             ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU       ");  cassete_menu_items++;
+        AffChaine(9,7,6,                    "CASSETTE MENU");
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE CASSETTE    ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP CASSETTE    ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " REWIND CASSETTE  ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " CLOAD  RUN       ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " BLOAD 'CAS:',R   ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN   'CAS:'     ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " LOAD  ''         ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN              ");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN EINSTEIN .COM");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN MEMOTECH .RUN");  cassete_menu_items++;
+        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU        ");  cassete_menu_items++;
     }
     DisplayFileName();
 }
@@ -1108,6 +1110,16 @@ void CassetteMenu(void)
                   break;
             }
             if (menuSelection == 8)
+            {
+                  einstein_load_com_file();
+                  break;
+            }
+            if (menuSelection == 9)
+            {
+                memotech_launch_run_file();
+                break;
+            }
+            if (menuSelection == 10)
             {
                 break;
             }
@@ -1682,13 +1694,7 @@ void colecoDS_main(void)
           }
           else if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
           {
-              memcpy(pColecoMem, Slot3RAM, 0x8000);
-              einstein_ram_start = 0x0000;
-              memcpy(pColecoMem+0x100, romBuffer, tape_len);
-              memcpy(Slot3RAM+0x100, romBuffer, tape_len);
-              z80_rebasePC(0x100);
-              CPU.PC.W = 0x100;
-              JumpZ80(CPU.PC.W);
+              einstein_load_com_file();
               WAITVBL;WAITVBL;WAITVBL;              
           }
           else if (memotech_mode && (nds_key & KEY_START))
@@ -1732,31 +1738,7 @@ void colecoDS_main(void)
               }
               else  // .RUN file: load and jump to program
               {
-                  vdp_int_source = INT_NONE;    // Needed when we wipe and run in this mode
-
-                  if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
-                  {
-                    memset(pColecoMem, 0x00, 0x10000);
-                    cpu_writeport_memotech(0x00, 0x80);                    
-                  }
-                  else if (myConfig.memWipe == 3)    // Random MSX Memory Wipe
-                  {
-                      for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (rand() & 0xFF);   // This pattern tends to make most things start up properly...
-                  }
-                  
-                  pColecoMem[0x3627] = 0xd3;
-                  pColecoMem[0x3628] = 0x05;
-                  CPU.IFF &= 0xFE;   // Disable Interrupts
-                  u16 mtx_start = (romBuffer[1] << 8) | romBuffer[0];
-                  u16 mtx_len   = (romBuffer[3] << 8) | romBuffer[2];
-                  u16 idx=4;
-                  for (int i=mtx_start; i < (mtx_start+mtx_len); i++)
-                  {
-                      pColecoMem[i] = romBuffer[idx++];
-                  }
-                  CPU.PC.W = mtx_start;
-                  
-                  RdCtrl9918();
+                  memotech_launch_run_file();
               }
               WAITVBL;WAITVBL;WAITVBL;
           }
