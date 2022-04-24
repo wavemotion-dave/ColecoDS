@@ -42,6 +42,9 @@ struct Config_t AllConfigs[MAX_CONFIGS];
 struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm")));
 extern u32 file_crc;
 
+u8 dev_z80_cycles = 0;
+u8 option_table=0;
+
 
 const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P1 JOY UP",
@@ -838,6 +841,7 @@ void SetDefaultGameConfig(void)
     myConfig.dpad        = DPAD_NORMAL;   // Normal DPAD use - mapped to joystick
     myConfig.memWipe     = 0;    
     myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY;
+    myConfig.cvEESize    = C24XX_24C256;
     myConfig.reservedA1  = 0;    
     myConfig.reservedA2  = 0;    
     myConfig.reservedA3  = 0;    
@@ -1036,6 +1040,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x31ff229b)                 myConfig.isPAL   = 0;   // Memotech Hustle Chummy is an NTSC conversion
     if (file_crc == 0x025e77dc)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
     if (file_crc == 0x95e71c67)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
+    
+    if (file_crc == 0xdddd1396)                 myConfig.cvEESize = C24XX_256B; // Black Onyx is 256 bytes... Boxxle is 32K. Other EE are unknown...
 
     if (myConfig.isPAL)                         myConfig.vertSync= 0;   // If we are PAL, we can't sync to the DS 60Hz
 }
@@ -1074,6 +1080,7 @@ void FindAndLoadConfig(void)
                 {
                     memcpy(&myConfig, &AllConfigs[slot], sizeof(struct Config_t));
                     if (myConfig.dpad > DPAD_DIAGONALS) myConfig.dpad = DPAD_DIAGONALS; // We downgraded this one
+                    if (myConfig.cvEESize == 0) myConfig.cvEESize = (file_crc == 0xdddd1396) ? C24XX_256B:C24XX_24C256;       // We repurposed this one... nothing has 128B EE
                     break;                           
                 }
             }
@@ -1103,30 +1110,35 @@ struct options_t
     u8           option_max;
 };
 
-u8 dev_z80_cycles = 0;
-const struct options_t Option_Table[] =
+const struct options_t Option_Table[2][20] =
 {
-    {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "FULL KEYBOARD"},                               &myConfig.overlay,    10},
-    {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
-    {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
-    {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
-    {"SVI/MTX VID",    {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
-    {"MAX SPRITES",    {"32",  "4"},                                                                                                                                                        &myConfig.maxSprites, 2},
-    {"VERT SYNC",      {"OFF", "ON"},                                                                                                                                                       &myConfig.vertSync,   2},    
-    {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire1,  4},
-    {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
-    {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
-    {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                    &myConfig.spinSpeed,  5},
-    {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    
-    {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
-    {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
-    {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
-    {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE"},                                                                                                               &myConfig.memWipe,    4},
-    {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
+    {
+        {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "FULL KEYBOARD"},                               &myConfig.overlay,    10},
+        {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
+        {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
+        {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
+        {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
+        {"MAX SPRITES",    {"32",  "4"},                                                                                                                                                        &myConfig.maxSprites, 2},
+        {"VERT SYNC",      {"OFF", "ON"},                                                                                                                                                       &myConfig.vertSync,   2},    
+        {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire1,  4},
+        {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
+        {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
+        {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                    &myConfig.spinSpeed,  5},
+        {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    
+        {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
+        {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
+        {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
+        {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE"},                                                                                                               &myConfig.memWipe,    4},
+        {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
+    },
+    {
+        {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
+        {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
 #if 0   // Developer use only   
-    {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
+        {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
 #endif    
-    {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
+        {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
+    }
 };              
 
 
@@ -1143,9 +1155,9 @@ u8 display_options_list(bool bFullDisplay)
     {
         while (true)
         {
-            siprintf(strBuf, " %-12s : %-14s", Option_Table[len].label, Option_Table[len].option[*(Option_Table[len].option_val)]);
+            siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][len].label, Option_Table[option_table][len].option[*(Option_Table[option_table][len].option_val)]);
             dsPrintValue(1,5+len, (len==0 ? 2:0), strBuf); len++;
-            if (Option_Table[len].label == NULL) break;
+            if (Option_Table[option_table][len].label == NULL) break;
         }
 
         // Blank out rest of the screen... option menus are of different lengths...
@@ -1155,7 +1167,7 @@ u8 display_options_list(bool bFullDisplay)
         }
     }
 
-    dsPrintValue(1,22, 0, (char *)" USE DPAD. B=EXIT, START=SAVE ");
+    dsPrintValue(2,22, 0, (char *)" B=EXIT, X=MORE, START=SAVE ");
     return len;    
 }
 
@@ -1199,42 +1211,53 @@ void colecoDSGameOptions(void)
             last_keys_pressed = keys_pressed;
             if (keysCurrent() & KEY_UP) // Previous option
             {
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 dsPrintValue(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_DOWN) // Next option
             {
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 dsPrintValue(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
 
             if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
             {
-                *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) + 1) % Option_Table[optionHighlighted].option_max;
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) + 1) % Option_Table[option_table][optionHighlighted].option_max;
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
             {
-                if ((*(Option_Table[optionHighlighted].option_val)) == 0)
-                    *(Option_Table[optionHighlighted].option_val) = Option_Table[optionHighlighted].option_max -1;
+                if ((*(Option_Table[option_table][optionHighlighted].option_val)) == 0)
+                    *(Option_Table[option_table][optionHighlighted].option_val) = Option_Table[option_table][optionHighlighted].option_max -1;
                 else
-                    *(Option_Table[optionHighlighted].option_val) = (*(Option_Table[optionHighlighted].option_val) - 1) % Option_Table[optionHighlighted].option_max;
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[optionHighlighted].label, Option_Table[optionHighlighted].option[*(Option_Table[optionHighlighted].option_val)]);
+                    *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) - 1) % Option_Table[option_table][optionHighlighted].option_max;
+                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 dsPrintValue(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_START)  // Save Options
             {
                 SaveConfig(TRUE);
             }
+            if (keysCurrent() & (KEY_X)) // Toggle Table
+            {
+                option_table = (option_table + 1) % 2;
+                idx=display_options_list(true);
+                optionHighlighted = 0;
+                while (keysCurrent() != 0)
+                {
+                    WAITVBL;
+                }
+            }
             if ((keysCurrent() & KEY_B) || (keysCurrent() & KEY_A))  // Exit options
             {
+                option_table = 0;   // Reset for next time
                 break;
             }
         }

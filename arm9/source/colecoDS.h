@@ -4,6 +4,7 @@
 #include <nds.h>
 #include <string.h>
 #include "cpu/z80/Z80_interface.h"
+#include "C24XX.h"
 
 #define VERSIONCLDS "6.9"
 
@@ -181,11 +182,13 @@ extern u16 NDS_keyMap[12];
 extern u8 pColecoMem[0x10000];                   // Coleco Memory
 
 extern u8 soundEmuPause;
+extern u8 write_EE_counter;
 
 extern int bg0, bg1, bg0b,bg1b;
 
 extern u16 *pVidFlipBuf;                         // Video flipping buffer
 
+extern C24XX EEPROM;
 
 extern void showMainMenu(void);
 extern void InitBottomScreen(void);
@@ -195,5 +198,7 @@ extern void ResetStatusFlags(void);
 extern void ReadFileCRCAndConfig(void);
 extern void SetupAdam(bool);
 extern void DisplayStatusLine(bool bForce);
-    
+extern void colecoSaveEEPROM(void);    
+extern void colecoLoadEEPROM(void);    
+extern void ResetColecovision(void);
 #endif
