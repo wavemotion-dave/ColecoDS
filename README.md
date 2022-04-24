@@ -125,7 +125,7 @@ There is support for the MTX MAGROM project... this is a multi-cart. You can use
 
 The MTX emulated is a base MTX-512 system with 64K of RAM... This should allow most games to run.
 
-Once the game is loaded into memory you will be sitting at the BASIC prompt. At this prompt you need to LOAD "" (if .MTX) or RUN the game (if .RUN). I've made this simple - just hit the DS **START** key to enter the proper command automatically.
+Once the game is loaded into memory you will be sitting at the BASIC prompt. At this prompt you need to LOAD "" (if .MTX) or RUN the game (if .RUN). I've made this simple - just hit the DS **START** key to enter the proper command automatically. Alternatively, you will find the RUN commands in the Cassette Icon Menu.
 
 Spectravideo SVI Compatibility :
 -----------------------
@@ -158,7 +158,15 @@ This should leave you with a 12k ROM called TreasureHunt.pen which is now playab
 
 Tatung Einstein Compatibility :
 -----------------------
-The base 64K machine is emulated. The compatibility on this one isn't too great. Only .COM files for now and only about 16 of the games currently work. But some of them are great games: Jet Set Willy, Manic Miner, Chuckie Egg, Mayham and Killer Tomatoes are among those that work well.
+The base 64K machine is emulated. Right now only .COM files will play. Out in the interwebs, you will mostly only find .dsk files and the .COM files need to be extracted from them. The easiest way is to use one of the following programs:
+
+dsktool from https://github.com/charlierobson/einsdein-vitamins
+or 
+EDIP v1e which you can find in the extras folder on the ColecoDS github page.
+
+With either of these tools, you should be able to extract more than 50 .COM games that currently work.
+
+A future version of the emulator will support .DSK files directly... but it's complicated.
 
 Controllers :
 -----------------------
@@ -231,6 +239,12 @@ would personally try them:
 * Turn on Frame Skip
 * Set Max Sprites to 4
 * Switch to the DrZ80 fast CPU core
+
+Versions :
+-----------------------
+V6.9: 24-Apr-2022 by wavemotion-dave
+* Much improved Tatung Einstein support. More than 50 games now run correctly. See readme.md for details.
+* Minor cleanups as time permitted.
 
 Versions :
 -----------------------

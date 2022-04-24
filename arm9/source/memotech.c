@@ -676,4 +676,33 @@ void MTX_HandleCassette(register Z80 *r)
         cpu_writeport_memotech(0x08, 0x7d);    
     }    
 }
+
+void memotech_launch_run_file(void)
+{
+      vdp_int_source = INT_NONE;    // Needed when we wipe and run in this mode
+
+      if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
+      {
+        memset(pColecoMem, 0x00, 0x10000);
+        cpu_writeport_memotech(0x00, 0x80);                    
+      }
+      else if (myConfig.memWipe == 3)    // Random MSX Memory Wipe
+      {
+          for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (rand() & 0xFF);   // This pattern tends to make most things start up properly...
+      }
+
+      pColecoMem[0x3627] = 0xd3;
+      pColecoMem[0x3628] = 0x05;
+      CPU.IFF &= 0xFE;   // Disable Interrupts
+      u16 mtx_start = (romBuffer[1] << 8) | romBuffer[0];
+      u16 mtx_len   = (romBuffer[3] << 8) | romBuffer[2];
+      u16 idx=4;
+      for (int i=mtx_start; i < (mtx_start+mtx_len); i++)
+      {
+          pColecoMem[i] = romBuffer[idx++];
+      }
+      CPU.PC.W = mtx_start;
+
+      RdCtrl9918();
+}
 // End of file

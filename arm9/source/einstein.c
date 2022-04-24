@@ -18,8 +18,6 @@
 #include <fcntl.h>
 
 #include "colecoDS.h"
-#include "AdamNet.h"
-#include "FDIDisk.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
@@ -294,6 +292,14 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
       }
       else              // Player 1 Joystick
       {
+          if (myConfig.dpad == DPAD_DIAGONALS)
+          {
+              if      (JoyState & JST_UP)    JoyState = (JST_UP   | JST_RIGHT);
+              else if (JoyState & JST_DOWN)  JoyState = (JST_DOWN | JST_LEFT);
+              else if (JoyState & JST_LEFT)  JoyState = (JST_LEFT | JST_UP);
+              else if (JoyState & JST_RIGHT) JoyState = (JST_RIGHT | JST_DOWN);
+          }
+          
           if ((adc_mux & 5) == 4) 
           {
               adc_port = 0x7F;
@@ -521,4 +527,16 @@ void einstein_handle_interrupts(void)
   }
 }
 
+void einstein_load_com_file(void)
+{
+    memcpy(pColecoMem, Slot3RAM, 0x8000);
+    einstein_ram_start = 0x0000;
+    memcpy(pColecoMem+0x100, romBuffer, tape_len);
+    memcpy(Slot3RAM+0x100, romBuffer, tape_len);
+    z80_rebasePC(0x100);
+    CPU.PC.W = 0x100;
+    JumpZ80(CPU.PC.W);
+}
+
 // End of file
+

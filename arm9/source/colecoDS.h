@@ -5,7 +5,7 @@
 #include <string.h>
 #include "cpu/z80/Z80_interface.h"
 
-#define VERSIONCLDS "6.8"
+#define VERSIONCLDS "6.9"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG
