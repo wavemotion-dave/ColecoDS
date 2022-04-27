@@ -189,6 +189,10 @@ void colecoWipeRAM(void)
   {
     // Do nothing... MSX has all kinds of memory mapping that is handled elsewhere
   }
+  else if (creativision_mode)
+  {
+     memset(pColecoMem, 0x00, 0x1000);  // Lower 1K is RAM mirrored four times (4K)
+  }
   else if (adam_mode)
   {
     // ADAM has special handling...
@@ -291,6 +295,11 @@ u8 colecoInit(char *szGame)
       RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
   }
   else if (pv2000_mode)  // Casio PV-2000 cartridge loads at C000
+  {
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,pColecoMem+0xC000,0x4000);  // Load up to 16K
+  }
+  else if (creativision_mode)  // Creativision loads cart up against 0xC000
   {
       colecoWipeRAM();
       RetFct = loadrom(szGame,pColecoMem+0xC000,0x4000);  // Load up to 16K
@@ -538,7 +547,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     fseek(handle, 0, SEEK_END);                     // Figure out how big the file is
     int iSSize = ftell(handle);
     sg1000_double_reset = false;
-      
+    
     if (sg1000_mode && (iSSize == (2048 * 1024)))   // Look for .sc Multicart
     {
         fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
@@ -618,6 +627,73 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             if (iSSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
             {
                 memcpy(pColecoMem+0x4000, romBuffer, iSSize);   // only for Diagnostics ROM
+            }
+        }
+        else if (creativision_mode)
+        {
+            memset(pColecoMem+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
+            if (iSSize == 4096) // 4K
+            {
+                memcpy(pColecoMem+0x9000, romBuffer, iSSize);
+                memcpy(pColecoMem+0xB000, romBuffer, iSSize);
+            }
+            if (iSSize == 1024 * 6) // 6K
+            {
+                memcpy(pColecoMem+0xB000, romBuffer+0x0000, 0x1000);   // main 4k at 0xB000
+                memcpy(pColecoMem+0xA800, romBuffer+0x1000, 0x0800);   // main 2k at 0xA800
+      
+                memcpy(pColecoMem+0x9000, pColecoMem+0xB000, 0x1000);   // Mirror 4k
+                memcpy(pColecoMem+0xA000, pColecoMem+0xA800, 0x0800);   // Mirror 2k
+                memcpy(pColecoMem+0x8800, pColecoMem+0xA800, 0x0800);   // Mirror 2k
+                memcpy(pColecoMem+0x8000, pColecoMem+0xA800, 0x0800);   // Mirror 2k
+            }
+            if (iSSize == 8192) // 8K
+            {
+                memcpy(pColecoMem+0x8000, romBuffer, iSSize);
+                memcpy(pColecoMem+0xA000, romBuffer, iSSize);
+            }
+            if (iSSize == 1024 * 10) // 10K
+            {
+                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb	at 0xA000
+                memcpy(pColecoMem+0x7800, romBuffer+0x2000, 0x0800);    // second 2Kb at 0x7800
+                
+                memcpy(pColecoMem+0x8000, pColecoMem+0xA000, 0x2000);   // Mirror 8k at 0x8000
+                
+                memcpy(pColecoMem+0x5800, pColecoMem+0x7800, 0x0800);   // Mirror 2k at 0x5800
+                memcpy(pColecoMem+0x7000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
+                memcpy(pColecoMem+0x6800, pColecoMem+0x7800, 0x0800);   // Mirror 2k
+                memcpy(pColecoMem+0x6000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
+                memcpy(pColecoMem+0x5000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
+                memcpy(pColecoMem+0x4800, pColecoMem+0x7800, 0x0800);   // Mirror 2k
+                memcpy(pColecoMem+0x4000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
+            }
+            if (iSSize == 1024 * 12) // 12K
+            {
+                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb	at 0xA000
+                memcpy(pColecoMem+0x7000, romBuffer+0x2000, 0x1000);    // second 4Kb at 0x7000
+                memcpy(pColecoMem+0x8000, pColecoMem+0xA000, 0x2000);   // Mirror 8k at 0x8000
+                memcpy(pColecoMem+0x5000, pColecoMem+0x7000, 0x1000);   // Mirror 4k at 0x5000
+                memcpy(pColecoMem+0x6000, pColecoMem+0x7000, 0x1000);   // Mirror 4k at 0x6000
+                memcpy(pColecoMem+0x4000, pColecoMem+0x7000, 0x1000);   // Mirror 4k at 0x4000
+            }
+            if (iSSize == 1024 * 16) // 16K
+            {
+                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb	at 0xA000
+                memcpy(pColecoMem+0x8000, romBuffer+0x2000, 0x2000);    // second 8Kb at 0x8000
+            }
+            if (iSSize == 1024 * 18) // 18K
+            {
+                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);
+                memcpy(pColecoMem+0x8000, romBuffer+0x2000, 0x2000);
+                memcpy(pColecoMem+0x7800, romBuffer+0x4000, 0x0800);
+                
+                memcpy(pColecoMem+0x6800, pColecoMem+0x7800, 0x0800);
+                memcpy(pColecoMem+0x5800, pColecoMem+0x7800, 0x0800);
+                memcpy(pColecoMem+0x4800, pColecoMem+0x7800, 0x0800);
+                memcpy(pColecoMem+0x7000, pColecoMem+0x7800, 0x0800);
+                memcpy(pColecoMem+0x6000, pColecoMem+0x7800, 0x0800);
+                memcpy(pColecoMem+0x5000, pColecoMem+0x7800, 0x0800);
+                memcpy(pColecoMem+0x4000, pColecoMem+0x7800, 0x0800);
             }
         }
         else
@@ -1027,129 +1103,139 @@ ITCM_CODE u32 LoopZ80()
     static u16 spinnerDampen = 0;
     cpuirequest=0;
     
-  // Just in case there are AY audio envelopes... this is very rough timing.
-  if (AY_EnvelopeOn)
+  // ----------------------------------------------------------------------------
+  // Special system as it runs an m6502 CPU core and is different than the Z80
+  // ----------------------------------------------------------------------------
+  if (creativision_mode)
   {
-      extern u16 envelope_counter;
-      extern u16 envelope_period;
-      if (++envelope_counter > envelope_period) FakeAY_Loop();
+      creativision_run();     
   }
-   
-  // ------------------------------------------------------------------
-  // Before we execute Z80 or Loop the 9918 (both of which can cause 
-  // NMI interrupt to occur), we check and adjust the spinners which 
-  // can generate a lower priority interrupt to the running Z80 code.
-  // ------------------------------------------------------------------
-  if (!msx_mode && !sordm5_mode && !memotech_mode && !svi_mode) //TBD clean this up
-  if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
-  {
-      if (spinX_left)
+  else
+  {    
+      // Just in case there are AY audio envelopes... this is very rough timing.
+      if (AY_EnvelopeOn)
       {
-          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
-          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-          JoyState   &= 0xFFFFCFFF;
-          JoyState   |= 0x00003000;
+          extern u16 envelope_counter;
+          extern u16 envelope_period;
+          if (++envelope_counter > envelope_period) FakeAY_Loop();
       }
-      else if (spinX_right)
+
+      // ------------------------------------------------------------------
+      // Before we execute Z80 or Loop the 9918 (both of which can cause 
+      // NMI interrupt to occur), we check and adjust the spinners which 
+      // can generate a lower priority interrupt to the running Z80 code.
+      // ------------------------------------------------------------------
+      if (!msx_mode && !sordm5_mode && !memotech_mode && !svi_mode) //TBD clean this up
+      if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
       {
-          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
-          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-          JoyState   &= 0xFFFFCFFF;
-          JoyState   |= 0x00001000;
+          if (spinX_left)
+          {
+              cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+              CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+              JoyState   &= 0xFFFFCFFF;
+              JoyState   |= 0x00003000;
+          }
+          else if (spinX_right)
+          {
+              cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+              CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+              JoyState   &= 0xFFFFCFFF;
+              JoyState   |= 0x00001000;
+          }
+
+          if (spinY_left)
+          {
+              cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+              CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+              JoyState   &= 0xCFFFFFFF;
+              JoyState   |= 0x30000000;
+          }
+          else if (spinY_right)
+          {
+              cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+              CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+              JoyState   &= 0xCFFFFFFF;
+              JoyState   |= 0x10000000;
+          }
       }
-      
-      if (spinY_left)
-      {
-          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
-          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-          JoyState   &= 0xCFFFFFFF;
-          JoyState   |= 0x30000000;
-      }
-      else if (spinY_right)
-      {
-          cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
-          CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-          JoyState   &= 0xCFFFFFFF;
-          JoyState   |= 0x10000000;
-      }
-  }
-    
-  // ---------------------------------------------------------------
-  // We current support two different Z80 cores... the DrZ80 is
-  // (relatively) blazingly fast on the DS ARM processor but
-  // the compatibilty isn't 100%. The CZ80 core is slower but
-  // has higher compatibilty. For now, the default core is 
-  // DrZ80 for the DS-LITE/PHAT and CZ80 for the DSi and above.
-  // The DSi has enough processing power to utilize this slower
-  // but more accurate core. The user can switch cores as they like.
-  // ---------------------------------------------------------------
-  if (myConfig.cpuCore == 0) // DrZ80 Core ... faster but lower accuracy
-  {
-      // Execute 1 scanline worth of CPU instructions
-      DrZ80_execute(tms_cpu_line + timingAdjustment);
-      
-      // Refresh VDP 
-      if(Loop9918()) cpuirequest = ((svi_mode || msx_mode || sg1000_mode) ? Z80_IRQ_INT : Z80_NMI_INT);
-      
-      // Generate interrupt if called for
-      if (cpuirequest)
-        DrZ80_Cause_Interrupt(cpuirequest);
-      else
-        DrZ80_Clear_Pending_Interrupts();
-  }
-  else  // CZ80 core from fMSX()... slower but higher accuracy
-  {
-      if (memotech_mode || einstein_mode || sordm5_mode)    // All of these have CTC Timers to deal with... 
+
+      // ---------------------------------------------------------------
+      // We current support two different Z80 cores... the DrZ80 is
+      // (relatively) blazingly fast on the DS ARM processor but
+      // the compatibilty isn't 100%. The CZ80 core is slower but
+      // has higher compatibilty. For now, the default core is 
+      // DrZ80 for the DS-LITE/PHAT and CZ80 for the DSi and above.
+      // The DSi has enough processing power to utilize this slower
+      // but more accurate core. The user can switch cores as they like.
+      // ---------------------------------------------------------------
+      if (myConfig.cpuCore == 0) // DrZ80 Core ... faster but lower accuracy
       {
           // Execute 1 scanline worth of CPU instructions
-          cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
+          DrZ80_execute(tms_cpu_line + timingAdjustment);
 
           // Refresh VDP 
-          if(Loop9918()) 
+          if(Loop9918()) cpuirequest = ((svi_mode || msx_mode || sg1000_mode) ? Z80_IRQ_INT : Z80_NMI_INT);
+
+          // Generate interrupt if called for
+          if (cpuirequest)
+            DrZ80_Cause_Interrupt(cpuirequest);
+          else
+            DrZ80_Clear_Pending_Interrupts();
+      }
+      else  // CZ80 core from fMSX()... slower but higher accuracy
+      {
+          if (memotech_mode || einstein_mode || sordm5_mode)    // All of these have CTC Timers to deal with... 
           {
-              CPU.IRequest = vdp_int_source;   // Sord M5 and Memotech MTX only works with the CZ80 core
+              // Execute 1 scanline worth of CPU instructions
+              cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
+
+              // Refresh VDP 
+              if(Loop9918()) 
+              {
+                  CPU.IRequest = vdp_int_source;   // Sord M5 and Memotech MTX only works with the CZ80 core
+              }
+              else
+              {
+                  // -------------------------------------------------------------------------
+                  // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer 
+                  // circuit that needs attention - this isnt timing accurate but it's good
+                  // enough to allow those timers to trigger and the games to be played.
+                  // -------------------------------------------------------------------------
+                  if (CPU.IRequest == INT_NONE)
+                  {
+                      Z80CTC_Timer();    
+                  }
+                  if (einstein_mode && (CPU.IRequest == INT_NONE))  // If the keyboard is generating an interrupt...
+                  {
+                      einstein_handle_interrupts();
+                      if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+                  }
+              }
           }
           else
           {
-              // -------------------------------------------------------------------------
-              // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer 
-              // circuit that needs attention - this isnt timing accurate but it's good
-              // enough to allow those timers to trigger and the games to be played.
-              // -------------------------------------------------------------------------
-              if (CPU.IRequest == INT_NONE)
+              // Execute 1 scanline worth of CPU instructions
+              cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
+
+              // Refresh VDP 
+              if(Loop9918()) 
               {
-                  Z80CTC_Timer();    
-              }
-              if (einstein_mode && (CPU.IRequest == INT_NONE))  // If the keyboard is generating an interrupt...
-              {
-                  einstein_handle_interrupts();
-                  if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+                  CPU.IRequest = vdp_int_source;
               }
           }
-      }
-      else
-      {
-          // Execute 1 scanline worth of CPU instructions
-          cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
 
-          // Refresh VDP 
-          if(Loop9918()) 
+          // Generate an interrupt if called for...
+          if(CPU.IRequest!=INT_NONE) 
           {
-              CPU.IRequest = vdp_int_source;
-          }
-      }
-
-      // Generate an interrupt if called for...
-      if(CPU.IRequest!=INT_NONE) 
-      {
-          IntZ80(&CPU, CPU.IRequest);
-#ifdef DEBUG_Z80 
-          CPU.User++;   // Track Interrupt Requests
-#endif          
-          if (pv2000_mode) 
-          {
-              extern void pv2000_check_kbd(void);
-              pv2000_check_kbd();
+              IntZ80(&CPU, CPU.IRequest);
+    #ifdef DEBUG_Z80 
+              CPU.User++;   // Track Interrupt Requests
+    #endif          
+              if (pv2000_mode) 
+              {
+                  extern void pv2000_check_kbd(void);
+                  pv2000_check_kbd();
+              }
           }
       }
   }

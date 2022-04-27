@@ -6,7 +6,7 @@
 #include "cpu/z80/Z80_interface.h"
 #include "C24XX.h"
 
-#define VERSIONCLDS "6.9"
+#define VERSIONCLDS "7.0"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG
@@ -109,8 +109,16 @@ extern u32 debug4;
 #define META_KBD_COMMA      0xFFFF0052
 #define META_KBD_COLON      0xFFFF0053
 #define META_KBD_SLASH      0xFFFF0054
+#define META_KBD_F1         0xFFFF0055
+#define META_KBD_F2         0xFFFF0056
+#define META_KBD_F3         0xFFFF0057
+#define META_KBD_F4         0xFFFF0058
+#define META_KBD_F5         0xFFFF0059
+#define META_KBD_F6         0xFFFF005A
+#define META_KBD_F7         0xFFFF005B
+#define META_KBD_F8         0xFFFF005C
 
-#define MAX_KEY_OPTIONS     94
+#define MAX_KEY_OPTIONS     102
 
 
 #define JOYMODE_JOYSTICK    0
@@ -169,6 +177,7 @@ extern u8 svi_mode;
 extern u8 adam_mode;
 extern u8 adam_CapsLock;
 extern u8 adam_unsaved_data;
+extern u8 creativision_mode;
 
 extern char lastAdamDataPath[];
 
@@ -201,4 +210,5 @@ extern void DisplayStatusLine(bool bForce);
 extern void colecoSaveEEPROM(void);    
 extern void colecoLoadEEPROM(void);    
 extern void ResetColecovision(void);
+extern u32  creativision_run(void);
 #endif

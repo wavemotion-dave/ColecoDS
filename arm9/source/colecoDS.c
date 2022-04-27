@@ -44,6 +44,7 @@
 #include "boulder.h"
 #include "quest.h"
 #include "hal2010.h"
+#include "cvision.h"
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -93,6 +94,7 @@ u8 AdamWRITER[0x8000] = {0};  // We keep the ADAM WRITER.ROM bios around to swap
 u8 SVIBios[0x8000]    = {0};  // We keep the SVI 32K BIOS around to swap in/out
 u8 Pencil2Bios[0x2000]= {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
 u8 EinsteinBios[0x2000]={0};  // We keep the 8k Einstein BIOS around
+u8 CreativisionBios[0x800]={0};  // We keep the 2k Creativision BIOS around
 
 C24XX EEPROM;                 // For Activision PCBs we have up to 32K of EEPROM
 
@@ -118,6 +120,7 @@ u8 bAdamBiosFound = false;
 u8 bPV2000BiosFound = false;
 u8 bPencilBiosFound = false;
 u8 bEinsteinBiosFound = false;
+u8 bCreativisionBiosFound = false;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
@@ -132,6 +135,7 @@ u8 svi_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 wh
 u8 adam_mode         __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
 u8 pencil2_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pii Pencil 2 ROM is loaded (only one known to exist!)
 u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
+u8 creativision_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .cv ROM is loaded (Creativision)
 
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
@@ -498,9 +502,9 @@ void ResetColecovision(void)
   ay76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
   ay76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
     
-  DrZ80_Reset();                        // Reset the Z80 CPU Core
-  ResetZ80(&CPU);                       // Reset the CZ80 core CPU
-    
+  DrZ80_Reset();                        // Reset the Z80 CPU core
+  ResetZ80(&CPU);                       // Reset the CZ80 CPU core
+  
   sordm5_reset();                       // Reset the Sord M5 specific vars
   memotech_reset();                     // Reset the memotech MTX specific vars
   svi_reset();                          // Reset the SVI specific vars
@@ -562,6 +566,12 @@ void ResetColecovision(void)
       colecoWipeRAM();                          // Wipe main RAM area
       memcpy(pColecoMem,EinsteinBios,0x2000);
   }    
+  else if (creativision_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+      memcpy(pColecoMem+0xF800,CreativisionBios,0x800);
+      creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
+  }        
   else
   {
       memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
@@ -662,18 +672,35 @@ void ShowDebugZ80(void)
         AffChaine(0,idx++,7, tmp);
     }
     idx++;
-    siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
-    AffChaine(0,idx++,7, tmp);
+    
+    if (AY_Enable)
+    {
+        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
+        AffChaine(0,idx++,7, tmp);
+    }
+    else
+    {
+        siprintf(tmp, "SNCH0 %5d %5d %5d %2d", sncol.ch0Frq, sncol.ch0Cnt, sncol.ch0Reg, sncol.ch0Att);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "SNCH1 %5d %5d %5d %2d", sncol.ch1Frq, sncol.ch1Cnt, sncol.ch1Reg, sncol.ch1Att);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "SNCH2 %5d %5d %5d %2d", sncol.ch2Frq, sncol.ch2Cnt, sncol.ch2Reg, sncol.ch2Att);
+        AffChaine(0,idx++,7, tmp);
+        siprintf(tmp, "SNCH3 %5d %5d %5d %2d", sncol.ch3Frq, sncol.ch3Cnt, sncol.ch3Reg, sncol.ch3Att);
+        AffChaine(0,idx++,7, tmp);
+        idx++;
+    }
+    
     siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "PORTS %02X %02X %02X", Port20, Port53, Port60);
@@ -813,6 +840,15 @@ void DisplayStatusLine(bool bForce)
         {
             last_pencil_mode = pencil2_mode;
             AffChaine(22,0,6, "PENCIL II");
+        }
+    }
+    else if (creativision_mode)
+    {
+        if ((creativision_mode != last_pencil_mode) || bForce)
+        {
+            last_pencil_mode = creativision_mode;
+            AffChaine(20,0,6, "CREATIVISION");
+            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (einstein_mode)
@@ -2023,6 +2059,14 @@ void InitBottomScreen(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) msx_smPal,(void*) BG_PALETTE_SUB,256*2);
       }
+      else if (creativision_mode)
+      {
+          //  Init bottom screen
+          decompress(cvisionTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(cvisionMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) cvisionPal,(void*) BG_PALETTE_SUB,256*2);
+      }
       else if (adam_mode)
       {
           //  Init bottom screen
@@ -2106,6 +2150,10 @@ void colecoDSInitCPU(void)
   {
       memcpy(pColecoMem,EinsteinBios,0x2000);
   }    
+  else if (creativision_mode)
+  {
+      memcpy(pColecoMem+0xF800,CreativisionBios,0x800);
+  }    
   else  // Finally we get to the Coleco BIOS
   {
     memcpy(pColecoMem,ColecoBios,0x2000);
@@ -2140,6 +2188,7 @@ void LoadBIOSFiles(void)
     bPV2000BiosFound = false;
     bPencilBiosFound = false;
     bEinsteinBiosFound = false;
+    bCreativisionBiosFound = false;
     
     // -----------------------------------------------------------
     // First load Sord M5 bios - don't really care if this fails
@@ -2229,6 +2278,19 @@ void LoadBIOSFiles(void)
         fclose(fp);
     }
 
+    // -----------------------------------------------------------
+    // Next try to load the bioscv.rom (creativision)
+    // -----------------------------------------------------------
+    fp = fopen("bioscv.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/bioscv.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/bioscv.rom", "rb");
+    if (fp != NULL)
+    {
+        bCreativisionBiosFound = true;
+        fread(CreativisionBios, 0x800, 1, fp);
+        fclose(fp);
+    }
+    
     // -----------------------------------------------------------
     // Try loading the EOS.ROM and WRITER.ROM Adam files...
     // -----------------------------------------------------------
@@ -2351,15 +2413,16 @@ int main(int argc, char **argv)
     {
         u8 idx = 6;
         AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
-                                AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND"); 
-        if (bMSXBiosFound)     {AffChaine(2,idx++,0,"msx.rom        BIOS FOUND"); }
-        if (bSVIBiosFound)     {AffChaine(2,idx++,0,"svi.rom        BIOS FOUND"); }
-        if (bSordBiosFound)    {AffChaine(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
-        if (bPV2000BiosFound)  {AffChaine(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
-        if (bPencilBiosFound)  {AffChaine(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
-        if (bEinsteinBiosFound){AffChaine(2,idx++,0,"einstein.rom   BIOS FOUND"); }
-        if (bAdamBiosFound)    {AffChaine(2,idx++,0,"eos.rom        BIOS FOUND"); }
-        if (bAdamBiosFound)    {AffChaine(2,idx++,0,"writer.rom     BIOS FOUND"); }
+                                     AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND"); 
+        if (bMSXBiosFound)          {AffChaine(2,idx++,0,"msx.rom        BIOS FOUND"); }
+        if (bSVIBiosFound)          {AffChaine(2,idx++,0,"svi.rom        BIOS FOUND"); }
+        if (bSordBiosFound)         {AffChaine(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
+        if (bPV2000BiosFound)       {AffChaine(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
+        if (bPencilBiosFound)       {AffChaine(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
+        if (bEinsteinBiosFound)     {AffChaine(2,idx++,0,"einstein.rom   BIOS FOUND"); }
+        if (bCreativisionBiosFound) {AffChaine(2,idx++,0,"bioscv.rom     BIOS FOUND"); }    
+        if (bAdamBiosFound)         {AffChaine(2,idx++,0,"eos.rom        BIOS FOUND"); }
+        if (bAdamBiosFound)         {AffChaine(2,idx++,0,"writer.rom     BIOS FOUND"); }
         AffChaine(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
         AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
         

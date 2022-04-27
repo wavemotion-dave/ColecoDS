@@ -719,6 +719,57 @@ byte Loop9918(void)
   return(bIRQ);
 }
 
+/** Loop6502() **********************************************/
+/** The 6502 version of the above... slimmer and trimmer.  **/
+/************************************************************/
+byte Loop6502(void)
+{
+  extern void creativision_input(void);
+  extern void colecoUpdateScreen(void);
+  register byte bIRQ;
+
+  /* No IRQ yet */
+  bIRQ=0;
+
+  /* Increment scanline */
+  if (++CurLine >= tms_num_lines) CurLine=0;
+
+  /* If refreshing display area, call scanline handler */
+  if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
+  {
+      if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
+          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for collisions
+      else
+         (SCR[ScrMode].Refresh)(CurLine - tms_start_line);
+  }
+  /* If time for emulated VBlank... */
+  else if (CurLine == tms_end_line)
+  {
+      /* Refresh screen */
+      if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) != 0)
+      {
+          colecoUpdateScreen();
+      }
+
+      frameSkipIdx++;
+      
+      /* Generate IRQ when enabled (only) */
+      bIRQ = (TMS9918_VBlankON ? 1:0);
+
+      /* Set VBlank status flag */
+      VDPStatus|=TMS9918_STAT_VBLANK;
+
+      /* Set Sprite Collision status flag */
+      if(!(VDPStatus&TMS9918_STAT_OVRLAP))
+        if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP;
+      
+      creativision_input();
+  }
+    
+  return bIRQ;
+}
+
+
 
 /** Reset9918() **********************************************/
 /** Reset the VDP. The user can provide a new screen buffer **/
