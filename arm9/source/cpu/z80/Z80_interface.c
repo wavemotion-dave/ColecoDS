@@ -699,7 +699,10 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     }
     else if ((address >= 0xE000) && (address < 0xE800)) // Allow SRAM if cart doesn't extend this high...
     {
-        if (sRamAtE000_OK) pColecoMem[address+0x800]=value;
+        if (sRamAtE000_OK)
+        {
+            pColecoMem[address+0x800]=value;
+        }
     }
     /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
     else if (bActivisionPCB)

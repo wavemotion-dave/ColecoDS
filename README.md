@@ -28,6 +28,7 @@ Features :
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
 * Tatung Einstein support (.com run-time files only) - requires einstein.rom BIOS
 * Memotech MTX game support (.mtx or .run) - single loader games only.
+* Creativision game support (.cv) - requires bioscv.rom BIOS
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
 * Save/Load Game State (one slot).
@@ -241,12 +242,16 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.0: 24-Apr-2022 by wavemotion-dave
+* Added Creativision emulation support with m6502 CPU core.
+* Coleco EEPROM support for Boxxle, Black Onyx, etc.
+* More definable keys for MSX emulation.
+* Minor cleanups as time permitted.
+
 V6.9: 24-Apr-2022 by wavemotion-dave
 * Much improved Tatung Einstein support. More than 50 games now run correctly. See readme.md for details.
 * Minor cleanups as time permitted.
 
-Versions :
------------------------
 V6.8: 20-Apr-2022 by wavemotion-dave
 * Hanimex Pencil II support. Only one game dumped - Treasure Hunter!
 * Tatung Einstein support. Only .COM files run and requires einstein.rom BIOS

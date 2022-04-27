@@ -144,6 +144,14 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBAORD ,",
   "KEYBOARD :",
   "KEYBOARD /",
+  "KEYBOARD F1",
+  "KEYBOARD F2",
+  "KEYBOARD F3",
+  "KEYBOARD F4",
+  "KEYBOARD F5",
+  "KEYBOARD F6",
+  "KEYBOARD F7",
+  "KEYBOARD F8",
 };
 
 
@@ -500,6 +508,12 @@ void colecoDSFindFiles(void)
           countCV++;
         }
         if ( (strcasecmp(strrchr(szFile, '.'), ".com") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".cv") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
           uNbFile++;
@@ -975,6 +989,8 @@ void SetDefaultGameConfig(void)
     if (einstein_mode)                          myConfig.overlay = 9;  // Tatung Einstein defaults to full keyboard
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
+    if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
+    if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
     if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 2;  // MTX Rolla Ball needs full memory wipe
     if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 2;  // MTX Surface Scanner needs full memory wipe
@@ -1498,6 +1514,7 @@ void ReadFileCRCAndConfig(void)
     msx_mode = 0;
     svi_mode = 0;
     adam_mode = 0;
+    creativision_mode = 0;
     
     CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
 
@@ -1505,8 +1522,10 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 2;    // SC-3000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".SC") != 0) sg1000_mode = 2;    // SC-3000 mode
-    if (strstr(gpFic[ucGameChoice].szName, ".pv") != 0) pv2000_mode = 2;    // SC-3000 mode
-    if (strstr(gpFic[ucGameChoice].szName, ".PV") != 0) pv2000_mode = 2;    // SC-3000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".pv") != 0) pv2000_mode = 2;    // PV-2000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".PV") != 0) pv2000_mode = 2;    // PV-2000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".CV") != 0) creativision_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".cv") != 0) creativision_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".M5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".mtx") != 0) memotech_mode = 2;

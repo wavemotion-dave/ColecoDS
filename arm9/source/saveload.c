@@ -501,15 +501,12 @@ void colecoSaveEEPROM(void)
   szFile[len-2] = 'e';
   szFile[len-1] = 0;
 
-  AffChaine(6,0,0,"SAVING...");
-  
   FILE *handle = fopen(szFile, "wb+");  
   if (handle != NULL) 
   {
       fwrite(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
       fclose(handle);
   }
-  AffChaine(6,0,0,"         ");
 }
 
 void colecoLoadEEPROM(void)

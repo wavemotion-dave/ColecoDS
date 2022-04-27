@@ -15,7 +15,7 @@ include $(DEVKITARM)/ds_rules
 # all directories are relative to this makefile
 #---------------------------------------------------------------------------------
 BUILD		:=	build
-SOURCES		:=	source/cpu/z80 source/cpu/z80/drz80 source/cpu/z80/cz80 source/cpu/tms9918a source/cpu/sn76496 source 
+SOURCES		:=	source/cpu/z80 source/cpu/z80/drz80 source/cpu/z80/cz80 source/cpu/tms9918a source/cpu/sn76496 source/cpu/m6502 source 
 INCLUDES	:=	include 
 DATA		:=	data
 GRAPHICS	:=	gfx
@@ -72,7 +72,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o msx_sm.o msx_full.o adam_full.o pv2000_sm.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o sprMario.o 
+OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o msx_sm.o msx_full.o adam_full.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o sprMario.o 
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -147,6 +147,9 @@ adam_sm.s adam_sm.h : adam_sm.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 msx_sm.s msx_sm.h : msx_sm.png
+	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
+
+cvision.s cvision.h : cvision.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 msx_full.s msx_full.h : msx_full.png
