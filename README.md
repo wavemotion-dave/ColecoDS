@@ -168,6 +168,11 @@ With either of these tools, you should be able to extract more than 50 .COM game
 
 A future version of the emulator will support .DSK files directly... but it's complicated.
 
+Creativision Compatibility :
+-----------------------
+The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area.
+
+
 Controllers :
 -----------------------
 You can map buttons to either P1 or P2 controllers. 
@@ -242,8 +247,8 @@ would personally try them:
 
 Versions :
 -----------------------
-V7.0: 24-Apr-2022 by wavemotion-dave
-* Added Creativision emulation support with m6502 CPU core.
+V7.0: 27-Apr-2022 by wavemotion-dave
+* Added Creativision emulation support with m6502 CPU core (requires bioscv.rom BIOS)
 * Coleco EEPROM support for Boxxle, Black Onyx, etc.
 * More definable keys for MSX emulation.
 * Minor cleanups as time permitted.
