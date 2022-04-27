@@ -151,7 +151,14 @@ void Wr6502(register word Addr,register byte Value)
                 PIABIO=Value;
                 if (Value != 0x90) 
                 {
+                  extern u32 file_crc;                    
                   sn76496W(Value, &sncol);
+                  if ((file_crc == 0x767a1f38) && (sncol.ch1Frq < 5000))    // Sonic Invaders... high pitch "fix"
+                  {
+                      sncol.ch1Frq = 0;
+                      sncol.ch1Att = 15;
+                      sncol.ch1Reg = 0xFF;
+                  }
                 }
                 return;
               }
