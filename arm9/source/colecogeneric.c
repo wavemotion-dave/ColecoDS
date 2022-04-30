@@ -1058,6 +1058,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x95e71c67)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
     
     if (file_crc == 0xdddd1396)                 myConfig.cvEESize = C24XX_256B; // Black Onyx is 256 bytes... Boxxle is 32K. Other EE are unknown...
+    
+    if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
 
     if (myConfig.isPAL)                         myConfig.vertSync= 0;   // If we are PAL, we can't sync to the DS 60Hz
 }

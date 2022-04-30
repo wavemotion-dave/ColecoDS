@@ -21,7 +21,7 @@
 #include "cpu/sn76496/SN76496.h"
 #define NORAM 0xFF
 
-M6502 m6502;        // Our core 6502 CPU
+M6502 m6502 __attribute__((section(".dtcm")));        // Our core 6502 CPU
 
 extern u8 pColecoMem[];
 extern byte Loop9918(void);
@@ -168,7 +168,6 @@ void Wr6502(register word Addr,register byte Value)
           break;
             
         case 0x3000:    // VDP Writes
-            debug4++;
             if ((Addr & 1)==0) WrData9918(Value);
             else if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);
             break;
@@ -182,7 +181,6 @@ byte Rd6502(register word Addr)
     switch (Addr & 0xF000)
     {
         case 0x1000:                // PIA
-          debug2++;
           if ((Addr & 0x03)==2) 
           {
             /* read from PIAB */
@@ -194,7 +192,6 @@ byte Rd6502(register word Addr)
                 return(0x9f);
               }
               else {
-                  debug3++;
                 if ((PIAAIO&0x0f)==0) {
                   x=KEYTBL[7]^KEYTBL[11]^0xff;
                   y=KEYTBL[13]^KEYTBL[14]^0xff;
