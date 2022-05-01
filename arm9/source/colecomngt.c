@@ -169,7 +169,7 @@ void colecoWipeRAM(void)
   }
   else if (pv2000_mode)
   {
-      memset(pColecoMem+0x4000, 0xFF, 0xC000);
+      memset(pColecoMem+0x4000, 0xFF, 0x8000);
       for (int i=0x7000; i<0x8000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (sordm5_mode)
