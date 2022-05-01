@@ -247,6 +247,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.1: 1-May-2022 by wavemotion-dave
+* Fixed PV-2000 driver (broken in 7.0).
+* Minor optmization for the CreatiVision to help on older DS-LITE/PHAT.
+* Minor cleanups as time permitted.
+
 V7.0: 27-Apr-2022 by wavemotion-dave
 * Added Creativision emulation support with m6502 CPU core (requires bioscv.rom BIOS)
 * Coleco EEPROM support for Boxxle, Black Onyx, etc.
