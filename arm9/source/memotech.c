@@ -342,6 +342,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == KBD_KEY_DEL)   key1 = 0x01;    // Backspace key on Memotech
               if (kbd_key == KBD_KEY_F5)    key1 = 0x02;    // F5
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F5))   key1 |= 0x02;
+              }
+          }
           return (~key1 & 0xFF);
       }
       else if (MTX_KBD_DRIVE == 0xFE)
@@ -358,6 +365,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               {
                   if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_CTRL))   key1 |= 0x01;
               }
+              if (nds_key)
+              {
+                  for (u8 i=0; i<12; i++)
+                  {
+                      if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F1))   key1 |= 0x02;
+                  }
+              }
           }
           return (~key1 & 0xFF);
       }
@@ -369,6 +383,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           {
               if (kbd_key == KBD_KEY_F2)    key1 = 0x02;    // F2
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F2))   key1 |= 0x02;
+              }
+          }
           return (~key1 & 0xFF);
       }
       else if (MTX_KBD_DRIVE == 0xF7)
@@ -378,6 +399,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           {
               if (kbd_key == KBD_KEY_F6)    key1 = 0x02;    // F6
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F6))   key1 |= 0x02;
+              }
+          }
           return (~key1 & 0xFF);
       }
       
@@ -389,6 +417,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           {
               if (kbd_key == KBD_KEY_F7)   key1 = 0x02;    // F7
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F7))   key1 |= 0x02;
+              }
+          }
           return (~key1 & 0xFF);
       }
       else if (MTX_KBD_DRIVE == 0xDF)
@@ -398,6 +433,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           {
               if (kbd_key == KBD_KEY_F3)    key1 = 0x02;    // F3
           }          
+          if (nds_key)
+          {
+              for (u8 i=0; i<12; i++)
+              {
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F3))   key1 |= 0x02;
+              }
+          }
           return (~key1 & 0xFF);
       }
       
@@ -426,6 +468,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               for (u8 i=0; i<12; i++)
               {
                   if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE))   key1 |= 0x01;
+                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F4))      key1 |= 0x02;
               }
           }
           
