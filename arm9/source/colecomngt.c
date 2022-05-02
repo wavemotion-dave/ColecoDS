@@ -165,7 +165,7 @@ void colecoWipeRAM(void)
 {
   if (sg1000_mode)
   {
-      for (int i=0x8000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0xC000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (pv2000_mode)
   {
