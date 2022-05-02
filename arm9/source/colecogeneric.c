@@ -1547,6 +1547,8 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".com") != 0) einstein_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".COM") != 0) einstein_mode = 1;    
     
+    if (sg1000_mode) msx_mode=0;        // Some Taiwan SG games look like MSX games...
+    
     // --------------------------------------------------------------------------
     // If a .cas file is picked, we need to figure out what machine it's for...
     // --------------------------------------------------------------------------
