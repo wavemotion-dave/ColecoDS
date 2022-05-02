@@ -438,12 +438,11 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 }
                 else if (IOBYTE == 0x1E)   // Cart ROM (not present)
                 {
-                  memset(pColecoMem, 0xFF, 0x8000);     // Nothing in lower slot
-                  svi_RAM_start = 0x8000;
+                    memset(pColecoMem, 0xFF, 0x8000);     // Nothing in lower slot
+                    svi_RAM_start = 0x8000;
                 }
                 else    // No RAM avaialble for any other combinations...
                 {
-                    debug3 = IOBYTE;
                     svi_RAM_start = 0xFFFF;
                     memset(pColecoMem+0x8000, 0xFF, 0x8000);    // No RAM in upper slot
                 }                

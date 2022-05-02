@@ -378,17 +378,11 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     // -------------------------------------------------------------
     if (sg1000_mode)
     {
-        if (address >= 0x8000)
+        // Allow normal SG-1000, SC-3000 writes, plus allow for 8K RAM Expanders...
+        if ((address >= 0x8000) || (address >= 0x2000 && address < 0x4000))
         {
-            pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
+            pColecoMem[address]=value;
         }
-        else
-        {        
-            if (address >= 0x2000 && address < 0x4000)
-            {
-                pColecoMem[address]=value;  // Allow writes in this 8K range to emulate DahJee RAM expander
-            }
-        }        
     }
     // ----------------------------------------------------------------------------------
     // For the Sord M5, RAM is at 0x7000 and we emulate the 32K RAM Expander above that
