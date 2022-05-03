@@ -49,7 +49,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
   // SG-1000 ports are 8-bit
   Port &= 0x00FF; 
 
-  if ((Port & 0xE0) == 0xA0)  // VDP Area
+  if ((Port >= 0x80) && (Port < 0xD0))  // VDP Area
   {
       if (Port & 1) return(RdCtrl9918()); 
       else return(RdData9918());
@@ -367,7 +367,7 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
     // ------------------------
     // Megacart Handling
     // ------------------------
-    if (Port >= 0xE0) 
+    if ((sg1000_mode == 2) && (Port >= 0xE0))
     {
         int game_no;
         
@@ -392,13 +392,16 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
         return;
     }
 
-    if ((Port & 0xE0) == 0xA0)  // VDP Area
+    if ((Port >= 0x80) && (Port < 0xD0))  // VDP Area
     {
         if ((Port & 1) == 0) WrData9918(Value);
         else if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }    // SG-1000 does not use NMI like Colecovision does...
     }
-    else if (Port == 0x7E) sn76496W(Value, &sncol);
-    else if (Port == 0x7F) sn76496W(Value, &sncol);
+    else if ((Port >= 0x40) && (Port < 0x80))
+    {
+        if (Port & 1) sn76496W(Value, &sncol);
+        else sn76496W(Value, &sncol);
+    }
     else if ((Port == 0xDC) || (Port == 0xC0)) Port_PPI_A = Value;
     else if ((Port == 0xDD) || (Port == 0xC1)) Port_PPI_B = Value;
     else if ((Port == 0xDE) || (Port == 0xC2)) 
