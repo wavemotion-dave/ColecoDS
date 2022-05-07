@@ -94,7 +94,7 @@ extern u8 key_int_mask;
 extern u32* lutTablehh;
 extern s32  cycle_deficit;
 extern u8 msx_sram_at_8000;
-extern u16 svi_RAM_start;
+extern u8 svi_RAM[2];
 extern u16 memotech_RAM_start;
 
 extern u8 memotech_magrom_present;

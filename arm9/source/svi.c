@@ -80,8 +80,8 @@ unsigned char cpu_readport_svi(register unsigned short Port)
   else if (Port == 0x98) 
   {
       Port_PPI_A |= 0x30;
-      if (JoyState & JST_FIREL) Port_PPI_A &= ~0x10;
-      if (JoyState & JST_FIRER) Port_PPI_A &= ~0x10;
+      if (JoyState & JST_FIREL)   Port_PPI_A &= ~0x10;
+      if (JoyState & JST_FIRER)   Port_PPI_A &= ~0x10;
       
       return Port_PPI_A;
   }
@@ -343,9 +343,10 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       {
           if (JoyState == JST_BLUE)   key1 |= 0x08;  // NUM3
       }
+      
       return ~key1;
   }
-  else if (Port == 0x9A) return Port_PPI_C;    
+  else if (Port == 0x9A) return Port_PPI_C;
     
   // No such port
   return(NORAM);
@@ -411,41 +412,55 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
 
             if (lastIOBYTE != IOBYTE)
             {
-                lastIOBYTE = IOBYTE;
+                u8 slotsEnabled = (~IOBYTE) & 0x1F;          // Positive logic 
                 
-                if (IOBYTE == 0x1F)   // Normal ROM + 32K Upper RAM
+                if (slotsEnabled == 0x00)  // Normal ROM + 32K Upper RAM (fairly common configuration)
                 {
                       FastMemCopy(pColecoMem, (u8 *)0x6820000, 0x8000); // Restore SVI BIOS (ram is already saved in Slot3RAM[])                      
                       SVI_PatchBIOS();
-                      if (svi_RAM_start == 0xFFFF)
-                      {
-                        memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
-                      }
-                      svi_RAM_start = 0x8000;
+                      memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
+                      svi_RAM[0]  = 0;
+                      svi_RAM[1]  = 1;
+                }
+                else // A bit more complicated - sort out the lower and upper banks...
+                {
+                    if (slotsEnabled & 0x02)   // SVI-328 RAM in lower slot is OK
+                    {
+                        memcpy(pColecoMem+0x0000, Slot3RAM+0x0000, 0x8000);     // Restore RAM in lower slot
+                        svi_RAM[0]  = 1;
+                    }
+                    else if (slotsEnabled & 0x08)   // No Expansion RAM in lower slot
+                    {
+                        memset(pColecoMem+0x0000, 0xFF, 0x8000);
+                        svi_RAM[0]  = 0;
+                    }
+                    else if (slotsEnabled & 0x01)   // No Game Cart in lower slot
+                    {
+                        memset(pColecoMem+0x0000, 0xFF, 0x8000);
+                        svi_RAM[0]  = 0;
+                    }
+                    else
+                    {
+                        FastMemCopy(pColecoMem, (u8 *)0x6820000, 0x8000); // Restore SVI BIOS (ram is already saved in Slot3RAM[])                      
+                        SVI_PatchBIOS();
+                        svi_RAM[0]  = 0;
+                    }
                     
-                }
-                else if (IOBYTE == 0x1D) // All 64K RAM
-                {
-                    if (svi_RAM_start == 0x8000)
+                    
+                    
+                    if (slotsEnabled & 0x14)   // No Expansion RAM in upper slot
                     {
-                      memcpy(pColecoMem, Slot3RAM, 0x8000);     // Restore RAM in lower slot
+                        memset(pColecoMem+0x8000, 0xFF, 0x8000);
+                        svi_RAM[1]  = 0;
                     }
-                    else if (svi_RAM_start == 0xFFFF)
+                    else
                     {
-                      memcpy(pColecoMem, Slot3RAM, 0x10000);     // Restore RAM in both slots
+                        memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
+                        svi_RAM[1]  = 1;
                     }
-                    svi_RAM_start = 0x0000;
                 }
-                else if (IOBYTE == 0x1E)   // Cart ROM (not present)
-                {
-                    memset(pColecoMem, 0xFF, 0x8000);     // Nothing in lower slot
-                    svi_RAM_start = 0x8000;
-                }
-                else    // No RAM avaialble for any other combinations...
-                {
-                    svi_RAM_start = 0xFFFF;
-                    memset(pColecoMem+0x8000, 0xFF, 0x8000);    // No RAM in upper slot
-                }                
+                
+                lastIOBYTE = IOBYTE;
             }
         }        
     }
@@ -457,6 +472,28 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     {
         Port_PPI_C = Value;
     }
+    else if (Port == 0x97)  // PPI - Mode/Control
+    {
+        if ((Value & 0x80) == 0)    // Set or Clear Bits
+        {
+            if (Value & 0x01)
+            {
+                Port_PPI_C |= (0x01 << ((Value >> 1) & 0x07));
+            }
+            else
+            {
+                Port_PPI_C &= ~(0x01 << ((Value >> 1) & 0x07));
+            }
+        }
+        else
+        {
+        }        
+    }
+  else if (Port > 0x80)
+  {
+      
+  }
+    
 }
 
 // ---------------------------------------------------------
@@ -471,7 +508,8 @@ void svi_reset(void)
         lastIOBYTE = 99;
         tape_pos = 0;
 
-        svi_RAM_start = 0x8000;
+        svi_RAM[0] = 0;
+        svi_RAM[1] = 1;
         
         Port_PPI_A = 0x00;
         Port_PPI_B = 0x00;       
@@ -500,9 +538,9 @@ void SVI_HandleCassette(register Z80 *r)
         // Find Header/Program
         while (!done)
         {
-            if ((romBuffer[tape_pos] == 0x55) && (romBuffer[tape_pos+1] == 0x55) && (romBuffer[tape_pos+2] == 0x7F))
+            if ((romBuffer[tape_pos] == 0x55) && (romBuffer[tape_pos+1] == 0x55) && (romBuffer[tape_pos+2] == 0x55) && (romBuffer[tape_pos+3] == 0x55) && (romBuffer[tape_pos+4] == 0x7F))
             {
-                tape_pos++; tape_pos++;
+                tape_pos++; tape_pos++; tape_pos++; tape_pos++;
                 break;
             }
             tape_pos++;
