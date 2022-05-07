@@ -822,7 +822,7 @@ void Reset9918(void)
     {
         vdp_int_source = INT_NONE;  // Einstein does NOT interrupt via VDP!
     }
-    else    // Pretty much just the colecovision and ADAM plus Pencil II
+    else    // The colecovision and ADAM plus Pencil II, PV-2000 use NMI 
     {
         vdp_int_source = INT_NMI;
     }

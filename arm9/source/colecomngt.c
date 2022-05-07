@@ -37,7 +37,7 @@ u8 sg1000_double_reset = false;
 // Some IO Port and Memory Map vars...
 // -------------------------------------
 u16 memotech_RAM_start  = 0x4000;
-u16 svi_RAM_start       = 0x8000;
+u8 svi_RAM[2]           = {0,1};
 u8 IOBYTE               = 0x00;
 u8 MTX_KBD_DRIVE        = 0x00;
 u8 lastIOBYTE           = 99;

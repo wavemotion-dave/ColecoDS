@@ -41,7 +41,7 @@ extern u8 adam_ram_hi;
 extern u8 adam_ram_lo_exp;
 extern u8 adam_ram_hi_exp;
 extern u8 AdamRAM[];
-extern u16 svi_RAM_start;
+extern u8 svi_RAM[2];
 
 // -----------------------------
 // Normal 8-bit Read... fast!
@@ -431,11 +431,11 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         Slot3RAM[address] = value;        // Plus shadow copy to improve bank switching
     }
     // ----------------------------------------------------------------------------------
-    // For the Spectravideo SVI - we allow anything above the base ROM area
+    // For the Spectravideo SVI - we write into any area that is designated as RAM
     // ----------------------------------------------------------------------------------
     else if (svi_mode)
     {
-        if (address >= svi_RAM_start) 
+        if ( ((address < 0x8000) && svi_RAM[0]) || ((address >= 0x8000) && svi_RAM[1]) )
         {
             extern u8 Slot3RAM[];
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
