@@ -64,6 +64,11 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (JoyState & JST_DOWN)  joy1 |= 0x02;
               if (JoyState & JST_LEFT)  joy1 |= 0x04;
               if (JoyState & JST_RIGHT) joy1 |= 0x08;
+
+              if (JoyState & (JST_UP << 16))    joy1 |= 0x10;
+              if (JoyState & (JST_DOWN << 16))  joy1 |= 0x20;
+              if (JoyState & (JST_LEFT << 16))  joy1 |= 0x40;
+              if (JoyState & (JST_RIGHT << 16)) joy1 |= 0x80;
           }
           else if (myConfig.dpad == DPAD_DIAGONALS)
           {
@@ -79,9 +84,12 @@ unsigned char cpu_readport_svi(register unsigned short Port)
   }    
   else if (Port == 0x98) 
   {
-      Port_PPI_A |= 0x30;
+      Port_PPI_A |= 0x3F;
       if (JoyState & JST_FIREL)   Port_PPI_A &= ~0x10;
       if (JoyState & JST_FIRER)   Port_PPI_A &= ~0x10;
+
+      if (JoyState & (JST_FIREL<<16))   Port_PPI_A &= ~0x20;
+      if (JoyState & (JST_FIRER<<16))   Port_PPI_A &= ~0x20;
       
       return Port_PPI_A;
   }
@@ -431,6 +439,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     }
                     else if (slotsEnabled & 0x08)   // No Expansion RAM in lower slot
                     {
+                        debug2++;
                         memset(pColecoMem+0x0000, 0xFF, 0x8000);
                         svi_RAM[0]  = 0;
                     }
@@ -450,12 +459,16 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     
                     if (slotsEnabled & 0x14)   // No Expansion RAM in upper slot
                     {
+                        debug3++;
                         memset(pColecoMem+0x8000, 0xFF, 0x8000);
                         svi_RAM[1]  = 0;
                     }
                     else
                     {
-                        memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
+                        if (svi_RAM[1] == 0)
+                        {
+                            memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
+                        }
                         svi_RAM[1]  = 1;
                     }
                 }
@@ -474,6 +487,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     }
     else if (Port == 0x97)  // PPI - Mode/Control
     {
+        Port_PPI_CTRL = Value;
         if ((Value & 0x80) == 0)    // Set or Clear Bits
         {
             if (Value & 0x01)
@@ -497,14 +511,13 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
 }
 
 // ---------------------------------------------------------
-// The SVI has some tape related stuff
+// The SVI has some tape related stuff and memory banking
 // ---------------------------------------------------------
 void svi_reset(void)
 {
     if (svi_mode)
     {
         IOBYTE = 0x00;
-        MTX_KBD_DRIVE = 0x00;
         lastIOBYTE = 99;
         tape_pos = 0;
 

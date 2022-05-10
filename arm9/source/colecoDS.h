@@ -180,6 +180,7 @@ extern u8 adam_unsaved_data;
 extern u8 creativision_mode;
 
 extern char lastAdamDataPath[];
+extern u32 tape_pos, tape_len;
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
@@ -198,6 +199,9 @@ extern int bg0, bg1, bg0b,bg1b;
 extern u16 *pVidFlipBuf;                         // Video flipping buffer
 
 extern C24XX EEPROM;
+
+extern u8 adam_ram_lo, adam_ram_hi;
+extern u8 io_show_status;
 
 extern void showMainMenu(void);
 extern void InitBottomScreen(void);

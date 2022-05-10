@@ -112,6 +112,7 @@ extern u8 msx_beeper_enabled;
 extern u8 Port_PPI_A;
 extern u8 Port_PPI_B;
 extern u8 Port_PPI_C;
+extern u8 Port_PPI_CTRL;
 
 
 extern u8 ctc_control[4];
@@ -148,7 +149,6 @@ extern u32 last_tape_pos;
 extern u8* Slot3RAMPtr;
 extern u8* Slot0BIOSPtr;
 extern u32 LastROMSize;
-extern u8 Port_PPI_CTRL;
 extern u8 OldPortC;
 extern u8 myKeyData;
 extern u8 adc_mux;

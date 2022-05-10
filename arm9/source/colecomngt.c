@@ -36,19 +36,19 @@ u8 sg1000_double_reset = false;
 // -------------------------------------
 // Some IO Port and Memory Map vars...
 // -------------------------------------
-u16 memotech_RAM_start  = 0x4000;
-u8 svi_RAM[2]           = {0,1};
-u8 IOBYTE               = 0x00;
-u8 MTX_KBD_DRIVE        = 0x00;
-u8 lastIOBYTE           = 99;
-u32 tape_pos            = 0;
-u32 tape_len            = 0;
-u8 key_shift_hold       = 0;
+u16 memotech_RAM_start  __attribute__((section(".dtcm"))) = 0x4000;
+u8 svi_RAM[2]           __attribute__((section(".dtcm"))) = {0,1};
+u8 IOBYTE               __attribute__((section(".dtcm"))) = 0x00;
+u8 MTX_KBD_DRIVE        __attribute__((section(".dtcm"))) = 0x00;
+u8 lastIOBYTE           __attribute__((section(".dtcm"))) = 99;
+u32 tape_pos            __attribute__((section(".dtcm"))) = 0;
+u32 tape_len            __attribute__((section(".dtcm"))) = 0;
+u8 key_shift_hold       __attribute__((section(".dtcm"))) = 0;
 
-u8 adam_ram_lo          = false;
-u8 adam_ram_hi          = false;
-u8 adam_ram_lo_exp      = false;
-u8 adam_ram_hi_exp      = false;
+u8 adam_ram_lo          __attribute__((section(".dtcm"))) = false;
+u8 adam_ram_hi          __attribute__((section(".dtcm"))) = false;
+u8 adam_ram_lo_exp      __attribute__((section(".dtcm"))) = false;
+u8 adam_ram_hi_exp      __attribute__((section(".dtcm"))) = false;
 
 Z80 CPU __attribute__((section(".dtcm")));
 
@@ -109,7 +109,7 @@ u8 AY_EnvelopeOn   __attribute__((section(".dtcm"))) = false;
 u8  JoyMode        __attribute__((section(".dtcm"))) = 0;           // Joystick Mode (1=Keypad, 0=Joystick)
 u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick State for P1 and P2
 
-s16 timingAdjustment = 0;
+s16 timingAdjustment __attribute__((section(".dtcm"))) = 0;
 
 // ---------------------------------------------------------------
 // We provide 5 "Sensitivity" settings for the X/Y spinner
@@ -148,7 +148,10 @@ void sgm_reset(void)
    
     sgm_enable = false;          // Default to no SGM until enabled
     sgm_low_addr = 0x2000;       // And the first 8K is BIOS
-    AY_Enable = false;           // Default to no AY use until accessed
+    if (!msx_mode && !svi_mode && !einstein_mode)
+    {
+        AY_Enable = false;       // Default to no AY use until accessed
+    }
     AY_EnvelopeOn = false;       // No Envelope mode yet
     bFirstSGMEnable = true;      // First time SGM enable we clear ram
     
@@ -588,7 +591,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
-            tape_len = iSSize;  // For Memotech MTX, the tape size is saved for showing tape load progress
+            tape_len = iSSize;  // For MSX, the tape size is saved for showing tape load progress
             tape_pos = 0;
             last_tape_pos = 9999;
             MSX_InitialMemoryLayout(iSSize);
@@ -616,7 +619,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 512K
         {
-            tape_len = iSSize;  // For Memotech MTX, the tape size is saved for showing tape load progress
+            tape_len = iSSize;  // The tape size is saved for showing tape load progress
             tape_pos = 0;
             last_tape_pos = 9999;
         }
