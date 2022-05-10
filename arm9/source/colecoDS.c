@@ -62,19 +62,6 @@ u32 debug1=0;
 u32 debug2=0;
 u32 debug3=0;
 u32 debug4=0;
-u32 debug5=0;
-u32 debug6=0;
-extern u8 adam_ram_lo, adam_ram_hi;
-extern u8 io_show_status;
-u8 adam_CapsLock = 0;
-u8 adam_unsaved_data = 0;
-u8 key_shift = false;
-u8 key_ctrl = false;
-u8 write_EE_counter=0;
-
-u32 last_tape_pos = 9999;
-
-extern u32 tape_pos, tape_len;
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -85,47 +72,73 @@ extern u32 tape_pos, tape_len;
 //    0x8000-0xFFFF  32K Cartridge Space
 // --------------------------------------------------------------------------
 u8 pColecoMem[0x10000] ALIGN(32) = {0};             
-u8 ColecoBios[0x2000] = {0};  // We keep the Coleco  8K BIOS around to swap in/out
-u8 SordM5Bios[0x2000] = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
-u8 PV2000Bios[0x4000] = {0};  // We keep the Casio PV-2000 16K BIOS around to swap in/out
-u8 MSXBios[0x8000]    = {0};  // We keep the MSX 32K BIOS around to swap in/out
-u8 AdamEOS[0x2000]    = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
-u8 AdamWRITER[0x8000] = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
-u8 SVIBios[0x8000]    = {0};  // We keep the SVI 32K BIOS around to swap in/out
-u8 Pencil2Bios[0x2000]= {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
-u8 EinsteinBios[0x2000]={0};  // We keep the 8k Einstein BIOS around
-u8 CreativisionBios[0x800]={0};  // We keep the 2k Creativision BIOS around
+u8 ColecoBios[0x2000]     = {0};  // We keep the Coleco  8K BIOS around to swap in/out
+u8 SordM5Bios[0x2000]     = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
+u8 PV2000Bios[0x4000]     = {0};  // We keep the Casio PV-2000 16K BIOS around to swap in/out
+u8 MSXBios[0x8000]        = {0};  // We keep the MSX 32K BIOS around to swap in/out
+u8 AdamEOS[0x2000]        = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
+u8 AdamWRITER[0x8000]     = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
+u8 SVIBios[0x8000]        = {0};  // We keep the SVI 32K BIOS around to swap in/out
+u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
+u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
+u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
 
-C24XX EEPROM;                 // For Activision PCBs we have up to 32K of EEPROM
+// --------------------------------------------------------------------------------
+// For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
+// --------------------------------------------------------------------------------
+C24XX EEPROM;
 
-// Various sound chips in the system
+// ------------------------------------------
+// Some ADAM and Tape related vars...
+// ------------------------------------------
+u8 adam_CapsLock        = 0;
+u8 adam_unsaved_data    = 0;
+u8 write_EE_counter     = 0;
+u8 last_adam_key        = -1;
+u32 last_tape_pos       = 9999;
+
+// --------------------------------------------------------------------------
+// For machines that have a full keybaord, we use the Left and Right
+// shoulder buttons on the NDS to emulate the SHIFT and CTRL keys...
+// --------------------------------------------------------------------------
+u8 key_shift = false;
+u8 key_ctrl  = false;
+
+// ------------------------------------------------------------------------------------------
+// Various sound chips in the system. We emulate the SN and AY sound chips but both of 
+// these really still use the underlying SN76496 sound chip driver for siplicity and speed.
+// ------------------------------------------------------------------------------------------
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
 extern SN76496 aycol;       // The AY sound chip is for the Super Game Moudle
+       SN76496 snmute;      // We keep this handy as a simple way to mute the sound
 
-SN76496 snmute;             // We keep this handy as a simple way to mute the sound
-
-// Some timing and frame rate comutations
+// ---------------------------------------------------------------------------
+// Some timing and frame rate comutations to keep the emulation on pace...
+// ---------------------------------------------------------------------------
 u16 emuFps=0;
 u16 emuActFrames=0;
 u16 timingFrames=0;
 
-u8 last_adam_key = -1;
-
-// For the various BIOS files ... only the coleco.rom is required
-u8 bColecoBiosFound = false;
-u8 bSordBiosFound = false;
-u8 bMSXBiosFound = false;
-u8 bSVIBiosFound = false;
-u8 bAdamBiosFound = false;
-u8 bPV2000BiosFound = false;
-u8 bPencilBiosFound = false;
-u8 bEinsteinBiosFound = false;
-u8 bCreativisionBiosFound = false;
+// -----------------------------------------------------------------------------------------------
+// For the various BIOS files ... only the coleco.rom is required - everything else is optional.
+// -----------------------------------------------------------------------------------------------
+u8 bColecoBiosFound         = false;
+u8 bSordBiosFound           = false;
+u8 bMSXBiosFound            = false;
+u8 bSVIBiosFound            = false;
+u8 bAdamBiosFound           = false;
+u8 bPV2000BiosFound         = false;
+u8 bPencilBiosFound         = false;
+u8 bEinsteinBiosFound       = false;
+u8 bCreativisionBiosFound   = false;
 
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
 u8 soundEmuPause     __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
-     
+
+// -----------------------------------------------------------------------------------------------
+// This set of critical vars is what determines the machine type - Coleco vs MSX vs SVI, etc.
+// -----------------------------------------------------------------------------------------------
 u8 sg1000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
 u8 sordm5_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
 u8 pv2000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
@@ -146,7 +159,9 @@ int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 
 u16 NDS_keyMap[12] = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
 
+// --------------------------------------------------------------------
 // The key map for the Colecovision... mapped into the NDS controller
+// --------------------------------------------------------------------
 u32 keyCoresp[MAX_KEY_OPTIONS] = {
     JST_UP, 
     JST_DOWN, 
@@ -281,13 +296,11 @@ void SoundUnPause(void)
     soundEmuPause = 0;
 }
 
-// --------------------------------------------
+// --------------------------------------------------------------------------------------------
 // MAXMOD streaming setup and handling...
-// We were using the normal ARM7 sound core but
-// it sounded "scratchy" and so with the help
-// of FluBBa, we've swiched over to the maxmod
-// sound core which seems to perform better.
-// --------------------------------------------
+// We were using the normal ARM7 sound core but it sounded "scratchy" and so with the help
+// of FluBBa, we've swiched over to the maxmod sound core which performs much better.
+// --------------------------------------------------------------------------------------------
 #define sample_rate  27965      // To match the driver in sn76496 - this is good enough quality for the DS
 #define buffer_size  (512+12)   // Enough buffer that we don't have to fill it too often
 
@@ -466,9 +479,12 @@ static u8 last_adam_mode = 0;
 static u8 last_scc_mode = 0;
 
 
+// --------------------------------------------------------------
+// When we reset the machine, there are many small utility flags 
+// for various expansion peripherals that must be reset.
+// --------------------------------------------------------------
 void ResetStatusFlags(void)
 {
-  // Some utility flags for various expansion peripherals
   last_sgm_mode = false;
   last_ay_mode  = false;
   last_mc_mode  = 0;
@@ -483,6 +499,10 @@ void ResetStatusFlags(void)
   last_adam_mode = 0;
 }
 
+// --------------------------------------------------------------
+// When we first load a ROM/CASSETTE or when the user presses
+// the RESET button on the touch-screen...
+// --------------------------------------------------------------
 void ResetColecovision(void)
 {
   JoyMode=JOYMODE_JOYSTICK;             // Joystick mode key
@@ -614,14 +634,14 @@ void ResetColecovision(void)
 //*********************************************************************************
 const char *VModeNames[] =
 {
-    "VDP 0  ",  
-    "VDP 3  ",  
-    "VDP 2  ",  
-    "VDP 2+3",  
-    "VDP 1  ",  
-    "VDP ?5 ",  
-    "VDP 1+2",  
-    "VDP ?7 ",  
+    "VDP_0  ",  
+    "VDP_3  ",  
+    "VDP_2  ",  
+    "VDP_2+3",  
+    "VDP_1  ",  
+    "VDP_?5 ",  
+    "VDP_1+2",  
+    "VDP_?7 ",  
 };
 
 void ShowDebugZ80(void)
@@ -633,7 +653,6 @@ void ShowDebugZ80(void)
     extern u8 lastBank;
     extern u8 romBankMask;
     extern u8 Port20, Port53, Port60;
-    extern u16 PCBAddr;
     siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
     AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
@@ -687,32 +706,37 @@ void ShowDebugZ80(void)
         AffChaine(0,idx++,7, tmp);
         siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
         AffChaine(0,idx++,7, tmp);
+        idx++;
     }
     else
     {
-        siprintf(tmp, "SNCH0 %5d %5d %5d %2d", sncol.ch0Frq, sncol.ch0Cnt, sncol.ch0Reg, sncol.ch0Att);
+        siprintf(tmp, "SN0 %04X %04X %2d", sncol.ch0Frq, sncol.ch0Reg, sncol.ch0Att);
         AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "SNCH1 %5d %5d %5d %2d", sncol.ch1Frq, sncol.ch1Cnt, sncol.ch1Reg, sncol.ch1Att);
+        siprintf(tmp, "SN1 %04X %04X %2d", sncol.ch1Frq, sncol.ch1Reg, sncol.ch1Att);
         AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "SNCH2 %5d %5d %5d %2d", sncol.ch2Frq, sncol.ch2Cnt, sncol.ch2Reg, sncol.ch2Att);
+        siprintf(tmp, "SN2 %04X %04X %2d", sncol.ch2Frq, sncol.ch2Reg, sncol.ch2Att);
         AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "SNCH3 %5d %5d %5d %2d", sncol.ch3Frq, sncol.ch3Cnt, sncol.ch3Reg, sncol.ch3Att);
+        siprintf(tmp, "SN3 %04X %04X %2d", sncol.ch3Frq, sncol.ch3Reg, sncol.ch3Att);
         AffChaine(0,idx++,7, tmp);
         idx++;
     }
     
-    siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "PORTS %02X %02X %02X", Port20, Port53, Port60);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);
-    AffChaine(0,idx++,7, tmp);  
+    siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             AffChaine(0,idx++,7, tmp);  
+    siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            AffChaine(0,idx++,7, tmp);  
 #endif    
 
-    siprintf(tmp, "DEBG  %lu %lu %04X", debug1, debug2, PCBAddr);
-    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "DEBG  %lu %lu", debug3, debug4);
-    AffChaine(0,idx++,7, tmp);
+    idx = 1;
+    siprintf(tmp, "D1 %-5lu %04X", debug1, (u16)debug1); AffChaine(19,idx++,7, tmp);
+    siprintf(tmp, "D2 %-5lu %04X", debug2, (u16)debug2); AffChaine(19,idx++,7, tmp);
+    siprintf(tmp, "D3 %-5lu %04X", debug3, (u16)debug3); AffChaine(19,idx++,7, tmp);
+    siprintf(tmp, "D4 %-5lu %04X", debug4, (u16)debug4); AffChaine(19,idx++,7, tmp);
+    idx++;
+    siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); AffChaine(19,idx++,7, tmp);
+    siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    AffChaine(19,idx++,7, tmp);
+    siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); AffChaine(19,idx++,7, tmp);
+    idx++;
 }
     
     
@@ -2025,6 +2049,13 @@ void InitBottomScreen(void)
     }
     else if (myConfig.overlay == 9)  // Full Keyboard - show the right one based on mode
     {
+#ifdef DEBUG_Z80
+          //  Init bottom screen
+          decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
+#else        
         if (!adam_mode) // Show generic full keybaord
         {
           //  Init bottom screen
@@ -2041,6 +2072,7 @@ void InitBottomScreen(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
         }
+#endif        
     }
     else // Generic Overlay
     {

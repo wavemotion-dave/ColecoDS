@@ -822,6 +822,38 @@ void SaveConfig(bool bShow)
     }
 }
 
+void MapPlayer2(void)
+{
+    myConfig.keymap[0]   = 20;    // NDS D-Pad mapped to CV Joystick UP
+    myConfig.keymap[1]   = 21;    // NDS D-Pad mapped to CV Joystick DOWN
+    myConfig.keymap[2]   = 22;    // NDS D-Pad mapped to CV Joystick LEFT
+    myConfig.keymap[3]   = 23;    // NDS D-Pad mapped to CV Joystick RIGHT
+    myConfig.keymap[4]   = 24;    // NDS A Button mapped to CV Button 1 (Yellow / Left Button)
+    myConfig.keymap[5]   = 25;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
+    myConfig.keymap[6]   = 26;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
+    myConfig.keymap[7]   = 27;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
+    myConfig.keymap[8]   = 30;    // NDS L      mapped to Keypad #3
+    myConfig.keymap[9]   = 31;    // NDS R      mapped to Keypad #4
+    myConfig.keymap[10]  = 28;    // NDS Start  mapped to Keypad #1
+    myConfig.keymap[11]  = 29;    // NDS Select mapped to Keypad #2
+}
+
+void MapPlayer1(void)
+{
+    myConfig.keymap[0]   = 0;    // NDS D-Pad mapped to CV Joystick UP
+    myConfig.keymap[1]   = 1;    // NDS D-Pad mapped to CV Joystick DOWN
+    myConfig.keymap[2]   = 2;    // NDS D-Pad mapped to CV Joystick LEFT
+    myConfig.keymap[3]   = 3;    // NDS D-Pad mapped to CV Joystick RIGHT
+    myConfig.keymap[4]   = 4;    // NDS A Button mapped to CV Button 1 (Yellow / Left Button)
+    myConfig.keymap[5]   = 5;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
+    myConfig.keymap[6]   = 6;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
+    myConfig.keymap[7]   = 7;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
+    myConfig.keymap[8]   = 10;   // NDS L      mapped to Keypad #3
+    myConfig.keymap[9]   = 11;   // NDS R      mapped to Keypad #4
+    myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
+    myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
+}
+
 void SetDefaultGameConfig(void)
 {
     myConfig.keymap[0]   = 0;    // NDS D-Pad mapped to CV Joystick UP
@@ -935,6 +967,12 @@ void SetDefaultGameConfig(void)
         myConfig.keymap[5]   = 5;    // NDS B Button mapped to P1 Button 2 
         myConfig.keymap[6]   = 24;   // NDS X Button mapped to P2 Button 1
         myConfig.keymap[7]   = 25;   // NDS Y Button mapped to P2 Button 2         
+    }
+    
+    if ((file_crc == 0xeec68527) ||     // SVI Crazy Teeth
+        (file_crc == 0x1748aed7))       // SVI Burkensoft Game Pak 14 with MEGALONE
+    {
+        MapPlayer2();               // These games want P2 mapping...
     }
     
     // --------------------------------------------------------------------------
@@ -1309,29 +1347,29 @@ void DisplayKeymapName(u32 uY)
   char szCha[34];
 
   siprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
-  AffChaine(1, 7,(uY==  7 ? 2 : 0),szCha);
+  AffChaine(1, 6,(uY==  6 ? 2 : 0),szCha);
   siprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
-  AffChaine(1, 8,(uY==  8 ? 2 : 0),szCha);
+  AffChaine(1, 7,(uY==  7 ? 2 : 0),szCha);
   siprintf(szCha," PAD LEFT  : %-17s",szKeyName[myConfig.keymap[2]]);
-  AffChaine(1, 9,(uY==  9 ? 2 : 0),szCha);
+  AffChaine(1, 8,(uY==  8 ? 2 : 0),szCha);
   siprintf(szCha," PAD RIGHT : %-17s",szKeyName[myConfig.keymap[3]]);
-  AffChaine(1,10,(uY== 10 ? 2 : 0),szCha);
+  AffChaine(1, 9,(uY== 9 ? 2 : 0),szCha);
   siprintf(szCha," KEY A     : %-17s",szKeyName[myConfig.keymap[4]]);
-  AffChaine(1,11,(uY== 11 ? 2 : 0),szCha);
+  AffChaine(1,10,(uY== 10 ? 2 : 0),szCha);
   siprintf(szCha," KEY B     : %-17s",szKeyName[myConfig.keymap[5]]);
-  AffChaine(1,12,(uY== 12 ? 2 : 0),szCha);
+  AffChaine(1,11,(uY== 11 ? 2 : 0),szCha);
   siprintf(szCha," KEY X     : %-17s",szKeyName[myConfig.keymap[6]]);
-  AffChaine(1,13,(uY== 13 ? 2 : 0),szCha);
+  AffChaine(1,12,(uY== 12 ? 2 : 0),szCha);
   siprintf(szCha," KEY Y     : %-17s",szKeyName[myConfig.keymap[7]]);
-  AffChaine(1,14,(uY== 14 ? 2 : 0),szCha);
+  AffChaine(1,13,(uY== 13 ? 2 : 0),szCha);
   siprintf(szCha," KEY R     : %-17s",szKeyName[myConfig.keymap[8]]);
-  AffChaine(1,15,(uY== 15 ? 2 : 0),szCha);
+  AffChaine(1,14,(uY== 14 ? 2 : 0),szCha);
   siprintf(szCha," KEY L     : %-17s",szKeyName[myConfig.keymap[9]]);
-  AffChaine(1,16,(uY== 16 ? 2 : 0),szCha);
+  AffChaine(1,15,(uY== 15 ? 2 : 0),szCha);
   siprintf(szCha," START     : %-17s",szKeyName[myConfig.keymap[10]]);
-  AffChaine(1,17,(uY== 17 ? 2 : 0),szCha);
+  AffChaine(1,16,(uY== 16 ? 2 : 0),szCha);
   siprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
-  AffChaine(1,18,(uY== 18 ? 2 : 0),szCha);
+  AffChaine(1,17,(uY== 17 ? 2 : 0),szCha);
 }
 
 // ------------------------------------------------------------------------------
@@ -1340,7 +1378,7 @@ void DisplayKeymapName(u32 uY)
 // ------------------------------------------------------------------------------
 void colecoDSChangeKeymap(void) 
 {
-  u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucY= 7, bOK=0, bIndTch=0;
+  u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucY= 6, bOK=0, bIndTch=0;
 
   // ------------------------------------------------------
   // Clear the screen so we can put up Key Map infomation
@@ -1351,9 +1389,9 @@ void colecoDSChangeKeymap(void)
   // --------------------------------------------------
   // Give instructions to the user...
   // --------------------------------------------------
-  AffChaine(9,5,0,("=*   KEYS  *="));
-  AffChaine(1 ,20,0,("   D-PAD : CHANGE KEY MAP    "));
-  AffChaine(1 ,21,0,("       B : RETURN MAIN MENU  "));
+  AffChaine(1 ,19,0,("   D-PAD : CHANGE KEY MAP    "));
+  AffChaine(1 ,20,0,("       B : RETURN MAIN MENU  "));
+  AffChaine(1 ,21,0,("       X : SWAP P1/P2 MAP    "));
   AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
   DisplayKeymapName(ucY);
   
@@ -1362,7 +1400,7 @@ void colecoDSChangeKeymap(void)
   // NDS keys are not being pressed. This prevents the inadvertant A key
   // that enters this menu from also being acted on in the keymap...
   // -----------------------------------------------------------------------
-  while ((keysCurrent() & (KEY_TOUCH | KEY_B | KEY_A | KEY_UP | KEY_DOWN))!=0)
+  while ((keysCurrent() & (KEY_TOUCH | KEY_B | KEY_A | KEY_X | KEY_UP | KEY_DOWN))!=0)
       ;
   WAITVBL;
  
@@ -1370,8 +1408,8 @@ void colecoDSChangeKeymap(void)
     if (keysCurrent() & KEY_UP) {
       if (!ucHaut) {
         DisplayKeymapName(32);
-        ucY = (ucY == 7 ? 18 : ucY -1);
-        bIndTch = myConfig.keymap[ucY-7];
+        ucY = (ucY == 6 ? 17 : ucY -1);
+        bIndTch = myConfig.keymap[ucY-6];
         ucHaut=0x01;
         DisplayKeymapName(ucY);
       }
@@ -1386,8 +1424,8 @@ void colecoDSChangeKeymap(void)
     if (keysCurrent() & KEY_DOWN) {
       if (!ucBas) {
         DisplayKeymapName(32);
-        ucY = (ucY == 18 ? 7 : ucY +1);
-        bIndTch = myConfig.keymap[ucY-7];
+        ucY = (ucY == 17 ? 6 : ucY +1);
+        bIndTch = myConfig.keymap[ucY-6];
         ucBas=0x01;
         DisplayKeymapName(ucY);
       }
@@ -1415,7 +1453,7 @@ void colecoDSChangeKeymap(void)
         if (ucL == 0) {
           bIndTch = (bIndTch == 0 ? (MAX_KEY_OPTIONS-1) : bIndTch-1);
           ucL=1;
-          myConfig.keymap[ucY-7] = bIndTch;
+          myConfig.keymap[ucY-6] = bIndTch;
           DisplayKeymapName(ucY);
         }
         else {
@@ -1434,7 +1472,7 @@ void colecoDSChangeKeymap(void)
         {
           bIndTch = (bIndTch == (MAX_KEY_OPTIONS-1) ? 0 : bIndTch+1);
           ucR=1;
-          myConfig.keymap[ucY-7] = bIndTch;
+          myConfig.keymap[ucY-6] = bIndTch;
           DisplayKeymapName(ucY);
         }
         else 
@@ -1446,6 +1484,20 @@ void colecoDSChangeKeymap(void)
     else
     {
         ucR=0;
+    }
+      
+    // Swap Player 1 and Player 2 keymap
+    if (keysCurrent() & KEY_X)
+    {
+        if (myConfig.keymap[0] != 20)
+            MapPlayer2();
+        else 
+            MapPlayer1();
+        bIndTch = myConfig.keymap[ucY-6];
+        DisplayKeymapName(ucY);
+        while (keysCurrent() & KEY_X) 
+            ;
+        WAITVBL
     }
     affMario();
     swiWaitForVBlank();
