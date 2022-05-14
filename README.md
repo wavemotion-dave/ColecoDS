@@ -76,6 +76,8 @@ and the CZ80 CPU core).  I think the original
 port was circa ColEM 2.1 with some fixes and 
 updated Sprite/Line handling from ColEM 5.6
 
+Without Marat - this emulator simply wouldn't exist.
+
 Known Issues :
 -----------------------
 * Borders are not correctly rendered - only a few games utilize them and are still fully playable without this.
@@ -247,6 +249,13 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.2: 14-May-2022 by wavemotion-dave
+* Improved Einstein driver to allow SHIFT and CONTROL key maps. 
+* Added AY Envelope Reset option for the few games that need it (Warp & Warp, Killer Station)
+* Added 2P mapping support for SVI games so MEGALONE (Burken Pak 14) and CRAZY TEETH will play properly.
+* Improved the SG-1000 driver so that the Dahjee and TW bootlegs work.
+* Added F1-F8 as assinable maps on Memotech
+
 V7.1: 1-May-2022 by wavemotion-dave
 * Fixed PV-2000 driver (broken in 7.0).
 * Minor optmization for the CreatiVision to help on older DS-LITE/PHAT.
