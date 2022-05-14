@@ -45,7 +45,6 @@ extern u32 file_crc;
 u8 dev_z80_cycles = 0;
 u8 option_table=0;
 
-
 const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P1 JOY UP",
   "P1 JOY DOWN",
@@ -888,6 +887,7 @@ void SetDefaultGameConfig(void)
     myConfig.memWipe     = 0;    
     myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY;
     myConfig.cvEESize    = C24XX_24C256;
+    myConfig.ayEnvelope  = 0;
     myConfig.reservedA1  = 0;    
     myConfig.reservedA2  = 0;    
     myConfig.reservedA3  = 0;    
@@ -1043,6 +1043,16 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x635064bc)                 myConfig.memWipe = 3;  // MTX Toado wants a special Random memory wipe
     if (file_crc == 0x3c8500af)                 myConfig.memWipe = 3;  // MTX Target Zone wants a special Random memory wipe
     
+    // ---------------------------------------------------------------------------------------------
+    // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
+    // ---------------------------------------------------------------------------------------------
+    if (file_crc == 0x90f5f414) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp
+    if (file_crc == 0x5e169d35) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
+    if (file_crc == 0xe66eaed9) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
+    if (file_crc == 0x785fc789) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)    
+    if (file_crc == 0xe50d6e60) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (cassette)    
+    if (file_crc == 0x73f37230) myConfig.ayEnvelope = 1; // MSX Killer Station
+    
     // ----------------------------------------------------------------------------
     // For these machines, we default to clearing interrupts only on VDP read...
     // ----------------------------------------------------------------------------
@@ -1190,6 +1200,7 @@ const struct options_t Option_Table[2][20] =
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
+        {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                               &myConfig.ayEnvelope, 2},
 #if 0   // Developer use only   
         {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
 #endif    
