@@ -290,8 +290,6 @@ void UpdateTonesAY(void)
 // ------------------------------------------------------------------------------------------------------------------
 void FakeAY_WriteData(u8 Value)
 {
-      extern u8 bDontResetEnvelope;
-    
       // ----------------------------------------------------------------------------------------
       // This is the AY sound chip support... we're cheating here and just mapping those sounds
       // onto the original Colecovision SN sound chip. Not perfect but good enough.
@@ -345,7 +343,7 @@ void FakeAY_WriteData(u8 Value)
           case 0x08:
               if (Value & 0x10) // Is Envelope Mode for Channel A active?
               {
-                  if (bDontResetEnvelope == false) a_idx = 0;
+                  if (myConfig.ayEnvelope == 0) a_idx = 0;
                   ay_reg[0x08] &= 0xF0 | (prevVal & 0x0F);
                   envelope_counter = 0xF000;    // Force first state change immediately
                   AY_EnvelopeOn = true;
@@ -361,7 +359,7 @@ void FakeAY_WriteData(u8 Value)
           case 0x09:
               if (Value & 0x10)  // Is Envelope Mode for Channel B active?
               {
-                  if (bDontResetEnvelope == false) b_idx = 0;
+                  if (myConfig.ayEnvelope == 0) b_idx = 0;
                   ay_reg[0x09] &= 0xF0 | (prevVal & 0x0F);
                   envelope_counter = 0xF000;    // Force first state change immediately
                   AY_EnvelopeOn = true;
@@ -377,7 +375,7 @@ void FakeAY_WriteData(u8 Value)
           case 0x0A:
               if (Value & 0x10)   // Is Envelope Mode for Channel C active?
               {
-                  if (bDontResetEnvelope == false) c_idx = 0;
+                  if (myConfig.ayEnvelope == 0) c_idx = 0;
                   ay_reg[0x0A] &= 0xF0 | (prevVal & 0x0F);
                   envelope_counter = 0xF000;    // Force first state change immediately
                   AY_EnvelopeOn = true;

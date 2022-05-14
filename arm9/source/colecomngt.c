@@ -52,8 +52,6 @@ u8 adam_ram_hi_exp      __attribute__((section(".dtcm"))) = false;
 
 Z80 CPU __attribute__((section(".dtcm")));
 
-u8 bDontResetEnvelope __attribute__((section(".dtcm"))) = false;
-
 // --------------------------------------------------
 // Some special ports for the MSX machine emu
 // --------------------------------------------------
@@ -486,16 +484,6 @@ void getfile_crc(const char *path)
     if (file_crc == 0x56c358a6) timingAdjustment =  2;  // Destructor (Coleco) requires more cycles
     if (file_crc == 0xb5be3448) timingAdjustment =  10; // Sudoku Homebrew requires more cycles
     
-    // ---------------------------------------------------------------------------------------------
-    // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
-    // ---------------------------------------------------------------------------------------------
-    bDontResetEnvelope = false;
-    if (file_crc == 0x90f5f414) bDontResetEnvelope = true; // MSX Warp-and-Warp
-    if (file_crc == 0x5e169d35) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)
-    if (file_crc == 0xe66eaed9) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)
-    if (file_crc == 0x785fc789) bDontResetEnvelope = true; // MSX Warp-and-Warp (alt)    
-    if (file_crc == 0xe50d6e60) bDontResetEnvelope = true; // MSX Warp-and-Warp (cassette)    
-    
     // -----------------------------------------------------------------
     // Only Lord of the Dungeon allows SRAM writting in this area... 
     // -----------------------------------------------------------------
@@ -530,8 +518,7 @@ void getfile_crc(const char *path)
     if (file_crc == 0x119b7ba8) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (JP)    
     if (file_crc == 0x27fd8f9a) msx_sram_enabled = 0x10;       // MSX Deep Dungeon I (JP)
     if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (EN)
-    if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)
-    
+    if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)    
 }
 
 

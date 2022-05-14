@@ -359,6 +359,12 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
       if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
       if (key_shift) key_port &= ~0x80;  // SHIFT KEY
       
+          for (u8 i=0; i<12; i++)
+          {
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SHIFT))  key_port &= ~0x80;  // SHIFT KEY
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_CTRL))   key_port &= ~0x40;  // CTRL KEY
+          }
+      
       return key_port;
   }
   else

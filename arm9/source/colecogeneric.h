@@ -49,7 +49,7 @@ struct __attribute__((__packed__)) Config_t
     u8  memWipe;
     u8  clearInt;
     u8  cvEESize;
-    u8  reservedA0;
+    u8  ayEnvelope;
     u8  reservedA1;
     u8  reservedA2;
     u8  reservedA3;
