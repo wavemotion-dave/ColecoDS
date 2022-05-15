@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2002 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
@@ -179,11 +179,11 @@ void colecoWipeRAM(void)
   }
   else if (memotech_mode)
   {
-    for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));   // This pattern tends to make most things start up properly...
+    for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (svi_mode)
   {
-    for (int i=0; i< 0x8000; i++) pColecoMem[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));   // This pattern tends to make most things start up properly...
+    for (int i=0; i< 0x8000; i++) pColecoMem[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
     memset(Slot3RAM,  0x00, 0x10000);
   }
   else if (msx_mode)
@@ -197,7 +197,7 @@ void colecoWipeRAM(void)
   else if (adam_mode)
   {
     // ADAM has special handling...
-    for (int i=0; i< 0x20000; i++) AdamRAM[i] = (myConfig.memWipe ? 0x02:  (rand() & 0xFF));   // This pattern tends to make most things start up properly...
+    for (int i=0; i< 0x20000; i++) AdamRAM[i] = (myConfig.memWipe ? 0x02:  (rand() & 0xFF));   // The 0x02 pattern tends to make most things start up properly... don't ask.
     memset(pColecoMem, 0xFF, 0x10000);
   }
   else if (einstein_mode)
@@ -205,7 +205,7 @@ void colecoWipeRAM(void)
       memset(pColecoMem+0x2000,0xFF, 0x6000);
       for (int i=0x8000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
-  else
+  else  // Normal colecovision which has 1K of RAM and is mirrored
   {
       for (int i=0; i<0x400; i++)
       {
@@ -342,13 +342,13 @@ u8 colecoInit(char *szGame)
   }
   else if (pencil2_mode)
   {
-      // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
+      // Wipe area from BIOS onwards and then wipe RAM to random values below
       memset(pColecoMem+0x2000, 0xFF, 0xE000);
 
       // Wipe RAM to Random Values
       colecoWipeRAM();
 
-      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
+      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);    // Load up to 32K
   }
   else if (einstein_mode)  // Load Einstein COM file
   {
@@ -371,8 +371,6 @@ u8 colecoInit(char *szGame)
     
   if (RetFct) 
   {
-    RetFct = colecoCartVerify(pColecoMem+0x8000);
-      
     // Perform a standard system RESET
     ResetColecovision();
   }
@@ -398,7 +396,12 @@ void colecoSetPal(void)
 {
   u8 uBcl,r,g,b;
   
+  // -----------------------------------------------------------------------
   // The Colecovision has a 16 color pallette... we set that up here.
+  // We always use the standard NTSC color palette which is fine for now
+  // but maybe in the future we add the PAL color palette for a bit more
+  // authenticity.
+  // -----------------------------------------------------------------------
   for (uBcl=0;uBcl<16;uBcl++) {
     r = (u8) ((float) TMS9918A_palette[uBcl*3+0]*0.121568f);
     g = (u8) ((float) TMS9918A_palette[uBcl*3+1]*0.121568f);
@@ -452,17 +455,6 @@ ITCM_CODE void colecoUpdateScreen(void)
         // -----------------------------------------------------------------
         dmaCopyWordsAsynch(2, (u32*)XBuf_A, (u32*)pVidFlipBuf, 256*192);
     }
-}
-
-
-/*********************************************************************************
- * Check if the cart is valid...
- ********************************************************************************/
-u8 colecoCartVerify(const u8 *cartData) 
-{
-  // Who are we to argue? Some SGM roms shift the magic numbers (5AA5, A55A) up to 
-  // bank 0 and it's not worth the hassle. The game either runs or it won't.
-  return IMAGE_VERIFY_PASS;
 }
 
 
@@ -673,11 +665,11 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             }
             if (iSSize == 1024 * 18) // 18K
             {
-                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);
-                memcpy(pColecoMem+0x8000, romBuffer+0x2000, 0x2000);
-                memcpy(pColecoMem+0x7800, romBuffer+0x4000, 0x0800);
+                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb at 0xA000
+                memcpy(pColecoMem+0x8000, romBuffer+0x2000, 0x2000);    // second 8Kb at 0x8000
+                memcpy(pColecoMem+0x7800, romBuffer+0x4000, 0x0800);    // final 2Kb at 0x7800
                 
-                memcpy(pColecoMem+0x6800, pColecoMem+0x7800, 0x0800);
+                memcpy(pColecoMem+0x6800, pColecoMem+0x7800, 0x0800);   // And then the odd mirrors...
                 memcpy(pColecoMem+0x5800, pColecoMem+0x7800, 0x0800);
                 memcpy(pColecoMem+0x4800, pColecoMem+0x7800, 0x0800);
                 memcpy(pColecoMem+0x7000, pColecoMem+0x7800, 0x0800);
@@ -1042,9 +1034,12 @@ void Z80CTC_Timer(void)
             }
         }
     }
-    else
-    if (memotech_mode)
+    else if (memotech_mode)
     {
+        // ------------------------------------------------------------------
+        // Channel 0 is the VDP interrupt in this emulation... so we only 
+        // need to deal with the other channels for timing here...
+        // ------------------------------------------------------------------
         for (u8 i=1; i<4; i++)
         {
             if (--ctc_timer[i] <= 0)
@@ -1056,12 +1051,12 @@ void Z80CTC_Timer(void)
     }
     else    // Sord M5 mode
     {
-        // -----------------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------
         // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
-        // Originally we were handling channels 0, 1 and 2 but there was never any program usage
-        // of channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which 
-        // are not supported by ColecoDS.  So we save time and effort here and only deal with Port1.
-        // -----------------------------------------------------------------------------------------
+        // Originally we were handling channels 0, 1 and 2 but there was never any program usage of
+        // channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which are not
+        // supported. Channel 3 is the VDP interrupt. So we save time/effort and only deal with Port1.
+        // --------------------------------------------------------------------------------------------
         if (--ctc_timer[1] <= 0)
         {
             ctc_timer[1] = ((((ctc_control[1] & 0x20) ? 256 : 16) * (ctc_time[1] ? ctc_time[1]:256)) / CTC_SOUND_DIV) + 1;
@@ -1218,9 +1213,9 @@ ITCM_CODE u32 LoopZ80()
           if(CPU.IRequest!=INT_NONE) 
           {
               IntZ80(&CPU, CPU.IRequest);
-    #ifdef DEBUG_Z80 
+#ifdef DEBUG_Z80 
               CPU.User++;   // Track Interrupt Requests
-    #endif          
+#endif          
               if (pv2000_mode) 
               {
                   extern void pv2000_check_kbd(void);

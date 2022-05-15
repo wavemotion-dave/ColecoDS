@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2002 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
@@ -94,15 +94,15 @@ C24XX EEPROM;
 u8 adam_CapsLock        = 0;
 u8 adam_unsaved_data    = 0;
 u8 write_EE_counter     = 0;
-u8 last_adam_key        = -1;
+u8 last_adam_key        = 255;
 u32 last_tape_pos       = 9999;
 
 // --------------------------------------------------------------------------
 // For machines that have a full keybaord, we use the Left and Right
 // shoulder buttons on the NDS to emulate the SHIFT and CTRL keys...
 // --------------------------------------------------------------------------
-u8 key_shift = false;
-u8 key_ctrl  = false;
+u8 key_shift __attribute__((section(".dtcm"))) = false;
+u8 key_ctrl  __attribute__((section(".dtcm"))) = false;
 
 // ------------------------------------------------------------------------------------------
 // Various sound chips in the system. We emulate the SN and AY sound chips but both of 
@@ -115,9 +115,9 @@ extern SN76496 aycol;       // The AY sound chip is for the Super Game Moudle
 // ---------------------------------------------------------------------------
 // Some timing and frame rate comutations to keep the emulation on pace...
 // ---------------------------------------------------------------------------
-u16 emuFps=0;
-u16 emuActFrames=0;
-u16 timingFrames=0;
+u16 emuFps          __attribute__((section(".dtcm"))) = 0;
+u16 emuActFrames    __attribute__((section(".dtcm"))) = 0;
+u16 timingFrames    __attribute__((section(".dtcm"))) = 0;
 
 // -----------------------------------------------------------------------------------------------
 // For the various BIOS files ... only the coleco.rom is required - everything else is optional.
