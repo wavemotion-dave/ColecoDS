@@ -11,7 +11,7 @@ Because the chips used in the Colecovision Hardware were so common in that era, 
 to be very close to the CV in terms of hardware. Often only the IO/Memory was different. As such,
 ColecoDS also allows cartridge and sometimes tapegames from "cousin" systems to be played - namely 
 the Sord M5, the Memotech MTX, the SG-1000/3000, the Spectravision 3x8 SVI, Casio PV-2000, Hanimex 
-Pencil II, the Tatung Einstein and the venerable MSX1.
+Pencil II, Creativision, the Tatung Einstein and the venerable MSX1.
 
 Features :
 -----------------------
@@ -42,7 +42,8 @@ Copyright :
 -----------------------
 ColecoDS Phoenix-Edition is Copyright (c) 2021-2022 Dave Bernazzani (wavemotion-dave)
 
-Copying and distribution of this emulator, it's source code
+As long as there is no commercial use (i.e. no profit is made),
+copying and distribution of this emulator, it's source code
 and associated readme files, with or without modification, 
 are permitted in any medium without royalty provided this 
 copyright notice is used and wavemotion-dave (Phoenix-Edition),
