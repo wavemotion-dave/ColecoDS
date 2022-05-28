@@ -49,6 +49,11 @@ copyright notice is used and wavemotion-dave (Phoenix-Edition),
 Alekmaul (original port) and Marat Fayzullin (ColEM core) are 
 thanked profusely.
 
+In addition, since the Z80 CPU and TMS9918 are borrowed from 
+ColEM, please contact Marat (https://fms.komkon.org/ColEm/)
+to make sure he's okay with what you're doing with the emulator
+core.
+
 The ColecoDS emulator is offered as-is, without any warranty.
 
 Credits :
