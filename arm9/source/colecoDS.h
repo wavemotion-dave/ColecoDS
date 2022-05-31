@@ -16,7 +16,7 @@
 #include "cpu/z80/Z80_interface.h"
 #include "C24XX.h"
 
-#define VERSIONCLDS "7.2"
+#define VERSIONCLDS "7.3"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG
@@ -185,6 +185,7 @@ extern u8 pencil2_mode;
 extern u8 msx_mode;
 extern u8 svi_mode;
 extern u8 adam_mode;
+extern u8 coleco_mode;
 extern u8 adam_CapsLock;
 extern u8 adam_unsaved_data;
 extern u8 creativision_mode;

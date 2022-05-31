@@ -491,7 +491,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     Port &= 0x00FF;
 
     if      (Port == 0x98) WrData9918(Value);
-    else if (Port == 0x99) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT;}}
+    else if (Port == 0x99) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; }}
     else if (Port == 0xA0) {FakeAY_WriteIndex(Value & 0x0F);}   // PSG Area
     else if (Port == 0xA1) FakeAY_WriteData(Value);
     else if (Port == 0xA8) // Slot system for MSX

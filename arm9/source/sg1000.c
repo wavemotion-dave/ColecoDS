@@ -395,7 +395,7 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
     if ((Port >= 0x80) && (Port < 0xD0))  // VDP Area
     {
         if ((Port & 1) == 0) WrData9918(Value);
-        else if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }    // SG-1000 does not use NMI like Colecovision does...
+        else if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; }    // SG-1000 does not use NMI like Colecovision does...
     }
     else if ((Port >= 0x40) && (Port < 0x80))
     {

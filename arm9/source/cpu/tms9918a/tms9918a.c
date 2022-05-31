@@ -45,6 +45,9 @@ u16 vdp_int_source       __attribute__((section(".dtcm"))) = 0;
 u16 my_config_clear_int  __attribute__((section(".dtcm"))) = 0;
 
 
+u8 OH __attribute__((section(".dtcm"))) = 0;
+u8 IH __attribute__((section(".dtcm"))) = 0;
+
 // ---------------------------------------------------------------------------------------
 // Screen handlers and masks for VDP table address registers. 
 // Screen modes are confusing as different documentation (MSX, Coleco, VDP manuals, etc)
@@ -105,7 +108,7 @@ byte ITCM_CODE CheckSprites(void) {
   int DH,DV;
 
   /* Find valid, displayed sprites */
-  DV = TMS9918_Sprites16? -16:-8;
+  DV = TMS9918_Sprites16 ? -16:-8;
   for(I=J=0,S=SprTab;(I<32)&&(S[0]!=208);++I,S+=4)
     if(((S[0]<191)||(S[0]>255+DV))&&((int)S[1]-(S[3]&0x80? 32:0)>DV))
       J|=1<<I;
@@ -173,11 +176,10 @@ byte ITCM_CODE CheckSprites(void) {
 /** Returns the first sprite to show or -1 if none shown.   **/
 /** Also updates 5th sprite fields in the status register.  **/
 /*************************************************************/
-ITCM_CODE int ScanSprites(register byte Y,unsigned int *Mask)
+int ITCM_CODE ScanSprites(register byte Y,unsigned int *Mask)
 {
-  static const byte SprHeights[4] = { 8,16,16,32 };
-  register byte OH,IH,*AT;
-  register int L,K,C1,C2;
+  register byte *AT;
+  register u8 L,K,C1,C2;
   register unsigned int M;
 
   /* No 5th sprite yet */
@@ -190,8 +192,6 @@ ITCM_CODE int ScanSprites(register byte Y,unsigned int *Mask)
     return(-1);
   }
 
-  OH = SprHeights[VDP[1]&0x03];
-  IH = SprHeights[VDP[1]&0x02];
   AT = SprTab;
   C1 = MaxSprites[myConfig.maxSprites]+1;
   C2 = 5;
@@ -231,8 +231,7 @@ ITCM_CODE int ScanSprites(register byte Y,unsigned int *Mask)
 /** sprites.                                                **/
 /*************************************************************/
 void ITCM_CODE RefreshSprites(register byte Y) {
-  static const byte SprHeights[4] = { 8,16,16,32 };
-  register byte OH,IH,*PT,*AT;
+  register byte *PT,*AT;
   register byte *P,*T,C;
   register int L,K,N;
   unsigned int M;
@@ -242,8 +241,6 @@ void ITCM_CODE RefreshSprites(register byte Y) {
   if((N<0) || !M) return;
 
   T  = XBuf+256*Y;
-  OH = SprHeights[VDP[1]&0x03];
-  IH = SprHeights[VDP[1]&0x02];
   AT = SprTab+(N<<2);
 
   /* For each possibly shown sprite... */
@@ -388,28 +385,39 @@ void RefreshLine0(u8 Y)
 /*************************************************************/
 void ITCM_CODE RefreshLine1(u8 uY) 
 {
-  register byte X,K,Offset,FC,BC;
+  register byte X,K=0,Offset,FC,BC;
   register u8 *T;
   register u32 *P;
-  u32 *ptLut;
+  u8 lastT;
+  u32 *ptLut=0;
 
   P=(u32*) (XBuf+(uY<<8));
+  u32 ptLow = 0; u32 ptHigh = 0;
 
   if(!ScreenON) 
     memset(P,BGColor,256);
-  else {
+  else 
+  {
     T=ChrTab+((int)(uY&0xF8)<<2);
     Offset=uY&0x07;
 
-    for(X=0;X<32;X++) {
-      K=*T;
-      BC=ColTab[K>>3];
-      K=ChrGen[((int)K<<3)+Offset];
-      FC=BC>>4;
-      BC=BC&0x0F;
-      ptLut = (u32*) (lutTablehh[FC][BC]);
-      *P++ = *(ptLut + ((K>>4)));
-      *P++ = *(ptLut + ((K & 0xF)));
+    lastT = ~(*T);
+      
+    for(X=0;X<32;X++) 
+    {
+      if (lastT != *T)
+      {
+          lastT=*T;
+          BC=ColTab[lastT>>3];
+          K=ChrGen[((int)lastT<<3)+Offset];
+          FC=BC>>4;
+          BC=BC&0x0F;
+          ptLut = (u32*) (lutTablehh[FC][BC]);
+          ptLow = *(ptLut + ((K>>4)));
+          ptHigh= *(ptLut + ((K & 0xF)));
+      }
+      *P++ = ptLow;
+      *P++ = ptHigh;
       T++;
     }
     RefreshSprites(uY);
@@ -424,6 +432,7 @@ void ITCM_CODE RefreshLine2(u8 uY) {
   u32 *P;
   register byte FC,BC;
   register byte X,K,*T;
+  u8 lastT;
   u16 J,I;
   u32 *ptLut;
 
@@ -433,20 +442,28 @@ void ITCM_CODE RefreshLine2(u8 uY) {
     memset(P,BGColor,256);
   else 
   {
+    u32 ptLow = 0; u32 ptHigh = 0;
+      
     J   = ((u16)((u16)uY&0xC0)<<5)+(uY&0x07);
     T   = ChrTab+((u16)((u16)uY&0xF8)<<2);
+    lastT = ~(*T);
 
     for(X=0;X<32;X++)
     {
-      I    = (u16)*T<<3;
-      K    = ColTab[(J+I)&ColTabM];
-      FC   = (K>>4);
-      BC   = K & 0x0F;
-      K    = ChrGen[(J+I)&ChrGenM];
-        
-      ptLut = (u32*)(lutTablehh[FC][BC]);
-      *P++ = *(ptLut + ((K>>4)));
-      *P++ = *(ptLut + ((K & 0xF)));
+      if (lastT != *T)
+      {
+          lastT = *T;
+          I    = (u16)lastT<<3;
+          K    = ColTab[(J+I)&ColTabM];
+          FC   = (K>>4);
+          BC   = K & 0x0F;
+          K    = ChrGen[(J+I)&ChrGenM];
+          ptLut = (u32*)(lutTablehh[FC][BC]);
+          ptLow = *(ptLut + ((K>>4)));
+          ptHigh = *(ptLut + ((K & 0xF)));
+      } 
+      *P++ = ptLow;
+      *P++ = ptHigh;
       T++;
     }
       
@@ -461,19 +478,28 @@ void ITCM_CODE RefreshLine2(u8 uY) {
 void ITCM_CODE RefreshLine3(u8 uY) {
   register byte X,K,Offset;
   register byte *P,*T;
-
+  u8 lastT;
   P=XBuf+(uY<<8);
 
   if(!TMS9918_ScreenON) {
     memset(P,BGColor,256);
   }
   else {
+    u8 ptLow = 0; u8 ptHigh = 0;
     T=ChrTab+((int)(uY&0xF8)<<2);
+    lastT = ~(*T);
     Offset=(uY&0x1C)>>2;
-    for(X=0;X<32;X++) {
-      K=ChrGen[((int)*T<<3)+Offset];
-      P[0]=P[1]=P[2]=P[3]=K>>4;
-      P[4]=P[5]=P[6]=P[7]=K&0x0F;
+    for(X=0;X<32;X++) 
+    {
+      if (lastT != *T)
+      {
+          lastT = *T;
+          K=ChrGen[((int)lastT<<3)+Offset];
+          ptLow = K>>4;
+          ptHigh = K&0x0F;
+      }
+      P[0]=P[1]=P[2]=P[3]=ptLow;
+      P[4]=P[5]=P[6]=P[7]=ptHigh;
       P+=8;T++;
     }
     RefreshSprites(uY);
@@ -485,6 +511,8 @@ void ITCM_CODE RefreshLine3(u8 uY) {
  * Emulator calls this function to write byte 'value' into a VDP register 'iReg'
  ********************************************************************************/
 u8 VDP_RegisterMasks[] __attribute__((section(".dtcm"))) = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };
+static const byte SprHeights[4] = { 8,16,16,32 };
+
 byte Write9918(u8 iReg, u8 value) 
 { 
   int newMode;
@@ -543,6 +571,10 @@ byte Write9918(u8 iReg, u8 value)
         ChrGenM = ((int)(VDP[4]|(u8)~SCR[ScrMode].M4)<<11)|0x07FF;
         SprTabM = ((int)(VDP[5]|(u8)~SCR[ScrMode].M5)<<7) |0x007F;
       }
+          
+      OH = SprHeights[VDP[1]&0x03];
+      IH = SprHeights[VDP[1]&0x02];
+          
       break;
     case  2: 
       ChrTab=pVDPVidMem+(((int)(value&SCR[ScrMode].R2)<<10)&VRAMMask);
@@ -671,7 +703,7 @@ byte Loop9918(void)
 
   /* Increment scanline */
   if (++CurLine >= tms_num_lines) CurLine=0;
-
+  else
   /* If refreshing display area, call scanline handler */
   if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
   {

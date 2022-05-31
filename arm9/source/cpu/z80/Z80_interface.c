@@ -1,8 +1,6 @@
 // ---------------------------------------------------------------------------------
 // This file is our bridge between the Z80 CPU core and the rest of the system.
-// ColecoDS currently supports 2 CPU cores:
-//    DRZ80 - Fast but not 100% compatible (some games won't run with it)
-//    CZ80  - Slower but much higher compatibility (about 10% slower)
+// ColecoDS currently supports the CZ80 CPU core.
 // ---------------------------------------------------------------------------------
 #include <nds.h>
 
@@ -13,18 +11,14 @@
 #include "Z80_interface.h"
 #include "../../colecoDS.h"
 #include "../../colecomngt.h"
+#include "../../colecogeneric.h"
 #include "../../AdamNet.h"
 #include "../../C24XX.h"
 
 #define DR_INT_IRQ 0x01
 #define DR_NMI_IRQ 0x02
 
-// ----------------------------------------------------------------------------
-// Put the whole Z80 register set into fast memory for better performance...
-// ----------------------------------------------------------------------------
-struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
-u16 cpuirequest     __attribute__((section(".dtcm"))) = 0;
 u8 lastBank         __attribute__((section(".dtcm"))) = 199;
 s32 cycle_deficit   __attribute__((section(".dtcm"))) = 0;
 u8 lastBlock[4]     __attribute__((section(".dtcm"))) = {99,99,99,99};
@@ -370,13 +364,61 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     extern u8 sgm_enable;
     extern u16 sgm_low_addr;
     
+    if (coleco_mode || adam_mode)
+    {
+        // --------------------------------------------------------------
+        // If the ADAM is enabled, we may be trying to write to AdamNet
+        // --------------------------------------------------------------
+        if (adam_mode)
+        {
+            if ((address < 0x8000) && adam_ram_lo)        {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+            else if ((address >= 0x8000) && adam_ram_hi)  {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+
+            if ((address < 0x8000) && adam_ram_lo_exp)        {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
+            else if ((address >= 0x8000) && adam_ram_hi_exp)  {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
+        }
+        // -----------------------------------------------------------
+        // If the Super Game Module has been enabled, we have a much 
+        // wider range of RAM that can be written (and no mirroring)
+        // -----------------------------------------------------------
+        else if (sgm_enable)
+        {
+            if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
+        }    
+        else if((address>0x5FFF)&&(address<0x8000)) // Normal memory RAM write... with mirrors...
+        {
+            if (myConfig.colecoRAM == COLECO_RAM_NORMAL_MIRROR)
+            {
+                address&=0x03FF;
+                pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x7400+address]=pColecoMem[0x7C00+address]=value;
+                pColecoMem[0x6000+address]=pColecoMem[0x6800+address]=pColecoMem[0x7000+address]=pColecoMem[0x7800+address]=value;
+            }
+            else pColecoMem[address] = value;
+        }
+        else if ((address >= 0xE000) && (address < 0xE800)) // Allow SRAM if cart doesn't extend this high...
+        {
+            if (sRamAtE000_OK)
+            {
+                pColecoMem[address+0x800]=value;
+            }
+        }
+        /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
+        else if (bActivisionPCB)
+        {
+            activision_pcb_write(address);
+        }
+        else if (address >= 0xFFC0)
+        {
+            BankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
+        }        
+    }    
     // -------------------------------------------------------------
     // If SG-1000 mode, we provide the Dhajee RAM expansion...
     // We aren't doing a lot of error/bounds checking here - we 
     // are going to assume well-behaved .sg ROMs as this is 
     // primarily a Colecovision emu with partial SG-1000 support.
     // -------------------------------------------------------------
-    if (sg1000_mode)
+    else if (sg1000_mode)
     {
         // Allow normal SG-1000, SC-3000 writes, plus allow for 8K RAM Expanders...
         if ((address >= 0x8000) || (address >= 0x2000 && address < 0x4000))
@@ -659,217 +701,24 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
             }
         }
     }
-    // --------------------------------------------------------------
-    // If the ADAM is enabled, we may be trying to write to AdamNet
-    // --------------------------------------------------------------
-    else if (adam_mode)
+    else if (pencil2_mode)
     {
-        if ((address < 0x8000) && adam_ram_lo)        {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
-        else if ((address >= 0x8000) && adam_ram_hi)  {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
-        
-        if ((address < 0x8000) && adam_ram_lo_exp)        {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
-        else if ((address >= 0x8000) && adam_ram_hi_exp)  {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
-    }
-    // -----------------------------------------------------------
-    // If the Super Game Module has been enabled, we have a much 
-    // wider range of RAM that can be written (and no mirroring)
-    // -----------------------------------------------------------
-    else if (sgm_enable)
-    {
-        if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
-    }    
-    else if((address>0x5FFF)&&(address<0x8000)) // Normal memory RAM write... with mirrors...
-    {
-        if (pencil2_mode)
-        {
-            address&=0x07FF;
-        }
-        else
-        {
-            address&=0x03FF;
-            pColecoMem[0x6400+address]=pColecoMem[0x6800+address]=pColecoMem[0x7400+address]=pColecoMem[0x7C00+address]=value;
-        }
-        pColecoMem[0x6000+address]=pColecoMem[0x6800+address]=pColecoMem[0x7000+address]=pColecoMem[0x7800+address]=value;
-    }
-    else if ((address >= 0xE000) && (address < 0xE800)) // Allow SRAM if cart doesn't extend this high...
-    {
-        if (sRamAtE000_OK)
-        {
-            pColecoMem[address+0x800]=value;
-        }
-    }
-    /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
-    else if (bActivisionPCB)
-    {
-        activision_pcb_write(address);
-    }
-    else if (address >= 0xFFC0)
-    {
-        BankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
+        pColecoMem[address] = value;
     }
 }
 
 
-// -----------------------------------------------------------------
-// All functions below are interfaces into the DrZ80 core
-// -----------------------------------------------------------------
-
-// -----------------------------------------------------------------
-// The 16-bit write simply makes 2 calls into the 8-bit writes...
-// -----------------------------------------------------------------
-void drz80MemWriteW(u16 data,u16 addr) 
+// ------------------------------------------------
+// A few vars related to the Z80 core...
+// ------------------------------------------------
+void ResetZ80Vars(void)
 {
-    cpu_writemem16(data & 0xff , addr);
-    cpu_writemem16(data>>8,addr+1);
-}
-
-u32 z80_rebaseSP(u16 address) {
-  drz80.Z80SP_BASE = (unsigned int) pColecoMem;
-  drz80.Z80SP      = drz80.Z80SP_BASE + address;
-  return (drz80.Z80SP);
-}
-
-u32 z80_rebasePC(u16 address) {
-  drz80.Z80PC_BASE = (unsigned int) pColecoMem;
-  drz80.Z80PC      = drz80.Z80PC_BASE + address;
-  return (drz80.Z80PC);
-}
-
-void z80_irq_callback(void) {
-	drz80.Z80_IRQ = 0x00;
-}
-
-
-void DrZ80_Cause_Interrupt(int type) 
-{
-    if (type == Z80_NMI_INT) 
-    {
-        drz80.pending_irq |= DR_NMI_IRQ;
-    }
-    else if (type != Z80_IGNORE_INT) 
-    {
-        drz80.z80irqvector = type & 0xff;
-        drz80.pending_irq |= DR_INT_IRQ;
-    }
-}
-
- void DrZ80_Clear_Pending_Interrupts(void) 
-{
-    drz80.pending_irq = 0;
-    drz80.Z80_IRQ = 0;
-}
-
- void DrZ80_Interrupt(void) 
-{
-    if (drz80.pending_irq & DR_NMI_IRQ)  /* NMI IRQ */
-    {
-        drz80.Z80_IRQ = DR_NMI_IRQ;
-        drz80.pending_irq &= ~DR_NMI_IRQ;
-    } 
-    else if (drz80.Z80IF & 1)  /* INT IRQ and Interrupts enabled */
-    {
-        drz80.Z80_IRQ = DR_INT_IRQ;
-        drz80.pending_irq &= ~DR_INT_IRQ;
-    }
-}
-
-// -----------------------------
-// Normal 16-bit Read... fast!
-// -----------------------------
- u16 drz80MemReadW(u16 address) 
-{
-    return (pColecoMem[address]  |  (pColecoMem[address+1] << 8));
-}
-
-// -------------------------------------------------
-// 16-bit read with bankswitch support... slower...
-// -------------------------------------------------
- u16 drz80MemReadW_banked(u16 addr) 
-{
-  if (bMagicMegaCart || adam_mode) // Handle Megacart Hot Spots
-  {
-      return (cpu_readmem16_banked(addr) | (cpu_readmem16_banked(addr+1)<<8));   // These handle both hotspots - slower but easier than reproducing the hotspot stuff
-  }    
-  return (pColecoMem[addr]  |  (pColecoMem[addr+1] << 8));
-}
-
-// ------------------------------------------------------
-// DrZ80 uses pointers to various read/write memory/IO
-// ------------------------------------------------------
-void DrZ80_InitHandlers() {
-  extern u8 romBankMask;
-  drz80.z80_write8=cpu_writemem16;
-  drz80.z80_write16=drz80MemWriteW;
-    
-  if (msx_mode || svi_mode)
-  {
-      drz80.z80_in=cpu_readport_msx;
-      drz80.z80_out=cpu_writeport_msx;    
-  }
-  else
-  {
-      drz80.z80_in=(sg1000_mode ? cpu_readport_sg:cpu_readport16);
-      drz80.z80_out=(sg1000_mode ? cpu_writeport_sg:cpu_writeport16);    
-  }    
-    
-  drz80.z80_read8= ((romBankMask || adam_mode) ? cpu_readmem16_banked : cpu_readmem16 );
-  drz80.z80_read16= ((romBankMask || adam_mode) ? drz80MemReadW_banked : drz80MemReadW);
-  drz80.z80_rebasePC=(unsigned int (*)(short unsigned int))z80_rebasePC;
-  drz80.z80_rebaseSP=(unsigned int (*)(short unsigned int))z80_rebaseSP;
-  drz80.z80_irq_callback=z80_irq_callback;
-}
-
-
-void DrZ80_Reset(void) {
-  memset (&drz80, 0, sizeof(struct DrZ80));
-  DrZ80_InitHandlers();
-
-  drz80.Z80A = 0x00 <<24;
-  drz80.Z80F = (1<<2); // set ZFlag 
-  drz80.Z80BC = 0x0000	<<16;
-  drz80.Z80DE = 0x0000	<<16;
-  drz80.Z80HL = 0x0000	<<16;
-  drz80.Z80A2 = 0x00 <<24;
-  drz80.Z80F2 = 1<<2;  // set ZFlag 
-  drz80.Z80BC2 = 0x0000 <<16;
-  drz80.Z80DE2 = 0x0000 <<16;
-  drz80.Z80HL2 = 0x0000 <<16;
-  drz80.Z80IX = 0xFFFF	<<16;
-  drz80.Z80IY = 0xFFFF	<<16;
-  drz80.Z80I = 0x00;
-  drz80.Z80IM = 0x00;
-  drz80.Z80_IRQ = 0x00;
-  drz80.Z80IF = 0x00;
-  drz80.Z80PC=z80_rebasePC(0);
-  drz80.Z80SP=z80_rebaseSP(0xF000); 
-  drz80.z80intadr = 0x38;
-
-  DrZ80_Clear_Pending_Interrupts();
-  cpuirequest=0;
   lastBank = 199;
   cycle_deficit = 0;
   msx_sram_at_8000 = 0;
   msx_scc_enable = 0;
     
   memset(lastBlock, 99, 4);
-}
-
-
-// --------------------------------------------------
-// Execute the asked-for cycles and keep track
-// of any deficit so we can apply that to the 
-// next call (since we are very unlikely to 
-// produce exactly an evenly-divisible number of
-// cycles for a given scanline...
-// --------------------------------------------------
- int DrZ80_execute(int cycles) 
-{
-  drz80.cycles = cycles + cycle_deficit;
-    
-  DrZ80Run(&drz80, cycles);
-
-  cycle_deficit = drz80.cycles;
-  return (cycle_deficit);
 }
 
 

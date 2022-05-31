@@ -539,7 +539,6 @@ void einstein_load_com_file(void)
     einstein_ram_start = 0x0000;
     memcpy(pColecoMem+0x100, romBuffer, tape_len);
     memcpy(Slot3RAM+0x100, romBuffer, tape_len);
-    z80_rebasePC(0x100);
     CPU.PC.W = 0x100;
     JumpZ80(CPU.PC.W);
 }

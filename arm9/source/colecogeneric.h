@@ -4,6 +4,11 @@
 #define MAX_ROMS        1024
 #define MAX_ROM_LENGTH  160
 
+#define MAX_CONFIGS     1360
+#define CONFIG_VER      0x0009
+#define CONFIG_VER_OLD  0x0008
+
+
 #define COLROM 0x01
 #define DIRECT 0x02
 
@@ -17,14 +22,15 @@
 #define CPU_CLEAR_INT_ON_VDP_READ   0
 #define CPU_CLEAR_INT_AUTOMATICALLY 1
 
+
+#define COLECO_RAM_NORMAL_MIRROR   0
+#define COLECO_RAM_NO_MIRROR       1
+
 typedef struct {
   char szName[MAX_ROM_LENGTH];
   u8 uType;
   u32 uCrc;
 } FICcoleco;
-
-#define MAX_CONFIGS         1360
-#define CONFIG_VER          0x0008
 
 struct __attribute__((__packed__)) Config_t
 {
@@ -42,7 +48,7 @@ struct __attribute__((__packed__)) Config_t
     u8  vertSync;
     u8  spinSpeed;
     u8  touchPad;
-    u8  cpuCore;
+    u8  reserved1;
     u8  msxBios;
     u8  msxKey5;
     u8  dpad;
@@ -50,7 +56,7 @@ struct __attribute__((__packed__)) Config_t
     u8  clearInt;
     u8  cvEESize;
     u8  ayEnvelope;
-    u8  reservedA1;
+    u8  colecoRAM;
     u8  reservedA2;
     u8  reservedA3;
     u8  reservedB0;

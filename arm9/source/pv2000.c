@@ -72,7 +72,7 @@ void cpu_writemem_pv2000 (u8 value,u16 address)
     if ((address == 0x4000) || (address == 0x4001))
     {
         if ((address & 1) == 0) WrData9918(value);
-        else if (WrCtrl9918(value)) { CPU.IRequest=INT_NMI; cpuirequest=Z80_NMI_INT; }
+        else if (WrCtrl9918(value)) { CPU.IRequest=INT_NMI; }
     }
     else if ((address >= 0x7000) && (address < 0x8000)) // PV-2000 RAM area
     {

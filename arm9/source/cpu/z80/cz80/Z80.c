@@ -46,11 +46,11 @@ extern byte cpu_readmem16 (u16 address);
 extern void cpu_writeport16(unsigned short Port, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
-extern u8 bIsComplicatedRAM, msx_mode, my_config_clear_int, einstein_mode;
+extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode;
 extern u16 vdp_int_source, keyboard_interrupt;
 #define OpZ80(A)            pColecoMem[A]
 #define WrZ80(A,V)          cpu_writemem16(V,A)
-#define OutZ80(P,V)         (msx_mode ? cpu_writeport_msx(P,V) : cpu_writeport16(P,V))
+#define OutZ80(P,V)         cpu_writeport16(P,V)
 #define InZ80(P)            cpu_readport16(P)
 INLINE byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A) : pColecoMem[A]);}
 
@@ -58,7 +58,8 @@ INLINE byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A)
 #define S(Fl)        CPU.AF.B.l|=Fl
 #define R(Fl)        CPU.AF.B.l&=~(Fl)
 #define FLAGS(Rg,Fl) CPU.AF.B.l=Fl|ZSTable[Rg]
-#define INCR(N)      CPU.R=((CPU.R+(N))&0x7F)|(CPU.R&0x80)
+//#define INCR(N)      CPU.R=((CPU.R+(N))&0x7F)|(CPU.R&0x80)
+#define INCR(N)      /* There are currently no games that need the R=Refresh RAM register */
 
 #define M_RLC(Rg)      \
   CPU.AF.B.l=Rg>>7;Rg=(Rg<<1)|CPU.AF.B.l;CPU.AF.B.l|=PZSTable[Rg]
