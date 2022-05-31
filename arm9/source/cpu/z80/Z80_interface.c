@@ -364,24 +364,24 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     extern u8 sgm_enable;
     extern u16 sgm_low_addr;
     
-    if (coleco_mode || adam_mode)
+    // --------------------------------------------------------------
+    // If the ADAM is enabled, we may be trying to write to AdamNet
+    // --------------------------------------------------------------
+    if (machine_mode & MODE_ADAM)
     {
-        // --------------------------------------------------------------
-        // If the ADAM is enabled, we may be trying to write to AdamNet
-        // --------------------------------------------------------------
-        if (adam_mode)
-        {
-            if ((address < 0x8000) && adam_ram_lo)        {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
-            else if ((address >= 0x8000) && adam_ram_hi)  {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+        if ((address < 0x8000) && adam_ram_lo)        {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+        else if ((address >= 0x8000) && adam_ram_hi)  {pColecoMem[address]=value;  AdamRAM[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
 
-            if ((address < 0x8000) && adam_ram_lo_exp)        {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
-            else if ((address >= 0x8000) && adam_ram_hi_exp)  {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
-        }
+        if ((address < 0x8000) && adam_ram_lo_exp)        {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
+        else if ((address >= 0x8000) && adam_ram_hi_exp)  {pColecoMem[address]=value;  AdamRAM[0x10000 + address] = value;}
+    }
+    else if (machine_mode & MODE_COLECO)
+    {
         // -----------------------------------------------------------
         // If the Super Game Module has been enabled, we have a much 
         // wider range of RAM that can be written (and no mirroring)
         // -----------------------------------------------------------
-        else if (sgm_enable)
+        if (sgm_enable)
         {
             if ((address >= sgm_low_addr) && (address < 0x8000)) pColecoMem[address]=value;
         }    
@@ -418,7 +418,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     // are going to assume well-behaved .sg ROMs as this is 
     // primarily a Colecovision emu with partial SG-1000 support.
     // -------------------------------------------------------------
-    else if (sg1000_mode)
+    else if (machine_mode & MODE_SG_1000)
     {
         // Allow normal SG-1000, SC-3000 writes, plus allow for 8K RAM Expanders...
         if ((address >= 0x8000) || (address >= 0x2000 && address < 0x4000))
@@ -429,21 +429,21 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     // ----------------------------------------------------------------------------------
     // For the Sord M5, RAM is at 0x7000 and we emulate the 32K RAM Expander above that
     // ----------------------------------------------------------------------------------
-    else if (sordm5_mode)
+    else if (machine_mode & MODE_SORDM5)
     {
         if (address >= 0x7000)
         {
             pColecoMem[address]=value;  // Allow pretty much anything above the base ROM area
         }
     }
-    else if (pv2000_mode)
+    else if (machine_mode & MODE_PV2000)
     {
         cpu_writemem_pv2000(value, address);
     }
     // ----------------------------------------------------------------------------------
     // For the Memotech MTX, allow anything in the upper 48K
     // ----------------------------------------------------------------------------------
-    else if (memotech_mode)
+    else if (machine_mode & MODE_MEMOTECH)
     {
         if (address >= memotech_RAM_start)
         {
@@ -460,9 +460,9 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         }
     }
     // ----------------------------------------------------------------------------------
-    // For the Memotech MTX, allow anything in the upper 48K
+    // For the Einstien, allow anything in the upper 48K
     // ----------------------------------------------------------------------------------
-    else if (einstein_mode)
+    else if (machine_mode & MODE_EINSTEIN)
     {
         extern u8 Slot3RAM[];
         extern u16 einstein_ram_start;
@@ -475,7 +475,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     // ----------------------------------------------------------------------------------
     // For the Spectravideo SVI - we write into any area that is designated as RAM
     // ----------------------------------------------------------------------------------
-    else if (svi_mode)
+    else if (machine_mode & MODE_SVI)
     {
         if ( ((address < 0x8000) && svi_RAM[0]) || ((address >= 0x8000) && svi_RAM[1]) )
         {
@@ -487,7 +487,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     // ----------------------------------------------------------------------------------------------------------
     // For the MSX, we support a 64K main RAM machine plus some of the more common memory mappers...
     // ----------------------------------------------------------------------------------------------------------
-    else if (msx_mode)
+    else if (machine_mode & MODE_MSX)
     {
         // -------------------------------------------------------
         // First see if this is a write to a RAM enabled slot...
@@ -701,7 +701,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
             }
         }
     }
-    else if (pencil2_mode)
+    else if (machine_mode & MODE_PENCIL2)
     {
         pColecoMem[address] = value;
     }

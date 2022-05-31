@@ -63,8 +63,6 @@ Thanks to Alekmaul who provided the
 baseline code to work with and to lobo
 for the menu graphical design.
 
-Thanks to Reesy for the DrZ80 core.
-
 Thanks to Flubba for the SN76496 sound core.
 
 Thanks to the C-BIOS team for the open 
@@ -89,7 +87,7 @@ Known Issues :
 * Borders are not correctly rendered - only a few games utilize them and are still fully playable without this.
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
-* MSX envelope and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
+* MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
 * MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music)
 
 ADAM Compatibility :
@@ -109,7 +107,7 @@ the default MSX Mapper is set to "GUESS" which does a fairly good job loading th
 * A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options.
 * Most 64K games use the ASC16 memory mapper - so you can try that one... but a few (e.g. Mutants from the Deep) are linear mapped from 0-64K and you will need to pick LINEAR64 in Game Options. 
 * The auto-detection on KONAMI8 and KONAMI-SCC mappers is pretty good... but many other games using ASCII8 or ASCII16 don't detect well - you should try those mappers if the "larger than 64K" game won't run.
-* Some of the really big games (128K or larger) run slow - if you're not getting full frame rate, you can try switching to the DrZ80 core (not all games will run with this) and/or you can disable Vertical Sync and/or enable Frame Skip.  Recommend you turn off Vertical Sync at a minimum to get the most speed from large MSX games.
+* Some of the really big games (128K or larger) run slow - if you're not getting full frame rate, you can try the speed configuration changes mentioned further below.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
 * Some MSX games take 4 or 5 seconds to initialize and start running due to checking various slots and subslots for memory - be patient. 
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 98% run rate on MSX1 games. 
@@ -188,6 +186,8 @@ There is full support for Spinner X (P1) and Spinner Y (P2) or map
 both of them to get support for trackball games. These also work
 for games like Turbo steering.  You can change the spinner sensitivity
 to one of five different settings (Normal, Fast, Fastest, Slow, Slowest).
+By default, the spinners are only enabled for the few games that use 
+them - but you can force them by changing the Spinner Speed.
 
 For the MSX emulation, the colecovision keypad is mapped as follows:
 ```
@@ -232,29 +232,22 @@ it for almost all games (Princess Quest is one game where you might turn it off)
 handle it for the more simple games. So by default it's enabled for DSi and disabled for DS-LITE/PHAT.
 You can toggle this in the "Game Options" (and START=SAVE it out as you wish). 
 
-A Tale of Two Cores :
------------------------
-ColecoDS supports 2 different Z80 CPU cores. 
-DrZ80 is very fast but is not 100% accurate so some games don't run right.
-CZ80 is 10% slower but is much closer to 100% accurate and games generally run great.
-For the DSi and above, the CZ80 core is the default.
-For the DS-LITE/PHAT, the DrZ80 core is the default.
-You can toggle this (and save on a per-game basis) in GAME OPTIONS.
-If you want to use the CZ80 core but need a bit more speed to make the
-games playable - you can also play with Vertical Sync and Frame Skip settings.
-
 The Need For Speed :
 -----------------------
 If a game just isn't running at the right speed or has periods of slowdown (not
 attributed to the actual game), here are the things you can try in the order I 
 would personally try them:
+* If it's a Colecovision game, make sure 'RAM MIRROR' is disabled. Only a few games need this (it will crash if you set it wrong).
 * Turn off Vertical Sync
-* Turn on Frame Skip
+* Turn on Frame Skip - there are two settings here... show 3/4 (light frame skip) and show 1/2 (heavy frame skip)
 * Set Max Sprites to 4
-* Switch to the DrZ80 fast CPU core
 
 Versions :
 -----------------------
+V7.3: 31-May-2022 by wavemotion-dave
+* Massive optimization of the VDP core and memory handling so we are now almost 35% faster on Colecovision games and more than 10% faster on all other systems.
+* Due to these optmizations, the DrZ80 core has been removed and only the high-compatibility CZ80 core remains.
+
 V7.2: 14-May-2022 by wavemotion-dave
 * Improved Einstein driver to allow SHIFT and CONTROL key maps. 
 * Added AY Envelope Reset option for the few games that need it (Warp & Warp, Killer Station)
