@@ -253,7 +253,7 @@ V7.2: 14-May-2022 by wavemotion-dave
 * Added AY Envelope Reset option for the few games that need it (Warp & Warp, Killer Station)
 * Added 2P mapping support for SVI games so MEGALONE (Burken Pak 14) and CRAZY TEETH will play properly.
 * Improved the SG-1000 driver so that the Dahjee and TW bootlegs work.
-* Added F1-F8 as assinable maps on Memotech
+* Added F1-F8 as assignable maps on Memotech
 
 V7.1: 1-May-2022 by wavemotion-dave
 * Fixed PV-2000 driver (broken in 7.0).
