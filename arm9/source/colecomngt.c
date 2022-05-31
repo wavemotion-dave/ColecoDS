@@ -540,6 +540,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         strcpy(lastAdamDataPath, path);
         romBankMask = 0x3F;
         sg1000_double_reset = true;
+        machine_mode = MODE_SG_1000;
         return bOK;
     }
     else
@@ -552,6 +553,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         strcpy(lastAdamDataPath, path);
         romBankMask = 0x7F;
         sg1000_double_reset = true;
+        machine_mode = MODE_SG_1000;
         return bOK;
     }
     else        
