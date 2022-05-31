@@ -151,6 +151,8 @@ u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 wh
 u8 creativision_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .cv ROM is loaded (Creativision)
 u8 coleco_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a Colecovision ROM is loaded
 
+u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0001;  // A faster way to know what type of machine we are 
+
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
 
@@ -323,7 +325,7 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
     }
     else
     {
-        if (msx_mode || svi_mode || einstein_mode)   // If we are an MSX or SVI, we can just use the one AY sound core
+        if (machine_mode & (MODE_MSX | MODE_SVI | MODE_EINSTEIN))
         {
             ay76496Mixer(len*4, dest, &aycol);
         }

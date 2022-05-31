@@ -190,8 +190,21 @@ extern u8 adam_CapsLock;
 extern u8 adam_unsaved_data;
 extern u8 creativision_mode;
 
+extern u16 machine_mode;
+
 extern char lastAdamDataPath[];
 extern u32 tape_pos, tape_len;
+
+#define MODE_COLECO         0x0001
+#define MODE_ADAM           0x0002
+#define MODE_SG_1000        0x0004
+#define MODE_SORDM5         0x0008
+#define MODE_PV2000         0x0010
+#define MODE_MEMOTECH       0x0020
+#define MODE_EINSTEIN       0x0040
+#define MODE_SVI            0x0080
+#define MODE_MSX            0x0100
+#define MODE_PENCIL2        0x0200
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 

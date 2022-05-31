@@ -746,7 +746,22 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     // For some combinations, we have hotspots or other memory stuff that 
     // needs to be more complicated than simply returning pColecoMem[].
     // -------------------------------------------------------------------------  
-    bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || adam_mode || pv2000_mode) ? 1:0;                          // Assume RAM is complicated until told otherweise
+    bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || adam_mode || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
+
+    // -----------------------------------------------------------------------
+    // To speed up processing in the memory write functions, we accumulate 
+    // the bits so we only have to fetch one machine_mode variable.
+    // -----------------------------------------------------------------------
+    if (pencil2_mode)       machine_mode = MODE_PENCIL2;
+    else if (msx_mode)      machine_mode = MODE_MSX;
+    else if (svi_mode)      machine_mode = MODE_SVI;
+    else if (einstein_mode) machine_mode = MODE_EINSTEIN;
+    else if (memotech_mode) machine_mode = MODE_MEMOTECH;
+    else if (pv2000_mode)   machine_mode = MODE_PV2000;
+    else if (sordm5_mode)   machine_mode = MODE_SORDM5;
+    else if (sg1000_mode)   machine_mode = MODE_SG_1000;
+    else if (adam_mode)     machine_mode = MODE_ADAM;
+    else                    machine_mode = MODE_COLECO;
   }
   return bOK;
 }
@@ -887,13 +902,16 @@ void SetupAdam(bool bResetAdamNet)
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
 {
-  if (sg1000_mode)   {return cpu_readport_sg(Port);}    
-  if (sordm5_mode)   {return cpu_readport_m5(Port);}    
-  if (pv2000_mode)   {return cpu_readport_pv2000(Port);}    
-  if (memotech_mode) {return cpu_readport_memotech(Port);}    
-  if (msx_mode)      {return cpu_readport_msx(Port);}
-  if (svi_mode)      {return cpu_readport_svi(Port);}
-  if (einstein_mode) {return cpu_readport_einstein(Port);}
+  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
+  {
+      if (machine_mode & MODE_MSX)      {return cpu_readport_msx(Port);}
+      if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}    
+      if (machine_mode & MODE_SORDM5)   {return cpu_readport_m5(Port);}    
+      if (machine_mode & MODE_PV2000)   {return cpu_readport_pv2000(Port);}    
+      if (machine_mode & MODE_MEMOTECH) {return cpu_readport_memotech(Port);}    
+      if (machine_mode & MODE_SVI)      {return cpu_readport_svi(Port);}
+      if (machine_mode & MODE_EINSTEIN) {return cpu_readport_einstein(Port);}
+  }
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF; 
@@ -938,13 +956,16 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 /*************************************************************/
 void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 {
-  if      (sg1000_mode)   {cpu_writeport_sg(Port, Value); return;}
-  else if (sordm5_mode)   {cpu_writeport_m5(Port, Value); return;}
-  else if (pv2000_mode)   {cpu_writeport_pv2000(Port, Value); return;}
-  else if (memotech_mode) {cpu_writeport_memotech(Port, Value); return;}
-  else if (svi_mode)      {cpu_writeport_svi(Port, Value); return;}
-  else if (einstein_mode) {cpu_writeport_einstein(Port, Value); return;}
-  else if (msx_mode)      {cpu_writeport_msx(Port, Value); return;}
+  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
+  {
+      if (machine_mode & MODE_MSX)      {cpu_writeport_msx(Port, Value); return;}
+      if (machine_mode & MODE_SG_1000)  {cpu_writeport_sg(Port, Value); return;}
+      if (machine_mode & MODE_SORDM5)   {cpu_writeport_m5(Port, Value); return;}
+      if (machine_mode & MODE_PV2000)   {cpu_writeport_pv2000(Port, Value); return;}
+      if (machine_mode & MODE_MEMOTECH) {cpu_writeport_memotech(Port, Value); return;}
+      if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value); return;}
+      if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
+  }
     
   // Colecovision ports are 8-bit
   Port &= 0x00FF;
