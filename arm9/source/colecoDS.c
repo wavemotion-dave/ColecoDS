@@ -149,6 +149,7 @@ u8 adam_mode         __attribute__((section(".dtcm"))) = 0;       // Set to 1 wh
 u8 pencil2_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pii Pencil 2 ROM is loaded (only one known to exist!)
 u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
 u8 creativision_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .cv ROM is loaded (Creativision)
+u8 coleco_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a Colecovision ROM is loaded
 
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
@@ -522,8 +523,8 @@ void ResetColecovision(void)
   ay76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
   ay76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
     
-  DrZ80_Reset();                        // Reset the Z80 CPU core
-  ResetZ80(&CPU);                       // Reset the CZ80 CPU core
+  ResetZ80Vars();                       // Reset the Z80 CPU core Vars
+  ResetZ80(&CPU);                       // Reset the Z80 CPU core
   
   sordm5_reset();                       // Reset the Sord M5 specific vars
   memotech_reset();                     // Reset the memotech MTX specific vars
@@ -664,32 +665,16 @@ void ShowDebugZ80(void)
     siprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
     AffChaine(0,idx++,7, tmp);
     idx++;
-    if (myConfig.cpuCore == 0)
-    {
-        siprintf(tmp, "Z80PC %08X", drz80.Z80PC-drz80.Z80PC_BASE);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "Z80SP %08X", drz80.Z80SP - drz80.Z80SP_BASE);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "Z80A  %08X", drz80.Z80A);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "IRQ   %02X", drz80.Z80_IRQ);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "IF/IM %02X/%02X", drz80.Z80IF, drz80.Z80IM);
-        AffChaine(0,idx++,7, tmp);
-    }
-    else
-    {
-        siprintf(tmp, "Z80PC %04X", CPU.PC.W);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "Z80SP %04X", CPU.SP.W);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "Z80A  %04X", CPU.AF.W);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "IRQ   %04X", CPU.IRequest);
-        AffChaine(0,idx++,7, tmp);
-        siprintf(tmp, "IREQ  %d", CPU.User);
-        AffChaine(0,idx++,7, tmp);
-    }
+    siprintf(tmp, "Z80PC %04X", CPU.PC.W);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80SP %04X", CPU.SP.W);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Z80A  %04X", CPU.AF.W);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "IRQ   %04X", CPU.IRequest);
+    AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "IREQ  %d", CPU.User);
+    AffChaine(0,idx++,7, tmp);
     idx++;
     
     if (AY_Enable)

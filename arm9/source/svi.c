@@ -406,7 +406,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     Port &= 0x00FF;
 
     if      (Port == 0x80) WrData9918(Value);
-    else if (Port == 0x81) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT;}}
+    else if (Port == 0x81) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; }}
     else if (Port == 0x88)    // PSG Area
     {
         FakeAY_WriteIndex(Value & 0x0F);

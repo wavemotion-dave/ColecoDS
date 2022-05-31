@@ -132,7 +132,6 @@ extern u16 keyboard_interrupt;
 // --------------------------------------------------
 extern void SetupAdam(bool bResetAdamNet);
 extern byte Loop9918(void);
-extern void DrZ80_InitHandlers(void);
 extern u8 ColecoBios[];
 extern u8 lastBank;
 extern u8 MSXBios[];

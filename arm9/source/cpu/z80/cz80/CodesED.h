@@ -96,6 +96,7 @@ case LD_A_I:
   break;
 
 case LD_A_R:
+  CPU.R = rand() % 128; // R is a refresh register which is not needed for emulation but a few games may use it as a pseudo-random number
   CPU.AF.B.h=CPU.R;
   CPU.AF.B.l=(CPU.AF.B.l&C_FLAG)|(CPU.IFF&IFF_2? P_FLAG:0)|ZSTable[CPU.AF.B.h];
   break;

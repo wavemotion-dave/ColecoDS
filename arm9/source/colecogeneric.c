@@ -153,6 +153,324 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD F8",
 };
 
+const u32 cv_no_mirror_games[] =
+{
+  0xc575a831,   //	2010 - The Graphic Action Game.rom
+  0xfce3aa06,   //	Alcazar - The Forgotten Fortress.rom
+  0x4ffb4e8c,   //	Alphabet Zoo.rom
+  0x78a738af,   //	Amazing Bumpman.rom
+  0x275c800e,   //	Antarctic Adventure.rom
+  0x947437ec,   //	Aquattack.rom
+  0x6f88fcf0,   //	Artillery Duel.rom
+  0xd464e5e4,   //	BC's Quest for Tires II.rom
+  0x4359a3e5,   //	BC's Quest for Tires.rom
+  0x7a93c6e5,   //	Beamrider.rom
+  0xdf65fc87,   //	Blockade Runner.rom
+  0x9b547ba8,   //	Boulder Dash.rom
+  0xb3044aa6,   //	Boulder Dash.sav
+  0x829c967d,   //	Brain Strainers.rom
+  0x00b37475,   //	Buck Rogers - Planet of Zoom.rom
+  0x9e1fab59,   //	Bump 'n' Jump.rom
+  0x91346341,   //	Burgertime.rom
+  0x6af19e75,   //	Cabbage Patch Kids - Adv's in the Park.rom
+  0x75b08d99,   //	Cabbage Patch Kids - Picture Show.rom
+  0x5aa22d66,   //	Campaign '84.rom
+  0x70f315c2,   //	Carnival.rom
+  0x17edbfd4,   //	Centipede.rom
+  0x030e0d48,   //	Choplifter!.rom
+  0x5eeb81de,   //	Chuck Norris Superkicks.rom
+  0x4e8b4c1d,   //	Congo Bongo.rom
+  0x39d4215b,   //	Cosmic Avenger.rom
+  0xab146fc6,   //	Cosmic Avenger.sav
+  0x7c2c7c41,   //	Cosmic Crisis.rom
+  0x890682b3,   //	Dam Busters, The.rom
+  0xbff86a98,   //	Dance Fantasy.rom
+  0x51fe49c8,   //	Decathlon.rom
+  0x6cf594e5,   //	Defender.rom
+  0x56c358a6,   //	Destructor.rom
+  0x3c77198c,   //	Donkey Kong [16K].rom
+  0x94c4cd4a,   //	Donkey Kong [24K].rom
+  0xfd11508d,   //	Donkey Kong Junior.rom
+  0xdcb8f9e8,   //	DragonFire.rom
+  0x109699e2,   //	Dr. Seuss Fix-Up the Mix-Up Puzzler.rom
+  0x4025ac94,   //	Dukes of Hazzard, The.rom
+  0x4cd4e185,   //	Evolution.rom
+  0xec9dfb07,   //	Facemaker.rom
+  0xb3b767ae,   //	Fathom.rom
+  0x2a49f507,   //	Flipper Slipper.rom
+  0x65bbbcb4,   //	Fortune Builder.rom
+  0x964db3bc,   //	Fraction Fever.rom
+  0x8615c6e8,   //	Frantic Freddy.rom
+  0x3cacddfb,   //	Frenzy.rom
+  0x4229ea5a,   //	Frogger II - Threeedeep!.rom
+  0x798002a2,   //	Frogger.rom
+  0xd0110137,   //	Front Line.rom
+  0x6a7a162a,   //	Galaxian.rom
+  0xfdb75be6,   //	Gateway to Apshai.rom
+  0x66c725ec,   //	Gateway to Apshai.sav
+  0xff46becc,   //	Gorf.rom
+  0x29fea563,   //	Gust Buster.rom
+  0x27cbf26d,   //	Gyruss.rom
+  0x987491ce,   //	Heist, The.rom
+  0x685ab9b5,   //	H.E.R.O..rom
+  0x2787516d,   //	Illusions.rom
+  0xcc43ebf7,   //	It's Only Rock 'n' Roll.rom
+  0xa3205f21,   //	James Bond 007.rom
+  0xa5511418,   //	Jukebox.rom
+  0x060c69e8,   //	Jumpman Junior.rom
+  0x58e886d2,   //	Jungle Hunt.rom
+  0x8c7b7803,   //	Ken Uston Blackjack-Poker.rom
+  0x69fc2966,   //	Keystone Kapers.rom
+  0x2c3097b8,   //	Lady Bug.rom
+  0x1641044f,   //	Learning with Leeper.rom
+  0x918f12c0,   //	Linking Logic.rom
+  0xd54c581b,   //	Logic Levels.rom
+  0x6a2d637b,   //	Looping.rom
+  0xbab520ea,   //	Memory Manor.rom
+  0x6a162c7d,   //	Meteoric Shower.rom
+  0xb24f10fd,   //	Miner 2049er.rom
+  0xd92b09c8,   //	Monkey Academy.rom
+  0xced0d16e,   //	Montezuma's Revenge.rom
+  0x8a303f5a,   //	Moonsweeper.rom
+  0x0f4d800a,   //	Motocross Racer.rom
+  0xc173bbec,   //	Mountain King.rom
+  0xde47c29f,   //	Mouse Trap.rom
+  0x461ab6ad,   //	Mr. Do!.rom
+  0x546f2c54,   //	Mr. Do!'s Castle.rom
+  0x4491a35b,   //	Nova Blast.rom
+  0xadd10242,   //	Oil's Well.rom
+  0x0a0511c7,   //	Omega Race.rom
+  0xef50e1c5,   //	One-on-One.rom
+  0x53b85e20,   //	Pepper II.rom
+  0x851a455f,   //	Pitfall II - Lost Caverns.rom
+  0xd4f180df,   //	Pitfall!.rom
+  0x81be4f55,   //	Pitstop.rom
+  0xa095454d,   //	Popeye.rom
+  0x532f61ba,   //	Q-bert.rom
+  0x79d90d26,   //	Q-Bert's QUBES.rom
+  0xeec81c42,   //	Quest for Quintana Roo.rom
+  0xfe897f9c,   //	River Raid.rom
+  0xcdb8d3cf,   //	Robin Hood.rom
+  0xaf49a0c3,   //	Rock 'n Bolt.rom
+  0x37f144d3,   //	Rocky - Super Action Boxing.rom
+  0xaf885d76,   //	Roc 'n Rope.rom
+  0x0364fb81,   //	Rolloverture.rom
+  0x3563286b,   //	Sammy Lightfoot.rom
+  0x0ec63a5c,   //	Sector Alpha.rom
+  0x4591f393,   //	Sewer Sam.rom
+  0xdf84ffb5,   //	Sir Lancelot.rom
+  0xb37d48bd,   //	Skiing.rom
+  0x53d2651c,   //	Slither.rom
+  0x8871e9fd,   //	Slurpy.rom
+  0x97c0382d,   //	Smurf Paint 'n' Play Workshop.rom
+  0x42850379,   //	Smurf Rescue in Gargamel's Castle.rom
+  0xdf8de30f,   //	Space Fury.rom
+  0x5bdf2997,   //	Space Panic.rom
+  0xa6401c46,   //	Spectron.rom
+  0x36478923,   //	Spy Hunter.rom
+  0xac92862d,   //	Squish'em Featuring Sam.rom
+  0x95824f1e,   //	Star Trek - Strategic Operations Sim.rom
+  0x0e75b3bf,   //	Star Wars - The Arcade Game.rom
+  0xd247a1c8,   //	Strike It!.rom
+  0xa417f25f,   //	Subroc.rom
+  0xb3bcf3f9,   //	Super Action Baseball.rom
+  0x62619dc0,   //	Super Action Football.rom
+  0xf84622d2,   //	Super Cobra.rom
+  0x84350129,   //	Super Cross Force.rom
+  0xaf6bbc7e,   //	Tank Wars.rom
+  0x8afd7db2,   //	Tapper.rom
+  0x7cd7a702,   //	Tarzan.rom
+  0xc8bc1950,   //	Telly Turtle.rom
+  0x1593f7df,   //	Threshold.rom
+  0xb3a1eacb,   //	Time Pilot.rom
+  0x1e14397e,   //	TOMARC The Barbarian.rom
+  0xc1d5a702,   //	Tournament Tennis.rom
+  0xbd6ab02a,   //	Turbo.rom
+  0x0408f58c,   //	Tutankham.rom
+  0xfdd52ca0,   //	Up'n Down.rom
+  0x8e5a4aa3,   //	Venture.rom
+  0x70142655,   //	Victory.rom
+  0xfd25adb3,   //	War Games.rom
+  0x261b7d56,   //	War Room.rom
+  0x29ec00c9,   //	Wing War.rom
+  0xb9ba2bb6,   //	Wizard of Id's Wizmath.rom
+  0xf7a29c01,   //	Word Feud.rom
+  0x8cb0891a,   //	Zaxxon.rom
+  0x6e523e50,   //	Zenji.rom
+  0x3678ab6f,   //  Escape from the Mindmaster
+  0xc2e7f0e0,   //  Super DK Junior
+  0xef25af90,   //  Super DK
+  0xa40a07e8,   //  Pac-Man
+  0x1038e0a1,   //  Dig-Dug
+  0x2ebf88c4,   //  Power Lords - Quest for Volcan
+  0x1bed9c5b,   //  Fall Guy 
+  0xdb845695,  //	AE - Anti Environment Encounter (AE2012).rom
+  0x5ba1a6c8,  //	Amazing Snake (2001) (Serge-Eric Tremblay).rom
+  0xa66e5ed1,  //	Antarctic Adventure (1984) (Konami) (Prototype).rom
+  0xaf86d22c,  //	AntiISDA Warrior (2004) (Ventzislav Tzvetkov).rom
+  0xead5e824,  //	Arno Dash (2021).rom
+  0x71d9d422,  //	Bagman (2015) (CollectorVision).rom
+  0x223e7ddc,  //	Bank Panic (2011).rom
+  0xdddd1396,  //	Black Onyx (2013).rom
+  0xa399d4cd,  //	Bomb Jack.rom
+  0x924a7d57,  //	booming_boy_cv_sgm.rom
+  0x88d0a96f,  //	BTshort.rom
+  0xb278ebde,  //	Burn Rubber (2012).rom
+  0x53672097,  //	caos_begins_colecovision_sgm.rom
+  0x10e6e6de,  //	Caterpillar (2011).rom
+  0x4928b5f5,  //	Caverns of Titan.rom
+  0x045c54d6,  //	champion-pro-wrestling-2020.rom
+  0x55b36d53,  //	children_of_the_night_cv_sgm.rom
+  0xbe3ef785,  //	Circus Charlie (2011).rom
+  0x960f7086,  //	cold_blood_colecovision_sgm.rom
+  0x43933306,  //	Cosmo Challenge (1997) (Red Bullet Software).rom
+  0x03f9e365,  //	Cosmo Fighter 2 (1997) (Red Bullet Software).rom
+  0xb4b9301f,  //	Cosmo Fighter 3 (2002) (Red Bullet Software).rom
+  0xb248cd72,  //	C-SO (2018).rom
+  0x3c0bba92,  //	DacMan (2000) (NewColeco).rom
+  0x0246bdb1,  //	danger_tower_colecovision_sgm.rom
+  0x1b3a8639,  //	Deflektor Kollection (2005) (NewColeco).rom
+  0x2a9fcbfa,  //	Destructor Standard Controller Edition (2010).rom
+  0x5576dec3,  //	Diamond Dash 2 (2021).rom
+  0x77088cab,  //	digger_cv.rom
+  0x12ceee08,  //	dragons_lair_colecovision_sgm.rom
+  0x70d55091,  //	dungeonandtrolls.rom
+  0x8d1b3636,  //	Explosion (2003) (NewColeco).rom
+  0x48ff87cf,  //	Final Test Cartridge (19xx).col
+  0x5ac80811,  //	flapee-byrd-2014.rom
+  0x89875c52,  //	Flicky (2018).rom
+  0xfd69012b,  //	Flora and the Ghost Mirror (2013) (NewColeco).rom
+  0xf43b0b28,  //	Frantic (2008) (Scott Huggins).rom
+  0xcb941eb4,  //	Frog Feast (2007).rom
+  0x832586bf,  //	Frontline - Standard Controller Edition.rom
+  0xb3212318,  //	Frostbite (2017).rom
+  0x9f1045e6,  //	Galaga RevA.rom
+  0x9a02fba5,  //	GamePack I (2002) (NewColeco).rom
+  0xeab0ddd6,  //	GamePack II (2004) (NewColeco).rom
+  0x5b4ad168,  //	GamePack - Vic-20 (2003) (NewColeco).rom
+  0x652d533e,  //	gauntlet-2019.rom
+  0x312980d5,  //	GhostBlaster (2010) (NewColeco) (Rev. A NTSC).rom
+  0xfc935cdd,  //	ghostbusters-2018.rom
+  0x1e79958a,  //	Girls Garden (2010).rom
+  0x8acf1bcf,  //	Golgo 13 (2011) (Team PixelBoy).rom
+  0x01581fa8,  //	goonies_colecovision_sgm.rom
+  0xb2fb36a9,  //	GrailoftheGodbugfix2.rom
+  0x81413ff6,  //	Gulkave (2010) (Team Pixelboy).rom
+  0x27818d93,  //	Hang-On (2016) (CollectorVision) (SGM).rom
+  0x9b891703,  //	helifire.rom
+  0x87a49761,  //	heroes_arena_colecovision_sgm.rom
+  0x5a6c2d2f,  //	Insane Pickin' Sticks VIII (2010) (NewColeco).rom
+  0x69e3c673,  //	Jeepers Creepers - 30th Anniversary (2012) (NewColeco).rom
+  0xae7614c3,  //	j-e-t-p-a-c-2017.rom
+  0x62f325b3,  //	Joust (2014) (Team Pixelboy).rom
+  0xf403fe04,  //	Jump or Die (2006) (NewColeco).rom
+  0x5287998b,  //	Kaboom (2017) (Team Pixelboy).rom
+  0x819a06e5,  //	Kevtris (1996) (Kevin Horton).rom
+  0x9ce3b912,  //	king-balloon-2018.rom
+  0x0a2ac883,  //	kings_valley_colecovision_sgm.rom
+  0x278c5021,  //	klondike-solitaire-2021.rom
+  0x1523bfbf,  //	knight_lore_colecovision_sgm.rom
+  0x01cacd0d,  //	knightmare_colecovision_sgm.rom
+  0x344cb482,  //	Konami's Ping Pong (2011) (Team PixelBoy).rom
+  0xe8a91349,  //	kralizec_tetris_colecovision.rom
+  0xa078f273,  //	Kung-Fu Master - 2016 (CollectorVision).rom
+  0x6bc9a350,  //	Lock-n-Chase.rom
+  0xa2128f74,  //	Lode Runner (2002) (Steve Begin).rom
+  0xf4314bb1,  //	Magical Tree (2006).rom
+  0x6ed6a2e1,  //	mahjong-solitaire-2021.rom
+  0x2a1438c0,  //	Majikazo (2016).rom
+  0x00d30431,  //	Mappy (2015) (Team Pixelboy) (SGM).rom
+  0x11777b27,  //	mario-brothers-2009.rom
+  0x90007079,  //	Matt Patrol (1984) (Atarisoft) (Prototype).rom
+  0x44bfaf23,  //	Maze Maniac (2006) (Charles-Mathieu Boyer).rom
+  0x53da40bc,  //	mecha_8_colecovision_sgm.rom
+  0xb405591a,  //	mecha9_colecovision_sgm.rom
+  0x5cd9d34a,  //	minesweeper-2021.rom
+  0xdd730dbd,  //	missle-strike-2021.rom
+  0x4e0edb24,  //	Miss Space Fury (2001).rom
+  0xeb6be8ec,  //	Module Man (2013).rom
+  0x4514d3f0,  //	Moon Patrol - Ikrananka - Final - WIP.rom
+  0xac3cb427,  //	Moon Patrol Prototype.rom
+  0x9ab11795,  //	Mr Chin (2008).rom
+  0xd45475ac,  //	Multiverse (2019).rom
+  0x9c059a51,  //	Nim (2000) (NewColeco).rom
+  0x5fb0ed62,  //	Ninja Princess (2011).rom
+  0xc177bfd4,  //	operation_wolf_colecovision_sgm.rom
+  0x4aafdc07,  //	ozmawars.rom
+  0xa82c9593,  //	Pacar (2017).rom
+  0xf3ccacb3,  //	PAC_CV_101.ROM
+  0xf3ccacb3,  //	Pac-Man Collection (2008 Opcode).rom
+  0x18aced43,  //	pang.rom
+  0xb47377fd,  //	pegged-2021.rom
+  0x5a49b249,  //	pillars-2021.rom
+  0x519bfe40,  //	Pitfall II Arcade (2010 Team Pixelboy).rom
+  0x50998610,  //	pitman-2021.rom
+  0x0e25ebd7,  //	Pooyan (2009).rom
+  0xa59eaa2b,  //	Princess Quest (2012).rom
+  0xf7052b06,  //	Pyramid Warp Battleship Clapton-2-2009.rom
+  0xee530ad2,  //	qbiqs_cv_sgm.rom
+  0x6da37da8,  //	Quest for the Golden Chalice (2012) (Team PixelBoy).rom
+  0xfb5dd80d,  //	rallyx_colecovision_sgm.rom
+  0x7e090dfb,  //	Remember the Flag (2017).rom
+  0x2331b6f6,  //	reversi-and-diamond-dash-2004.rom
+  0xd8caac4c,  //	RipCord (2016) (CollectorVision).rom
+  0x570b9935,  //	Road Fighter (2007) (Opcode Games).rom
+  0x99e66988,  //	Rockcutter32Kv.rom
+  0xeaf7d6dc,  //	searchforthestolencrownjewels2.rom
+  0x594b1235,  //	searchforthestolencrownjewels3.rom
+  0xe339d9cc,  //	searchforthestolencrownjewels.rom
+  0xb753a8ca,  //	secret_of_the_moai_cv_sgm.rom
+  0x10e8dd09,  //	Shmup.rom
+  0x89c2b16f,  //	Shouganai.rom
+  0x2e4c28e2,  //	Side Trak (2012) (CollectorVision).rom
+  0x54d54968,  //	Sky Jaguar (1984) (Konami-Opcode).rom
+  0x92624cff,  //	Slither - Controller Hack (2010) (Daniel Bienvenu-NewColeco).rom
+  0x9e1bea35,  //	Space Caverns (2004) (Scott Huggins) (Prototype).rom
+  0x9badaa20,  //	Space Hunter (2005) (Guy Foster).rom
+  0xec76ee9e,  //	Space Invaders Collection (full).rom
+  0xaf9b178c,  //	Space Invasion (1998 John Dondzilla).rom
+  0xfe521268,  //	Space Trainer (2005) (NewColeco).rom
+  0xf7ed24e9,  //	Space_Venture_v3.1_(color).rom
+  0x75f84889,  //	spelunker_colecovision_sgm.rom
+  0xdeed811e,  //	spunky-s-super-car-2014.rom
+  0xea3aa29e,  //	star-fire-2021.rom
+  0xce3ff5c7,  //	Star Force (2011) (Patched).rom
+  0xf7f18e6f,  //	Star Fortress (1997) (John Dondzila).rom
+  0x08e7df91,  //	StarOcean.rom
+  0x3e7d0520,  //	Star Soldier (2016) (CollectorVision) (SGM).rom
+  0x153ac4ef,  //	Steamroller (1984) (Activision) (Prototype).rom
+  0x342c73ca,  //	stone_of_wisdom_colecovision_sgm.rom
+  0xf55f499e,  //	stray_cat_colecovision_sgm.rom
+  0xb5be3448,  //	sudoku_colecovision.rom
+  0xec76729e,  //	Super Action Soccer (2012) (Team PixelBoy).rom
+  0x260cdf98,  //	super_pac_man_colecovision_sgm.rom
+  0x1457c897,  //	Super Sonyk Arena v1.6 (Gameblabla).col
+  0xae209065,  //	Super Space Acer (2011).rom
+  0x81bfb02d,  //	Sydney Hunter and the Caverns of Death (2019) (CollectorVision).rom
+  0xb5c92637,  //	Sydney Hunter and The Sacred Tribe (2017) (CollectorVision).rom
+  0xd195e199,  //	Terra Attack (2007) (Scott Huggins).rom
+  0x09e3fdda,  //	thexder_colecovision_sgm.rom
+  0xa8b4b159,  //	Track and Field-2010.rom
+  0xaad0f224,  //	traffic_jam_colecovision_sgm.rom
+  0x6a0b954a,  //	Turbo Standard Controller Hack.rom
+  0xe7e07a70,  //	twinbee_colecovision_sgm.rom
+  0x28bdf665,  //	Txupinazo.rom
+  0xbc8320a0,  //	uridium-2019.rom
+  0xa7a8d25e,  //	Vanguard (2019) (CollectorVision).rom
+  0x530c586f,  //	vexed-2021.rom
+  0x4157b347,  //	Victory - Standard Controller Hack.rom
+  0x7f06e25c,  //	War (2014).rom
+  0xd642fb9e,  //	Waterville Rescue (2009).rom
+  0xd9207f30,  //	Wizard of Wor (SGM).rom
+  0x43505be0,  //	Wonder Boy (2012).rom
+  0x471240bb,  //	Yie Ar Kung-fu (2005).rom
+  0xe290a941,  //	Zanac (2015) (CollectorVision) (SGM).rom
+  0xa5a90f63,  //	zaxxon_super_game_colecovision_sgm.rom
+  0x44e6948c,  //	Zippy Race (2009).rom
+  0x8027dad7,  //	zombie_incident_cv_sgm.rom
+  0xc89d281d,  //	zombie-near-2012.rom
+  0xFFFFFFFF,   //	End of list
+};
 
 /*********************************************************************************
  * Show A message with YES / NO
@@ -870,7 +1188,7 @@ void SetDefaultGameConfig(void)
     myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
     
     myConfig.showFPS     = 0;
-    myConfig.frameSkip   = 0;
+    myConfig.frameSkip   = (isDSiMode() ? 0:1);    // For DSi we don't need FrameSkip, but for older DS-LITE we turn on light frameskip
     myConfig.frameBlend  = 0;
     myConfig.msxMapper   = GUESS;
     myConfig.autoFire1   = 0;
@@ -880,7 +1198,7 @@ void SetDefaultGameConfig(void)
     myConfig.vertSync    = (isDSiMode() ? 1:0);    // Default is Vertical Sync ON for DSi and OFF for DS-LITE
     myConfig.spinSpeed   = 0;    
     myConfig.touchPad    = 0;
-    myConfig.cpuCore     = (isDSiMode() ? 1:0);    // Default is slower/accurate CZ80 for DSi and faster DrZ80 core for DS-LITE
+    myConfig.reserved1   = 1;
     myConfig.msxBios     = 0;   // Default to the C-BIOS
     myConfig.msxKey5     = 0;   // Default key map
     myConfig.dpad        = DPAD_NORMAL;   // Normal DPAD use - mapped to joystick
@@ -888,7 +1206,7 @@ void SetDefaultGameConfig(void)
     myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY;
     myConfig.cvEESize    = C24XX_24C256;
     myConfig.ayEnvelope  = 0;
-    myConfig.reservedA1  = 0;    
+    myConfig.colecoRAM   = COLECO_RAM_NORMAL_MIRROR;
     myConfig.reservedA2  = 0;    
     myConfig.reservedA3  = 0;    
     myConfig.reservedB0  = 0xA5;    // So it's easy to spot on an "upgrade"
@@ -897,11 +1215,13 @@ void SetDefaultGameConfig(void)
     myConfig.reservedB3  = 0;    
     myConfig.reservedC   = 0;    
     
-    // And a few odd defaults 
+    // And a few games don't want more than 4 max sprites (they pull tricks that rely on it)
     if (file_crc == 0xee530ad2) myConfig.maxSprites  = 1;  // QBiqs
     if (file_crc == 0x275c800e) myConfig.maxSprites  = 1;  // Antartic Adventure
     if (file_crc == 0xa66e5ed1) myConfig.maxSprites  = 1;  // Antartic Adventure Prototype  
     if (file_crc == 0x6af19e75) myConfig.maxSprites  = 1;  // Adventures in the Park    
+    if (file_crc == 0xbc8320a0) myConfig.maxSprites  = 1;  // Uridium 
+    
     
     // -------------------------------------------
     // Turbo needs the Driving Module
@@ -975,51 +1295,36 @@ void SetDefaultGameConfig(void)
         MapPlayer2();               // These games want P2 mapping...
     }
     
-    // --------------------------------------------------------------------------
-    // These CV games all need the slower but higher compatibility CZ80 CPU Core
-    // so override the default above for these games in order to play them.
-    // --------------------------------------------------------------------------
-    if (
-        (file_crc == 0xead5e824) ||     // Arno Dash
-        (file_crc == 0x3b27ed05) ||     // Astro Storm
-        (file_crc == 0x77900970) ||     // Deep Dungeon Adventures
-        (file_crc == 0x5576dec3) ||     // Diamond Dash II
-        (file_crc == 0x70d55091) ||     // Dungeon and Trolls
-        (file_crc == 0xb3b767ae) ||     // Fathom (Imagic)        
-        (file_crc == 0xf43b0b28) ||     // Frantic (homebrew)
-        (file_crc == 0x27818d93) ||     // Hang-On 
-        (file_crc == 0x278c5021) ||     // Klondike Solitaire
-        (file_crc == 0x6ed6a2e1) ||     // Mahjong Solitaire
-        (file_crc == 0x5cd9d34a) ||     // Minesweeper
-        (file_crc == 0xdd730dbd) ||     // Missile Strike
-        (file_crc == 0xb47377fd) ||     // Pegged
-        (file_crc == 0x5a49b249) ||     // Pillars
-        (file_crc == 0x50998610) ||     // Pitman
-        (file_crc == 0xd8caac4c) ||     // Rip Cord
-        (file_crc == 0x260cdf98) ||     // Super Pac-Mans
-        (file_crc == 0xae209065) ||     // Super Space Acer
-        (file_crc == 0xbc8320a0) ||     // Uridium
-        (file_crc == 0xa7a8d25e) ||     // Vanguard        
-        (file_crc == 0x530c586f)        // Vexxed
-        )
+   
+    // -----------------------------------------------------------
+    // If we are DS-PHAT or DS-LITE running on slower CPU, we 
+    // need to help the processor out a bit by turning off RAM
+    // mirrors for the games that don't need them.
+    // -----------------------------------------------------------
+    if (!isDSiMode())
     {
-        myConfig.cpuCore = 1;
+        int idx=0;
+        while (cv_no_mirror_games[idx] != 0xFFFFFFFF)
+        {
+            if (file_crc == cv_no_mirror_games[idx])
+            {
+                myConfig.colecoRAM = COLECO_RAM_NO_MIRROR;
+                break;
+            }
+            idx++;
+        }
+        
+        myConfig.spinSpeed = 5;                                                 // Turn off Spinner... except for these games
+        if (file_crc == 0x53d2651c)             myConfig.spinSpeed = 0;         // Slither
+        if (file_crc == 0xbd6ab02a)             myConfig.spinSpeed = 0;         // Turbo
+        if (file_crc == 0xd0110137)             myConfig.spinSpeed = 0;         // Front Line
+        if (file_crc == 0x56c358a6)             myConfig.spinSpeed = 0;         // Destructor
+        if (file_crc == 0x70142655)             myConfig.spinSpeed = 0;         // Victory
     }
     
-    if (sg1000_mode)                            myConfig.cpuCore = 1;  // SG-1000 always uses the CZ80 core
     if (sg1000_mode == 2)                       myConfig.overlay = 9;  // SC-3000 uses the keyboard
-    if (sordm5_mode)                            myConfig.cpuCore = 1;  // SORD M5 always uses the CZ80 core
-    if (memotech_mode)                          myConfig.cpuCore = 1;  // Memotech MTX always uses the CZ80 core
-    if (msx_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
-    if (svi_mode)                               myConfig.cpuCore = 1;  // MSX defaults to CZ80 core - user can switch it out
-    if (adam_mode)                              myConfig.cpuCore = 1;  // Adam defaults to CZ80 core - user can switch it out
-    if (pv2000_mode)                            myConfig.cpuCore = 1;  // PV-2000 only supports DrZ80 core
-    if (einstein_mode)                          myConfig.cpuCore = 1;  // Tatung Einstein only supports DrZ80 core
     if (msx_mode == 2)                          myConfig.msxBios = 1;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
-    if (adam_mode && !isDSiMode())              myConfig.frameSkip=1;  // If Adam and older DS-LITE, turn on light frameskip
-    if (memotech_mode && !isDSiMode())          myConfig.frameSkip=1;  // If Memotech and older DS-LITE, turn on light frameskip
-    if (svi_mode && !isDSiMode())               myConfig.frameSkip=1;  // If SVI and older DS-LITE, turn on light frameskip
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 9;  // Memotech MTX default to full keyboard
     if (svi_mode)                               myConfig.overlay = 9;  // SVI default to full keyboard    
@@ -1132,6 +1437,16 @@ void FindAndLoadConfig(void)
         fread(&AllConfigs, sizeof(AllConfigs), 1, fp);
         fclose(fp);
         
+        if ((AllConfigs[0].config_ver == CONFIG_VER_OLD) && isDSiMode())    // If we are DSi we simply bump up the ver... if older DS-LITE/PHAT we wipe config
+        {
+            for (u16 slot=0; slot<MAX_CONFIGS; slot++)
+            {
+                AllConfigs[slot].config_ver = CONFIG_VER;
+                AllConfigs[slot].reserved1 = 1;
+            }
+        }
+        
+        
         if (AllConfigs[0].config_ver != CONFIG_VER)
         {
             memset(&AllConfigs, 0x00, sizeof(AllConfigs));
@@ -1189,21 +1504,19 @@ const struct options_t Option_Table[2][20] =
         {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire1,  4},
         {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
         {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
-        {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST"},                                                                                                                    &myConfig.spinSpeed,  5},
-        {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    
+        {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
         {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE"},                                                                                                               &myConfig.memWipe,    4},
+        {"COLECO RAM",     {"MIRRORED","NO MIRROR"},                                                                                                                                            &myConfig.colecoRAM,  2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
+    // Page 2
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
-        {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                               &myConfig.ayEnvelope, 2},
-#if 0   // Developer use only   
-        {"Z80 CYCLES!!",   {"NORMAL", "+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10", "-1", "-2", "-3", "-4", "-5"},                                                               &dev_z80_cycles,      16},
-#endif    
+        {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     }
 };              
@@ -1244,25 +1557,12 @@ u8 display_options_list(bool bFullDisplay)
 //*****************************************************************************
 void colecoDSGameOptions(void)
 {
-    extern s16 timingAdjustment;
     u8 optionHighlighted;
     u8 idx;
     bool bDone=false;
     int keys_pressed;
     int last_keys_pressed = 999;
     char strBuf[35];
-    
-    // ----------------------------------------------------
-    // Load up the timing adjustment for the Z80. This is
-    // a bit of a "fudge factor" for the few games that
-    // need help due to the slightly inaccurate Z80 core.
-    // ----------------------------------------------------
-    if      (timingAdjustment == -1) dev_z80_cycles = 11;
-    else if (timingAdjustment == -2) dev_z80_cycles = 12;
-    else if (timingAdjustment == -3) dev_z80_cycles = 13;
-    else if (timingAdjustment == -4) dev_z80_cycles = 14;
-    else if (timingAdjustment == -5) dev_z80_cycles = 15;
-    else  dev_z80_cycles = timingAdjustment;
 
     idx=display_options_list(true);
     optionHighlighted = 0;
@@ -1337,13 +1637,6 @@ void colecoDSGameOptions(void)
     {
         swiWaitForVBlank();
     }
-    
-    if      (dev_z80_cycles == 11) timingAdjustment = -1;
-    else if (dev_z80_cycles == 12) timingAdjustment = -2;
-    else if (dev_z80_cycles == 13) timingAdjustment = -3;
-    else if (dev_z80_cycles == 14) timingAdjustment = -4;
-    else if (dev_z80_cycles == 15) timingAdjustment = -5;
-    else  timingAdjustment = dev_z80_cycles;
     
     if (myConfig.isPAL) myConfig.vertSync = 0;
     
@@ -1580,6 +1873,7 @@ void ReadFileCRCAndConfig(void)
     svi_mode = 0;
     adam_mode = 0;
     creativision_mode = 0;
+    coleco_mode = 0;
     
     CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
 
