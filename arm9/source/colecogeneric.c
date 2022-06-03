@@ -1440,7 +1440,7 @@ void FindAndLoadConfig(void)
         fread(&AllConfigs, sizeof(AllConfigs), 1, fp);
         fclose(fp);
         
-        if ((AllConfigs[0].config_ver == CONFIG_VER_OLD) && isDSiMode())    // If we are DSi we simply bump up the ver... if older DS-LITE/PHAT we wipe config
+        if (((AllConfigs[0].config_ver == CONFIG_VER_OLD1) || (AllConfigs[0].config_ver == CONFIG_VER_OLD2)) && isDSiMode())    // If we are DSi we simply bump up the ver... if older DS-LITE/PHAT we wipe config
         {
             for (u16 slot=0; slot<MAX_CONFIGS; slot++)
             {
