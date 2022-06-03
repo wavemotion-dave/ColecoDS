@@ -395,7 +395,7 @@ u8 colecoInit(char *szGame)
  ********************************************************************************/
 void colecoRun(void) 
 {
-  ResetZ80Vars();                       // Reset the Z80 core vars
+  DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
   showMainMenu();                       // Show the game-related screen
 }
@@ -1013,7 +1013,7 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
       return;
     case 0xA0:  // The VDP graphics port
       if(!(Port&0x01)) WrData9918(Value);
-      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI; }
+      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI; cpuirequest=Z80_NMI_INT;}
       return;
     case 0x40:  // Printer status and ADAM related stuff...not used
       return;
@@ -1109,7 +1109,8 @@ void PatchZ80(register Z80 *r)
 /**************************************************************/
 ITCM_CODE u32 LoopZ80() 
 {
-    static u16 spinnerDampen = 0;
+  static u16 spinnerDampen = 0;
+  cpuirequest=0;
     
   // ----------------------------------------------------------------------------
   // Special system as it runs an m6502 CPU core and is different than the Z80
@@ -1139,12 +1140,14 @@ ITCM_CODE u32 LoopZ80()
           {
               if (spinX_left)
               {
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xFFFFCFFF;
                   JoyState   |= 0x00003000;
               }
               else if (spinX_right)
               {
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xFFFFCFFF;
                   JoyState   |= 0x00001000;
@@ -1152,12 +1155,14 @@ ITCM_CODE u32 LoopZ80()
 
               if (spinY_left)
               {
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xCFFFFFFF;
                   JoyState   |= 0x30000000;
               }
               else if (spinY_right)
               {
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xCFFFFFFF;
                   JoyState   |= 0x10000000;
@@ -1165,7 +1170,30 @@ ITCM_CODE u32 LoopZ80()
           }
       }
       
-      if (ctc_enabled)    // All of these have CTC Timers to deal with... 
+      // ---------------------------------------------------------------
+      // We current support two different Z80 cores... the DrZ80 is
+      // (relatively) blazingly fast on the DS ARM processor but
+      // the compatibilty isn't 100%. The CZ80 core is slower but
+      // has higher compatibilty. For now, the default core is 
+      // DrZ80 for the DS-LITE/PHAT and CZ80 for the DSi and above.
+      // The DSi has enough processing power to utilize this slower
+      // but more accurate core. The user can switch cores as they like.
+      // ---------------------------------------------------------------
+      if (myConfig.cpuCore == 0) // DrZ80 Core ... faster but lower accuracy
+      {
+          // Execute 1 scanline worth of CPU instructions
+          cycle_deficit = DrZ80_execute(tms_cpu_line + cycle_deficit);
+
+          // Refresh VDP 
+          if(Loop9918()) cpuirequest = ((machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SVI)) ? Z80_IRQ_INT : Z80_NMI_INT);
+
+          // Generate interrupt if called for
+          if (cpuirequest)
+            DrZ80_Cause_Interrupt(cpuirequest);
+          else
+            DrZ80_Clear_Pending_Interrupts();
+      }
+      else  // CZ80 core from fMSX()... slower but higher accuracy
       {
           // Execute 1 scanline worth of CPU instructions
           cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
@@ -1173,9 +1201,9 @@ ITCM_CODE u32 LoopZ80()
           // Refresh VDP 
           if(Loop9918()) 
           {
-              CPU.IRequest = vdp_int_source;   // Sord M5 and Memotech MTX only works with the CZ80 core
+              CPU.IRequest = vdp_int_source;    // Use the proper VDP interrupt souce (set in TMS9918 init)
           }
-          else
+          else if (ctc_enabled)
           {
               // -------------------------------------------------------------------------
               // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer 
@@ -1192,34 +1220,24 @@ ITCM_CODE u32 LoopZ80()
                   if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
               }
           }
-      }
-      else
-      {
-          // Execute 1 scanline worth of CPU instructions
-          cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
 
-          // Refresh VDP 
-          if(Loop9918()) 
+          // Generate an interrupt if called for...
+          if(CPU.IRequest!=INT_NONE) 
           {
-              CPU.IRequest = vdp_int_source;
-          }
-      }
-
-      // Generate an interrupt if called for...
-      if(CPU.IRequest!=INT_NONE) 
-      {
-          IntZ80(&CPU, CPU.IRequest);
+              IntZ80(&CPU, CPU.IRequest);
 #ifdef DEBUG_Z80 
-          CPU.User++;   // Track Interrupt Requests
+              CPU.User++;   // Track Interrupt Requests
 #endif          
-          if (pv2000_mode) 
-          {
-              extern void pv2000_check_kbd(void);
-              pv2000_check_kbd();
+              if (pv2000_mode) 
+              {
+                  extern void pv2000_check_kbd(void);
+                  pv2000_check_kbd();
+              }
           }
+
       }
   }
-  
+    
   // Drop out unless end of screen is reached 
   if (CurLine == tms_end_line)
   {
@@ -1236,6 +1254,7 @@ ITCM_CODE u32 LoopZ80()
       return 0;
   }
   return 1;
+    
 }
 
 // End of file

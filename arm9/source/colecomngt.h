@@ -194,4 +194,6 @@ extern void MTX_HandleCassette(register Z80 *r);
 extern void SVI_HandleCassette(register Z80 *r);
 extern void SVI_PatchBIOS(void);
 
+extern void DrZ80_InitHandlers(void);
+
 #endif

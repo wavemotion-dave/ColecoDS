@@ -63,6 +63,8 @@ tScrMode SCR[MAXSCREEN+1] __attribute__((section(".dtcm")))  = {
   { RefreshLine3,0x7F,0x00,0x3F,0xFF,0x3F,0x00,0x00,0x00,0x00 }, /* VDP Mode 2 aka MSX SCREEN 3 aka "MULTICOLOR" */
 };
 
+void (*RefreshLine)(u8 uY) __attribute__((section(".dtcm"))) = RefreshLine0;
+
 /** Palette9918[] ********************************************/
 /** 16 standard colors used by TMS9918/TMS9928 VDP chips.   **/
 /*************************************************************/
@@ -560,6 +562,7 @@ byte Write9918(u8 iReg, u8 value)
       {
         VRAMMask    = TMS9918_VRAMMask;
         ScrMode=newMode;
+        RefreshLine = SCR[ScrMode].Refresh;
         ChrTab=pVDPVidMem+(((int)(VDP[2]&SCR[ScrMode].R2)<<10)&VRAMMask);
         ColTab=pVDPVidMem+(((int)(VDP[3]&SCR[ScrMode].R3)<<6)&VRAMMask);
         ChrGen=pVDPVidMem+(((int)(VDP[4]&SCR[ScrMode].R4)<<11)&VRAMMask);
@@ -710,7 +713,7 @@ byte Loop9918(void)
       if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
           ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for collisions
       else
-         (SCR[ScrMode].Refresh)(CurLine - tms_start_line);
+          RefreshLine(CurLine - tms_start_line);
   }
   /* If time for emulated VBlank... */
   else if (CurLine == tms_end_line)

@@ -525,7 +525,7 @@ void ResetColecovision(void)
   ay76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
   ay76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
     
-  ResetZ80Vars();                       // Reset the Z80 CPU core Vars
+  DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the Z80 CPU core
   
   sordm5_reset();                       // Reset the Sord M5 specific vars

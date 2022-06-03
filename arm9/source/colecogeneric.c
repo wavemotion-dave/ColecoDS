@@ -27,6 +27,7 @@
 #include "CRC32.h"
 
 typedef enum {FT_NONE,FT_FILE,FT_DIR} FILE_TYPE;
+extern u8 bMSXBiosFound;
 
 SpriteEntry OAMCopy[128];
 
@@ -1198,8 +1199,8 @@ void SetDefaultGameConfig(void)
     myConfig.vertSync    = (isDSiMode() ? 1:0);    // Default is Vertical Sync ON for DSi and OFF for DS-LITE
     myConfig.spinSpeed   = 0;    
     myConfig.touchPad    = 0;
-    myConfig.reserved1   = 1;
-    myConfig.msxBios     = 0;   // Default to the C-BIOS
+    myConfig.cpuCore     = 1;   // Default to CZ80 core
+    myConfig.msxBios     = (bMSXBiosFound ? 1:0);    // Default to real MSX bios unless we can't find it
     myConfig.msxKey5     = 0;   // Default key map
     myConfig.dpad        = DPAD_NORMAL;   // Normal DPAD use - mapped to joystick
     myConfig.memWipe     = 0;    
@@ -1348,6 +1349,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x635064bc)                 myConfig.memWipe = 3;  // MTX Toado wants a special Random memory wipe
     if (file_crc == 0x3c8500af)                 myConfig.memWipe = 3;  // MTX Target Zone wants a special Random memory wipe
     
+    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;   // Boulder Dash (Colecovision) only works with the DrZ80 core
+    
     // ---------------------------------------------------------------------------------------------
     // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
     // ---------------------------------------------------------------------------------------------
@@ -1442,10 +1445,9 @@ void FindAndLoadConfig(void)
             for (u16 slot=0; slot<MAX_CONFIGS; slot++)
             {
                 AllConfigs[slot].config_ver = CONFIG_VER;
-                AllConfigs[slot].reserved1 = 1;
+                AllConfigs[slot].cpuCore = (file_crc == 0x9b547ba8) ? 0:1;  // Boulder Dash is DrZ80... everything else is CZ80
             }
-        }
-        
+        }        
         
         if (AllConfigs[0].config_ver != CONFIG_VER)
         {
@@ -1517,6 +1519,7 @@ const struct options_t Option_Table[2][20] =
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
+        {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     }
 };              
