@@ -4,9 +4,10 @@
 #define MAX_ROMS        1024
 #define MAX_ROM_LENGTH  160
 
-#define MAX_CONFIGS     1360
-#define CONFIG_VER      0x000A
-#define CONFIG_VER_OLD  0x0008
+#define MAX_CONFIGS      1360
+#define CONFIG_VER       0x000A
+#define CONFIG_VER_OLD1  0x0008
+#define CONFIG_VER_OLD2  0x0008
 
 #define COLROM        0x01
 #define DIRECT        0x02
