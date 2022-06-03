@@ -5,12 +5,11 @@
 #define MAX_ROM_LENGTH  160
 
 #define MAX_CONFIGS     1360
-#define CONFIG_VER      0x0009
+#define CONFIG_VER      0x000A
 #define CONFIG_VER_OLD  0x0008
 
-
-#define COLROM 0x01
-#define DIRECT 0x02
+#define COLROM        0x01
+#define DIRECT        0x02
 
 #define ID_SHM_CANCEL 0x00
 #define ID_SHM_YES    0x01
@@ -21,7 +20,6 @@
 
 #define CPU_CLEAR_INT_ON_VDP_READ   0
 #define CPU_CLEAR_INT_AUTOMATICALLY 1
-
 
 #define COLECO_RAM_NORMAL_MIRROR   0
 #define COLECO_RAM_NO_MIRROR       1
@@ -48,7 +46,7 @@ struct __attribute__((__packed__)) Config_t
     u8  vertSync;
     u8  spinSpeed;
     u8  touchPad;
-    u8  reserved1;
+    u8  cpuCore;
     u8  msxBios;
     u8  msxKey5;
     u8  dpad;
