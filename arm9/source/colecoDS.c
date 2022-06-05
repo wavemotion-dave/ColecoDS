@@ -532,8 +532,8 @@ void ResetColecovision(void)
   memotech_reset();                     // Reset the memotech MTX specific vars
   svi_reset();                          // Reset the SVI specific vars
   msx_reset();                          // Reset the MSX specific vars
-  pv2000_reset();                       // Reset the PV2000 stuff
-  einstein_reset();
+  pv2000_reset();                       // Reset the PV2000 specific vars
+  einstein_reset();                     // Reset the Tatung Einstein specific vars
 
   adam_CapsLock = 0;
   adam_unsaved_data = 0;
@@ -746,7 +746,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(23,0,6, (sg1000_mode == 2 ? "SC-3000":"SG-1000"));
             last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL)
+        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
@@ -782,8 +782,9 @@ void DisplayStatusLine(bool bForce)
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             AffChaine(8,0,6, tmp);
+            last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL)
+        if (last_pal_mode != myConfig.isPAL && !myConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
@@ -797,6 +798,7 @@ void DisplayStatusLine(bool bForce)
             last_msx_mode = msx_mode;
             siprintf(tmp, "MSX %dK ", (int)(LastROMSize/1024));
             AffChaine(23,0,6, tmp);
+            last_pal_mode = 99;
         }
         if ((last_tape_pos != tape_pos) && (msx_mode == 2))
         {
@@ -804,6 +806,12 @@ void DisplayStatusLine(bool bForce)
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             AffChaine(8,0,6, tmp);
+            last_pal_mode = 99;
+        }
+        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
+        {
+            last_pal_mode = myConfig.isPAL;
+            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (svi_mode)
@@ -859,6 +867,11 @@ void DisplayStatusLine(bool bForce)
         {
             last_pencil_mode = creativision_mode;
             AffChaine(20,0,6, "CREATIVISION");
+            last_pal_mode = 99;
+        }
+        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
+        {
+            last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
@@ -869,7 +882,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(22,0,6, "EINSTEIN");
             last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL)
+        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
