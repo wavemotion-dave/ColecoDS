@@ -677,8 +677,6 @@ u8 MSX_GuessROMType(u32 size)
     u8 type = KON8;  // Default to Konami 8K mapper
     u16 guess[MAX_MAPPERS] = {0,0,0,0};
     
-    if (size == (64 * 1024)) return ASC16;      // Big percentage of 64K mapper ROMs are ASCII16
-    
     for (int i=0; i<size - 3; i++)
     {
         if (romBuffer[i] == 0x32)   // LD,A instruction
@@ -723,6 +721,8 @@ u8 MSX_GuessROMType(u32 size)
     else if ((guess[SCC8]  > guess[KON8]) && (guess[SCC8]  > guess[ASC8]) && (guess[SCC8]  > guess[ASC16]))   type = SCC8;
     else type = KON8; 
     
+    if (size == (64 * 1024)) type = ASC16;      // Big percentage of 64K mapper ROMs are ASCII16 so default to that and override below
+    
     
     // ----------------------------------------------------------------------
     // Since mappers are hard to detect reliably, check a few special CRCs
@@ -746,7 +746,32 @@ u8 MSX_GuessROMType(u32 size)
     if (file_crc == 0xec036e37) type = ASC16;  // Gall Force
     if (file_crc == 0xa29176e3) type = ASC16;  // Mecha 9    
     if (file_crc == 0x03379ef8) type = ASC16;  // MSXDev Step Up 1.2
-    if (file_crc == 0x8183bae1) type = LIN64;  // Mutants fro the Deep (fixed)
+    if (file_crc == 0x2f9bed70) type = ZEN16;  // Adventure Kid
+    if (file_crc == 0xab9fb4a4) type = ASC16;  // Astro Marine Corps
+    if (file_crc == 0x8cf0e6c0) type = ASC8;   // Bomber King
+    if (file_crc == 0xf2f2f0c8) type = ASC16;  // Borfestu (English Translation)
+    if (file_crc == 0x8801b31e) type = LIN64;  // Break In
+    if (file_crc == 0x79cf953d) type = ASC8;   // Death Wish III    
+    if (file_crc == 0x387c1de7) type = ASC16;  // Dragon Slayer III - Romantica
+    if (file_crc == 0x2526e568) type = ASC16;  // Dungeon Hunter
+    if (file_crc == 0x1d75c0b4) type = ASC16;  // Freedom Fighter (newest)
+    if (file_crc == 0xc570ea63) type = ASC16;  // Freedom Fighter
+    if (file_crc == 0xa5b0e901) type = ASC16;  // Game Over (Parts I and II)
+    if (file_crc == 0xb2e57a45) type = ASC16;  // Gremlins II
+    if (file_crc == 0xb29edaec) type = ASC16;  // Hydlide II
+    if (file_crc == 0x41c82156) type = ZEN8;   // Hydlide III (Zenmia)
+    if (file_crc == 0xcb9eebfb) type = SCC8;   // Lex Flics (translated)
+    if (file_crc == 0xd6c395f8) type = SCC8;   // Monster Hunter
+    if (file_crc == 0x8183bae1) type = LIN64;  // Mutants from the Deep   
+    if (file_crc == 0xa78fdb26) type = ASC8;   // No Back Down   
+    if (file_crc == 0x454381e4) type = SCC8;   // PuzzyBox 1.0
+    if (file_crc == 0x31e3f039) type = LIN64;  // Stupid Martians
+    if (file_crc == 0x9195c34c) type = ZEN8;   // Super Boy III
+    if (file_crc == 0x73efe840) type = ASC16;  // Super Pierrot
+    if (file_crc == 0x41676177) type = LIN64;  // Tina's Island Adventure
+    if (file_crc == 0xc5c14bbd) type = KON8;   // The Hobbit
+    if (file_crc == 0xfea70207) type = ASC16;  // Vaxol
+    if (file_crc == 0x35899655) type = ASC8;   // Venom Strikes Back    
     
     return type;
 }

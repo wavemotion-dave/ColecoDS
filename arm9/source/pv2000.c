@@ -88,8 +88,6 @@ unsigned char cpu_readport_pv2000(register unsigned short Port)
   // PV-2000 ports are 8-bit
   Port &= 0x00FF; 
     
-  debug4 = JoyState;
-    
   if (Port == 0x10)
   {
       u8 joy1 = 0x00;

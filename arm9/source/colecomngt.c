@@ -500,6 +500,7 @@ void getfile_crc(const char *path)
     if (file_crc == 0x111fc33b) msx_beeper_enabled = 1;     // MSX Avenger uses beeper    
     if (file_crc == 0x690f9715) msx_beeper_enabled = 1;     // MSX Batman (the movie) uses beeper
     if (file_crc == 0x3571f5d4) msx_beeper_enabled = 1;     // MSX Master of the Universe uses beeper
+    if (file_crc == 0x2142bd10) msx_beeper_enabled = 1;     // MSX Future Knight
     
     // ------------------------------------------------------------------------------
     // And a handful of games require SRAM which is a special case-by-case basis...
@@ -1051,7 +1052,7 @@ void Z80CTC_Timer(void)
                 {
                     if (--ctc_timer[3] <= 0)
                     {
-                        ctc_timer[3] = ((((ctc_control[3] & 0x20) ? 256 : 16) * (ctc_time[3] ? ctc_time[3]:256)) / 60) + 1;
+                        ctc_timer[3] = ((((ctc_control[3] & 0x20) ? 256 : 16) * (ctc_time[3] ? ctc_time[3]:256)) / 51) + 1;
                         if (ctc_control[3] & 0x80)  CPU.IRequest = ctc_vector[3];
                     }
                 }

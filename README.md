@@ -193,13 +193,13 @@ For the MSX emulation, the colecovision keypad is mapped as follows:
 ```
   1   2   3
   
-  4   5  STOP
+  4   ?   STP
   
   M1  M2  M3
   
   SPC 0   RET
 ```
-That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '5' key to be any mappable MSX key. For the few games that still require the MSX arrows to play - you can emulate that via the D-PAD in Game Options.
+That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '?' key to be any mappable MSX key. For the few games that still require the MSX arrows to play - you can emulate that via the D-PAD in Game Options.
 As of version 6.1 there is also a custom overlay for "MSX Full" keyboard.
 
 Blend Mode (DSi) :
@@ -237,7 +237,7 @@ A Tale of Two Cores :
 ColecoDS supports 2 different Z80 CPU cores. 
 DrZ80 is very fast but is not 100% accurate so some games don't run right.
 CZ80 is 10% slower but is much closer to 100% accurate and games generally run great.
-You can toggle this (and save on a per-game basis) in GAME OPTIONS.
+The CZ80 core i the default across the board - but you can change this (and save on a per-game basis) in GAME OPTIONS.
 
 The Need For Speed :
 -----------------------
@@ -252,6 +252,14 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.4: 05-June-2022 by wavemotion-dave
+* Added back DrZ80 core and fixed Colecovision Boulder Dash so it doesn't crash.
+* Better Einstein CTC handling so timing is a bit more accurate.
+* Improved Einstein memory swap for faster performance.
+* Improved MSX mapper detection - about 30 more games playable without fiddling with settings.
+* MSX Pal game support added (it was only 80% working before this).
+* A few more frames of performance squeezed out to make more games run buttery-smooth.
+
 V7.3: 31-May-2022 by wavemotion-dave
 * Massive optimization of the VDP core and memory handling so we are now almost 35% faster on Colecovision games and more than 10% faster on all other systems.
 * Due to these optmizations, the DrZ80 core has been removed and only the high-compatibility CZ80 core remains.

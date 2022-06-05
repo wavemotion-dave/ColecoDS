@@ -30,6 +30,7 @@ u8 lastBlock[4]     __attribute__((section(".dtcm"))) = {99,99,99,99};
 u32 msx_offset      __attribute__((section(".dtcm"))) = 0;
 u8 msx_sram_at_8000 __attribute__((section(".dtcm"))) = 0;
 u8 msx_scc_enable   __attribute__((section(".dtcm"))) = 0;
+u8 einstein_ram_dirty __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
 extern u8 Slot1ROM[];
@@ -357,7 +358,6 @@ void activision_pcb_write(u16 address)
   if (address == 0xFFF0) Write24XX(&EEPROM,EEPROM.Pins|C24XX_SDA);
 }
 
-
 // ------------------------------------------------------------------
 // Write memory handles both normal writes and bankswitched since
 // write is much less common than reads...   We handle the MSX
@@ -474,7 +474,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         if (address >= einstein_ram_start)
         {
             pColecoMem[address] = value;  // Allow pretty much anything above the base ROM area
-        }
+        } else einstein_ram_dirty=1;
         Slot3RAM[address] = value;        // Plus shadow copy to improve bank switching
     }
     // ----------------------------------------------------------------------------------

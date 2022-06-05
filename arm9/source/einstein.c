@@ -220,14 +220,23 @@ void einstein_swap_memory(void)
     
     if (einstein_ram_start == 0x8000)  
     {
-        memcpy(pColecoMem, Slot3RAM, 0x8000);
+        extern u8 einstein_ram_dirty;
+        if (einstein_ram_dirty) // If we have some dirty bytes, copy over all of the RAM shadow copy
+        {
+            einstein_ram_dirty=0;
+            memcpy(pColecoMem, Slot3RAM, 0x8000);
+        } 
+        else    // Otherwise just copy over the RAM into where the BIOS was... saves time.
+        {
+            memcpy(pColecoMem, Slot3RAM, 0x2000);
+        }
         einstein_ram_start = 0x0000;
     }
     else
     {
         einstein_ram_start = 0x8000;
         memcpy(pColecoMem,EinsteinBios,0x2000);
-        memset(pColecoMem+0x2000,0xFF, 0x6000);
+        //memset(pColecoMem+0x2000,0xFF, 0x6000);  - In theory we should blank this area but to save memory swap time we don't bother
         if (tape_len == 1626) // A bit of a hack... the size of the Diagnostic ROM
         {
             memcpy(pColecoMem+0x4000, romBuffer, tape_len);   // only for Diagnostics ROM
@@ -395,17 +404,15 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     }
     else if (Port == 0x21)  // ADC INT MASK
     {
-        debug4++;
         //key_int_mask = Value;   
     }
     else if (Port == 0x25)  // JOYSTICK INT MASK
     {
-        debug4++;
         //key_int_mask = Value;   
     }
     else if (Port == 0x25)  // Drive Select
     {
-        //if (Value & 1) zzz();
+        //if (Value & 1) einstein_ram_dirty();
     }
     else if (Port == 0x24)  // ROM vs RAM bank port
     {
