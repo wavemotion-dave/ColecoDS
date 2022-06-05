@@ -61,6 +61,8 @@ typedef struct {
 extern u8 *XBuf;
 extern u8 XBuf_A[];
 extern u8 XBuf_B[];
+extern u8 OH;
+extern u8 IH;
 
 extern u8 bResetVLatch;
 
