@@ -27,7 +27,7 @@
 #include "MTX_BIOS.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0014        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x0015        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 
 /*********************************************************************************
@@ -141,6 +141,8 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle); 
     if (uNbO) uNbO = fwrite(&FGColor, sizeof(FGColor),1, handle); 
     if (uNbO) uNbO = fwrite(&BGColor, sizeof(BGColor),1, handle); 
+    if (uNbO) uNbO = fwrite(&OH, sizeof(OH),1, handle); 
+    if (uNbO) uNbO = fwrite(&IH, sizeof(IH),1, handle);       
     if (uNbO) uNbO = fwrite(&ScrMode, sizeof(ScrMode),1, handle); 
     if (uNbO) uNbO = fwrite(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
     if (uNbO) uNbO = fwrite(&VAddr, sizeof(VAddr),1, handle); 
@@ -359,7 +361,10 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&VDPStatus, sizeof(VDPStatus),1, handle); 
             if (uNbO) uNbO = fread(&FGColor, sizeof(FGColor),1, handle); 
             if (uNbO) uNbO = fread(&BGColor, sizeof(BGColor),1, handle); 
+            if (uNbO) uNbO = fread(&OH, sizeof(OH),1, handle); 
+            if (uNbO) uNbO = fread(&IH, sizeof(IH),1, handle); 
             if (uNbO) uNbO = fread(&ScrMode, sizeof(ScrMode),1, handle); 
+            extern void (*RefreshLine)(u8 uY);  RefreshLine = SCR[ScrMode].Refresh;
             if (uNbO) uNbO = fread(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
             if (uNbO) uNbO = fread(&VAddr, sizeof(VAddr),1, handle); 
             if (uNbO) uNbO = fread(&CurLine, sizeof(CurLine),1, handle); 
