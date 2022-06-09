@@ -564,6 +564,16 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         fread((void*) romBuffer, iSSize, 1, handle); 
         fclose(handle);
         
+        if (file_crc == 0x68c85890) // M5 Up Up Balloon needs a patch to add 0x00 at the front
+        {
+            for (u16 i=iSSize; i>0; i--)
+            {
+                romBuffer[i] = romBuffer[i-1];  // Shift everything up 1 byte
+            }
+            romBuffer[0] = 0x00;    // Add 0x00 to the first byte which is the patch
+            iSSize++;               // Make sure the size is now correct
+        }
+        
         romBankMask = 0x00;         // No bank mask until proven otherwise
         bMagicMegaCart = false;     // No Mega Cart to start
         mapperMask = 0x00;          // No MSX mapper mask
