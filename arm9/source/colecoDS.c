@@ -263,6 +263,14 @@ u32 keyCoresp[MAX_KEY_OPTIONS] = {
     META_KBD_COMMA,
     META_KBD_COLON,
     META_KBD_SLASH,
+    META_KBD_F1,
+    META_KBD_F2,
+    META_KBD_F3,
+    META_KBD_F4,
+    META_KBD_F5,
+    META_KBD_F6,
+    META_KBD_F7,
+    META_KBD_F8,
 };
 
 extern u8 msx_scc_enable;
