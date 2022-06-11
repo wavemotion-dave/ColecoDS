@@ -1349,7 +1349,10 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x635064bc)                 myConfig.memWipe = 3;  // MTX Toado wants a special Random memory wipe
     if (file_crc == 0x3c8500af)                 myConfig.memWipe = 3;  // MTX Target Zone wants a special Random memory wipe
     
-    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;   // Boulder Dash (Colecovision) only works with the DrZ80 core
+    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;   // Colecovision Boulder Dash only works with the DrZ80 core
+    if (file_crc == 0xb32c9e08)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
+    if (file_crc == 0xa2edc01d)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
+    
     
     // ---------------------------------------------------------------------------------------------
     // And we don't have the AY envelope quite right so a few games don't want to reset the indexes

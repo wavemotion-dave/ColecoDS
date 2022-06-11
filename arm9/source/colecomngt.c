@@ -176,6 +176,7 @@ void colecoWipeRAM(void)
   }
   else if (sordm5_mode)
   {
+      memset(pColecoMem+0x6000, 0xFF, 0x1000);
       for (int i=0x7000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (memotech_mode)
