@@ -57,6 +57,8 @@ void scan_keyboard(void)
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)) myKeyData |= 0x20;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE))  myKeyData |= 0x40;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_ESC))    myKeyData |= 0x80;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_HOME))   myKeyData |= 0x08;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F7))     myKeyData |= 0x04;
           }
       }
       if (!(keyboard_w & 0x02))
@@ -97,6 +99,7 @@ void scan_keyboard(void)
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_COLON))  myKeyData |= 0x08;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT))  myKeyData |= 0x10;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_9))      myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F8))     myKeyData |= 0x80;
           }
       }
         
@@ -118,6 +121,7 @@ void scan_keyboard(void)
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SLASH))  myKeyData |= 0x04;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_8))      myKeyData |= 0x08;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_UP))     myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F4))     myKeyData |= 0x80;
           }
       }
 
@@ -140,6 +144,7 @@ void scan_keyboard(void)
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_3))  myKeyData |= 0x10;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_2))  myKeyData |= 0x20;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_1))  myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F3)) myKeyData |= 0x80;
           }
       }
       if (!(keyboard_w & 0x20))
@@ -161,6 +166,7 @@ void scan_keyboard(void)
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_E))  myKeyData |= 0x10;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_W))  myKeyData |= 0x20;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Q))  myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F2)) myKeyData |= 0x80;
           }
       }
       if (!(keyboard_w & 0x40))
@@ -182,6 +188,7 @@ void scan_keyboard(void)
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_D))  myKeyData |= 0x10;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_S))  myKeyData |= 0x20;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_A))  myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F1)) myKeyData |= 0x80;
           }
       }
       if (!(keyboard_w & 0x80))
@@ -203,6 +210,7 @@ void scan_keyboard(void)
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_C))  myKeyData |= 0x10;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_X))  myKeyData |= 0x20;
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_Z))  myKeyData |= 0x40;
+              if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_F6)) myKeyData |= 0x80;
           }
       }
     }
