@@ -31,21 +31,28 @@
 // ------------------------------------------------------------------
 unsigned char cpu_readport_m5(register unsigned short Port) 
 {
-  // M5 ports are 8-bit
-  Port &= 0x00FF; 
+  // M5 ports are 8-bit but bit3 is not decoded
+  Port &= 0x00F7; 
 
-  if (Port >= 0x00 && Port <= 0x03)      // Z80-CTC Area
+  if (Port < 0x10)      // Z80-CTC Area
   {
+      Port &= 0x03;
       return ctc_timer[Port];
   }
-  else if ((Port == 0x10) || (Port == 0x11))  // VDP Area
+  else if (Port < 0x20)  // VDP Area
   {
       return(Port&0x01 ? RdCtrl9918():RdData9918());      
   }
   else if (Port == 0x30)    // Y0
   {
       u8 joy1 = 0x00;
-      return (joy1);
+
+      if (key_ctrl)                 joy1 |= 0x01;
+      if (key_shift)                joy1 |= 0x04;
+      if (kbd_key == ' ')           joy1 |= 0x40;
+      if (kbd_key == KBD_KEY_RET)   joy1 |= 0x80;
+      
+      return (joy1);      
   }
   else if (Port == 0x31)    // Y1
   {
@@ -60,11 +67,92 @@ unsigned char cpu_readport_m5(register unsigned short Port)
       if (JoyState == JST_6)   joy1 |= 0x20;  // '6'
       if (JoyState == JST_7)   joy1 |= 0x40;  // '7'
       if (JoyState == JST_8)   joy1 |= 0x80;  // '8'
+      
+      if (kbd_key == '1')      joy1 |= 0x01;
+      if (kbd_key == '2')      joy1 |= 0x02;
+      if (kbd_key == '3')      joy1 |= 0x04;
+      if (kbd_key == '4')      joy1 |= 0x08;
+      if (kbd_key == '5')      joy1 |= 0x10;
+      if (kbd_key == '6')      joy1 |= 0x20;
+      if (kbd_key == '7')      joy1 |= 0x40;
+      if (kbd_key == '8')      joy1 |= 0x80;
+      
       return (joy1);
   }
-  else if (Port >= 0x32 && Port < 0x37)
+  else if (Port == 0x32)    // Y2
   {
-      return 0x00;
+      u8 joy1 = 0x00;
+      
+      if (kbd_key == 'Q')      joy1 |= 0x01;
+      if (kbd_key == 'W')      joy1 |= 0x02;
+      if (kbd_key == 'E')      joy1 |= 0x04;
+      if (kbd_key == 'R')      joy1 |= 0x08;
+      if (kbd_key == 'T')      joy1 |= 0x10;
+      if (kbd_key == 'Y')      joy1 |= 0x20;
+      if (kbd_key == 'U')      joy1 |= 0x40;
+      if (kbd_key == 'I')      joy1 |= 0x80;
+      
+      return joy1;
+  }
+  else if (Port == 0x33)    // Y3
+  {
+      u8 joy1 = 0x00;
+      
+      if (kbd_key == 'A')      joy1 |= 0x01;
+      if (kbd_key == 'S')      joy1 |= 0x02;
+      if (kbd_key == 'D')      joy1 |= 0x04;
+      if (kbd_key == 'F')      joy1 |= 0x08;
+      if (kbd_key == 'G')      joy1 |= 0x10;
+      if (kbd_key == 'H')      joy1 |= 0x20;
+      if (kbd_key == 'J')      joy1 |= 0x40;
+      if (kbd_key == 'K')      joy1 |= 0x80;
+      
+      return joy1;
+  }
+  else if (Port == 0x34)    // Y4
+  {
+      u8 joy1 = 0x00;
+      
+      if (kbd_key == 'Z')      joy1 |= 0x01;
+      if (kbd_key == 'X')      joy1 |= 0x02;
+      if (kbd_key == 'C')      joy1 |= 0x04;
+      if (kbd_key == 'V')      joy1 |= 0x08;
+      if (kbd_key == 'B')      joy1 |= 0x10;
+      if (kbd_key == 'N')      joy1 |= 0x20;
+      if (kbd_key == 'M')      joy1 |= 0x40;
+      if (kbd_key == ',')      joy1 |= 0x80;
+      
+      return joy1;
+  }
+  else if (Port == 0x35)    // Y5
+  {
+      u8 joy1 = 0x00;
+      
+      if (kbd_key == '9')      joy1 |= 0x01;
+      if (kbd_key == '0')      joy1 |= 0x02;
+      if (kbd_key == '-')      joy1 |= 0x04;
+      if (kbd_key == '>')      joy1 |= 0x08;
+      if (kbd_key == '.')      joy1 |= 0x10;
+      if (kbd_key == '/')      joy1 |= 0x20;
+      if (kbd_key == '|')      joy1 |= 0x40;
+      if (kbd_key == '<')      joy1 |= 0x80;
+      
+      return joy1;
+  }
+  else if (Port == 0x36)    // Y6
+  {
+      u8 joy1 = 0x00;
+      
+      if (kbd_key == 'O')      joy1 |= 0x01;
+      if (kbd_key == 'P')      joy1 |= 0x02;
+      if (kbd_key == '@')      joy1 |= 0x04;
+      if (kbd_key == ']')      joy1 |= 0x08;
+      if (kbd_key == 'L')      joy1 |= 0x10;
+      if (kbd_key == ';')      joy1 |= 0x20;
+      if (kbd_key == ':')      joy1 |= 0x40;
+      if (kbd_key == '[')      joy1 |= 0x80;
+      
+      return joy1;
   }
   else if (Port == 0x37)    // Joystick Port 1
   {
@@ -89,8 +177,8 @@ unsigned char cpu_readport_m5(register unsigned short Port)
 // --------------------------------------------------------------------------
 void cpu_writeport_m5(register unsigned short Port,register unsigned char Value) 
 {
-    // M5 ports are 8-bit
-    Port &= 0x00FF;
+    // M5 ports are 8-bit but bit3 is not decoded
+    Port &= 0x00F7; 
 
     // ----------------------------------------------------------------------
     // Z80-CTC Area
@@ -99,8 +187,9 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
     // NOT accurate emulation - but it's good enough to render the Sord M5
     // games as playable in this emulator.
     // ----------------------------------------------------------------------
-    if (Port >= 0x00 && Port <= 0x03)      
+    if (Port < 0x10)
     {
+        Port &= 0x03;
         if (ctc_latch[Port])    // If latched, we now have the countdown timer value
         {
             ctc_time[Port] = Value;     // Latch the time constant and compute the countdown timer directly below.
@@ -127,12 +216,12 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
             }
         }
     }
-    else if ((Port == 0x10) || (Port == 0x11))  // VDP Area
+    else if (Port < 0x20)  // VDP Area
     {
         if ((Port & 1) == 0) WrData9918(Value);
         else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;    // Sord M5 must get vector from the Z80-CTC. Only the CZ80 core works with this.
     }
-    else if (Port == 0x20) sn76496W(Value, &sncol);
+    else if (Port < 0x30) sn76496W(Value, &sncol);
 }
 
 
