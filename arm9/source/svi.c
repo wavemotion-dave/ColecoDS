@@ -361,23 +361,31 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 }
 
 
-// --------------------------------------------------------------------
-// Patch the SVI bios so that we can intercept cassette read/writes...
-// --------------------------------------------------------------------
-void SVI_PatchBIOS(void)
+void svi_restore_bios(void)
 {
-    //patchAddressSVI[] = {0x006C,0x006F,0x0072,0x0075,0x0078,0x210A,0x21A9,0}; // 0x0069
-    pColecoMem[0x210A] = 0xed; pColecoMem[0x210B] = 0xfe; pColecoMem[0x210C] = 0xc9; 
-    pColecoMem[0x21A9] = 0xed; pColecoMem[0x21AA] = 0xfe; pColecoMem[0x21AB] = 0xc9; 
-    pColecoMem[0x0069] = 0xed; pColecoMem[0x006A] = 0xfe; pColecoMem[0x006B] = 0xc9; 
-    pColecoMem[0x006C] = 0xed; pColecoMem[0x006D] = 0xfe; pColecoMem[0x006E] = 0xc9; 
-    pColecoMem[0x006F] = 0xed; pColecoMem[0x0070] = 0xfe; pColecoMem[0x0071] = 0xc9; 
-    pColecoMem[0x0072] = 0xed; pColecoMem[0x0073] = 0xfe; pColecoMem[0x0074] = 0xc9; 
-    pColecoMem[0x0075] = 0xed; pColecoMem[0x0076] = 0xfe; pColecoMem[0x0077] = 0xc9; 
-    pColecoMem[0x0078] = 0xed; pColecoMem[0x0079] = 0xfe; pColecoMem[0x007A] = 0xc9; 
-    pColecoMem[0x2073] = 0x01;  // Remove Delay
-    pColecoMem[0x20D0] = 0x10; pColecoMem[0x20D1] = 0x00;   // Only write 0x10 header bytes (instead of 190!)
-    pColecoMem[0x20E3]=0x00; pColecoMem[0x20E4]=0x00; pColecoMem[0x20E5]=0x00; pColecoMem[0x20E6]=0xed; pColecoMem[0x20E7]=0xfe;
+     memcpy(BIOS_Memory,SVIBios,0x8000);       // Restore SVI BIOS
+    
+    // And patch it for cassette use...
+    BIOS_Memory[0x210A] = 0xed; BIOS_Memory[0x210B] = 0xfe; BIOS_Memory[0x210C] = 0xc9; 
+    BIOS_Memory[0x21A9] = 0xed; BIOS_Memory[0x21AA] = 0xfe; BIOS_Memory[0x21AB] = 0xc9; 
+    BIOS_Memory[0x0069] = 0xed; BIOS_Memory[0x006A] = 0xfe; BIOS_Memory[0x006B] = 0xc9; 
+    BIOS_Memory[0x006C] = 0xed; BIOS_Memory[0x006D] = 0xfe; BIOS_Memory[0x006E] = 0xc9; 
+    BIOS_Memory[0x006F] = 0xed; BIOS_Memory[0x0070] = 0xfe; BIOS_Memory[0x0071] = 0xc9; 
+    BIOS_Memory[0x0072] = 0xed; BIOS_Memory[0x0073] = 0xfe; BIOS_Memory[0x0074] = 0xc9; 
+    BIOS_Memory[0x0075] = 0xed; BIOS_Memory[0x0076] = 0xfe; BIOS_Memory[0x0077] = 0xc9; 
+    BIOS_Memory[0x0078] = 0xed; BIOS_Memory[0x0079] = 0xfe; BIOS_Memory[0x007A] = 0xc9; 
+    BIOS_Memory[0x2073] = 0x01;  // Remove Delay
+    BIOS_Memory[0x20D0] = 0x10; BIOS_Memory[0x20D1] = 0x00;   // Only write 0x10 header bytes (instead of 190!)
+    BIOS_Memory[0x20E3]=0x00; BIOS_Memory[0x20E4]=0x00; BIOS_Memory[0x20E5]=0x00; BIOS_Memory[0x20E6]=0xed; BIOS_Memory[0x20E7]=0xfe;
+    
+    MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
+    MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
+    MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
+    MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS     
+    MemoryMap[4] = (u8 *)(BIOS_Memory + 0x8000);      // 0xFF here...
+    MemoryMap[5] = (u8 *)(BIOS_Memory + 0xA000);      // 0xFF here...
+    MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);      // 0xFF here...
+    MemoryMap[7] = (u8 *)(BIOS_Memory + 0xE000);      // 0xFF here...
 }
 
 
@@ -422,11 +430,16 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
             {
                 u8 slotsEnabled = (~IOBYTE) & 0x1F;          // Positive logic 
                 
-                if (slotsEnabled == 0x00)  // Normal ROM + 32K Upper RAM (fairly common configuration)
+                if (slotsEnabled == 0x00)  // Normal BIOS ROM + 32K Upper RAM (fairly common configuration)
                 {
-                      FastMemCopy(pColecoMem, (u8 *)0x6820000, 0x8000); // Restore SVI BIOS (ram is already saved in Slot3RAM[])                      
-                      SVI_PatchBIOS();
-                      memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
+                      MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
+                      MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
+                      MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
+                      MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS 
+                      MemoryMap[4] = (u8 *)(RAM_Memory + 0x8000);       // Normal RAM in upper slot
+                      MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);       // Normal RAM in upper slot
+                      MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);       // Normal RAM in upper slot
+                      MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);       // Normal RAM in upper slot
                       svi_RAM[0]  = 0;
                       svi_RAM[1]  = 1;
                 }
@@ -434,40 +447,53 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                 {
                     if (slotsEnabled & 0x02)   // SVI-328 RAM in lower slot is OK
                     {
-                        memcpy(pColecoMem+0x0000, Slot3RAM+0x0000, 0x8000);     // Restore RAM in lower slot
+                        MemoryMap[0] = (u8 *)(RAM_Memory + 0x0000);       // Normal RAM in lower slot
+                        MemoryMap[1] = (u8 *)(RAM_Memory + 0x2000);       // Normal RAM in lower slot
+                        MemoryMap[2] = (u8 *)(RAM_Memory + 0x4000);       // Normal RAM in lower slot
+                        MemoryMap[3] = (u8 *)(RAM_Memory + 0x6000);       // Normal RAM in lower slot
                         svi_RAM[0]  = 1;
                     }
                     else if (slotsEnabled & 0x08)   // No Expansion RAM in lower slot
                     {
-                        debug2++;
-                        memset(pColecoMem+0x0000, 0xFF, 0x8000);
+                        MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                         svi_RAM[0]  = 0;
                     }
                     else if (slotsEnabled & 0x01)   // No Game Cart in lower slot
                     {
-                        memset(pColecoMem+0x0000, 0xFF, 0x8000);
+                        MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                         svi_RAM[0]  = 0;
                     }
                     else
                     {
-                        FastMemCopy(pColecoMem, (u8 *)0x6820000, 0x8000); // Restore SVI BIOS (ram is already saved in Slot3RAM[])                      
-                        SVI_PatchBIOS();
+                        MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
+                        MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
+                        MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
+                        MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS 
                         svi_RAM[0]  = 0;
                     }
                     
-                    
-                    
                     if (slotsEnabled & 0x14)   // No Expansion RAM in upper slot
                     {
-                        debug3++;
-                        memset(pColecoMem+0x8000, 0xFF, 0x8000);
+                        MemoryMap[4] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[5] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[7] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                         svi_RAM[1]  = 0;
                     }
                     else
                     {
                         if (svi_RAM[1] == 0)
                         {
-                            memcpy(pColecoMem+0x8000, Slot3RAM+0x8000, 0x8000);     // Restore RAM in upper slot
+                            MemoryMap[4] = (u8 *)(RAM_Memory + 0x8000);       // Normal RAM in upper slot
+                            MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);       // Normal RAM in upper slot
+                            MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);       // Normal RAM in upper slot
+                            MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);       // Normal RAM in upper slot
                         }
                         svi_RAM[1]  = 1;
                     }
@@ -551,7 +577,7 @@ void SVI_HandleCassette(register Z80 *r)
         // Find Header/Program
         while (!done)
         {
-            if ((romBuffer[tape_pos] == 0x55) && (romBuffer[tape_pos+1] == 0x55) && (romBuffer[tape_pos+2] == 0x55) && (romBuffer[tape_pos+3] == 0x55) && (romBuffer[tape_pos+4] == 0x7F))
+            if ((ROM_Memory[tape_pos] == 0x55) && (ROM_Memory[tape_pos+1] == 0x55) && (ROM_Memory[tape_pos+2] == 0x55) && (ROM_Memory[tape_pos+3] == 0x55) && (ROM_Memory[tape_pos+4] == 0x7F))
             {
                 tape_pos++; tape_pos++; tape_pos++; tape_pos++;
                 break;
@@ -563,7 +589,7 @@ void SVI_HandleCassette(register Z80 *r)
 
         if (tape_pos < tape_len)
         {
-            r->AF.B.h = romBuffer[tape_pos++];
+            r->AF.B.h = ROM_Memory[tape_pos++];
             r->AF.B.l &= ~C_FLAG;
         }
         else
@@ -575,7 +601,7 @@ void SVI_HandleCassette(register Z80 *r)
     {
         if (tape_pos >= tape_len) {r->AF.B.l |= C_FLAG;return;}
         // Read Data Byte from Cassette
-        r->AF.B.h = romBuffer[tape_pos++];
+        r->AF.B.h = ROM_Memory[tape_pos++];
         r->AF.B.l &= ~C_FLAG;
     }
     else if (r->PC.W-2 == 0x006F)   // Stop Tape
@@ -586,20 +612,20 @@ void SVI_HandleCassette(register Z80 *r)
     {
         for (u8 i=0; i<17; i++)
         {
-            romBuffer[tape_pos++] = header_SVI[i];
+            ROM_Memory[tape_pos++] = header_SVI[i];
         }
         if (tape_pos > tape_len)  tape_len=tape_pos;
         r->AF.B.l &= ~C_FLAG;
     }
     else if (r->PC.W-2 == 0x0075)   // TAPOUT
     {
-        romBuffer[tape_pos++] = r->AF.B.h;
+        ROM_Memory[tape_pos++] = r->AF.B.h;
         if (tape_pos > tape_len)  tape_len=tape_pos;
         r->AF.B.l &= ~C_FLAG;
     }
     else if (r->PC.W-2 == 0x20E6)   // CASOUT
     {
-        romBuffer[tape_pos++] = r->AF.B.h;
+        ROM_Memory[tape_pos++] = r->AF.B.h;
         if (tape_pos > tape_len)  tape_len=tape_pos;
         r->AF.B.l &= ~C_FLAG;
         r->PC.W = 0x20ED;

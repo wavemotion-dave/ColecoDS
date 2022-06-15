@@ -29,7 +29,6 @@
 // ------------------------------------------------
 // Adam RAM is 128K (64K Intrinsic, 64K Expanded)
 // ------------------------------------------------
-u8 AdamRAM[0x20000]   = {0x00};
 u8 adam_128k_mode     = 0;
 u8 sg1000_double_reset = false;
 
@@ -81,14 +80,6 @@ u32 ctc_timer[4]    __attribute__((section(".dtcm"))) = {0};
 u8 ctc_vector[4]    __attribute__((section(".dtcm"))) = {0};
 u8 ctc_latch[4]     __attribute__((section(".dtcm"))) = {0}; 
 
-// ----------------------------------------------------------------------
-// Our "massive" ROM buffer - we support MegaCarts up to 512k but 
-// we could bump this to 1MB as the MC standard supports up to 1MB
-// but there are currently no games that take advantage of that 
-// much... only Wizard of Wor is 512K as the largest I've seen...
-// ----------------------------------------------------------------------
-u8 romBuffer[512 * 1024] ALIGN(32);   // We support MegaCarts up to 512KB
-
 u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
 u8 ay_reg_idx     __attribute__((section(".dtcm"))) = 0;
@@ -124,8 +115,6 @@ u8 bActivisionPCB __attribute__((section(".dtcm"))) = 0;      // Activision PCB 
 u8 sRamAtE000_OK  __attribute__((section(".dtcm"))) = 0;      // Lord of the Dungeon is the only game that needs this
 
 u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
-
-u8 sgm_low_mem[8192] = {0}; // The 8K of SGM RAM that can be mapped into the BIOS area
 
 // -----------------------------------------------------------
 // The two master sound chips... both are mapped to SN sound.
@@ -167,26 +156,25 @@ void colecoWipeRAM(void)
 {
   if (sg1000_mode)
   {
-      for (int i=0xC000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0xC000; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (pv2000_mode)
   {
-      memset(pColecoMem+0x4000, 0xFF, 0x8000);
-      for (int i=0x7000; i<0x8000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      memset(RAM_Memory+0x4000, 0xFF, 0x8000);
+      for (int i=0x7000; i<0x8000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (sordm5_mode)
   {
-      memset(pColecoMem+0x6000, 0xFF, 0x1000);
-      for (int i=0x7000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0x7000; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (memotech_mode)
   {
-    for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+    for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (svi_mode)
   {
-    for (int i=0; i< 0x8000; i++) pColecoMem[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
-    memset(Slot3RAM,  0x00, 0x10000);
+    for (int i=0; i< 0x8000; i++) RAM_Memory[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+    memset(RAM_Memory,  0x00, 0x10000);
   }
   else if (msx_mode)
   {
@@ -194,32 +182,30 @@ void colecoWipeRAM(void)
   }
   else if (creativision_mode)
   {
-     memset(pColecoMem, 0x00, 0x1000);  // Lower 1K is RAM mirrored four times (4K)
+     memset(RAM_Memory, 0x00, 0x1000);  // Lower 1K is RAM mirrored four times (4K)
   }
   else if (adam_mode)
   {
     // ADAM has special handling...
-    for (int i=0; i< 0x20000; i++) AdamRAM[i] = (myConfig.memWipe ? 0x02:  (rand() & 0xFF));   // The 0x02 pattern tends to make most things start up properly... don't ask.
-    memset(pColecoMem, 0xFF, 0x10000);
+    for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x02:  (rand() & 0xFF));   // The 0x02 pattern tends to make most things start up properly... don't ask.
   }
   else if (einstein_mode)
   {
-      memset(pColecoMem+0x2000,0xFF, 0x6000);
-      for (int i=0x8000; i<0x10000; i++) pColecoMem[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else  // Normal colecovision which has 1K of RAM and is mirrored
   {
       for (int i=0; i<0x400; i++)
       {
           u8 randbyte = rand() & 0xFF;
-          pColecoMem[0x6000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-          pColecoMem[0x6400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-          pColecoMem[0x6800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-          pColecoMem[0x6C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-          pColecoMem[0x7000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-          pColecoMem[0x7400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-          pColecoMem[0x7800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-          pColecoMem[0x7C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x6000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x6400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x6800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x6C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
       }
   }
 }
@@ -249,7 +235,7 @@ u8 colecoInit(char *szGame)
   // ----------------------------------------------------------------------------------  
   // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory
   // ----------------------------------------------------------------------------------  
-  memset(romBuffer, 0xFF, (512 * 1024));
+  memset(ROM_Memory, 0xFF, (512 * 1024));
   
   if (bForceMSXLoad) msx_mode = 1;
   if (msx_mode)      AY_Enable=true;
@@ -291,49 +277,42 @@ u8 colecoInit(char *szGame)
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
       colecoWipeRAM();                              // Wipe RAM
-      RetFct = loadrom(szGame,pColecoMem,0xC000);   // Load up to 48K
+      RetFct = loadrom(szGame,RAM_Memory,0xC000);   // Load up to 48K
       sg1000_reset();                               // Reset the SG-1000
   }
   else if (sordm5_mode)  // Load Sord M5 cartridge
   {
       ctc_enabled = true;
       colecoWipeRAM();
-      RetFct = loadrom(szGame,pColecoMem+0x2000,0x4000);  // Load up to 16K
+      RetFct = loadrom(szGame,RAM_Memory+0x2000,0x5000);  // Load up to 20K
   }
   else if (pv2000_mode)  // Casio PV-2000 cartridge loads at C000
   {
       colecoWipeRAM();
-      RetFct = loadrom(szGame,pColecoMem+0xC000,0x4000);  // Load up to 16K
+      RetFct = loadrom(szGame,RAM_Memory+0xC000,0x4000);  // Load up to 16K
   }
   else if (creativision_mode)  // Creativision loads cart up against 0xC000
   {
       colecoWipeRAM();
-      RetFct = loadrom(szGame,pColecoMem+0xC000,0x4000);  // Load up to 16K
+      RetFct = loadrom(szGame,RAM_Memory+0xC000,0x4000);  // Load up to 16K
   }
   else if (memotech_mode)  // Load Memotech MTX file
   {
       ctc_enabled = true;
-      memcpy((u8 *)0x6820000+0x0000, mtx_os,    0x2000);  // Fast copy buffer
-      memcpy((u8 *)0x6820000+0x2000, mtx_basic, 0x2000);  // Fast copy buffer
-      memcpy((u8 *)0x6820000+0x4000, mtx_assem, 0x2000);  // Fast copy buffer
-      memset((u8 *)0x6830000, 0x00, 0x10000);             // Clear RAM buffer
-      memset(pColecoMem+0x4000, 0xFF, 0xC000);            // Wipe Memory above BIOS
-      RetFct = loadrom(szGame,pColecoMem+0x4000,0xC000);  // Load up to 48K
+      RetFct = loadrom(szGame,RAM_Memory+0x4000,0xC000);  // Load up to 48K
   }
   else if (msx_mode)  // Load MSX cartridge ... 
   {
       // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);  
+      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);  
       
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
   }
   else if (svi_mode)  // Load SVI ROM ... 
   {
-      memcpy((u8 *)0x6820000+0x0000, SVIBios, 0x8000);  // Fast copy buffer for BIOS
-          
       // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);  
+      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);  
       
       // Wipe RAM area from 0x8000 upwards after ROM is loaded...
       colecoWipeRAM();
@@ -345,38 +324,38 @@ u8 colecoInit(char *szGame)
       adam_CapsLock = 0;
       adam_unsaved_data = 0;
       colecoWipeRAM();
-      RetFct = loadrom(szGame,pColecoMem,0x10000);  
+      RetFct = loadrom(szGame,RAM_Memory,0x10000);  
   }
   else if (pencil2_mode)
   {
       // Wipe area from BIOS onwards and then wipe RAM to random values below
-      memset(pColecoMem+0x2000, 0xFF, 0xE000);
+      memset(RAM_Memory+0x2000, 0xFF, 0xE000);
 
       // Wipe RAM to Random Values
       colecoWipeRAM();
 
-      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);    // Load up to 32K
+      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);    // Load up to 32K
   }
   else if (einstein_mode)  // Load Einstein COM file
   {
       ctc_enabled = true;
       colecoWipeRAM();
-      RetFct = loadrom(szGame,pColecoMem+0x4000,0xC000);  // Load up to 48K
+      RetFct = loadrom(szGame,RAM_Memory+0x4000,0xC000);  // Load up to 48K
   }
   else  // Load coleco cartridge
   {
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       
       // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
-      memset(pColecoMem+0x2000, 0xFF, 0x4000);
+      memset(RAM_Memory+0x2000, 0xFF, 0x4000);
 
       // Wipe RAM to Random Values
       colecoWipeRAM();
 
       // Set upper 32K ROM area to 0xFF before load
-      memset(pColecoMem+0x8000, 0xFF, 0x8000);
+      memset(RAM_Memory+0x8000, 0xFF, 0x8000);
 
-      RetFct = loadrom(szGame,pColecoMem+0x8000,0x8000);
+      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);
       
       coleco_mode = true;
   }
@@ -509,11 +488,16 @@ void getfile_crc(const char *path)
     msx_sram_enabled = 0;
     if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN) 
     if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
+    if (file_crc == 0xa0fd57cf) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
     if (file_crc == 0xd640deaf) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (EN)
     if (file_crc == 0x119b7ba8) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (JP)    
     if (file_crc == 0x27fd8f9a) msx_sram_enabled = 0x10;       // MSX Deep Dungeon I (JP)
     if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (EN)
     if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)    
+    if (file_crc == 0x96b7faca) msx_sram_enabled = 0x10;       // MSX Harry Fox Special (JP)
+    if (file_crc == 0xb8fc19a4) msx_sram_enabled = 0x20;       // MSX Cosmic Soldier 2 - Psychic War
+    if (file_crc == 0x4ead5098) msx_sram_enabled = 0x20;       // MSX Ghengis Khan
+    if (file_crc == 0x3aa33a30) msx_sram_enabled = 0x20;       // MSX Nobunaga no Yabou - Zenkokuhan    
 }
 
 
@@ -527,7 +511,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   FILE* handle = fopen(path, "rb");  
   if (handle != NULL) 
   {
-    memset(romBuffer, 0xFF, (512 * 1024));          // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
+    memset(ROM_Memory, 0xFF, (512 * 1024));          // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
     
     fseek(handle, 0, SEEK_END);                     // Figure out how big the file is
     int iSSize = ftell(handle);
@@ -536,8 +520,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     if (sg1000_mode && (iSSize == (2048 * 1024)))   // Look for .sc Multicart
     {
         fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
-        fread((void*) romBuffer, 0x8000, 1, handle);  // Read 32K from that last block
-        memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
+        fread((void*) ROM_Memory, 0x8000, 1, handle);  // Read 32K from that last block
+        memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         fclose(handle);
         strcpy(lastAdamDataPath, path);
         romBankMask = 0x3F;
@@ -549,8 +533,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     if (sg1000_mode && (iSSize == (4096 * 1024)))   // Look for .sc Megacart
     {
         fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
-        fread((void*) romBuffer, 0x8000, 1, handle);  // Read 32K from that last block
-        memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
+        fread((void*) ROM_Memory, 0x8000, 1, handle);  // Read 32K from that last block
+        memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         fclose(handle);
         strcpy(lastAdamDataPath, path);
         romBankMask = 0x7F;
@@ -562,16 +546,16 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
     {
         fseek(handle, 0, SEEK_SET);
-        fread((void*) romBuffer, iSSize, 1, handle); 
+        fread((void*) ROM_Memory, iSSize, 1, handle); 
         fclose(handle);
         
         if (file_crc == 0x68c85890) // M5 Up Up Balloon needs a patch to add 0x00 at the front
         {
             for (u16 i=iSSize; i>0; i--)
             {
-                romBuffer[i] = romBuffer[i-1];  // Shift everything up 1 byte
+                ROM_Memory[i] = ROM_Memory[i-1];  // Shift everything up 1 byte
             }
-            romBuffer[0] = 0x00;    // Add 0x00 to the first byte which is the patch
+            ROM_Memory[0] = 0x00;    // Add 0x00 to the first byte which is the patch
             iSSize++;               // Make sure the size is now correct
         }
         
@@ -599,7 +583,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             Port20 = 0x00;               // Adam Net default
             adam_128k_mode = 0;          // Normal 64K ADAM to start
             SetupAdam(false);
-            // The .ddp is now in romBuffer[]
+            // The .ddp is now in ROM_Memory[]
             if (strstr(path, ".ddp") != 0)
             {
                 ChangeTape(0, path);
@@ -623,74 +607,74 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             tape_len = iSSize;  
             if (iSSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
             {
-                memcpy(pColecoMem+0x4000, romBuffer, iSSize);   // only for Diagnostics ROM
+                memcpy(RAM_Memory+0x4000, ROM_Memory, iSSize);   // only for Diagnostics ROM
             }
         }
         else if (creativision_mode)
         {
-            memset(pColecoMem+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
+            memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
             if (iSSize == 4096) // 4K
             {
-                memcpy(pColecoMem+0x9000, romBuffer, iSSize);
-                memcpy(pColecoMem+0xB000, romBuffer, iSSize);
+                memcpy(RAM_Memory+0x9000, ROM_Memory, iSSize);
+                memcpy(RAM_Memory+0xB000, ROM_Memory, iSSize);
             }
             if (iSSize == 1024 * 6) // 6K
             {
-                memcpy(pColecoMem+0xB000, romBuffer+0x0000, 0x1000);   // main 4k at 0xB000
-                memcpy(pColecoMem+0xA800, romBuffer+0x1000, 0x0800);   // main 2k at 0xA800
+                memcpy(RAM_Memory+0xB000, ROM_Memory+0x0000, 0x1000);   // main 4k at 0xB000
+                memcpy(RAM_Memory+0xA800, ROM_Memory+0x1000, 0x0800);   // main 2k at 0xA800
       
-                memcpy(pColecoMem+0x9000, pColecoMem+0xB000, 0x1000);   // Mirror 4k
-                memcpy(pColecoMem+0xA000, pColecoMem+0xA800, 0x0800);   // Mirror 2k
-                memcpy(pColecoMem+0x8800, pColecoMem+0xA800, 0x0800);   // Mirror 2k
-                memcpy(pColecoMem+0x8000, pColecoMem+0xA800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x9000, RAM_Memory+0xB000, 0x1000);   // Mirror 4k
+                memcpy(RAM_Memory+0xA000, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x8800, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x8000, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
             }
             if (iSSize == 8192) // 8K
             {
-                memcpy(pColecoMem+0x8000, romBuffer, iSSize);
-                memcpy(pColecoMem+0xA000, romBuffer, iSSize);
+                memcpy(RAM_Memory+0x8000, ROM_Memory, iSSize);
+                memcpy(RAM_Memory+0xA000, ROM_Memory, iSSize);
             }
             if (iSSize == 1024 * 10) // 10K
             {
-                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb	at 0xA000
-                memcpy(pColecoMem+0x7800, romBuffer+0x2000, 0x0800);    // second 2Kb at 0x7800
+                memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
+                memcpy(RAM_Memory+0x7800, ROM_Memory+0x2000, 0x0800);    // second 2Kb at 0x7800
                 
-                memcpy(pColecoMem+0x8000, pColecoMem+0xA000, 0x2000);   // Mirror 8k at 0x8000
+                memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
                 
-                memcpy(pColecoMem+0x5800, pColecoMem+0x7800, 0x0800);   // Mirror 2k at 0x5800
-                memcpy(pColecoMem+0x7000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
-                memcpy(pColecoMem+0x6800, pColecoMem+0x7800, 0x0800);   // Mirror 2k
-                memcpy(pColecoMem+0x6000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
-                memcpy(pColecoMem+0x5000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
-                memcpy(pColecoMem+0x4800, pColecoMem+0x7800, 0x0800);   // Mirror 2k
-                memcpy(pColecoMem+0x4000, pColecoMem+0x7800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x5800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k at 0x5800
+                memcpy(RAM_Memory+0x7000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x6800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x6000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x5000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x4800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+                memcpy(RAM_Memory+0x4000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
             }
             if (iSSize == 1024 * 12) // 12K
             {
-                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb	at 0xA000
-                memcpy(pColecoMem+0x7000, romBuffer+0x2000, 0x1000);    // second 4Kb at 0x7000
-                memcpy(pColecoMem+0x8000, pColecoMem+0xA000, 0x2000);   // Mirror 8k at 0x8000
-                memcpy(pColecoMem+0x5000, pColecoMem+0x7000, 0x1000);   // Mirror 4k at 0x5000
-                memcpy(pColecoMem+0x6000, pColecoMem+0x7000, 0x1000);   // Mirror 4k at 0x6000
-                memcpy(pColecoMem+0x4000, pColecoMem+0x7000, 0x1000);   // Mirror 4k at 0x4000
+                memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
+                memcpy(RAM_Memory+0x7000, ROM_Memory+0x2000, 0x1000);    // second 4Kb at 0x7000
+                memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
+                memcpy(RAM_Memory+0x5000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x5000
+                memcpy(RAM_Memory+0x6000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x6000
+                memcpy(RAM_Memory+0x4000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x4000
             }
             if (iSSize == 1024 * 16) // 16K
             {
-                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb	at 0xA000
-                memcpy(pColecoMem+0x8000, romBuffer+0x2000, 0x2000);    // second 8Kb at 0x8000
+                memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
+                memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
             }
             if (iSSize == 1024 * 18) // 18K
             {
-                memcpy(pColecoMem+0xA000, romBuffer+0x0000, 0x2000);    // main 8Kb at 0xA000
-                memcpy(pColecoMem+0x8000, romBuffer+0x2000, 0x2000);    // second 8Kb at 0x8000
-                memcpy(pColecoMem+0x7800, romBuffer+0x4000, 0x0800);    // final 2Kb at 0x7800
+                memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb at 0xA000
+                memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
+                memcpy(RAM_Memory+0x7800, ROM_Memory+0x4000, 0x0800);    // final 2Kb at 0x7800
                 
-                memcpy(pColecoMem+0x6800, pColecoMem+0x7800, 0x0800);   // And then the odd mirrors...
-                memcpy(pColecoMem+0x5800, pColecoMem+0x7800, 0x0800);
-                memcpy(pColecoMem+0x4800, pColecoMem+0x7800, 0x0800);
-                memcpy(pColecoMem+0x7000, pColecoMem+0x7800, 0x0800);
-                memcpy(pColecoMem+0x6000, pColecoMem+0x7800, 0x0800);
-                memcpy(pColecoMem+0x5000, pColecoMem+0x7800, 0x0800);
-                memcpy(pColecoMem+0x4000, pColecoMem+0x7800, 0x0800);
+                memcpy(RAM_Memory+0x6800, RAM_Memory+0x7800, 0x0800);   // And then the odd mirrors...
+                memcpy(RAM_Memory+0x5800, RAM_Memory+0x7800, 0x0800);
+                memcpy(RAM_Memory+0x4800, RAM_Memory+0x7800, 0x0800);
+                memcpy(RAM_Memory+0x7000, RAM_Memory+0x7800, 0x0800);
+                memcpy(RAM_Memory+0x6000, RAM_Memory+0x7800, 0x0800);
+                memcpy(RAM_Memory+0x5000, RAM_Memory+0x7800, 0x0800);
+                memcpy(RAM_Memory+0x4000, RAM_Memory+0x7800, 0x0800);
             }
         }
         else
@@ -699,14 +683,14 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ----------------------------------------------------------------------
         if (iSSize <= (((sg1000_mode) ? 48:32)*1024)) // Allow SG ROMs to be up to 48K, otherwise 32K limit
         {
-            memcpy(ptr, romBuffer, nmemb);
+            memcpy(ptr, ROM_Memory, nmemb);
         }
         else    // No - must be Mega Cart (MC) Bankswitched!!  We have two banks of 128K VRAM to help with speed.
         {
             // Copy 128K worth up to the VRAM for faster bank switching on the first 8 banks
             u32 copySize = ((iSSize <= 128*1024) ? iSSize : (128*1024));
             u32 *dest = (u32*)0x06880000;
-            u32 *src  = (u32*)romBuffer;
+            u32 *src  = (u32*)ROM_Memory;
             for (u32 i=0; i<copySize/4; i++)
             {
                 *dest++ = *src++;
@@ -717,7 +701,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             {
                 u32 copySize = (128*1024);
                 u32 *dest = (u32*)0x6820000;
-                u32 *src  = (u32*)(romBuffer + (128*1024));
+                u32 *src  = (u32*)(ROM_Memory + (128*1024));
                 for (u32 i=0; i<copySize/4; i++)
                 {
                     *dest++ = *src++;
@@ -730,19 +714,19 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             // possible 64K Megacart (theoretically MC should be 128K+ but
             // there are examples of 64K MegaCarts). This code does that...
             // --------------------------------------------------------------
-            bMagicMegaCart = ((romBuffer[0xC000] == 0x55 && romBuffer[0xC001] == 0xAA) ? 1:0);
+            bMagicMegaCart = ((ROM_Memory[0xC000] == 0x55 && ROM_Memory[0xC001] == 0xAA) ? 1:0);
             lastBank = 199;                                 // Force load of the first bank when asked to bankswitch
             if ((iSSize == (64 * 1024)) && !bMagicMegaCart)
             {
                 bActivisionPCB = 1;
-                memcpy(ptr, romBuffer, 0x4000);                     // bank 0
-                memcpy(ptr+0x4000, romBuffer+0x4000, 0x4000);       // bank 1
+                memcpy(ptr, ROM_Memory, 0x4000);                     // bank 0
+                memcpy(ptr+0x4000, ROM_Memory+0x4000, 0x4000);       // bank 1
                 romBankMask = 0x03;
             }
             else    // We will assume Megacart then...
             {
                 bMagicMegaCart = 1;
-                memcpy(ptr, romBuffer+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
+                memcpy(ptr, ROM_Memory+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
                 BankSwitch(0);                                  // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
                 
                 if      (iSSize == (64  * 1024)) romBankMask = 0x03;
@@ -758,9 +742,9 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
       
     // -------------------------------------------------------------------------  
     // For some combinations, we have hotspots or other memory stuff that 
-    // needs to be more complicated than simply returning pColecoMem[].
+    // needs to be more complicated than simply returning RAM_Memory[].
     // -------------------------------------------------------------------------  
-    bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || adam_mode || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
+    bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || adam_mode || msx_sram_enabled || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
 
     // -----------------------------------------------------------------------
     // To speed up processing in the memory write functions, we accumulate 
@@ -796,7 +780,7 @@ void SetupSGM(void)
     // ----------------------------------------------------------------
     if (sgm_enable && bFirstSGMEnable)
     {
-        memset(pColecoMem+0x2000, 0x00, 0x6000);
+        memset(RAM_Memory+0x2000, 0x00, 0x6000);
         bFirstSGMEnable = false;
     }
     
@@ -811,9 +795,8 @@ void SetupSGM(void)
     {
       if (sgm_low_addr != 0x2000)
       {
-          memcpy(sgm_low_mem,pColecoMem,0x2000);
           sgm_low_addr = 0x2000;
-          memcpy(pColecoMem,ColecoBios,0x2000);
+          MemoryMap[0] = BIOS_Memory + 0x0000;
       }
     }
     else 
@@ -821,12 +804,20 @@ void SetupSGM(void)
       sgm_enable = true;    // Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
       if (sgm_low_addr != 0x0000)
       {
-          memcpy(pColecoMem,sgm_low_mem,0x2000);
+          MemoryMap[0] = RAM_Memory + 0x0000;
           sgm_low_addr = 0x0000; 
       }
     }
 }
 
+
+void adam_setup_bios(void)
+{
+    memcpy(BIOS_Memory+0x0000, AdamWRITER, 0x8000);
+    memcpy(BIOS_Memory+0x8000, AdamEOS,    0x2000);
+    memcpy(BIOS_Memory+0xA000, ColecoBios, 0x2000);
+}
+    
 // ================================================================================================
 // Setup Adam based on Port60 (Adam Memory) and Port20 (AdamNet)
 // Most of this hinges around Port60:
@@ -855,31 +846,45 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ram_lo = false;
         adam_ram_lo_exp = false;
-        memcpy(pColecoMem, AdamWRITER, 0x8000);
+        MemoryMap[0] = BIOS_Memory + 0x0000;
+        MemoryMap[1] = BIOS_Memory + 0x2000;
+        MemoryMap[2] = BIOS_Memory + 0x4000;
         if (Port20 & 0x02) 
         {
-            memcpy(pColecoMem+0x6000, AdamEOS, 0x2000);
+            MemoryMap[3] = BIOS_Memory + 0x8000;    // EOS
+        }
+        else
+        {
+            MemoryMap[3] = BIOS_Memory + 0x6000;    // Lst block of Adam WRITER
         }
     }
     else if ((Port60 & 0x03) == 0x01)   // Onboard RAM
     {
         adam_ram_lo = true;
         adam_ram_lo_exp = false;
-        memcpy(pColecoMem+0x0000, AdamRAM+0x0000, 0x8000);
+        MemoryMap[0] = RAM_Memory + 0x0000;
+        MemoryMap[1] = RAM_Memory + 0x2000;
+        MemoryMap[2] = RAM_Memory + 0x4000;
+        MemoryMap[3] = RAM_Memory + 0x6000;
     }
     else if ((Port60 & 0x03) == 0x03)   // Colecovision BIOS + RAM
     {
         adam_ram_lo = true;
         adam_ram_lo_exp = false;
-        memcpy(pColecoMem+0x0000, AdamRAM+0x0000, 0x8000);
-        memcpy(pColecoMem, ColecoBios, 0x2000);
+        MemoryMap[0] = BIOS_Memory + 0xA000;    // Coleco.rom BIOS
+        MemoryMap[1] = RAM_Memory + 0x2000;
+        MemoryMap[2] = RAM_Memory + 0x4000;
+        MemoryMap[3] = RAM_Memory + 0x6000;
     }
     else                                // Expanded RAM
     {
         adam_128k_mode = 1;
         adam_ram_lo = false;
         adam_ram_lo_exp = true;
-        memcpy(pColecoMem+0x0000, AdamRAM+0x10000, 0x8000);
+        MemoryMap[0] = RAM_Memory + 0x10000;
+        MemoryMap[1] = RAM_Memory + 0x12000;
+        MemoryMap[2] = RAM_Memory + 0x14000;
+        MemoryMap[3] = RAM_Memory + 0x16000;
     }
 
 
@@ -890,20 +895,25 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ram_hi = true;
         adam_ram_hi_exp = false;
-        memcpy(pColecoMem+0x8000, AdamRAM+0x8000, 0x8000);
+        MemoryMap[4] = RAM_Memory + 0x8000;
+        MemoryMap[5] = RAM_Memory + 0xA000;
+        MemoryMap[6] = RAM_Memory + 0xC000;
+        MemoryMap[7] = RAM_Memory + 0xE000;
     }
     else if ((Port60 & 0x0C) == 0x08)    // Expanded RAM
     {
         adam_128k_mode = 1;
         adam_ram_hi = false;
         adam_ram_hi_exp = true;
-        memcpy(pColecoMem+0x8000, AdamRAM+0x18000, 0x8000);
+        MemoryMap[4] = RAM_Memory + 0x18000;
+        MemoryMap[5] = RAM_Memory + 0x1A000;
+        MemoryMap[6] = RAM_Memory + 0x1C000;
+        MemoryMap[7] = RAM_Memory + 0x1E000;
     }
     else        // Nothing else exists so just return 0xFF
     {
         adam_ram_hi = false;
         adam_ram_hi_exp = false;
-        memset(pColecoMem+0x8000, 0xFF, 0x8000);
     }
     
     // Check if we are to Reset the AdamNet
@@ -914,7 +924,7 @@ void SetupAdam(bool bResetAdamNet)
 /** Z80 emulation calls this function to read a byte from   **/
 /** a given I/O port.                                       **/
 /*************************************************************/
-ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
+unsigned char cpu_readport16(register unsigned short Port) 
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
   {

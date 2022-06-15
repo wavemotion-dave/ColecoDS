@@ -24,7 +24,6 @@
 FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
 FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
-extern byte AdamRAM[];
 extern byte adam_ram_hi;
 extern byte adam_ram_lo;
 
@@ -38,7 +37,7 @@ byte io_show_status=0;
 #define DELAY_IO 10
 
 /** RAM Access Macro *****************************************/
-#define RAM(A)         (pColecoMem[A])
+#define RAM(A)         (RAM_Memory[A])
 
 /** PCB Field Offsets ****************************************/
 #define PCB_CMD_STAT   0
@@ -155,7 +154,7 @@ byte DiskID;
 byte KBDStatus;
 byte LastKey;
 
-extern byte pColecoMem[];
+extern byte RAM_Memory[];
 
 
 /** GetDCB() *************************************************/
@@ -164,7 +163,7 @@ extern byte pColecoMem[];
 static byte GetDCB(byte Dev,byte Offset)
 {
   word A = (PCBAddr+PCB_SIZE+Dev*DCB_SIZE+Offset)&0xFFFF;
-  return(AdamRAM[A]);
+  return(RAM_Memory[A]);
 }
 
 static word GetDCBBase(byte Dev)
@@ -193,7 +192,7 @@ static unsigned int GetDCBSector(byte Dev)
 static byte GetPCB(word Offset)
 {
   word A = (PCBAddr+Offset)&0xFFFF;
-  return(AdamRAM[A]);
+  return(RAM_Memory[A]);
 }
 
 static word GetPCBBase(void)
@@ -213,8 +212,7 @@ static void SetDCB(byte Dev,byte Offset,byte Value)
 {
   word A = (PCBAddr+PCB_SIZE+Dev*DCB_SIZE+Offset)&0xFFFF;
     
-  pColecoMem[A] = Value;
-  AdamRAM[A] = Value;
+  RAM_Memory[A] = Value;
 }
 
 /** SetPCB() *************************************************/
@@ -223,8 +221,7 @@ static void SetDCB(byte Dev,byte Offset,byte Value)
 static void SetPCB(word Offset,byte Value)
 {
   word A = (PCBAddr+Offset)&0xFFFF;
-  pColecoMem[A] = Value;
-  AdamRAM[A] = Value;
+  RAM_Memory[A] = Value;
 }
 
 /** IsPCB() **************************************************/
@@ -336,8 +333,7 @@ static void UpdateKBD(byte Dev,int V)
       N = GetDCBLen(Dev);
       for(J=0 ; (J<N) && (V=GetKBD()) ; ++J, A=(A+1)&0xFFFF)
       {
-        pColecoMem[A] = V;
-        AdamRAM[A] = V;
+        RAM_Memory[A] = V;
       }
       KBDStatus = RSP_STATUS+(J<N? 0x0C:0x00);
       break;
@@ -379,8 +375,7 @@ static void AdamFlushCache(void)
   for (word i=0; i<savedLEN; i++)
   {
       // Copy data from holding buffer...
-      pColecoMem[savedBUF] = HoldingBuf[i];
-      AdamRAM[savedBUF] = HoldingBuf[i];
+      RAM_Memory[savedBUF] = HoldingBuf[i];
       savedBUF++;
   }
 }
@@ -477,7 +472,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
           last_command_read = false;
           for(J=0;J<K;++J,++BUF) 
           {
-              Data[J] = AdamRAM[BUF];
+              Data[J] = RAM_Memory[BUF];
           }
         }
         /* If disk access failed, stop here */

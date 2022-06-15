@@ -27,8 +27,7 @@
 #include "MTX_BIOS.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0015        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
-
+#define COLECODS_SAVE_VER 0x0016        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
@@ -88,7 +87,10 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
 
     // Save Coleco Memory (yes, all of it!)
-    if (uNbO) uNbO = fwrite(pColecoMem, 0x10000,1, handle); 
+    if (uNbO) uNbO = fwrite(RAM_Memory, 0x10000,1, handle); 
+      
+    // And the Memory Map - TODO: generic
+    if (uNbO) uNbO = fwrite(MemoryMap, sizeof(MemoryMap),1, handle);     
       
     // Write the Super Game Module and AY sound core 
     if (uNbO) uNbO = fwrite(ay_reg, 16, 1, handle);      
@@ -172,6 +174,11 @@ void colecoSaveState()
     if (uNbO) fwrite(&Port53, sizeof(Port53),1, handle);
     if (uNbO) fwrite(&Port60, sizeof(Port60),1, handle);
       
+    if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
+    if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
+    if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
+    if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+      
     if (uNbO) fwrite(ctc_control, sizeof(ctc_control),1, handle);
     if (uNbO) fwrite(ctc_time, sizeof(ctc_time),1, handle);
     if (uNbO) fwrite(ctc_timer, sizeof(ctc_timer),1, handle);
@@ -187,17 +194,10 @@ void colecoSaveState()
         if (uNbO) fwrite(&myKeyData, sizeof(myKeyData),1, handle);      
         if (uNbO) fwrite(&adc_mux, sizeof(adc_mux),1, handle);      
     }
-    
-    if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
+    else if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
     {
-        if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
-        if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
-        if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
-        if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
         if (uNbO) fwrite(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
-        memcpy(Slot3RAM, Slot3RAMPtr, 0x10000);
-        if (uNbO) fwrite(Slot3RAM, 0x10000,1, handle);
-        if (uNbO) fwrite(msx_SRAM, 0x2000,1, handle);    // No game uses more than 8K
+        if (uNbO) fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
         if (uNbO) fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
@@ -223,17 +223,18 @@ void colecoSaveState()
         if (uNbO) fwrite(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
         if (uNbO) fwrite(spare, 30,1, handle);        
         if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
-        if (uNbO) fwrite(AdamRAM, (adam_128k_mode ? 0x20000:0x10000),1, handle);
-    }
-    else if (!memotech_mode && !sordm5_mode && !sg1000_mode)
-    {
-        // Write the SGM low memory
-        if (uNbO) fwrite(sgm_low_mem, 0x2000,1, handle);      
+        if (adam_128k_mode) fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
     }
     else if (bActivisionPCB)
     {
         // Write the EEPROM and memory
         if (uNbO) fwrite(&EEPROM, sizeof(EEPROM),1, handle);      
+    }
+    else if (creativision_mode)
+    {
+        u16 cv_cpu_size=1;
+        u8 *mem = creativision_get_cpu(&cv_cpu_size);
+        if (uNbO) fwrite(mem, cv_cpu_size,1, handle);
     }
       
     if (uNbO) 
@@ -308,8 +309,11 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
             
             // Load Coleco Memory (yes, all of it!)
-            if (uNbO) uNbO = fread(pColecoMem, 0x10000,1, handle); 
+            if (uNbO) uNbO = fread(RAM_Memory, 0x10000,1, handle); 
 
+            // And the Memory Map - TODO: generic
+            if (uNbO) uNbO = fread(MemoryMap, sizeof(MemoryMap),1, handle);     
+            
             // Load the Super Game Module stuff
             if (uNbO) uNbO = fread(ay_reg, 16, 1, handle);      
             if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
@@ -393,7 +397,12 @@ void colecoLoadState()
             if (uNbO) fread(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
             if (uNbO) fread(&Port53, sizeof(Port53),1, handle);
             if (uNbO) fread(&Port60, sizeof(Port60),1, handle);
-
+            
+            if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
+            if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
+            if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
+            if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+            
             if (uNbO) fread(ctc_control, sizeof(ctc_control),1, handle);
             if (uNbO) fread(ctc_time, sizeof(ctc_time),1, handle);
             if (uNbO) fread(ctc_timer, sizeof(ctc_timer),1, handle);
@@ -409,17 +418,10 @@ void colecoLoadState()
                 if (uNbO) fread(&myKeyData, sizeof(myKeyData),1, handle);      
                 if (uNbO) fread(&adc_mux, sizeof(adc_mux),1, handle);      
     		}
-    		
-            if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
+    		else if (msx_mode)   // Big enough that we will not write this if we are not MSX
             {
-                if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
-                if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
-                if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
-                if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
-                if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
-                if (uNbO) fread(Slot3RAM, 0x10000,1, handle);
-                if (msx_mode) memcpy(Slot3RAMPtr, Slot3RAM, 0x10000);
-                if (uNbO) fread(msx_SRAM, 0x2000,1, handle);    // No game uses more than 8K
+                if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle); //zzz - make this generic
+                if (uNbO) fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
                 if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
@@ -445,17 +447,19 @@ void colecoLoadState()
                 if (uNbO) fread(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
                 if (uNbO) fread(spare, 30,1, handle);                
                 if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
-                if (uNbO) fread(AdamRAM, (adam_128k_mode ? 0x20000:0x10000),1, handle);
-            }
-            else if (!memotech_mode && !sordm5_mode && !sg1000_mode)
-            {
-                // Load the SGM low memory
-                if (uNbO) uNbO = fread(sgm_low_mem, 0x2000,1, handle);
+                if (adam_128k_mode) fread(RAM_Memory+0x10000, 0x10000,1, handle);
             }
             else if (bActivisionPCB)
             {
                 // Write the EEPROM and memory
                 if (uNbO) fread(&EEPROM, sizeof(EEPROM),1, handle);      
+            }
+            else if (creativision_mode)
+            {
+                u16 cv_cpu_size=1;
+                u8 *mem = creativision_get_cpu(&cv_cpu_size);
+                if (uNbO) fread(mem, cv_cpu_size,1, handle);
+                creativision_put_cpu(mem);
             }
             
             // Fix up transparency
@@ -493,52 +497,105 @@ void colecoLoadState()
 
 void colecoSaveEEPROM(void) 
 {
-  char szFile[128];
-    
-  // Init filename = romname and EE in place of ROM
-  DIR* dir = opendir("sav");
-  if (dir) closedir(dir);  // Directory exists... close it out and move on.
-  else mkdir("sav", 0777);   // Otherwise create the directory...
-  siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    char szFile[128];
 
-  int len = strlen(szFile);
-  szFile[len-3] = 'e';
-  szFile[len-2] = 'e';
-  szFile[len-1] = 0;
+    // Init filename = romname and EE in place of ROM
+    DIR* dir = opendir("sav");
+    if (dir) closedir(dir);  // Directory exists... close it out and move on.
+    else mkdir("sav", 0777);   // Otherwise create the directory...
+    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
 
-  FILE *handle = fopen(szFile, "wb+");  
-  if (handle != NULL) 
-  {
+    int len = strlen(szFile);
+    szFile[len-3] = 'e';
+    szFile[len-2] = 'e';
+    szFile[len-1] = 0;
+
+    FILE *handle = fopen(szFile, "wb+");  
+    if (handle != NULL) 
+    {
       fwrite(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
       fclose(handle);
-  }
+    }
 }
 
 void colecoLoadEEPROM(void)
 {
-  char szFile[128];
-    
-  // Init filename = romname and EE in place of ROM
-  DIR* dir = opendir("sav");
-  if (dir) closedir(dir);  // Directory exists... close it out and move on.
-  else mkdir("sav", 0777);   // Otherwise create the directory...
-  siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    char szFile[128];
 
-  int len = strlen(szFile);
-  szFile[len-3] = 'e';
-  szFile[len-2] = 'e';
-  szFile[len-1] = 0;
+    // Init filename = romname and EE in place of ROM
+    DIR* dir = opendir("sav");
+    if (dir) closedir(dir);  // Directory exists... close it out and move on.
+    else mkdir("sav", 0777);   // Otherwise create the directory...
+    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
 
-  FILE *handle = fopen(szFile, "rb+");
-  if (handle != NULL) 
-  {
+    int len = strlen(szFile);
+    szFile[len-3] = 'e';
+    szFile[len-2] = 'e';
+    szFile[len-1] = 0;
+
+    FILE *handle = fopen(szFile, "rb+");
+    if (handle != NULL) 
+    {
       fread(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
       fclose(handle);
-  }
-  else
-  {
+    }
+    else
+    {
       memset(EEPROM.Data, 0xFF, 0x8000);
-  }
+    }
+}
+
+
+void msxSaveEEPROM(void)
+{
+    char szFile[128];
+
+    // Init filename = romname and SRM (SRAM) in place of ROM
+    DIR* dir = opendir("sav");
+    if (dir) closedir(dir);  // Directory exists... close it out and move on.
+    else mkdir("sav", 0777);   // Otherwise create the directory...
+    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+
+    int len = strlen(szFile);
+    szFile[len-3] = 's';
+    szFile[len-2] = 'r';
+    szFile[len-1] = 'm';
+    szFile[len-0] = 0;
+
+    FILE *handle = fopen(szFile, "wb+");  
+    if (handle != NULL) 
+    {
+      fwrite(SRAM_Memory, 0x4000, 1, handle);
+      fclose(handle);
+    }
+}
+
+void msxLoadEEPROM(void)
+{
+    char szFile[128];
+
+    // Init filename = romname and SRM (SRAM) in place of ROM
+    DIR* dir = opendir("sav");
+    if (dir) closedir(dir);  // Directory exists... close it out and move on.
+    else mkdir("sav", 0777);   // Otherwise create the directory...
+    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+
+    int len = strlen(szFile);
+    szFile[len-3] = 's';
+    szFile[len-2] = 'r';
+    szFile[len-1] = 'm';
+    szFile[len-0] = 0;
+
+    FILE *handle = fopen(szFile, "rb+");
+    if (handle != NULL) 
+    {
+      fread(SRAM_Memory, 0x4000, 1, handle);
+      fclose(handle);
+    }
+    else
+    {
+      memset(EEPROM.Data, 0xFF, 0x8000);
+    }
 }
 
 

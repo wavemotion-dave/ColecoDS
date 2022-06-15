@@ -67,11 +67,13 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       }
       else
       {
+          // Player 1
           if (JoyState & JST_UP)    joy1 |= 0x01;
           if (JoyState & JST_DOWN)  joy1 |= 0x02;
           if (JoyState & JST_LEFT)  joy1 |= 0x04;
           if (JoyState & JST_RIGHT) joy1 |= 0x08;
           
+          // Player 2
           if (JoyState & (JST_UP<<16))    joy1 |= 0x10;
           if (JoyState & (JST_DOWN<<16))  joy1 |= 0x20;
           if (JoyState & (JST_LEFT<<16))  joy1 |= 0x40;
@@ -497,9 +499,6 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
             // -----------------------------------------------------------------------
             // We are using simplified logic for the MTX... this should provide
             // a simple 64K machine roughly the same as a Memotech MTX-512 
-            // We don't bother to emulate the delta bank of 16k which can swap
-            // between the start of RAM at 0000h and RAM at 8000-BFFF. Virtually
-            // no games use that technique and it's not worth the effort.
             // -----------------------------------------------------------------------
             if ((IOBYTE & 0x80) == 0)  // ROM Mode...
             {
@@ -511,26 +510,25 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                     // -------------------------------------------------------------------
                     // No matter the ROM paging, the basic mtx_os[] BIOS is present...
                     // -------------------------------------------------------------------
-                    FastMemCopy(pColecoMem+0x0000, (u8 *)(0x6820000+0x0000), 0x2000);                 // Copy mtx_os[] rom into memory
-                    pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
+                    MemoryMap[0] = BIOS_Memory + 0x0000;    // Restore Memotech BIOS OS
 
-                    if ((IOBYTE & 0x70) == 0x00)        // BASIC ROM ENABLED
+                    if ((IOBYTE & 0x70) == 0x00)            // Is BASIC ROM Enabled?
                     {
-                        FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x2000), 0x2000);   // Copy mtx_basic[] rom into memory
+                        MemoryMap[1] = BIOS_Memory + 0x2000;// Restore Memotech BASIC
                         memotech_lastMagROMPage = 0xFF;
                     }
-                    else if ((IOBYTE & 0x70) == 0x10)   // ASSEMBLY ROM ENABLED
+                    else if ((IOBYTE & 0x70) == 0x10)   // Is ASSEMBLY ROM Enabled?
                     {
-                        FastMemCopy(pColecoMem+0x2000, (u8 *)(0x6820000+0x4000), 0x2000);   // Copy mtx_assem[] rom into memory
+                        MemoryMap[1] = BIOS_Memory + 0x4000;// Restore Memotech Assembly ROM
                         memotech_lastMagROMPage = 0xFF;
                     }
                     else if (((IOBYTE & 0x70) == 0x70) && memotech_magrom_present)   // ROM7 - MAGROM (if present)
                     {
-                        memcpy(pColecoMem+0x2000, romBuffer+0x2000, 0x2000); // Copy MAGROM to page 7
+                        MemoryMap[1] = (u8 *)(ROM_Memory+0x2000);   // Copy MAGROM into memory
                     }
                     else                                // Nothing else is supported fill ROM above BIOS with 0xFF
                     {
-                        memset(pColecoMem+0x2000, 0xFF, 0x2000);    // Nothing lives here...
+                        MemoryMap[1] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
                         memotech_lastMagROMPage = 0xFF;
                     }
                 }
@@ -543,20 +541,35 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                     // Now look at the Page value to see how to map the memory from 0x4000 onwards is mapped
                     if ((IOBYTE & 0x0F) == 0x00)   // Page 0:  48K enabled from 4000-FFFF
                     {
-                        memcpy (pColecoMem+0x4000, Slot3RAM+0x4000, 0x8000);                // Don't need to fool with the upper block as that's common
-                        memotech_RAM_start = 0x4000;                                        // Allow access to RAM above base memory
+                        MemoryMap[2] = (u8 *)RAM_Memory+0x4000;     // The third   RAM block is mapped to 0x4000
+                        MemoryMap[3] = (u8 *)RAM_Memory+0x6000;     // The fourth  RAM block is mapped to 0x6000
+                        MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
+                        MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
+                        MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
+                        MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
+                        memotech_RAM_start = 0x4000;                 // Allow access to RAM above base memory
                         memotech_lastMagROMPage = 0xFF;
                     }
-                    else if ((IOBYTE & 0x0F) == 0x01)   // Page 1:  32K enabled from 8000-FFFF with the RAM at 0x8000 being the first page block
+                    else if ((IOBYTE & 0x0F) == 0x01)   // Page 1:  32K enabled from 8000-FFFF with the RAM at 0x8000 being the first RAM location block
                     {
-                        memset(pColecoMem+0x4000, 0xFF, 0x4000);
-                        memcpy (pColecoMem+0x8000, Slot3RAM+0x0000, 0x4000);                // Move first slot into memory position at 0x8000
-                        memotech_RAM_start = 0x8000;                                        // Allow access to RAM above base memory
+                        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                        MemoryMap[4] = (u8 *)RAM_Memory+0x0000;      // The first  RAM block is mapped to 0x8000
+                        MemoryMap[5] = (u8 *)RAM_Memory+0x2000;      // The second RAM block is mapped to 0xA000
+                        MemoryMap[6] = (u8 *)RAM_Memory+0xC000;      // Common memory area
+                        MemoryMap[7] = (u8 *)RAM_Memory+0xE000;      // Common memory area
+                        
+                        memotech_RAM_start = 0x8000;                 // Allow access to RAM above base memory
                     }
                     else    // Only the common RAM is available
                     {
-                        memset(pColecoMem+0x4000, 0xFF, 0x8000);
-                        memotech_RAM_start = 0xC000;                                        // Just the common RAM enabled
+                        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                        MemoryMap[4] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                        MemoryMap[5] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                        MemoryMap[6] = (u8 *)RAM_Memory+0xC000;      // Common memory area
+                        MemoryMap[7] = (u8 *)RAM_Memory+0xE000;      // Common memory area
+                        memotech_RAM_start = 0xC000;                 // Just the common RAM enabled
                         memotech_lastMagROMPage = 0xFF;
                     }
                 }
@@ -565,12 +578,26 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
             {
                 if ((IOBYTE & 0x0F) == 0x00)   // All 64K enabled
                 {
-                    memcpy (pColecoMem+0x0000, Slot3RAM+0x0000, 0xC000); 
+                    MemoryMap[0] = (u8 *)RAM_Memory+0x0000;     // The first   RAM block is mapped to 0x0000
+                    MemoryMap[1] = (u8 *)RAM_Memory+0x2000;     // The second  RAM block is mapped to 0x2000
+                    MemoryMap[2] = (u8 *)RAM_Memory+0x4000;     // The third   RAM block is mapped to 0x4000
+                    MemoryMap[3] = (u8 *)RAM_Memory+0x6000;     // The fourth  RAM block is mapped to 0x6000
+                    MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
+                    MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
+                    MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
+                    MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
                     memotech_RAM_start = 0x0000;         // We're emulating a 64K machine
                 }
                 else    // Only the common RAM is available
                 {
-                    memset(pColecoMem+0x0000, 0xFF, 0xC000);
+                    MemoryMap[0] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[1] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[4] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[5] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[6] = (u8 *)RAM_Memory+0xC000;      // Common memory area
+                    MemoryMap[7] = (u8 *)RAM_Memory+0xE000;      // Common memory area
                     memotech_RAM_start = 0xC000;         // Just the common RAM enabled
                 }
             }
@@ -626,11 +653,25 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
         {
             if (memotech_lastMagROMPage != Value)
             {
-                memcpy(pColecoMem+0x4000, romBuffer+(0x4000 * Value), 0x4000);
+                MemoryMap[2] = (u8 *)(ROM_Memory+(0x4000 * Value));
+                MemoryMap[3] = (u8 *)(ROM_Memory+(0x4000 * Value))+0x2000;
                 memotech_lastMagROMPage = Value;
             }
         }
     }
+}
+
+
+void memotech_restore_bios(void)
+{
+    memcpy(BIOS_Memory+0x0000, mtx_os,    0x2000);
+    memcpy(BIOS_Memory+0x2000, mtx_basic, 0x2000);
+    memcpy(BIOS_Memory+0x4000, mtx_assem, 0x2000);
+    memset(BIOS_Memory+0x6000, 0xFF, 0xA000);
+    MemoryMap[0] = BIOS_Memory+0x0000;
+    MemoryMap[1] = BIOS_Memory+0x2000;
+    MemoryMap[2] = BIOS_Memory+0xC000;
+    MemoryMap[3] = BIOS_Memory+0xC000;
 }
 
 // ---------------------------------------------------------
@@ -653,6 +694,13 @@ void memotech_reset(void)
         MTX_KBD_DRIVE = 0x00;               // Used to determine which Keybaord scanrow to use
         lastIOBYTE = 99;                    // To save time
         tape_pos = 0;                       // Start at the front of a cassette
+
+        mtx_os[0x0aae] = 0xed;              // Patch BIOS for .MTX tape access
+        mtx_os[0x0aaf] = 0xfe;              // ..
+        mtx_os[0x0ab0] = 0xc9;              // ..
+        
+        // Get the Memotech BIOS files ready...
+        memotech_restore_bios();
         
         memotech_magrom_present = (((file_crc == 0xe3f495c4) || (file_crc == 0x98240ee9)) ? 1:0);       // The MAGROM 1.05 and 1.05a
         memotech_mtx_500_only = (((file_crc == 0x9a0461db) ||               // Duckybod
@@ -670,12 +718,12 @@ void MTX_HandleCassette(register Z80 *r)
         word base   = r->HL.W;
         word length = r->DE.W;
 
-        if ( pColecoMem[0xfd68] == 0 )
+        if ( RAM_Memory[0xfd68] == 0 )
         /* SAVE */
         {
             // Not supported yet...
         }
-        else if ( pColecoMem[0xfd67] != 0 )
+        else if ( RAM_Memory[0xfd67] != 0 )
         /* VERIFY.
            Normally, if verification fails, the MTX BASIC ROM
            stops the tape, cleans up and does rst 0x28.
@@ -693,7 +741,7 @@ void MTX_HandleCassette(register Z80 *r)
             if ( base == 0xc011 && length == 18 )
             /* Load header, so read whole file */
             {
-                // File is in romBuffer[]
+                // File is in ROM_Memory[]
                 tape_pos = 0;
             }
 
@@ -701,7 +749,7 @@ void MTX_HandleCassette(register Z80 *r)
             for (u16 i=0; i<length; i++)
             {
                 extern void cpu_writemem16(u8, u16);
-                cpu_writemem16(romBuffer[tape_pos++], base+i);
+                cpu_writemem16(ROM_Memory[tape_pos++], base+i);
             }
         }
 
@@ -726,23 +774,23 @@ void memotech_launch_run_file(void)
 
       if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
       {
-        memset(pColecoMem, 0x00, 0x10000);
+        memset(RAM_Memory, 0x00, 0x10000);
         cpu_writeport_memotech(0x00, 0x80);                    
       }
       else if (myConfig.memWipe == 3)    // Random MSX Memory Wipe
       {
-          for (int i=0; i< 0xC000; i++) pColecoMem[0x4000+i] = (rand() & 0xFF);   // This pattern tends to make most things start up properly...
+          for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (rand() & 0xFF);   // This pattern tends to make most things start up properly...
       }
 
-      pColecoMem[0x3627] = 0xd3;
-      pColecoMem[0x3628] = 0x05;
+      RAM_Memory[0x3627] = 0xd3;
+      RAM_Memory[0x3628] = 0x05;
       CPU.IFF &= 0xFE;   // Disable Interrupts
-      u16 mtx_start = (romBuffer[1] << 8) | romBuffer[0];
-      u16 mtx_len   = (romBuffer[3] << 8) | romBuffer[2];
+      u16 mtx_start = (ROM_Memory[1] << 8) | ROM_Memory[0];
+      u16 mtx_len   = (ROM_Memory[3] << 8) | ROM_Memory[2];
       u16 idx=4;
       for (int i=mtx_start; i < (mtx_start+mtx_len); i++)
       {
-          pColecoMem[i] = romBuffer[idx++];
+          RAM_Memory[i] = ROM_Memory[idx++];
       }
       CPU.PC.W = mtx_start;
 

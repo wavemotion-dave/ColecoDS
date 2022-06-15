@@ -46,7 +46,7 @@ static const int SecSizes[] =
 static const char FDIDiskLabel[] =
 "Disk image created by EMULib (C)Marat Fayzullin";
 
-extern byte romBuffer[];
+extern byte ROM_Memory[];
 
 /** InitFDI() ************************************************/
 /** Clear all data structure fields.                        **/
@@ -89,11 +89,11 @@ byte *NewFDI(FDIDisk *D,int Sides,int Tracks,int Sectors,int SecSize)
   I = Sides*Tracks*(Sectors+1)*7+14;
   
   // -----------------------------------------------------------
-  // Re-use the 512K romBuffer[] array as it has no other
+  // Re-use the 512K ROM_Memory[] array as it has no other
   // use at this point and it's more efficient than allocating
   // another big chunk of memory off the heap!
   // -----------------------------------------------------------
-  P = (byte*)romBuffer;
+  P = (byte*)ROM_Memory;
   memset(P,0x00,I+K);
 
   /* Eject previous disk image */

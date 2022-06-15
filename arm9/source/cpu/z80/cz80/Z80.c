@@ -35,11 +35,12 @@ extern Z80 CPU;
 /*************************************************************/
 #define FAST_RDOP
 
+extern u8 *MemoryMap[8];
 // ------------------------------------------------------
 // These defines and inline functions are to map maximum
 // speed/efficiency onto the memory system we have.
 // ------------------------------------------------------
-extern byte pColecoMem[];
+//extern byte pColecoMem[];
 extern void cpu_writemem16 (u8 value,u16 address);
 extern byte cpu_readmem16_banked (u16 address);
 extern byte cpu_readmem16 (u16 address);
@@ -48,11 +49,11 @@ extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
 extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode;
 extern u16 vdp_int_source, keyboard_interrupt;
-#define OpZ80(A)            pColecoMem[A]
+INLINE byte OpZ80(word A)   { return*(MemoryMap[(A)>>13] + ((A)&0x1FFF));}
 #define WrZ80(A,V)          cpu_writemem16(V,A)
 #define OutZ80(P,V)         cpu_writeport16(P,V)
 #define InZ80(P)            cpu_readport16(P)
-INLINE byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A) : pColecoMem[A]);}
+INLINE byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A) : *(MemoryMap[(A)>>13] + ((A)&0x1FFF)));}
 
 /** Macros for use through the CPU subsystem */
 #define S(Fl)        CPU.AF.B.l|=Fl

@@ -154,13 +154,22 @@ unsigned char cpu_readport_m5(register unsigned short Port)
       
       return joy1;
   }
-  else if (Port == 0x37)    // Joystick Port 1
+  else if (Port == 0x37)    // Joystick Port 1 or 2
   {
       u8 joy1 = 0x00;
+      
+      // Player 1
       if (JoyState & JST_UP)     joy1 |= 0x02;
       if (JoyState & JST_DOWN)   joy1 |= 0x08;
       if (JoyState & JST_LEFT)   joy1 |= 0x04;
       if (JoyState & JST_RIGHT)  joy1 |= 0x01;      
+      
+      // Player 2
+      if (JoyState & (JST_UP<<16))    joy1 |= 0x20;
+      if (JoyState & (JST_DOWN<<16))  joy1 |= 0x80;
+      if (JoyState & (JST_LEFT<<16))  joy1 |= 0x40;
+      if (JoyState & (JST_RIGHT<<16)) joy1 |= 0x10;
+        
       return (joy1);
   }
   else if (Port == 0x50)

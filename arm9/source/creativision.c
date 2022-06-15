@@ -23,7 +23,7 @@
 
 M6502 m6502 __attribute__((section(".dtcm")));        // Our core 6502 CPU
 
-extern u8 pColecoMem[];
+extern u8 RAM_Memory[];
 extern byte Loop9918(void);
 extern int debug1, debug2, debug3, debug4;
 extern SN76496 sncol;
@@ -40,7 +40,16 @@ byte KEYTBL[16] =  { 255, 255, 255, 255, 255, 255, 255, 255,   /* KEYTBL[7]  is 
                                                                /* KEYTBL[13] is piaa1=lo */
                                                                /* KEYTBL[14] is piaa0=lo */
 
+u8 *creativision_get_cpu(u16 *cv_cpu_size)
+{
+    *cv_cpu_size = (u16)sizeof(m6502);
+    return (u8*)&m6502;
+}
 
+void creativision_put_cpu(u8 *mem)
+{
+    memcpy(&m6502, mem, sizeof(m6502));
+}
 
 void creativision_reset(void)
 {
@@ -119,10 +128,10 @@ void Wr6502(register word Addr,register byte Value)
     switch (Addr & 0xF000)
     {
         case 0x0000:
-            pColecoMem[(Addr & 0x3FF) + 0x000] = Value;
-            pColecoMem[(Addr & 0x3FF) + 0x400] = Value;
-            pColecoMem[(Addr & 0x3FF) + 0x800] = Value;
-            pColecoMem[(Addr & 0x3FF) + 0xC00] = Value;
+            RAM_Memory[(Addr & 0x3FF) + 0x000] = Value;
+            RAM_Memory[(Addr & 0x3FF) + 0x400] = Value;
+            RAM_Memory[(Addr & 0x3FF) + 0x800] = Value;
+            RAM_Memory[(Addr & 0x3FF) + 0xC00] = Value;
             break;
 
         case 0x1000:            // PIA
@@ -216,7 +225,7 @@ byte Rd6502(register word Addr)
           break;
     }
 
-    return pColecoMem[Addr];
+    return RAM_Memory[Addr];
 }
 
 // End of file
