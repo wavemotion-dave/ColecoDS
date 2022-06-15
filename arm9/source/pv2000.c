@@ -42,7 +42,7 @@ u8 cpu_readmem_pv2000 (u16 address)
           if (address & 1) return(RdCtrl9918()); 
           else return(RdData9918());
     }
-    return (pColecoMem[address]);
+    return (RAM_Memory[address]);
 }
 
 
@@ -76,7 +76,7 @@ void cpu_writemem_pv2000 (u8 value,u16 address)
     }
     else if ((address >= 0x7000) && (address < 0x8000)) // PV-2000 RAM area
     {
-        pColecoMem[address] = value;
+        RAM_Memory[address] = value;
     }
 }
 

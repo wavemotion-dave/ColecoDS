@@ -28,28 +28,31 @@ extern u8 mapperMask;
 #define AT8K        11
 #define LIN64       12
 
-#define MAX_MAPPERS 7
+#define MAX_MAPPERS 7   // The most we can guess when examining ROM data
 
 #define CTC_SOUND_DIV     280
 #define MTX_CTC_SOUND_DIV 260
 
-extern u8 romBuffer[];
+extern u8 ROM_Memory[512 * 1024];
+extern u8 RAM_Memory[0x20000];
+extern u8 BIOS_Memory[0x10000];
+extern u8 SRAM_Memory[0x4000];
 
 extern u8 bROMInSlot[4];
 extern u8 bRAMInSlot[4];
 extern u8 *Slot1ROMPtr[8];
+extern u8 *MemoryMap[8];
+extern u8 msx_slot_dirty[4];
 
-extern u8 AdamRAM[0x20000];
 extern u8 adam_128k_mode;
 
 extern SN76496 sncol;
 extern SN76496 aycol;
 
-extern u8 VR;                           // Sound and VDP register storage
-
 extern u8 JoyMode;                      // Joystick / Paddle management
 extern u32 JoyState;                    // Joystick / Paddle management
 
+extern u8 sRamAtE000_OK;
 extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
 extern u8 msx_sram_enabled;
@@ -114,7 +117,6 @@ extern u8 Port_PPI_B;
 extern u8 Port_PPI_C;
 extern u8 Port_PPI_CTRL;
 
-
 extern u8 ctc_control[4];
 extern u8 ctc_time[4];
 extern u32 ctc_timer[4]; 
@@ -140,13 +142,9 @@ extern u8 SVIBios[];
 extern u8 Pencil2Bios[];
 extern u8 AdamEOS[];
 extern u8 AdamWRITER[];
-extern u8 Slot3RAM[0x10000];
-extern u8 msx_SRAM[0x4000];
 extern u8 key_shift;
 extern u8 key_ctrl;
 extern u32 last_tape_pos;
-extern u8* Slot3RAMPtr;
-extern u8* Slot0BIOSPtr;
 extern u32 LastROMSize;
 extern u8 OldPortC;
 extern u8 myKeyData;
@@ -174,9 +172,11 @@ extern void einstein_reset(void);
 extern void svi_reset(void);
 extern void pv2000_reset(void);
 extern void msx_reset(void);
+extern void msx_restore_bios(void);
 extern void MSX_HandleBeeper(void);
 extern void einstein_handle_interrupts(void);
 extern void einstein_load_com_file(void);
+extern void einstien_restore_bios(void);
 extern void memotech_launch_run_file(void);
 
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
@@ -186,13 +186,18 @@ extern void BankSwitch(u8 bank);
 extern void CheckMSXHeaders(char *szGame);
 extern void BufferKey(u8 key);
 
-extern ITCM_CODE void FastMemCopy(u8* dest, u8* src, u16 numBytes);
-extern ITCM_CODE void SaveRAM(u8 slot);
-extern ITCM_CODE void RestoreRAM(u8 slot);
 extern void MSX_HandleCassette(register Z80 *r);
 extern void MTX_HandleCassette(register Z80 *r);
 extern void SVI_HandleCassette(register Z80 *r);
-extern void SVI_PatchBIOS(void);
+extern void svi_restore_bios(void);
+extern void memotech_restore_bios(void);
+extern void adam_setup_bios(void);
+
+extern u8 *creativision_get_cpu(u16 *cv_cpu_size);
+extern void creativision_put_cpu(u8 *mem);
+
+extern void msxSaveEEPROM(void);
+extern void msxLoadEEPROM(void);
 
 extern void DrZ80_InitHandlers(void);
 

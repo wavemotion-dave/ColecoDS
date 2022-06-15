@@ -37,7 +37,7 @@ void sg1000_reset(void)
     Port_PPI_C = 0xFF;
     Port_PPI_CTRL = 0xFF;
     OldPortC=0xFF;
-    memcpy(pColecoMem, romBuffer, 0x8000);
+    memcpy(RAM_Memory, ROM_Memory, 0x8000);
 }
 
 
@@ -377,7 +377,7 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
             game_no = (Value & 0x1f) | (Value & 0xc0) >> 1;
         if (game_no == romBankMask)
         {
-            memcpy(pColecoMem, romBuffer, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
+            memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         }
         else
         {
@@ -385,7 +385,7 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
             if (handle != NULL) 
             {
                 fseek(handle, (0x8000 * (u32)game_no), SEEK_SET);   // Seek to the 32K chunk we want to read in
-                fread((void*) pColecoMem, 0x8000, 1, handle);       // Read 32K from that paged block
+                fread((void*) RAM_Memory, 0x8000, 1, handle);       // Read 32K from that paged block
                 fclose(handle);
             }
         }

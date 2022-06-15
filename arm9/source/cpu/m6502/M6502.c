@@ -32,10 +32,10 @@
 /** up. It has to stay inlined to be fast.                  **/
 /*************************************************************/
 
-extern byte pColecoMem[];
+extern byte RAM_Memory[];
 
 #define FAST_RDOP
-INLINE byte Op6502(register word A) { return(pColecoMem[A]); }
+INLINE byte Op6502(register word A) { return(RAM_Memory[A]); }
 
 /** FAST_RDOP ************************************************/
 /** With this #define not present, Rd6502() should perform  **/

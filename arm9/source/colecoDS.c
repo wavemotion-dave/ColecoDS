@@ -57,11 +57,32 @@
 #include "cpu/z80/Z80_interface.h"
 
 extern Z80 CPU;
-extern u8 Slot0BIOS[];
 u32 debug1=0;
 u32 debug2=0;
 u32 debug3=0;
 u32 debug4=0;
+
+
+
+// -------------------------------------------------------------------------------------------
+// All emulated systems have ROM, RAM and possibly BIOS or SRAM. So we create generic buffers 
+// for all this here... these are sized big enough to handle the largest memory necessary
+// to render games playable. There are a few MSX games that are larger than 512k but they 
+// are mostly demos or foreign-language adventures... not enough interest to try to squeeze
+// in a larger ROM buffer to include them - we are still trying to keep compatible with the
+// smaller memory model of the original DS/DS-LITE.
+//
+// These memory buffers will be pointed to by the MemoryMap[] array. This array contains 8
+// pointers that can break down the Z80 memory into 8k chunks.  For the few games that have
+// a smaller than 8k boundary (e.g. Creativision uses a 2k BIOS) we can just stage/build
+// up the memory into the RAM_Memory[] buffer and point into that as a single 64k layout.
+// -------------------------------------------------------------------------------------------
+
+u8 ROM_Memory[512 * 1024]   ALIGN(32) = {0};        // ROM Carts up to 512K (that's pretty huge in the Z80 world!)
+u8 RAM_Memory[0x20000]      ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
+u8 BIOS_Memory[0x10000]     ALIGN(32) = {0};        // To hold our BIOS and related OS memory
+u8 SRAM_Memory[0x4000]      ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
+
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -70,8 +91,12 @@ u32 debug4=0;
 //    0x2000-0x5FFF  Usually unused - but Super Game Module maps RAM here
 //    0x6000-0x7FFF  RAM - there is only 1K repeated with 8 mirrors
 //    0x8000-0xFFFF  32K Cartridge Space
+//
+// Other emulated machines will have different memory layouts and different
+// IO port mappings... these are handled on a machine-by-machine basis.
+// We need to keep the BIOS files around for possible use as the player
+// switches between gaming systems.
 // --------------------------------------------------------------------------
-u8 pColecoMem[0x10000] ALIGN(32) = {0};             
 u8 ColecoBios[0x2000]     = {0};  // We keep the Coleco  8K BIOS around to swap in/out
 u8 SordM5Bios[0x2000]     = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
 u8 PV2000Bios[0x4000]     = {0};  // We keep the Casio PV-2000 16K BIOS around to swap in/out
@@ -132,8 +157,6 @@ u8 bPencilBiosFound         = false;
 u8 bEinsteinBiosFound       = false;
 u8 bCreativisionBiosFound   = false;
 
-volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
-
 u8 soundEmuPause     __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
 // -----------------------------------------------------------------------------------------------
@@ -156,10 +179,11 @@ u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0001;  // A faster wa
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
 
-u8 bStartSoundEngine = false;   // Set to true to unmute sound after 1 frame of rendering...
-
+u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of rendering...
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
+volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
+// The DS/DSi has 12 keys that can be mapped
 u16 NDS_keyMap[12] = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
 
 // --------------------------------------------------------------------
@@ -548,6 +572,22 @@ void ResetColecovision(void)
     
   write_EE_counter=0;
     
+  // -----------------------------------------------------------------------
+  // By default, many of the machines use a simple flat 64K memory model
+  // which is simple to emulate by having all the memory map point to the
+  // internal 64K ram memory. So we default to that - specific machines
+  // can change this up as required for more complicated memory handling.
+  // -----------------------------------------------------------------------
+  MemoryMap[0] = RAM_Memory + 0x0000;
+  MemoryMap[1] = RAM_Memory + 0x2000;
+  MemoryMap[2] = RAM_Memory + 0x4000;
+  MemoryMap[3] = RAM_Memory + 0x6000;
+  MemoryMap[4] = RAM_Memory + 0x8000;
+  MemoryMap[5] = RAM_Memory + 0xA000;
+  MemoryMap[6] = RAM_Memory + 0xC000;
+  MemoryMap[7] = RAM_Memory + 0xE000;
+    
+    
   if (sg1000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
@@ -556,30 +596,28 @@ void ResetColecovision(void)
   else if (pv2000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,PV2000Bios,0x4000);     // Restore the Casio PV-2000 BIOS
+      memcpy(RAM_Memory,PV2000Bios,0x4000);     // Restore the Casio PV-2000 BIOS
   }
   else if (sordm5_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,SordM5Bios,0x2000);     // Restore Sord M5 BIOS
+      memcpy(RAM_Memory,SordM5Bios,0x2000);     // Restore Sord M5 BIOS
   }
   else if (memotech_mode)
   {
-      colecoWipeRAM();                            // Wipe main RAM area
-      memcpy(pColecoMem+0x0000,mtx_os,0x2000);    // Restore Memotech BIOS OS
-      memcpy(pColecoMem+0x2000,mtx_basic,0x2000); // Restore Memotech BASIC
-      pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
+      colecoWipeRAM();                          // Wipe main RAM area
+      memotech_restore_bios();                  // Put the BIOS back in place and point to it
   }
   else if (msx_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,Slot0BIOS,0x8000);      // Restore MSX BIOS
+      msx_restore_bios();                       // Put the BIOS back in place and point to it
+      if (msx_sram_enabled) msxLoadEEPROM();    // If this cart uses SRAM, we can try to load it from file
   }
   else if (svi_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,SVIBios,0x8000);        // Restore SVI BIOS
-      SVI_PatchBIOS();                          // And Patch the BIOS
+      svi_restore_bios();                       // Put the BIOS back in place and point to it
   }
   else if (adam_mode)
   {
@@ -590,24 +628,29 @@ void ResetColecovision(void)
   else if (pencil2_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,Pencil2Bios,0x2000);
+      memcpy(RAM_Memory,Pencil2Bios,0x2000);
   }
   else if (einstein_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,EinsteinBios,0x2000);
+      einstien_restore_bios();                  // Put the BIOS back in place and point to it
   }    
   else if (creativision_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem+0xF800,CreativisionBios,0x800);
+      memcpy(RAM_Memory+0xF800,CreativisionBios,0x800);
       creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
   }        
   else
   {
-      memset(pColecoMem+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
+      memset(RAM_Memory+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(pColecoMem,ColecoBios,0x2000);     // Restore Coleco BIOS
+
+      // Setup the Coleco BIOS and point to it
+      memset(BIOS_Memory+0x2000, 0xFF, 0xE000);
+      memcpy(BIOS_Memory+0x0000, ColecoBios, 0x2000);
+      MemoryMap[0] = BIOS_Memory+0x0000;      
+      
       if (bActivisionPCB)
       {
           Reset24XX(&EEPROM, myConfig.cvEESize); 
@@ -821,6 +864,17 @@ void DisplayStatusLine(bool bForce)
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
+        if (write_EE_counter > 0)
+        {
+            --write_EE_counter;
+            if (write_EE_counter == 0)
+            {
+                // Save EE now!
+                msxSaveEEPROM();
+            }
+            AffChaine(5,0,6, (write_EE_counter ? "EE":"  "));            
+        }
+        
     }
     else if (svi_mode)
     {
@@ -954,14 +1008,14 @@ void DigitalDataInsert(char *filename)
     FILE *fp;
     
     // --------------------------------------------
-    // Read the .DDP or .DSK into the romBuffer[]
+    // Read the .DDP or .DSK into the ROM_Memory[]
     // --------------------------------------------
     fp = fopen(filename, "rb");
     fseek(fp, 0, SEEK_END);
     LastROMSize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    memset(romBuffer, 0xFF, (512 * 1024));
-    fread(romBuffer, tape_len, 1, fp);
+    memset(ROM_Memory, 0xFF, (512 * 1024));
+    fread(ROM_Memory, tape_len, 1, fp);
     fclose(fp);
      
     // --------------------------------------------
@@ -989,8 +1043,8 @@ void CassetteInsert(char *filename)
     fseek(fp, 0, SEEK_END);
     LastROMSize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    memset(romBuffer, 0xFF, (512 * 1024));
-    fread(romBuffer, tape_len, 1, fp);
+    memset(ROM_Memory, 0xFF, (512 * 1024));
+    fread(ROM_Memory, tape_len, 1, fp);
     tape_pos = 0;    
     tape_len = LastROMSize;
     fclose(fp);
@@ -1086,7 +1140,7 @@ void CassetteMenu(void)
                         AffChaine(12,0,6, "SAVING");
                         FILE *fp;
                         fp = fopen(gpFic[ucGameChoice].szName, "wb");
-                        fwrite(romBuffer, tape_len, 1, fp);
+                        fwrite(ROM_Memory, tape_len, 1, fp);
                         fclose(fp);
                         WAITVBL;WAITVBL;
                         AffChaine(12,0,6, "      ");
@@ -1807,7 +1861,7 @@ void colecoDS_main(void)
               {
                   if (memotech_mtx_500_only)
                   {
-                      pColecoMem[0xFA7A] = 0x00;
+                      RAM_Memory[0xFA7A] = 0x00;
 
                       BufferKey('N');
                       BufferKey('E');
@@ -2148,7 +2202,7 @@ void colecoDSInitCPU(void)
   //  -----------------------------------------
   //  Init Main Memory and VDP Video Memory
   //  -----------------------------------------
-  memset(pColecoMem, 0xFF, 0x10000);
+  memset(RAM_Memory, 0xFF, 0x10000);
   memset(pVDPVidMem, 0x00, 0x4000);
 
   // -----------------------------------------------
@@ -2161,42 +2215,46 @@ void colecoDSInitCPU(void)
   // -----------------------------------------------------
   if (sordm5_mode)
   {
-    memcpy(pColecoMem,SordM5Bios,0x2000);
+      memcpy(RAM_Memory,SordM5Bios,0x2000);
   }
   else if (pv2000_mode)
   {
-    memcpy(pColecoMem,PV2000Bios,0x4000);
+      memcpy(RAM_Memory,PV2000Bios,0x4000);
   }
   else if (memotech_mode)
   {
-    memcpy(pColecoMem,mtx_os,0x2000);
-    memcpy(pColecoMem+0x2000,mtx_basic,0x2000);
-    pColecoMem[0x0aae] = 0xed; pColecoMem[0x0aaf] = 0xfe; pColecoMem[0x0ab0] = 0xc9;  // Patch for .MTX tape access      
+      memotech_restore_bios();
   }
   else if (msx_mode)
   {
-    memcpy(pColecoMem,Slot0BIOS,0x8000);
+      msx_restore_bios();
   }
   else if (svi_mode)
   { 
-      memcpy(pColecoMem,SVIBios,0x8000);        // Copy BIOS into place
-      SVI_PatchBIOS();                          // And Patch the BIOS
+      svi_restore_bios();
+  }
+  else if (adam_mode)
+  {
+      adam_setup_bios();
   }
   else if (pencil2_mode)
   {
-      memcpy(pColecoMem,Pencil2Bios,0x2000);
+      memcpy(RAM_Memory,Pencil2Bios,0x2000);
   }
   else if (einstein_mode)
   {
-      memcpy(pColecoMem,EinsteinBios,0x2000);
+      einstien_restore_bios();
   }    
   else if (creativision_mode)
   {
-      memcpy(pColecoMem+0xF800,CreativisionBios,0x800);
+      memcpy(RAM_Memory+0xF800,CreativisionBios,0x800);
   }    
   else  // Finally we get to the Coleco BIOS
   {
-    memcpy(pColecoMem,ColecoBios,0x2000);
+      if (myConfig.cpuCore == 0)    // If DrZ80 core... put the BIOS into main RAM for now
+      {
+        memcpy(RAM_Memory,ColecoBios,0x2000);
+      }
   }
 }
 
@@ -2216,6 +2274,8 @@ void LoadBIOSFiles(void)
 {
     FILE *fp;
 
+    memset(BIOS_Memory, 0xFF, 0x10000); // All of BIOS area is FF until loaded up
+    
     // --------------------------------------------------
     // We will look for all 3 BIOS files here but only 
     // the Colecovision coleco.rom is critical.

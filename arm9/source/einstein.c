@@ -217,6 +217,26 @@ void scan_keyboard(void)
     myKeyData = ~myKeyData;
 }
 
+
+// --------------------------------------------------------------------------
+// Move the Einstein BIOS back into default memory and point to it...
+// --------------------------------------------------------------------------
+void einstien_restore_bios(void)
+{
+    extern u8 EinsteinBios[];
+    
+    memset(BIOS_Memory, 0xFF, 0x10000);
+    memcpy(BIOS_Memory, EinsteinBios, 0x2000);
+    if (tape_len == 1626) // A bit of a hack... the size of the Diagnostic ROM
+    {
+        memcpy(BIOS_Memory+0x4000, ROM_Memory, tape_len);   // only for Diagnostics ROM
+    }
+    MemoryMap[0] = BIOS_Memory+0x0000;
+    MemoryMap[1] = BIOS_Memory+0x2000;
+    MemoryMap[2] = BIOS_Memory+0x4000;
+    MemoryMap[3] = BIOS_Memory+0x6000;
+}
+
 // --------------------------------------------------------------------------
 // The Einstein is interesting in that it will always respond to writes to
 // RAM even if the ROM is swapped in (since you can't write to ROM anyway).
@@ -224,31 +244,21 @@ void scan_keyboard(void)
 // --------------------------------------------------------------------------
 void einstein_swap_memory(void)
 {
-    extern u8 EinsteinBios[];
-    
     if (einstein_ram_start == 0x8000)  
     {
-        extern u8 einstein_ram_dirty;
-        if (einstein_ram_dirty) // If we have some dirty bytes, copy over all of the RAM shadow copy
-        {
-            einstein_ram_dirty=0;
-            memcpy(pColecoMem, Slot3RAM, 0x8000);
-        } 
-        else    // Otherwise just copy over the RAM into where the BIOS was... saves time.
-        {
-            memcpy(pColecoMem, Slot3RAM, 0x2000);
-        }
+        MemoryMap[0] = RAM_Memory+0x0000;
+        MemoryMap[1] = RAM_Memory+0x2000;
+        MemoryMap[2] = RAM_Memory+0x4000;
+        MemoryMap[3] = RAM_Memory+0x6000;
         einstein_ram_start = 0x0000;
     }
     else
     {
+        MemoryMap[0] = BIOS_Memory+0x0000;
+        MemoryMap[1] = BIOS_Memory+0x2000;
+        MemoryMap[2] = BIOS_Memory+0x4000;
+        MemoryMap[3] = BIOS_Memory+0x6000;
         einstein_ram_start = 0x8000;
-        memcpy(pColecoMem,EinsteinBios,0x2000);
-        //memset(pColecoMem+0x2000,0xFF, 0x6000);  - In theory we should blank this area but to save memory swap time we don't bother
-        if (tape_len == 1626) // A bit of a hack... the size of the Diagnostic ROM
-        {
-            memcpy(pColecoMem+0x4000, romBuffer, tape_len);   // only for Diagnostics ROM
-        }        
     }
 }
 
@@ -525,7 +535,7 @@ void einstein_reset(void)
         
         memset(ay_reg, 0x00, 16);    // Clear the AY registers...
         
-        memset(Slot3RAM, 0x00, 0x10000);
+        einstien_restore_bios();
     }
 }
 
@@ -550,10 +560,18 @@ void einstein_handle_interrupts(void)
 
 void einstein_load_com_file(void)
 {
-    memcpy(pColecoMem, Slot3RAM, 0x8000);
     einstein_ram_start = 0x0000;
-    memcpy(pColecoMem+0x100, romBuffer, tape_len);
-    memcpy(Slot3RAM+0x100, romBuffer, tape_len);
+    
+    MemoryMap[0] = RAM_Memory + 0x0000;
+    MemoryMap[1] = RAM_Memory + 0x2000;
+    MemoryMap[2] = RAM_Memory + 0x4000;
+    MemoryMap[3] = RAM_Memory + 0x6000;
+    MemoryMap[4] = RAM_Memory + 0x8000;
+    MemoryMap[5] = RAM_Memory + 0xA000;
+    MemoryMap[6] = RAM_Memory + 0xC000;
+    MemoryMap[7] = RAM_Memory + 0xE000;
+    
+    memcpy(RAM_Memory+0x100, ROM_Memory, tape_len);
     CPU.PC.W = 0x100;
     JumpZ80(CPU.PC.W);
 }

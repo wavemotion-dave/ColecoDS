@@ -211,9 +211,7 @@ extern u32 tape_pos, tape_len;
 extern volatile u16 vusCptVBL;                   // Video Management
 
 extern u32 keyCoresp[MAX_KEY_OPTIONS];
-extern u16 NDS_keyMap[12];
-
-extern u8 pColecoMem[0x10000];                   // Coleco Memory
+extern u16 NDS_keyMap[];
 
 extern u8 soundEmuPause;
 extern u8 write_EE_counter;
