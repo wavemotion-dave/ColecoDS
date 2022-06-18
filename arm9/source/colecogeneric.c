@@ -1353,6 +1353,108 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xb32c9e08)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
     if (file_crc == 0xa2edc01d)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
     
+    // --------------------------------------------------------
+    // These ADAM games use the larger full keyboard
+    // --------------------------------------------------------
+    if (file_crc == 0x6a879bc7)                 myConfig.overlay = 9;  // 2010 Graphic Adventure DSK
+    if (file_crc == 0xf9257a68)                 myConfig.overlay = 9;  // 2010 Graphic Adventure[a1] DSK
+    if (file_crc == 0xf7ff1a75)                 myConfig.overlay = 9;  // 2010 Graphic Adventure DDP
+    if (file_crc == 0x3fe56492)                 myConfig.overlay = 9;  // Blank Media DDP
+    if (file_crc == 0x45c120b5)                 myConfig.overlay = 9;  // Jeopardy DDP
+    if (file_crc == 0xca1cc594)                 myConfig.overlay = 9;  // Family Fued DDP
+    if (file_crc == 0xaa52c12f)                 myConfig.overlay = 9;  // ADAM SmartBASIC DDP
+    if (file_crc == 0xe27df400)                 myConfig.overlay = 9;  // ADAM SmartBASIC [a1] DDP
+    if (file_crc == 0x1a7aaf37)                 myConfig.overlay = 9;  // Temple of the Snow Dragon DDP
+    if (file_crc == 0xf9257a68)                 myConfig.overlay = 9;  // 2010 - the text adventure game (1984) (coleco) [a1].dsk
+    if (file_crc == 0x6a879bc7)                 myConfig.overlay = 9;  // 2010 - the text adventure game (1984) (coleco).dsk
+    if (file_crc == 0x955cf8ae)                 myConfig.overlay = 9;  // adamcalc (1984) (coleco) [a1].dsk
+    if (file_crc == 0x00c30589)                 myConfig.overlay = 9;  // adamcalc (1984) (coleco).dsk
+    if (file_crc == 0x92ac82b4)                 myConfig.overlay = 9;  // adam graphics (199x) (maine adam library) [a1].dsk
+    if (file_crc == 0xf335de5e)                 myConfig.overlay = 9;  // adam graphics (199x) (maine adam library).dsk
+    if (file_crc == 0x83295fd8)                 myConfig.overlay = 9;  // adamlink i (1984) (coleco).dsk
+    if (file_crc == 0x64f9486b)                 myConfig.overlay = 9;  // adamlink ii (1984) (coleco).dsk
+    if (file_crc == 0xc900e8a8)                 myConfig.overlay = 9;  // adventure (1979) (scott adms) (aka - colossal cave).dsk
+    if (file_crc == 0x3f6b4963)                 myConfig.overlay = 9;  // adventure pack 1 (1986) (adamagic software).dsk
+    if (file_crc == 0x7471c625)                 myConfig.overlay = 9;  // adventure pack 2 (1986) (adamagic software).dsk
+    if (file_crc == 0x2a9629be)                 myConfig.overlay = 9;  // adventure pack 3 (1986) (adamagic software).dsk
+    if (file_crc == 0x1fd42c84)                 myConfig.overlay = 9;  // adventure pack i (1984) (victory software).dsk
+    if (file_crc == 0x4c78d88c)                 myConfig.overlay = 9;  // adventure pack ii (1984) (victory software).dsk
+    if (file_crc == 0x2ec89205)                 myConfig.overlay = 9;  // ballyhoo (1986) (infocom).dsk
+    if (file_crc == 0xef284baf)                 myConfig.overlay = 9;  // cp-m 2.2 v1.50 (1984) (coleco).dsk
+    if (file_crc == 0x4632a370)                 myConfig.overlay = 9;  // cutthroats (1984) (infocom).dsk
+    if (file_crc == 0x9539e5f5)                 myConfig.overlay = 9;  // deadline (1982) (infocom) [a1].dsk
+    if (file_crc == 0xd46ff3d1)                 myConfig.overlay = 9;  // deadline (1982) (infocom).dsk
+    if (file_crc == 0x3749609c)                 myConfig.overlay = 9;  // enchanter (1983) (infocom).dsk
+    if (file_crc == 0x9bb60875)                 myConfig.overlay = 9;  // family feud (1984) (coleco) [a1].dsk
+    if (file_crc == 0x3060b235)                 myConfig.overlay = 9;  // family feud (1984) (coleco).dsk
+    if (file_crc == 0x43828f0d)                 myConfig.overlay = 9;  // file manager v2.0 (1988) (ajm software).dsk
+    if (file_crc == 0xa36afa87)                 myConfig.overlay = 9;  // file manager v2.1 (1988) (ajm software).dsk
+    if (file_crc == 0xd39f1fb1)                 myConfig.overlay = 9;  // file manager v2.2 (1988) (ajm software).dsk
+    if (file_crc == 0x3c1653e1)                 myConfig.overlay = 9;  // file manager v3.0 (1992) (ajm software).dsk
+    if (file_crc == 0x9065853e)                 myConfig.overlay = 9;  // hitchhiker's guide to the galaxy, the (1984) (infocom) [a1].dsk
+    if (file_crc == 0x76bae642)                 myConfig.overlay = 9;  // hitchhiker's guide to the galaxy, the (1984) (infocom).dsk
+    if (file_crc == 0xb481e00b)                 myConfig.overlay = 9;  // infidel (1983) (infocom).dsk
+    if (file_crc == 0xc8850be8)                 myConfig.overlay = 9;  // jeopardy (1984) (coleco) (prototype).dsk
+    if (file_crc == 0xf822c7a8)                 myConfig.overlay = 9;  // jeopardy - disk#01 (1984) (coleco) (prototype).dsk
+    if (file_crc == 0x5d0045a2)                 myConfig.overlay = 9;  // jeopardy - disk#02 (1984) (coleco) (prototype).dsk
+    if (file_crc == 0xc4754e3e)                 myConfig.overlay = 9;  // leather goddess' of phobos (1986) (infocom).dsk
+    if (file_crc == 0x5177032a)                 myConfig.overlay = 9;  // planetfall (1983) (infocom) [a1].dsk
+    if (file_crc == 0xe9f6b71b)                 myConfig.overlay = 9;  // planetfall (1983) (infocom).dsk
+    if (file_crc == 0x2371b3d5)                 myConfig.overlay = 9;  // plundered hearts (1987) (infocom).dsk
+    if (file_crc == 0x455e72d8)                 myConfig.overlay = 9;  // seastalker (1984) (infocom) [a1].dsk
+    if (file_crc == 0x3e298768)                 myConfig.overlay = 9;  // seastalker (1984) (infocom).dsk
+    if (file_crc == 0x8866fcc9)                 myConfig.overlay = 9;  // smartbasic 1.x rev-20 (1991) (rich drushel software) [a1].dsk
+    if (file_crc == 0x2368fcc5)                 myConfig.overlay = 9;  // smartbasic 1.x rev-20 (1991) (rich drushel software).dsk
+    if (file_crc == 0x250f1fa5)                 myConfig.overlay = 9;  // smartbasic v1.0 (1983) (coleco) [a1].dsk
+    if (file_crc == 0xe9b12204)                 myConfig.overlay = 9;  // smartbasic v1.0 (1983) (coleco).dsk
+    if (file_crc == 0xc3755733)                 myConfig.overlay = 9;  // smartbasic v1.0 (1983)(coleco - lmi).dsk
+    if (file_crc == 0xca37ac14)                 myConfig.overlay = 9;  // smartbasic v1.0 - d.e.i. patches (1986) (digital express inc.).dsk
+    if (file_crc == 0x119736b5)                 myConfig.overlay = 9;  // smartbasic v1.0 (disk enhanced) (1983) (coleco - m.m.s.g.).dsk
+    if (file_crc == 0x58e97cc8)                 myConfig.overlay = 9;  // smartbasic v1.0 with parallel printer driver (198x) (wayne motel - n.i.a.d. software) [a1].dsk
+    if (file_crc == 0xb12b2e21)                 myConfig.overlay = 9;  // smartbasic v1.0 with parallel printer driver (198x) (wayne motel - n.i.a.d. software).dsk
+    if (file_crc == 0xcf0002f1)                 myConfig.overlay = 9;  // smartbasic v1.2 (1983)(coleco - lmi).dsk
+    if (file_crc == 0x893bdc71)                 myConfig.overlay = 9;  // smartbasic+ v1.3 (198x) (unknown) [a1].dsk
+    if (file_crc == 0xcdb75d23)                 myConfig.overlay = 9;  // smartbasic+ v1.3 (198x) (unknown).dsk
+    if (file_crc == 0x410b68c6)                 myConfig.overlay = 9;  // smartbasic+ v1.79 (1987) (sharon macfarlane).dsk
+    if (file_crc == 0xa3c57b61)                 myConfig.overlay = 9;  // smartbasic v2.0 (1984) (coleco) (prototype) [a1].dsk
+    if (file_crc == 0xb8b49c7b)                 myConfig.overlay = 9;  // smartbasic v2.0 (1984) (coleco) (prototype).dsk
+    if (file_crc == 0x43fa7b0f)                 myConfig.overlay = 9;  // smartbasic v2.0 - 40 column (1984) (coleco - gary hoosier software) [a1].dsk
+    if (file_crc == 0x63301b15)                 myConfig.overlay = 9;  // smartbasic v2.0 - 40 column (1984) (coleco - gary hoosier software).dsk
+    if (file_crc == 0xccb5a561)                 myConfig.overlay = 9;  // smartbasic v2.1 & tools (1988) (coleco - sharon macfarlane).dsk
+    if (file_crc == 0x07c07a56)                 myConfig.overlay = 9;  // sorcerer (198x) (infocom).dsk
+    if (file_crc == 0xf27044d8)                 myConfig.overlay = 9;  // spellbreaker (1985) (infocom).dsk
+    if (file_crc == 0xec88e6bb)                 myConfig.overlay = 9;  // starcross (1982) (infocom) [a1].dsk
+    if (file_crc == 0xb4b1e0f3)                 myConfig.overlay = 9;  // starcross (1982) (infocom).dsk
+    if (file_crc == 0xd092bbcb)                 myConfig.overlay = 9;  // stationfall (1987) (infocom).dsk
+    if (file_crc == 0xdda503aa)                 myConfig.overlay = 9;  // suspect (1984) (infocom).dsk
+    if (file_crc == 0x04e9d59e)                 myConfig.overlay = 9;  // suspended (1983) (infocom).dsk
+    if (file_crc == 0x89f1cf13)                 myConfig.overlay = 9;  // wishbringer (1985) (infocom).dsk
+    if (file_crc == 0x48a313ad)                 myConfig.overlay = 9;  // witness (1983) (infocom).dsk
+    if (file_crc == 0xd890aad7)                 myConfig.overlay = 9;  // zork iii - the dungeon master (1982) (infocom) [a1].dsk
+    if (file_crc == 0x5ce833b2)                 myConfig.overlay = 9;  // zork iii - the dungeon master (1982) (infocom).dsk
+    if (file_crc == 0x3daf5073)                 myConfig.overlay = 9;  // zork ii - the wizard of frobozz (1981) (infocom) [a1].dsk
+    if (file_crc == 0xc8ada76e)                 myConfig.overlay = 9;  // zork ii - the wizard of frobozz (1981) (infocom).dsk
+    if (file_crc == 0x8dac567c)                 myConfig.overlay = 9;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
+    if (file_crc == 0xae4d50e9)                 myConfig.overlay = 9;  // zork i - the great underground empire (1981) (infocom).dsk
+
+    // ----------------------------------------------------------------------------------
+    // A bunch of CP/M games for the Adam need a special memory wipe to load properly...
+    // ----------------------------------------------------------------------------------
+    if (file_crc == 0x07c07a56)                 myConfig.memWipe = 4;  // sorcerer (198x) (infocom).dsk
+    if (file_crc == 0xf27044d8)                 myConfig.memWipe = 4;  // spellbreaker (1985) (infocom).dsk
+    if (file_crc == 0xec88e6bb)                 myConfig.memWipe = 4;  // starcross (1982) (infocom) [a1].dsk
+    if (file_crc == 0xb4b1e0f3)                 myConfig.memWipe = 4;  // starcross (1982) (infocom).dsk
+    if (file_crc == 0xd092bbcb)                 myConfig.memWipe = 4;  // stationfall (1987) (infocom).dsk
+    if (file_crc == 0xdda503aa)                 myConfig.memWipe = 4;  // suspect (1984) (infocom).dsk
+    if (file_crc == 0x04e9d59e)                 myConfig.memWipe = 4;  // suspended (1983) (infocom).dsk
+    if (file_crc == 0x89f1cf13)                 myConfig.memWipe = 4;  // wishbringer (1985) (infocom).dsk
+    if (file_crc == 0x48a313ad)                 myConfig.memWipe = 4;  // witness (1983) (infocom).dsk
+    if (file_crc == 0xd890aad7)                 myConfig.memWipe = 4;  // zork iii - the dungeon master (1982) (infocom) [a1].dsk
+    if (file_crc == 0x5ce833b2)                 myConfig.memWipe = 4;  // zork iii - the dungeon master (1982) (infocom).dsk
+    if (file_crc == 0x3daf5073)                 myConfig.memWipe = 4;  // zork ii - the wizard of frobozz (1981) (infocom) [a1].dsk
+    if (file_crc == 0xc8ada76e)                 myConfig.memWipe = 4;  // zork ii - the wizard of frobozz (1981) (infocom).dsk
+    if (file_crc == 0x8dac567c)                 myConfig.memWipe = 4;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
+    if (file_crc == 0xae4d50e9)                 myConfig.memWipe = 4;  // zork i - the great underground empire (1981) (infocom).dsk
     
     // ---------------------------------------------------------------------------------------------
     // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
@@ -1513,7 +1615,7 @@ const struct options_t Option_Table[2][20] =
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","RESERVED1","RESERVED2","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
         {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
-        {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE"},                                                                                                               &myConfig.memWipe,    4},
+        {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE", "ADAM CPM"},                                                                                                   &myConfig.memWipe,    5},
         {"COLECO RAM",     {"MIRRORED","NO MIRROR"},                                                                                                                                            &myConfig.colecoRAM,  2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },

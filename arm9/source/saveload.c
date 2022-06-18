@@ -27,12 +27,24 @@
 #include "MTX_BIOS.h"
 #define NORAM 0xFF
 
-#define COLECODS_SAVE_VER 0x0016        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x0017        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+
+struct RomOffset
+{
+    u8   type;
+    u32  offset;
+};
+
+struct RomOffset Offsets[8];
+#define TYPE_ROM   0
+#define TYPE_RAM   1
+#define TYPE_BIOS  2
+#define TYPE_OTHER 3
 
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
-u8  spare[489] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
+u8  spare[512] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
 void colecoSaveState() 
 {
   u32 uNbO;
@@ -89,8 +101,31 @@ void colecoSaveState()
     // Save Coleco Memory (yes, all of it!)
     if (uNbO) uNbO = fwrite(RAM_Memory, 0x10000,1, handle); 
       
-    // And the Memory Map - TODO: generic
-    if (uNbO) uNbO = fwrite(MemoryMap, sizeof(MemoryMap),1, handle);     
+    // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
+    for (u8 i=0; i<8; i++)
+    {
+        if ((MemoryMap[i] >= ROM_Memory) && (MemoryMap[i] <= ROM_Memory+(sizeof(ROM_Memory))))
+        {
+            Offsets[i].type = TYPE_ROM;
+            Offsets[i].offset = MemoryMap[i] - ROM_Memory;
+        }
+        else if ((MemoryMap[i] >= RAM_Memory) && (MemoryMap[i] <= RAM_Memory+(sizeof(RAM_Memory))))
+        {
+            Offsets[i].type = TYPE_RAM;
+            Offsets[i].offset = MemoryMap[i] - RAM_Memory;
+        }
+        else if ((MemoryMap[i] >= BIOS_Memory) && (MemoryMap[i] <= BIOS_Memory+(sizeof(BIOS_Memory))))
+        {
+            Offsets[i].type = TYPE_BIOS;
+            Offsets[i].offset = MemoryMap[i] - BIOS_Memory;
+        }
+        else
+        {
+            Offsets[i].type = TYPE_OTHER;
+            Offsets[i].offset =  (u32)MemoryMap[i];
+        }
+    }
+    if (uNbO) uNbO = fwrite(Offsets, sizeof(Offsets),1, handle);     
       
     // Write the Super Game Module and AY sound core 
     if (uNbO) uNbO = fwrite(ay_reg, 16, 1, handle);      
@@ -135,7 +170,7 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&key_int_mask, sizeof(key_int_mask), 1, handle);                        
       
     // Some spare memory we can eat into...
-    if (uNbO) uNbO = fwrite(&spare, sizeof(spare),1, handle); 
+    if (uNbO) uNbO = fwrite(&spare, 512,1, handle); 
       
     // Write VDP
     if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
@@ -194,11 +229,25 @@ void colecoSaveState()
         if (uNbO) fwrite(&myKeyData, sizeof(myKeyData),1, handle);      
         if (uNbO) fwrite(&adc_mux, sizeof(adc_mux),1, handle);      
     }
-    else if (msx_mode || svi_mode || memotech_mode)   // Big enough that we will not write this if we are not MSX or SVI or MEMOTECH
+    else if (msx_mode)   // Big enough that we will not write this if we are not MSX 
     {
-        if (uNbO) fwrite(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle);
-        if (uNbO) fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
+        for (u8 i=0; i<8; i++)
+        {
+            if ((Slot1ROMPtr[i] >= ROM_Memory) && (Slot1ROMPtr[i] <= ROM_Memory+(sizeof(ROM_Memory))))
+            {
+                Offsets[i].type = TYPE_ROM;
+                Offsets[i].offset = Slot1ROMPtr[i] - ROM_Memory;
+            }
+            else
+            {
+                Offsets[i].type = TYPE_OTHER;
+                Offsets[i].offset =  (u32)Slot1ROMPtr[i];
+            }
+        }
+        if (uNbO) fwrite(Offsets, sizeof(Offsets),1, handle);
+        
         if (uNbO) fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
+        if (msx_sram_enabled) if (uNbO) fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
@@ -221,7 +270,7 @@ void colecoSaveState()
         if (uNbO) fwrite(&savedLEN, sizeof(savedLEN),1, handle);
         if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
         if (uNbO) fwrite(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
-        if (uNbO) fwrite(spare, 30,1, handle);        
+        if (uNbO) fwrite(spare, 32,1, handle);        
         if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
         if (adam_128k_mode) fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
     }
@@ -310,9 +359,28 @@ void colecoLoadState()
             
             // Load Coleco Memory (yes, all of it!)
             if (uNbO) uNbO = fread(RAM_Memory, 0x10000,1, handle); 
-
-            // And the Memory Map - TODO: generic
-            if (uNbO) uNbO = fread(MemoryMap, sizeof(MemoryMap),1, handle);     
+            
+            // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
+            if (uNbO) uNbO = fread(Offsets, sizeof(Offsets),1, handle);     
+            for (u8 i=0; i<8; i++)
+            {
+                if (Offsets[i].type == TYPE_ROM)
+                {
+                    MemoryMap[i] = (u8 *) (ROM_Memory + Offsets[i].offset);
+                }
+                else if (Offsets[i].type == TYPE_RAM)
+                {
+                    MemoryMap[i] = (u8 *) (RAM_Memory + Offsets[i].offset);
+                }
+                else if (Offsets[i].type == TYPE_BIOS)
+                {
+                    MemoryMap[i] = (u8 *) (BIOS_Memory + Offsets[i].offset);
+                }
+                else
+                {
+                    MemoryMap[i] = (u8 *) (Offsets[i].offset);
+                }
+            }
             
             // Load the Super Game Module stuff
             if (uNbO) uNbO = fread(ay_reg, 16, 1, handle);      
@@ -357,7 +425,7 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&key_int_mask, sizeof(key_int_mask), 1, handle);                        
             
             // Load spare memory for future use
-            if (uNbO) uNbO = fread(&spare, sizeof(spare),1, handle); 
+            if (uNbO) uNbO = fread(&spare, 512,1, handle); 
 
             // Load VDP
             if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 
@@ -420,9 +488,21 @@ void colecoLoadState()
     		}
     		else if (msx_mode)   // Big enough that we will not write this if we are not MSX
             {
-                if (uNbO) fread(Slot1ROMPtr, sizeof(Slot1ROMPtr),1, handle); //zzz - make this generic
-                if (uNbO) fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
+                if (uNbO) fread(Offsets, sizeof(Offsets),1, handle);
+                for (u8 i=0; i<8; i++)
+                {
+                    if (Offsets[i].type == TYPE_ROM)
+                    {
+                        Slot1ROMPtr[i] = (u8 *) (ROM_Memory + Offsets[i].offset);
+                    }
+                    else
+                    {
+                        Slot1ROMPtr[i] = (u8 *) (Offsets[i].offset);
+                    }
+                }
+
                 if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
+                if (msx_sram_enabled) if (uNbO) fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {
@@ -445,7 +525,7 @@ void colecoLoadState()
                 if (uNbO) fread(&savedLEN, sizeof(savedLEN),1, handle);
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
                 if (uNbO) fread(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
-                if (uNbO) fread(spare, 30,1, handle);                
+                if (uNbO) fread(spare, 32,1, handle);                
                 if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
                 if (adam_128k_mode) fread(RAM_Memory+0x10000, 0x10000,1, handle);
             }
@@ -489,6 +569,12 @@ void colecoLoadState()
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         AffChaine(6,0,0,"             ");  
         DisplayStatusLine(true);
+      }
+      else
+      {
+        AffChaine(6,0,0,"NO SAVED GAME");
+        WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+        AffChaine(6,0,0,"             ");  
       }
 
     fclose(handle);

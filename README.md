@@ -88,32 +88,30 @@ Known Issues :
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
-* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music)
+* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music but otherwise play fine)
 
 ADAM Compatibility :
 -----------------------
 * The emulated ADAM is not completely bug-free but generally will run most tape images (.ddp) or disk images (.dsk).
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
 * Sometimes when loading an ADAM game the system doesn't run... just hit RESET and it will probably load.
-* By default, RAM is cleared when you reset the ADAM. In Game Config you can change this to 'RANDOM' which may improve the ability to load some games.
+* By default, RAM is cleared when you reset the ADAM. In Game Config you can change this Memory Wipe to 'RANDOM' which may improve the ability to load some games.
+* If the game uses a CP/M disk, try chaning the Memory Wipe to 'ADAM CPM' which helps.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). It's not all ADAM keys but should be enough to play games.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only whenthe tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
-* Save and Load state files for ADAM games are generally rather large - about 320K. 
 
 MSX Compatibility :
 -----------------------
 Considering this is a Colecovision emulator, the MSX1 support and compatibility is reasonably high.  In Game Options you will notice that
 the default MSX Mapper is set to "GUESS" which does a fairly good job loading the ROM - especially for 32K or smaller games. However, if a game doesn't run, you can try these suggestions:
-* A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options.
+* A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options. If you have an MSX.ROM bios, it will use it by default.
 * Most 64K games use the ASC16 memory mapper - so you can try that one... but a few (e.g. Mutants from the Deep) are linear mapped from 0-64K and you will need to pick LINEAR64 in Game Options. 
-* The auto-detection on KONAMI8 and KONAMI-SCC mappers is pretty good... but many other games using ASCII8 or ASCII16 don't detect well - you should try those mappers if the "larger than 64K" game won't run.
-* Some of the really big games (128K or larger) run slow - if you're not getting full frame rate, you can try the speed configuration changes mentioned further below.
+* The auto-detection on KONAMI8, KONAMI-SCC and ASCII8/16 mappers is pretty good... but some games don't detect well - you should try various mappers if the "larger than 64K" game won't run.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
-* Some MSX games take 4 or 5 seconds to initialize and start running due to checking various slots and subslots for memory - be patient. 
-* With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 98% run rate on MSX1 games. 
+* With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run.
 
-As of version 6.5, cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
+As of version 6.5, MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
 
 The MSX memory is laid out as follows:
 ```
@@ -204,7 +202,7 @@ As of version 6.1 there is also a custom overlay for "MSX Full" keyboard.
 
 Blend Mode (DSi) :
 -----------------------
-A huge change is the new "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
+ColecoDS supports a "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
 two frames are blended together - this is really useful when playing games like Space Fury or Galaxian 
 where the bullets on screen are only 1 pixel wide and the DSi LCD just doesn't hold onto the pixels 
 long enough to be visible. These games were designed to run on an old tube TV with phosphor which 
@@ -252,6 +250,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.5: 18-June-2022 by wavemotion-dave
+* Major update to the way internal memory is handled. It's slimmer, trimmer and much faster across-the-board. More games run at full speed.
+* Fixed EE and SRAM handling on MSX games - those also now back to files on the SD card so you can pick up where you left off.
+* Improvements to the Sord M5 driver so more games run correctly - Mahjong now works.
+* Improvements to the Coleco/ADAM driver so more games run correctly. Boulder Dash works properly and more ADAM disk games run properly.
+
 V7.4: 05-June-2022 by wavemotion-dave
 * Added back DrZ80 core and fixed Colecovision Boulder Dash so it doesn't crash.
 * Better Einstein CTC handling so timing is a bit more accurate.
