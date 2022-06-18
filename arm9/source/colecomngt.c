@@ -187,7 +187,10 @@ void colecoWipeRAM(void)
   else if (adam_mode)
   {
     // ADAM has special handling...
-    for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x02:  (rand() & 0xFF));   // The 0x02 pattern tends to make most things start up properly... don't ask.
+      u8 pattern = 0x00;                               // Default to all-clear
+      if (myConfig.memWipe == 1) pattern = 0x02;       // The 0x02 pattern tends to make most things start up properly... don't ask.
+      if (myConfig.memWipe == 4) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
+      for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? pattern : (rand() & 0xFF));
   }
   else if (einstein_mode)
   {
