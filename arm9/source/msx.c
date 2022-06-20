@@ -717,7 +717,10 @@ u8 MSX_GuessROMType(u32 size)
     if (file_crc == 0xa3a51fbb) type = ASC16;  // R-Type 512k
     if (file_crc == 0x952bfaa4) type = SCC8;   // R-Type 512k
     if (file_crc == 0xfbd3f05b) type = ASC16;  // Alien Attack 3.5
-    if (file_crc == 0xa6e924ab) type = ASC16;  // Alien2
+    if (file_crc == 0xa6e924ab) type = ASC16;  // Aliens aka Alien 2
+    if (file_crc == 0xa6e924ab) type = ASC16;  // Aliens aka Alien 2
+    if (file_crc == 0xc6fc7bd7) type = ASC16;  // Aliens aka Alien 2
+    if (file_crc == 0x3ddcb524) type = ASC16;  // Aliens aka Alien 2    
     if (file_crc == 0x1306ccca) type = ASC8;   // Auf Wiedershen Monty [1.7]
     if (file_crc == 0xec036e37) type = ASC16;  // Gall Force
     if (file_crc == 0xa29176e3) type = ASC16;  // Mecha 9    
@@ -751,6 +754,7 @@ u8 MSX_GuessROMType(u32 size)
     if (file_crc == 0xc5c14bbd) type = KON8;   // The Hobbit
     if (file_crc == 0xfea70207) type = ASC16;  // Vaxol
     if (file_crc == 0x35899655) type = ASC8;   // Venom Strikes Back    
+    if (file_crc == 0x47273220) type = XBLAM;   // Cross Blaim
     
     return type;
 }
@@ -1054,7 +1058,18 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
             Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
             Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
-        }                
+        }
+        else if (mapperType == XBLAM)        // Just for Cross Blaim
+        {
+            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+        }
 
         // --------------------------------------------------------------------------------
         // We've copied as much of the ROM into fast VRAM as possible. We only have 256K 
@@ -1062,7 +1077,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         // --------------------------------------------------------------------------------
         if (iSSize <= (128 * 1024))
         {
-            if (mapperType == ASC16 || mapperType == ZEN16)
+            if (mapperType == ASC16 || mapperType == ZEN16 || mapperType == XBLAM)
                 mapperMask = (iSSize == (64 * 1024)) ? 0x03:0x07;
             else
                 mapperMask = (iSSize == (64 * 1024)) ? 0x07:0x0F;
