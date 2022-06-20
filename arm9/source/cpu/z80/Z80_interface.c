@@ -487,11 +487,9 @@ void cpu_writemem16 (u8 value,u16 address)
                 // Up to 128K we can fetch from fast VRAM shadow copy
                 // otherwise we are forced to fetch from slow ROM_Memory[]
                 // ---------------------------------------------------------
-                u32 *src;
                 u32 block = (value & mapperMask);
-                msx_offset = block * ((mapperType == ASC16 || mapperType == ZEN16) ? 0x4000:0x2000);
-                
-                src = (u32*)((u8*)ROM_Memory + msx_offset);
+                msx_offset = block * ((mapperType == ASC16 || mapperType == ZEN16 || mapperType == XBLAM) ? 0x4000:0x2000);
+                u32 *src = (u32*)((u8*)ROM_Memory + msx_offset);
             
                 // ---------------------------------------------------------------------------------
                 // The Konami 8K Mapper without SCC:
@@ -647,6 +645,19 @@ void cpu_writemem16 (u8 value,u16 address)
                 else if (mapperType == ZEN16)
                 {
                     HandleZemina16K(src, block, address);
+                }                
+                else if (mapperType == XBLAM)
+                {
+                    if (address == 0x4045)
+                    {
+                        Slot1ROMPtr[4] = (u8*)src;          // Main ROM at 8000
+                        Slot1ROMPtr[5] = (u8*)src+0x2000;   // Main ROM at A000                  
+                        if (bROMInSlot[2]) 
+                        {
+                            MemoryMap[4] = Slot1ROMPtr[4];
+                            MemoryMap[5] = Slot1ROMPtr[5];
+                        }
+                    }
                 }                
             }
         }

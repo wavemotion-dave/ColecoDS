@@ -21,7 +21,7 @@ extern u8 mapperMask;
 #define ASC16       4
 #define ZEN8        5
 #define ZEN16       6
-#define RES1        7
+#define XBLAM       7
 #define RES2        8
 #define AT0K        9
 #define AT4K        10
