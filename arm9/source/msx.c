@@ -40,9 +40,10 @@ u8 *MemoryMap[8]        __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
         
 u16 beeperFreq          __attribute__((section(".dtcm"))) = 0;
 u8 msx_beeper_process   __attribute__((section(".dtcm"))) = 0;
-u8 msx_beeper_enabled   __attribute__((section(".dtcm"))) = 0;
 u8 beeperWasOn          __attribute__((section(".dtcm"))) = 0;
 u8 msx_sram_enabled     __attribute__((section(".dtcm"))) = 0;
+
+u16 msx_block_size      __attribute__((section(".dtcm"))) = 0x2000; // Either 8K or 16K based on Mapper Type
 
 // --------------------------------------------------------------------------
 // These aren't used very often so we don't need them in fast .dtcm memory
@@ -1096,6 +1097,8 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     {
         // Size not right for MSX support... we've already pre-filled 0xFF so nothing more to do here...
     }
+    
+    msx_block_size = ((mapperType == ASC16 || mapperType == ZEN16 || mapperType == XBLAM) ? 0x4000:0x2000);
 }
 
 /*********************************************************************************

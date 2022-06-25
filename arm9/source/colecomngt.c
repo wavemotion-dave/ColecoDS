@@ -475,16 +475,6 @@ void getfile_crc(const char *path)
     if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
     if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
     
-    // ---------------------------------------------------------------------------------
-    // A few of the ZX Spectrum ports actually use the MSX beeper for sound. Go figure!
-    // ---------------------------------------------------------------------------------
-    msx_beeper_enabled = 0;
-    if (file_crc == 0x1b8873ca) msx_beeper_enabled = 1;     // MSX Avenger uses beeper
-    if (file_crc == 0x111fc33b) msx_beeper_enabled = 1;     // MSX Avenger uses beeper    
-    if (file_crc == 0x690f9715) msx_beeper_enabled = 1;     // MSX Batman (the movie) uses beeper
-    if (file_crc == 0x3571f5d4) msx_beeper_enabled = 1;     // MSX Master of the Universe uses beeper
-    if (file_crc == 0x2142bd10) msx_beeper_enabled = 1;     // MSX Future Knight
-    
     // ------------------------------------------------------------------------------
     // And a handful of games require SRAM which is a special case-by-case basis...
     // ------------------------------------------------------------------------------
@@ -688,29 +678,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         {
             memcpy(ptr, ROM_Memory, nmemb);
         }
-        else    // No - must be Mega Cart (MC) Bankswitched!!  We have two banks of 128K VRAM to help with speed.
+        else    // No - must be Mega Cart (MC) Bankswitched!!  
         {
-            // Copy 128K worth up to the VRAM for faster bank switching on the first 8 banks
-            u32 copySize = ((iSSize <= 128*1024) ? iSSize : (128*1024));
-            u32 *dest = (u32*)0x06880000;
-            u32 *src  = (u32*)ROM_Memory;
-            for (u32 i=0; i<copySize/4; i++)
-            {
-                *dest++ = *src++;
-            }
-
-            // Copy another 128K worth up to the VRAM for faster bank switching on the next 8 banks
-            if (iSSize > 128*1024)
-            {
-                u32 copySize = (128*1024);
-                u32 *dest = (u32*)0x6820000;
-                u32 *src  = (u32*)(ROM_Memory + (128*1024));
-                for (u32 i=0; i<copySize/4; i++)
-                {
-                    *dest++ = *src++;
-                }
-            }
-            
             // --------------------------------------------------------------
             // Mega Carts have a special byte pattern in the upper block... 
             // but we need to distinguish between 64k Activision PCB and
@@ -730,7 +699,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             {
                 bMagicMegaCart = 1;
                 memcpy(ptr, ROM_Memory+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
-                BankSwitch(0);                                  // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
+                MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
                 
                 if      (iSSize == (64  * 1024)) romBankMask = 0x03;
                 else if (iSSize == (128 * 1024)) romBankMask = 0x07;
@@ -1272,7 +1241,7 @@ ITCM_CODE u32 LoopZ80()
       // game has hit the beeper and approximate that by using AY Channel A to produce the 
       // tone.  This is crude and doesn't sound quite right... but good enough.
       // ------------------------------------------------------------------------------------
-      if (msx_beeper_enabled)
+      if (myConfig.msxBeeper)
       {
           MSX_HandleBeeper();
       }

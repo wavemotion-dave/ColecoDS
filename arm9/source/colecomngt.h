@@ -110,7 +110,6 @@ extern u8 lastIOBYTE;
 extern u32 tape_pos;
 extern u32 tape_len;
 extern u8 key_shift_hold;
-extern u8 msx_beeper_enabled;
 
 extern u8 Port_PPI_A;
 extern u8 Port_PPI_B;
@@ -182,7 +181,7 @@ extern void memotech_launch_run_file(void);
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 
 extern u32 LoopZ80();
-extern void BankSwitch(u8 bank);
+extern void MegaCartBankSwitch(u8 bank);
 extern void CheckMSXHeaders(char *szGame);
 extern void BufferKey(u8 key);
 
