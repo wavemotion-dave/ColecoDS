@@ -1208,7 +1208,7 @@ void SetDefaultGameConfig(void)
     myConfig.cvEESize    = C24XX_24C256;
     myConfig.ayEnvelope  = 0;
     myConfig.colecoRAM   = COLECO_RAM_NORMAL_MIRROR;
-    myConfig.reservedA2  = 0;    
+    myConfig.msxBeeper   = 0;    
     myConfig.reservedA3  = 0;    
     myConfig.reservedB0  = 0xA5;    // So it's easy to spot on an "upgrade"
     myConfig.reservedB1  = 0xA5;    // So it's easy to spot on an "upgrade"
@@ -1494,6 +1494,15 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x98240ee9)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MAGROM
     
     
+    // ---------------------------------------------------------------------------------
+    // A few of the ZX Spectrum ports actually use the MSX beeper for sound. Go figure!
+    // ---------------------------------------------------------------------------------
+    if (file_crc == 0x1b8873ca)                 myConfig.msxBeeper = 1;     // MSX Avenger uses beeper
+    if (file_crc == 0x111fc33b)                 myConfig.msxBeeper = 1;     // MSX Avenger uses beeper    
+    if (file_crc == 0x690f9715)                 myConfig.msxBeeper = 1;     // MSX Batman (the movie) uses beeper
+    if (file_crc == 0x3571f5d4)                 myConfig.msxBeeper = 1;     // MSX Master of the Universe uses beeper
+    if (file_crc == 0x2142bd10)                 myConfig.msxBeeper = 1;     // MSX Future Knight
+
     // ------------------------------------------------------
     // A few games really want diagonal inputs enabled...
     // ------------------------------------------------------
@@ -1622,6 +1631,7 @@ const struct options_t Option_Table[2][20] =
     // Page 2
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
+        {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    

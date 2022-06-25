@@ -184,7 +184,7 @@ int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 
 // The DS/DSi has 12 keys that can be mapped
-u16 NDS_keyMap[12] = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
+u16 NDS_keyMap[12] __attribute__((section(".dtcm"))) = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
 
 // --------------------------------------------------------------------
 // The key map for the Colecovision... mapped into the NDS controller
@@ -1129,22 +1129,25 @@ void CassetteMenu(void)
         {
             if (menuSelection == 0) // SAVE CASSETTE
             {
-                if (adam_mode)
+                if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE DATA?") == ID_SHM_YES) 
                 {
-                    SaveAdamTapeOrDisk();
-                }
-                else
-                {
-                    if (msx_mode || svi_mode)   // Not supporting Memotech MTX yet...
+                    if (adam_mode)
                     {
-                        AffChaine(12,0,6, "SAVING");
-                        FILE *fp;
-                        fp = fopen(gpFic[ucGameChoice].szName, "wb");
-                        fwrite(ROM_Memory, tape_len, 1, fp);
-                        fclose(fp);
-                        WAITVBL;WAITVBL;
-                        AffChaine(12,0,6, "      ");
-                        DisplayStatusLine(true);
+                        SaveAdamTapeOrDisk();
+                    }
+                    else
+                    {
+                        if (msx_mode || svi_mode)   // Not supporting Memotech MTX yet...
+                        {
+                            AffChaine(12,0,6, "SAVING");
+                            FILE *fp;
+                            fp = fopen(gpFic[ucGameChoice].szName, "wb");
+                            fwrite(ROM_Memory, tape_len, 1, fp);
+                            fclose(fp);
+                            WAITVBL;WAITVBL;
+                            AffChaine(12,0,6, "      ");
+                            DisplayStatusLine(true);
+                        }
                     }
                 }
                 CassetteMenuShow(true, menuSelection);
@@ -1171,11 +1174,14 @@ void CassetteMenu(void)
             }
             if (menuSelection == 2) // REWIND (ADAM = EXIT)
             {
-                  if (adam_mode) break;
-                  else
+                  if (!adam_mode && (tape_pos>0))
                   {
                       tape_pos = 0;
-                      break;
+                      AffChaine(12,0,6, "REWOUND");
+                      WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+                      AffChaine(12,0,6, "       ");
+                      DisplayStatusLine(true);                      
+                      CassetteMenuShow(true, menuSelection);
                   }
             }
             if (menuSelection == 3)

@@ -33,14 +33,13 @@ u8 msx_scc_enable   __attribute__((section(".dtcm"))) = 0;
 u8 einstein_ram_dirty __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
-extern u8 Slot1ROM[];
 extern u8 PCBTable[];
 extern u8 adam_ram_lo;
 extern u8 adam_ram_hi;
 extern u8 adam_ram_lo_exp;
 extern u8 adam_ram_hi_exp;
 extern u8 svi_RAM[2];
-
+extern u16 msx_block_size;
 extern u8 *MemoryMap[8];
 
 // -------------------------------------------------
@@ -48,7 +47,7 @@ extern u8 *MemoryMap[8];
 // Up to 256K of the Colecovision Mega Cart ROM can 
 // be stored in fast VRAM so we check that here.
 // -------------------------------------------------
-ITCM_CODE void BankSwitch(u8 bank)
+ITCM_CODE void MegaCartBankSwitch(u8 bank)
 {
     if (lastBank != bank)   // Only if the bank was changed...
     {
@@ -72,7 +71,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
   {
       if (address >= 0xFFC0)
       {
-          BankSwitch(address & romBankMask);
+          MegaCartBankSwitch(address & romBankMask);
       }
   }    
   else if (bActivisionPCB)
@@ -321,7 +320,7 @@ void activision_pcb_write(u16 address)
 {
   if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
   {
-      BankSwitch((address>>4) & romBankMask);
+      MegaCartBankSwitch((address>>4) & romBankMask);
   }
 
   if (address == 0xFFC0) Write24XX(&EEPROM,EEPROM.Pins&~C24XX_SCL);
@@ -382,7 +381,7 @@ void cpu_writemem16 (u8 value,u16 address)
         }
         else if (address >= 0xFFC0)
         {
-            BankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
+            MegaCartBankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
         }        
     }    
     // -------------------------------------------------------------
@@ -488,7 +487,7 @@ void cpu_writemem16 (u8 value,u16 address)
                 // otherwise we are forced to fetch from slow ROM_Memory[]
                 // ---------------------------------------------------------
                 u32 block = (value & mapperMask);
-                msx_offset = block * ((mapperType == ASC16 || mapperType == ZEN16 || mapperType == XBLAM) ? 0x4000:0x2000);
+                msx_offset = block * msx_block_size;
                 u32 *src = (u32*)((u8*)ROM_Memory + msx_offset);
             
                 // ---------------------------------------------------------------------------------
@@ -745,11 +744,7 @@ void DrZ80_Cause_Interrupt(int type)
 // -------------------------------------------------
  u16 drz80MemReadW_banked(u16 addr) 
 {
-  if (bMagicMegaCart || adam_mode) // Handle Megacart Hot Spots
-  {
-      return (cpu_readmem16_banked(addr) | (cpu_readmem16_banked(addr+1)<<8));   // These handle both hotspots - slower but easier than reproducing the hotspot stuff
-  }    
-  return (RAM_Memory[addr]  |  (RAM_Memory[addr+1] << 8));
+  return (cpu_readmem16_banked(addr) | (cpu_readmem16_banked(addr+1)<<8));   // These handle both hotspots - slower but easier than reproducing the hotspot stuff
 }
 
 // ------------------------------------------------------
