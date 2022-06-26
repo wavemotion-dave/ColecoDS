@@ -97,14 +97,14 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 * 3aa93ef3	coleco.rom (original version)
 * a30b0c34	coleco.rom (faster boot)
 * 94ee12f3	msx.rom (MSX)
-* c3c590c6	bioscv.rom (creativision)
-* ec134953	einstein.rom (einstein)
+* c3c590c6	bioscv.rom (Creativision)
+* ec134953	einstein.rom (Tatung Einstein)
 * 338d7b59	pencil2.rom (Hanimex Pencil II)
 * 8f31f297	pv2000.rom (Casio PV-2000)
 * 92cf9353	sordm5.rom (Sord M5)
 * 709904e9	svi.rom (Spectravision)
 * 05a37a34	eos.rom (ADAM)
-* 58d86a2a	writer.rom (aDAM)
+* 58d86a2a	writer.rom (ADAM)
 ```
 
 ADAM Compatibility :
