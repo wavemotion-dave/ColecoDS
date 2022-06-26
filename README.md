@@ -88,7 +88,24 @@ Known Issues :
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
-* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music but otherwise play fine)
+* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music but otherwise play fine).
+
+BIOS Files :
+-----------------------
+Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek these out if you want maximum compatibility:
+
+* 3aa93ef3	coleco.rom (original version)
+* a30b0c34	coleco.rom (faster boot)
+* c3c590c6	bioscv.rom
+* ec134953	einstein.rom
+* 05a37a34	eos.rom
+* 94ee12f3	msx.rom
+* 338d7b59	pencil2.rom
+* 8f31f297	pv2000.rom
+* 92cf9353	sordm5.rom
+* 709904e9	svi.rom
+* 58d86a2a	writer.rom
+
 
 ADAM Compatibility :
 -----------------------
