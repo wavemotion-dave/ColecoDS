@@ -129,7 +129,7 @@ Considering this is a Colecovision emulator, the MSX1 support and compatibility 
 
 MSX is not a single machine but a standard - there are lots of machines and lots of BIOS files. The one I'm using to do all my testing is MSX.ROM with a CRC32 of 94ee12f3.  Seek that one out - it's used by default in a lot of other emulators.
 
-As of version 6.5, MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
+MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
 
 The MSX memory is laid out as follows:
 ```
@@ -188,11 +188,11 @@ EDIP v1e which you can find in the extras folder on the ColecoDS github page.
 
 With either of these tools, you should be able to extract more than 50 .COM games that currently work.
 
-A future version of the emulator will support .DSK files directly... but it's complicated.
+A future version of the emulator will support .DSK files directly... but it's complicated and I haven't got it all figured out yet.
 
 Creativision Compatibility :
 -----------------------
-The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area.
+The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games run properly under ColecoDS.
 
 
 Controllers :
