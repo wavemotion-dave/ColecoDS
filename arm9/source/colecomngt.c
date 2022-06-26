@@ -722,16 +722,17 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     // To speed up processing in the memory write functions, we accumulate 
     // the bits so we only have to fetch one machine_mode variable.
     // -----------------------------------------------------------------------
-    if (pencil2_mode)       machine_mode = MODE_PENCIL2;
-    else if (msx_mode)      machine_mode = MODE_MSX;
-    else if (svi_mode)      machine_mode = MODE_SVI;
-    else if (einstein_mode) machine_mode = MODE_EINSTEIN;
-    else if (memotech_mode) machine_mode = MODE_MEMOTECH;
-    else if (pv2000_mode)   machine_mode = MODE_PV2000;
-    else if (sordm5_mode)   machine_mode = MODE_SORDM5;
-    else if (sg1000_mode)   machine_mode = MODE_SG_1000;
-    else if (adam_mode)     machine_mode = MODE_ADAM;
-    else                    machine_mode = MODE_COLECO;
+    if (pencil2_mode)           machine_mode = MODE_PENCIL2;
+    else if (msx_mode)          machine_mode = MODE_MSX;
+    else if (svi_mode)          machine_mode = MODE_SVI;
+    else if (einstein_mode)     machine_mode = MODE_EINSTEIN;
+    else if (memotech_mode)     machine_mode = MODE_MEMOTECH;
+    else if (pv2000_mode)       machine_mode = MODE_PV2000;
+    else if (sordm5_mode)       machine_mode = MODE_SORDM5;
+    else if (sg1000_mode)       machine_mode = MODE_SG_1000;
+    else if (adam_mode)         machine_mode = MODE_ADAM;
+    else if (creativision_mode) machine_mode = MODE_CREATIVISION;
+    else                        machine_mode = MODE_COLECO;
   }
   return bOK;
 }

@@ -205,6 +205,7 @@ extern u32 tape_pos, tape_len;
 #define MODE_SVI            0x0080
 #define MODE_MSX            0x0100
 #define MODE_PENCIL2        0x0200
+#define MODE_CREATIVISION   0x0400
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 
