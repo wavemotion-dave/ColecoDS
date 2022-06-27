@@ -1287,7 +1287,10 @@ void CassetteMenu(void)
         WAITVBL;WAITVBL;
     }
   }
-  
+
+  while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
+  WAITVBL;WAITVBL;
+    
   InitBottomScreen();  // Could be generic or overlay...
 
   SoundUnPause();
