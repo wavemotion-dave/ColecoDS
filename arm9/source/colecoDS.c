@@ -1856,7 +1856,7 @@ void colecoDS_main(void)
                     mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
                 }
             }
-            else
+            else // All other machines...
             {
                 if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
                 {
@@ -1868,6 +1868,7 @@ void colecoDS_main(void)
                     else if (adam_key == ADAM_KEY_F6)    kbd_key = KBD_KEY_F6;
                     else if (adam_key == ADAM_KEY_ENTER) kbd_key = KBD_KEY_RET;
                     else if (adam_key == ADAM_KEY_BS)    kbd_key = KBD_KEY_DEL;
+                    else if (adam_key == '?')            ucUN = JST_5;
                     else kbd_key = adam_key;
                 }
             }
