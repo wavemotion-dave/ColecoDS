@@ -1868,7 +1868,7 @@ void colecoDS_main(void)
                     else if (adam_key == ADAM_KEY_F6)    kbd_key = KBD_KEY_F6;
                     else if (adam_key == ADAM_KEY_ENTER) kbd_key = KBD_KEY_RET;
                     else if (adam_key == ADAM_KEY_BS)    kbd_key = KBD_KEY_DEL;
-                    else if (adam_key == '?')            ucUN = JST_5;
+                    else if (adam_key == '?')            ucUN = JST_5;  // User defined
                     else kbd_key = adam_key;
                 }
             }
