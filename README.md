@@ -268,6 +268,13 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.6: 28-June-2022 by wavemotion-dave
+* Cleanup of Cassette Menu handling.
+* Improved MSX compatibility.
+* Faster large-ROM loading speed.
+* New Alpha-only Keyboard support.
+* A few minor bug fixes as time allowed.
+
 V7.5: 18-June-2022 by wavemotion-dave
 * Major update to the way internal memory is handled. It's slimmer, trimmer and much faster across-the-board. More games run at full speed.
 * Fixed EE and SRAM handling on MSX games - those also now back to files on the SD card so you can pick up where you left off.
