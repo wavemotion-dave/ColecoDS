@@ -828,7 +828,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(20,0,6, "MEMOTECH MTX");
             last_pal_mode = 99;
         }
-        if ((memotech_mode == 2) && (last_tape_pos != tape_pos))
+        if ((memotech_mode == 2) && (last_tape_pos != tape_pos) && (!memotech_magrom_present))
         {
             last_tape_pos = tape_pos;
             char tmp[15];
