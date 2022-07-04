@@ -1978,6 +1978,7 @@ void NoGameSelected(u32 ucY)
 
 void ReadFileCRCAndConfig(void)
 {    
+    u8 checkCOM = 0;
     getfile_crc(gpFic[ucGameChoice].szName);
     
     u8 cas_load = 0;
@@ -2019,10 +2020,52 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".pen") != 0) pencil2_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".PEN") != 0) pencil2_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".com") != 0) einstein_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".COM") != 0) einstein_mode = 1;    
+    if (strstr(gpFic[ucGameChoice].szName, ".com") != 0) checkCOM = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".COM") != 0) checkCOM = 1;
     
     if (sg1000_mode) msx_mode=0;        // Some Taiwan SG games look like MSX games...
+    
+    if (checkCOM)   // COM is usually Einstein... but we also support it for MTX for some games
+    {
+        if ( (file_crc == 0xb35a8beb)  ||  // SGM2M - alt
+             (file_crc == 0x8e1dd825)  ||  // 1STLETTR.COM
+             (file_crc == 0xefd652df)  ||  // ALPHA.COM
+             (file_crc == 0x2fa8a871)  ||  // ANGLE.COM
+             (file_crc == 0x640efa8d)  ||  // ASTROPAC.COM
+             (file_crc == 0x1a50a1e3)  ||  // BUCK.COM
+             (file_crc == 0xeb809665)  ||  // CSCPM.COM
+             (file_crc == 0xd79a86b7)  ||  // DEFENDER.COM
+             (file_crc == 0xac7195d4)  ||  // DT.COM
+             (file_crc == 0xcd43d48d)  ||  // H-CHUMY.COM
+             (file_crc == 0x62dfae2d)  ||  // L9ADV.COM
+             (file_crc == 0x9888465b)  ||  // merlin8.COM
+             (file_crc == 0xb52a7312)  ||  // NEMO.COM
+             (file_crc == 0x7ad2b90e)  ||  // OBLOIDS.COM
+             (file_crc == 0x36549adc)  ||  // OLDMAC.COM
+             (file_crc == 0x2f3e6416)  ||  // ORBCPM.COM
+             (file_crc == 0x8af83858)  ||  // PACMAN.COM
+             (file_crc == 0x585478f4)  ||  // POWERPAC.COM
+             (file_crc == 0x542051ce)  ||  // QUASAR.COM
+             (file_crc == 0x5ed7b7d8)  ||  // REV.COM
+             (file_crc == 0x1464e8b0)  ||  // RUN.COM
+             (file_crc == 0x6b2d4eb9)  ||  // SASA.COM
+             (file_crc == 0x7812bb8c)  ||  // SMG2M.COM
+             (file_crc == 0x02fb1412)  ||  // SMG.COM
+             (file_crc == 0xcbd19c59)  ||  // SPECTRON.COM
+             (file_crc == 0x9f4b067d)  ||  // STAR.COM
+             (file_crc == 0x6b67dd68)  ||  // TBUNNY.COM
+             (file_crc == 0xcab321fc)  ||  // TLOAD.COM
+             (file_crc == 0x8ff4ef96)  ||  // TURBO.COM
+             (file_crc == 0x9db0a5d7)  ||  // TV.COM
+             (file_crc == 0x46a242b0) )    // ZOMBNEAR.COM
+        {
+            memotech_mode = 3;  // Memotech MTX .COM file
+        }
+        else
+        {
+            einstein_mode = 1;  // Tatung Einstein .COM file
+        }
+    }
     
     // --------------------------------------------------------------------------
     // If a .cas file is picked, we need to figure out what machine it's for...

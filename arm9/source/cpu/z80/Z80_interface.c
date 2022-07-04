@@ -408,28 +408,21 @@ void cpu_writemem16 (u8 value,u16 address)
             RAM_Memory[address]=value;  // Allow pretty much anything above the base ROM area
         }
     }
+    // ----------------------------------------------------------------------------------
+    // For the Casio PV-2000, we call into a special routine to handle memory writes.
+    // ----------------------------------------------------------------------------------
     else if (machine_mode & MODE_PV2000)
     {
         cpu_writemem_pv2000(value, address);
     }
     // ----------------------------------------------------------------------------------
-    // For the Memotech MTX, allow anything in the upper 48K
+    // For the Memotech MTX, we need to address through the MemoryMap[] pointers...
     // ----------------------------------------------------------------------------------
     else if (machine_mode & MODE_MEMOTECH)
     {
         if (address >= memotech_RAM_start)
         {
-            if (memotech_RAM_start == 0x8000) // Special handling as the first 16K of RAM is mapped at 0x8000 and then thge common RAM is mapped at 0xC000 as usual
-            {
-                if (address >= 0x8000 && address < 0xC000)
-                    RAM_Memory[address&0x3FFF] = value; // Backing RAM always updated to assist in bank swap
-                else
-                    RAM_Memory[address] = value;        // Backing RAM always updated to assist in bank swap
-            }
-            else
-            {
-                RAM_Memory[address] = value;        // Backing RAM always updated to assist in bank swap
-            }
+            *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
         }
     }
     // -----------------------------------------------------------------------------------------
