@@ -28,7 +28,7 @@
 
 u8 memotech_magrom_present = 0;
 u8 memotech_mtx_500_only = 0;
-u8 memotech_lastMagROMPage = 0xFF;
+u8 memotech_lastMagROMPage = 0x00;
 
 // ---------------------------------------------------------------------
 // Memotech MTX IO Port Read - VDP, Joystick/Keyboard and Z80-CTC
@@ -95,7 +95,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }
       }
       
-      if ((JoyState == 0) && (kbd_key == 0) && (key_shift == 0) && (nds_key == 0)) return 0xFF;
+      if ((JoyState == 0) && (kbd_key == 0) && (key_shift == 0) && (key_ctrl == 0) && (nds_key == 0)) return 0xFF;
       
       if (MTX_KBD_DRIVE == 0xFD)
       {
@@ -166,6 +166,9 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == '[')           key1 = 0x40;
               if (kbd_key == KBD_KEY_UP)    key1 = 0x80;
           }          
+          
+          if (key_ctrl)                     key1 |= 0x01;
+          
           if (nds_key)
           {
               for (u8 i=0; i<12; i++)
@@ -278,7 +281,6 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       {
           u8 key1 = 0x00;
           if (joy1 & 0x02)                  key1 = 0x80;
-          if (key_shift)                    key1 = 0x01;    // SHIFT key
           
           if (kbd_key)
           {
@@ -289,6 +291,9 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == '/')           key1 = 0x20;
               if (kbd_key == KBD_KEY_DOWN)  key1 = 0x80;              
           }          
+          
+          if (key_shift)                    key1 |= 0x01;    // SHIFT key
+          
           if (nds_key)
           {
               for (u8 i=0; i<12; i++)
@@ -502,91 +507,123 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
             // -----------------------------------------------------------------------
             if ((IOBYTE & 0x80) == 0)  // ROM Mode...
             {
-                // --------------------------------------------
-                // See if the ROM area needs to be updated...
-                // --------------------------------------------
-                if ((lastIOBYTE&0x70) != (IOBYTE & 0x70))
-                {
-                    // -------------------------------------------------------------------
-                    // No matter the ROM paging, the basic mtx_os[] BIOS is present...
-                    // -------------------------------------------------------------------
-                    MemoryMap[0] = BIOS_Memory + 0x0000;    // Restore Memotech BIOS OS
+                // -------------------------------------------------------------------
+                // No matter the ROM paging, the basic mtx_os[] BIOS is present...
+                // -------------------------------------------------------------------
+                MemoryMap[0] = BIOS_Memory + 0x0000;    // Restore Memotech BIOS OS-A - this always lives in the bottom slot
 
-                    if ((IOBYTE & 0x70) == 0x00)            // Is BASIC ROM Enabled?
-                    {
-                        MemoryMap[1] = BIOS_Memory + 0x2000;// Restore Memotech BASIC
-                        memotech_lastMagROMPage = 0xFF;
-                    }
-                    else if ((IOBYTE & 0x70) == 0x10)   // Is ASSEMBLY ROM Enabled?
-                    {
-                        MemoryMap[1] = BIOS_Memory + 0x4000;// Restore Memotech Assembly ROM
-                        memotech_lastMagROMPage = 0xFF;
-                    }
-                    else if (((IOBYTE & 0x70) == 0x70) && memotech_magrom_present)   // ROM7 - MAGROM (if present)
-                    {
-                        MemoryMap[1] = (u8 *)(ROM_Memory+0x2000);   // Copy MAGROM into memory
-                    }
-                    else                                // Nothing else is supported fill ROM above BIOS with 0xFF
-                    {
-                        MemoryMap[1] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
-                        memotech_lastMagROMPage = 0xFF;
-                    }
+                if ((IOBYTE & 0x70) == 0x00)            // Is BASIC ROM Enabled?
+                {
+                    MemoryMap[1] = BIOS_Memory + 0x2000;        // Restore Memotech BASIC
                 }
-
-                // --------------------------------------------
-                // See if the RAM area needs to be updated...
-                // --------------------------------------------
-                if ((lastIOBYTE&0x0F) != (IOBYTE & 0x0F))
+                else if ((IOBYTE & 0x70) == 0x10)   // Is ASSEMBLY ROM Enabled?
                 {
-                    // Now look at the Page value to see how to map the memory from 0x4000 onwards is mapped
-                    if ((IOBYTE & 0x0F) == 0x00)   // Page 0:  48K enabled from 4000-FFFF
+                    MemoryMap[1] = BIOS_Memory + 0x4000;         // Restore Memotech Assembly ROM
+                }
+                else if (((IOBYTE & 0x70) == 0x70) && memotech_magrom_present)   // ROM7 - MAGROM (if present)
+                {
+                    MemoryMap[1] = (u8 *)(ROM_Memory+0x2000);    // Copy MAGROM into memory
+                }
+                else                                // Nothing else is supported fill ROM above BIOS with 0xFF
+                {
+                    MemoryMap[1] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                }
+                
+                // ---------------------------------------------------
+                // Now map the RAM based on the RAM Paging bits...
+                // ---------------------------------------------------
+                if ((IOBYTE & 0x0F) == 0x00)    // Page 0
+                {
+                    if (memotech_mtx_500_only)
                     {
-                        MemoryMap[2] = (u8 *)RAM_Memory+0x4000;     // The third   RAM block is mapped to 0x4000
-                        MemoryMap[3] = (u8 *)RAM_Memory+0x6000;     // The fourth  RAM block is mapped to 0x6000
-                        MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
-                        MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
-                        MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
-                        MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
-                        memotech_RAM_start = 0x4000;                 // Allow access to RAM above base memory
-                        memotech_lastMagROMPage = 0xFF;
-                    }
-                    else if ((IOBYTE & 0x0F) == 0x01)   // Page 1:  32K enabled from 8000-FFFF with the RAM at 0x8000 being the first RAM location block
+                        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                        memotech_RAM_start = 0x8000;                // Allow access to RAM above base memory
+                }
+                    else
                     {
-                        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
-                        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
-                        MemoryMap[4] = (u8 *)RAM_Memory+0x0000;      // The first  RAM block is mapped to 0x8000
-                        MemoryMap[5] = (u8 *)RAM_Memory+0x2000;      // The second RAM block is mapped to 0xA000
-                        MemoryMap[6] = (u8 *)RAM_Memory+0xC000;      // Common memory area
-                        MemoryMap[7] = (u8 *)RAM_Memory+0xE000;      // Common memory area
-                        
-                        memotech_RAM_start = 0x8000;                 // Allow access to RAM above base memory
+                        MemoryMap[2] = (u8 *)RAM_Memory+0x4000; // The third   RAM block is mapped to 0x4000
+                        MemoryMap[3] = (u8 *)RAM_Memory+0x6000; // The fourth  RAM block is mapped to 0x6000
+                        memotech_RAM_start = 0x4000;                // Allow access to RAM above base memory
                     }
-                    else    // Only the common RAM is available
+                    MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
+                    MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
+                    MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
+                    MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
+                }
+                else if ((IOBYTE & 0x0F) == 0x01)   // Page 1
+                {
+                    if (memotech_magrom_present)
                     {
-                        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
-                        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
-                        MemoryMap[4] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
-                        MemoryMap[5] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
-                        MemoryMap[6] = (u8 *)RAM_Memory+0xC000;      // Common memory area
-                        MemoryMap[7] = (u8 *)RAM_Memory+0xE000;      // Common memory area
-                        memotech_RAM_start = 0xC000;                 // Just the common RAM enabled
-                        memotech_lastMagROMPage = 0xFF;
+                        MemoryMap[2] = (u8 *)(ROM_Memory+(0x4000 * memotech_lastMagROMPage));
+                        MemoryMap[3] = (u8 *)(ROM_Memory+(0x4000 * memotech_lastMagROMPage))+0x2000;
                     }
+                    else                
+                    {
+                        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                    }
+                    
+                    if (memotech_mtx_500_only)
+                    {
+                        MemoryMap[4] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                        MemoryMap[5] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                        memotech_RAM_start = 0xC000;                // Allow access to RAM above base memory
+                    }
+                    else
+                    {
+                        MemoryMap[4] = (u8 *)RAM_Memory+0x0000;     // We map the first block here
+                        MemoryMap[5] = (u8 *)RAM_Memory+0x2000;     // We map the second block here
+                        memotech_RAM_start = 0x8000;                // Allow access to RAM above base memory
+                    }
+                    MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
+                    MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
+                }
+                else    // Page 2-15
+                {
+                    MemoryMap[0] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[1] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    if (memotech_magrom_present)
+                    {
+                        MemoryMap[2] = (u8 *)(ROM_Memory+(0x4000 * memotech_lastMagROMPage));
+                        MemoryMap[3] = (u8 *)(ROM_Memory+(0x4000 * memotech_lastMagROMPage))+0x2000;
+                    }
+                    else                
+                    {
+                        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+                    }
+                    MemoryMap[4] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[5] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
+                    MemoryMap[6] = (u8 *)RAM_Memory+0xC000;      // Common memory area
+                    MemoryMap[7] = (u8 *)RAM_Memory+0xE000;      // Common memory area
+                    memotech_RAM_start = 0xC000;                 // Just the common RAM enabled
                 }
             }
             else  // RAM Mode
             {
                 if ((IOBYTE & 0x0F) == 0x00)   // All 64K enabled
                 {
-                    MemoryMap[0] = (u8 *)RAM_Memory+0x0000;     // The first   RAM block is mapped to 0x0000
-                    MemoryMap[1] = (u8 *)RAM_Memory+0x2000;     // The second  RAM block is mapped to 0x2000
-                    MemoryMap[2] = (u8 *)RAM_Memory+0x4000;     // The third   RAM block is mapped to 0x4000
-                    MemoryMap[3] = (u8 *)RAM_Memory+0x6000;     // The fourth  RAM block is mapped to 0x6000
+                    if (memotech_mtx_500_only)
+                    {
+                        MemoryMap[0] = (u8 *)BIOS_Memory+0xC000;    // Just 0xFF out here...
+                        MemoryMap[1] = (u8 *)BIOS_Memory+0xC000;    // Just 0xFF out here...
+                        MemoryMap[2] = (u8 *)BIOS_Memory+0xC000;    // Just 0xFF out here...
+                        MemoryMap[3] = (u8 *)BIOS_Memory+0xC000;    // Just 0xFF out here...
+                        memotech_RAM_start = 0x0000;                // We're emulating a 64K machine
+                    }
+                    else
+                    {
+                        MemoryMap[0] = (u8 *)RAM_Memory+0x0000;     // The first   RAM block is mapped to 0x0000
+                        MemoryMap[1] = (u8 *)RAM_Memory+0x2000;     // The second  RAM block is mapped to 0x2000
+                        MemoryMap[2] = (u8 *)RAM_Memory+0x4000;     // The third   RAM block is mapped to 0x4000
+                        MemoryMap[3] = (u8 *)RAM_Memory+0x6000;     // The fourth  RAM block is mapped to 0x6000
+                        memotech_RAM_start = 0x0000;                // We're emulating a 64K machine
+                    }
                     MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
                     MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
                     MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
                     MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
-                    memotech_RAM_start = 0x0000;         // We're emulating a 64K machine
                 }
                 else    // Only the common RAM is available
                 {
@@ -598,9 +635,10 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                     MemoryMap[5] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
                     MemoryMap[6] = (u8 *)RAM_Memory+0xC000;      // Common memory area
                     MemoryMap[7] = (u8 *)RAM_Memory+0xE000;      // Common memory area
-                    memotech_RAM_start = 0xC000;         // Just the common RAM enabled
+                    memotech_RAM_start = 0xC000;                 // Just the common RAM enabled
                 }
             }
+            
             lastIOBYTE = IOBYTE;
         }
     }
@@ -651,12 +689,9 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
     {
         if (memotech_RAM_start >= 0x8000)
         {
-            if (memotech_lastMagROMPage != Value)
-            {
-                MemoryMap[2] = (u8 *)(ROM_Memory+(0x4000 * Value));
-                MemoryMap[3] = (u8 *)(ROM_Memory+(0x4000 * Value))+0x2000;
-                memotech_lastMagROMPage = Value;
-            }
+            memotech_lastMagROMPage = Value;
+            MemoryMap[2] = (u8 *)(ROM_Memory+(0x4000 * memotech_lastMagROMPage));
+            MemoryMap[3] = (u8 *)(ROM_Memory+(0x4000 * memotech_lastMagROMPage))+0x2000;
         }
     }
 }
@@ -664,14 +699,31 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
 
 void memotech_restore_bios(void)
 {
+    memset(BIOS_Memory, 0xFF, 0x10000);
     memcpy(BIOS_Memory+0x0000, mtx_os,    0x2000);
     memcpy(BIOS_Memory+0x2000, mtx_basic, 0x2000);
     memcpy(BIOS_Memory+0x4000, mtx_assem, 0x2000);
-    memset(BIOS_Memory+0x6000, 0xFF, 0xA000);
-    MemoryMap[0] = BIOS_Memory+0x0000;
-    MemoryMap[1] = BIOS_Memory+0x2000;
-    MemoryMap[2] = BIOS_Memory+0xC000;
-    MemoryMap[3] = BIOS_Memory+0xC000;
+    MemoryMap[0] = BIOS_Memory+0x0000;          // OS-A
+    MemoryMap[1] = BIOS_Memory+0x2000;          // BASIC
+
+    if (memotech_mtx_500_only)
+    {
+        MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+        MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
+        memotech_RAM_start = 0x8000;                // Allow access to RAM above base memory
+    }
+    else
+    {
+        MemoryMap[2] = (u8 *)RAM_Memory+0x4000;     // The third   RAM block is mapped to 0x4000
+        MemoryMap[3] = (u8 *)RAM_Memory+0x6000;     // The fourth  RAM block is mapped to 0x6000
+        memotech_RAM_start = 0x4000;                // Allow access to RAM above base memory
+    }
+        
+    MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
+    MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
+    MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
+    MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
+    memotech_lastMagROMPage = 0x00;
 }
 
 // ---------------------------------------------------------
@@ -689,7 +741,6 @@ void memotech_reset(void)
         memset(ctc_latch, 0x00, 4);         // No latch set
         vdp_int_source = INT_NONE;          // No IRQ set to start (CRC writes this)
 
-        memotech_RAM_start = 0x4000;        // Default is ROM below 4000h and RAM above.
         IOBYTE = 0x00;                      // Used for ROM-RAM bankswitch
         MTX_KBD_DRIVE = 0x00;               // Used to determine which Keybaord scanrow to use
         lastIOBYTE = 99;                    // To save time
@@ -699,14 +750,14 @@ void memotech_reset(void)
         mtx_os[0x0aaf] = 0xfe;              // ..
         mtx_os[0x0ab0] = 0xc9;              // ..
         
-        // Get the Memotech BIOS files ready...
-        memotech_restore_bios();
-        
-        memotech_magrom_present = (((file_crc == 0xe3f495c4) || (file_crc == 0x98240ee9)) ? 1:0);       // The MAGROM 1.05 and 1.05a
+        memotech_magrom_present = (((file_crc == 0xe3f495c4) || (file_crc == 0x98240ee9) || (file_crc == 0xcbc13a32)) ? 1:0);       // The MAGROM 1.05 and 1.05a and Magrom v2
         memotech_mtx_500_only = (((file_crc == 0x9a0461db) ||               // Duckybod
                                   (file_crc == 0xd1cd3e62) ||               // Soldier Sam
                                   (file_crc == 0x93556570) ||               // TNT Tim                                  
                                   (file_crc == 0xa1d594fb)) ? 1:0);         // Dragon's Ring won't run on MTX512
+
+        // Get the Memotech BIOS files ready...
+        memotech_restore_bios();
     }
 }
 
@@ -781,19 +832,35 @@ void memotech_launch_run_file(void)
       {
           for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (rand() & 0xFF);   // This pattern tends to make most things start up properly...
       }
-
-      RAM_Memory[0x3627] = 0xd3;
-      RAM_Memory[0x3628] = 0x05;
-      CPU.IFF &= 0xFE;   // Disable Interrupts
-      u16 mtx_start = (ROM_Memory[1] << 8) | ROM_Memory[0];
-      u16 mtx_len   = (ROM_Memory[3] << 8) | ROM_Memory[2];
-      u16 idx=4;
-      for (int i=mtx_start; i < (mtx_start+mtx_len); i++)
+  
+      if (memotech_mode == 3)   // .COM file
       {
-          RAM_Memory[i] = ROM_Memory[idx++];
+            MemoryMap[0] = (u8 *)RAM_Memory+0x0000;     // The first   RAM block is mapped to 0x0000
+            MemoryMap[1] = (u8 *)RAM_Memory+0x2000;     // The second  RAM block is mapped to 0x2000
+            MemoryMap[2] = (u8 *)RAM_Memory+0x4000;     // The third   RAM block is mapped to 0x4000
+            MemoryMap[3] = (u8 *)RAM_Memory+0x6000;     // The fourth  RAM block is mapped to 0x6000
+            MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
+            MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
+            MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
+            MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
+            memotech_RAM_start = 0x0000;                // We're emulating a 64K machine
+            memcpy(RAM_Memory+0x100, ROM_Memory, 0xFF00);          
+            CPU.PC.W = 0x100;
       }
-      CPU.PC.W = mtx_start;
-
+      else  // Must be .RUN fule
+      {
+          RAM_Memory[0x3627] = 0xd3;
+          RAM_Memory[0x3628] = 0x05;
+          CPU.IFF &= 0xFE;   // Disable Interrupts
+          u16 mtx_start = (ROM_Memory[1] << 8) | ROM_Memory[0];
+          u16 mtx_len   = (ROM_Memory[3] << 8) | ROM_Memory[2];
+          u16 idx=4;
+          for (int i=mtx_start; i < (mtx_start+mtx_len); i++)
+          {
+              RAM_Memory[i] = ROM_Memory[idx++];
+          }
+          CPU.PC.W = mtx_start;
+      }
       RdCtrl9918();
 }
 // End of file

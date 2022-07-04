@@ -443,21 +443,6 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   return(NORAM);
 }
 
-// ----------------------------
-// Save MSX Ram from Slot
-// ----------------------------
-void SaveRAM(u8 slot)
-{
-    return;
-}
-
-// ----------------------------
-// Restore MSX Ram to Slot
-// ----------------------------
-void RestoreRAM(u8 slot)
-{
-    return;
-}
 
 // ----------------------------------------------------------------------
 // MSX IO Port Write - VDP and AY Sound Chip plus Slot Mapper $A8
@@ -509,7 +494,6 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                     MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
                     break;
                 case 0x03:  // Slot 3:  Maps to our 64K of RAM
-                    RestoreRAM(0);
                     bROMInSlot[0] = 0;
                     bRAMInSlot[0] = 1;
                     MemoryMap[0] = RAM_Memory+0x0000;
@@ -536,6 +520,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                         break;
                     }
                 case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+                    bROMInSlot[1] = 0;
+                    bRAMInSlot[1] = 0;
                     MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
                     MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
                     break;
@@ -755,7 +741,7 @@ u8 MSX_GuessROMType(u32 size)
     if (file_crc == 0xc5c14bbd) type = KON8;   // The Hobbit
     if (file_crc == 0xfea70207) type = ASC16;  // Vaxol
     if (file_crc == 0x35899655) type = ASC8;   // Venom Strikes Back    
-    if (file_crc == 0x47273220) type = XBLAM;   // Cross Blaim
+    if (file_crc == 0x47273220) type = XBLAM;  // Cross Blaim
     
     return type;
 }

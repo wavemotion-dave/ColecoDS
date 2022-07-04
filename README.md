@@ -27,7 +27,7 @@ Features :
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
 * Tatung Einstein support (.com run-time files only) - requires einstein.rom BIOS
-* Memotech MTX game support (.mtx or .run) - single loader games only.
+* Memotech MTX game support (.mtx or .run or .com files) - single loader games only.
 * Creativision game support (.cv) - requires bioscv.rom BIOS
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
@@ -143,9 +143,11 @@ Memotech MTX Compatibility :
 -----------------------
 The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound is not perfect due to some CTC chip timing differences from real hardware. Also, only about 80% of the games load and run properly - some games use more complex loaders and are not well supported by ColecoDS. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  Of the two types (.mtx and .run), the .RUN files are generally better supported - seek those out (the excellent MEMU MTX emulator has a good selection).
 
-There is support for the MTX MAGROM project... this is a multi-cart. You can use either 1.05 or 1.05a of the MAGROM 512K binary file... just rename as .MTX and load it by running the game and pressing the START button to launch the menu.
+There is support for the MTX MAGROM project... this are several multi-carts. You can use either 1.05 or 1.05a of the MAGROM binary file or the MAGROM512 Binary... just rename as .MTX and load it by running the game and pressing the START button to launch the menu.
 
 The MTX emulated is a base MTX-512 system with 64K of RAM... This should allow most games to run.
+
+A small set of .COM files are supported - mostly so that games like Angle, SMG2 and Quazar will load and run (these games won't run from .MTX properly). You can find these distributed in the MEMU emulator package.
 
 Once the game is loaded into memory you will be sitting at the BASIC prompt. At this prompt you need to LOAD "" (if .MTX) or RUN the game (if .RUN). I've made this simple - just hit the DS **START** key to enter the proper command automatically. Alternatively, you will find the RUN commands in the Cassette Icon Menu.
 
