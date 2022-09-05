@@ -33,7 +33,9 @@ extern u8 mapperMask;
 #define CTC_SOUND_DIV     280
 #define MTX_CTC_SOUND_DIV 260
 
-extern u8 ROM_Memory[512 * 1024];
+#define MAX_CART_SIZE     1024  // 1MB of ROM Cart... huge!
+
+extern u8 ROM_Memory[MAX_CART_SIZE * 1024];
 extern u8 RAM_Memory[0x20000];
 extern u8 BIOS_Memory[0x10000];
 extern u8 SRAM_Memory[0x4000];
@@ -59,7 +61,6 @@ extern u8 msx_sram_enabled;
 extern u8 sgm_enable;
 extern u8 AY_Enable;
 extern u8 lastBank; 
-extern u8 romBankMask;
 extern u32 file_crc;
 extern u8 AY_EnvelopeOn;
 

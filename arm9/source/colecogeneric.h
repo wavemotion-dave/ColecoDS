@@ -80,7 +80,7 @@ extern void colecoDSModeNormal(void);
 extern void colecoDSInitScreenUp(void);
 extern void colecoDSFindFiles(void);
 extern void colecoDSChangeOptions(void);
-extern void MSX_InitialMemoryLayout(u32 iSSize);
+extern void MSX_InitialMemoryLayout(u32 romSize);
 
 extern void AffChaine(int iX,int iY,int iScr,char *szMessage);
 extern void dsPrintValue(int iX,int iY,int iScr,char *szMessage);

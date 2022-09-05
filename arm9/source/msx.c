@@ -751,9 +751,9 @@ u8 MSX_GuessROMType(u32 size)
 // -------------------------------------------------------------------------
 // Setup the initial MSX memory layout based on the size of the ROM loaded.
 // -------------------------------------------------------------------------
-void MSX_InitialMemoryLayout(u32 iSSize)
+void MSX_InitialMemoryLayout(u32 romSize)
 {
-    LastROMSize = iSSize;
+    LastROMSize = romSize;
     
     // -------------------------------------
     // Make sure the MSX ports are clear
@@ -786,7 +786,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
     // ------------------------------------------------------------
     // Setup the Z80 memory based on the MSX game ROM size loaded
     // ------------------------------------------------------------
-    if (iSSize == (8 * 1024))
+    if (romSize == (8 * 1024))
     {
         if (msx_basic)  // Basic Game loads at 0x8000 ONLY
         {
@@ -811,7 +811,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 7
         }
     }
-    else if (iSSize <= (16 * 1024))
+    else if (romSize <= (16 * 1024))
     {
         if (myConfig.msxMapper == AT4K)  // Load the 16K rom at 0x4000 without Mirrors
         {
@@ -861,7 +861,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             }
         }
     }
-    else if (iSSize <= (32 * 1024))
+    else if (romSize <= (32 * 1024))
     {
         // ------------------------------------------------------------------------------------------------------
         // For 32K roms, we need more information to determine exactly where to load it... however
@@ -929,7 +929,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             }
         }
     }
-    else if (iSSize == (48 * 1024))
+    else if (romSize == (48 * 1024))
     {
         if ((myConfig.msxMapper == KON8) || (myConfig.msxMapper == ZEN8))
         {
@@ -990,7 +990,7 @@ void MSX_InitialMemoryLayout(u32 iSSize)
             Slot1ROMPtr[7] = (u8*)ROM_Memory+0xE000;        // Segment NA
         }
     }
-    else if ((iSSize == (64 * 1024)) && (myConfig.msxMapper == LIN64))   // 64K Linear ROM
+    else if ((romSize == (64 * 1024)) && (myConfig.msxMapper == LIN64))   // 64K Linear ROM
     {
         Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
         Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
@@ -1002,11 +1002,11 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         Slot1ROMPtr[7] = (u8*)ROM_Memory+0xE000;        // Segment 7
         
     }
-    else if ((iSSize >= (64 * 1024)) && (iSSize <= (512 * 1024)))   // We'll take anything between these two...
+    else if ((romSize >= (64 * 1024)) && (romSize <= (MAX_CART_SIZE * 1024)))   // We'll take anything between these two...
     {
         if (myConfig.msxMapper == GUESS)
         {
-            mapperType = MSX_GuessROMType(iSSize);
+            mapperType = MSX_GuessROMType(romSize);
         }
         else
         {
@@ -1062,21 +1062,28 @@ void MSX_InitialMemoryLayout(u32 iSSize)
         // We've copied as much of the ROM into fast VRAM as possible. We only have 256K 
         // of VRAM available - anything beyond this will have to be fetched from slow RAM.
         // --------------------------------------------------------------------------------
-        if (iSSize <= (128 * 1024))
+        if (romSize <= (128 * 1024))
         {
             if (mapperType == ASC16 || mapperType == ZEN16 || mapperType == XBLAM)
-                mapperMask = (iSSize == (64 * 1024)) ? 0x03:0x07;
+                mapperMask = (romSize == (64 * 1024)) ? 0x03:0x07;
             else
-                mapperMask = (iSSize == (64 * 1024)) ? 0x07:0x0F;
+                mapperMask = (romSize == (64 * 1024)) ? 0x07:0x0F;
         }
-        else
+        else if (romSize <= (512 * 1024))
         {
             if (mapperType == ASC16 || mapperType == ZEN16)
-                mapperMask = (iSSize == (512 * 1024)) ? 0x1F:0x0F;
+                mapperMask = (romSize == (512 * 1024)) ? 0x1F:0x0F;
             else
-                mapperMask = (iSSize == (512 * 1024)) ? 0x3F:0x1F;
+                mapperMask = (romSize == (512 * 1024)) ? 0x3F:0x1F;
         }        
-        
+        else // Must be 1024k... 
+        {
+            if (mapperType == ASC16 || mapperType == ZEN16)
+                mapperMask = 0x3F;
+            else 
+                mapperMask = 0x7F;
+        }
+
         if (msx_sram_enabled) mapperMask = 0x3F;        // Override for SRAM which uses upper bits (4 or 5) to select
     }
     else    

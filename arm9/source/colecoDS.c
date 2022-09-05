@@ -63,8 +63,6 @@ u32 debug2=0;
 u32 debug3=0;
 u32 debug4=0;
 
-
-
 // -------------------------------------------------------------------------------------------
 // All emulated systems have ROM, RAM and possibly BIOS or SRAM. So we create generic buffers 
 // for all this here... these are sized big enough to handle the largest memory necessary
@@ -79,10 +77,10 @@ u32 debug4=0;
 // up the memory into the RAM_Memory[] buffer and point into that as a single 64k layout.
 // -------------------------------------------------------------------------------------------
 
-u8 ROM_Memory[512 * 1024]   ALIGN(32) = {0};        // ROM Carts up to 512K (that's pretty huge in the Z80 world!)
-u8 RAM_Memory[0x20000]      ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
-u8 BIOS_Memory[0x10000]     ALIGN(32) = {0};        // To hold our BIOS and related OS memory
-u8 SRAM_Memory[0x4000]      ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
+u8 ROM_Memory[MAX_CART_SIZE * 1024]   ALIGN(32) = {0};        // ROM Carts up to 1MB (that's pretty huge in the Z80 world!)
+u8 RAM_Memory[0x20000]                ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
+u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory
+u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
 
 
 // --------------------------------------------------------------------------
@@ -190,7 +188,7 @@ u16 NDS_keyMap[12] __attribute__((section(".dtcm"))) = {KEY_UP, KEY_DOWN, KEY_LE
 // --------------------------------------------------------------------
 // The key map for the Colecovision... mapped into the NDS controller
 // --------------------------------------------------------------------
-u32 keyCoresp[MAX_KEY_OPTIONS] = {
+u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     JST_UP, 
     JST_DOWN, 
     JST_LEFT, 
@@ -1015,7 +1013,7 @@ void DigitalDataInsert(char *filename)
     fseek(fp, 0, SEEK_END);
     LastROMSize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    memset(ROM_Memory, 0xFF, (512 * 1024));
+    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
     fread(ROM_Memory, tape_len, 1, fp);
     fclose(fp);
      
@@ -1044,7 +1042,7 @@ void CassetteInsert(char *filename)
     fseek(fp, 0, SEEK_END);
     LastROMSize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    memset(ROM_Memory, 0xFF, (512 * 1024));
+    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
     fread(ROM_Memory, tape_len, 1, fp);
     tape_pos = 0;    
     tape_len = LastROMSize;

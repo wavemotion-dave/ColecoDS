@@ -17,12 +17,12 @@ Features :
 -----------------------
 * Colecovision game support (.rom or .col files). Requires coleco.rom BIOS.
 * Super Game Module support including AY sound chip.
-* Megacart Bankswitching support (up to 512K).
+* Megacart Bankswitching support (up to 1024K).
 * Coleco ADAM game support (.ddp or .dsk files). Requires eos.rom and writer.rom
 * Sega SG-1000 game support (.sg roms)
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
-* MSX1 game support (.msx or .rom or.cas) up to 512K 
+* MSX1 game support (.msx or .rom or.cas) up to 1024K 
 * Spectravideo SVI support (.cas) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
@@ -143,7 +143,7 @@ Memotech MTX Compatibility :
 -----------------------
 The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound is not perfect due to some CTC chip timing differences from real hardware. Also, only about 80% of the games load and run properly - some games use more complex loaders and are not well supported by ColecoDS. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  Of the two types (.mtx and .run), the .RUN files are generally better supported - seek those out (the excellent MEMU MTX emulator has a good selection).
 
-There is support for the MTX MAGROM project... this are several multi-carts. You can use either 1.05 or 1.05a of the MAGROM binary file or the MAGROM512 Binary... just rename as .MTX and load it by running the game and pressing the START button to launch the menu.
+There is support for the MTX MAGROM project... this are several multi-carts. You can use either 1.05 or 1.05a of the MAGROM binary file or the V2 MAGROM Binary... just rename as .MTX and load it by running the game and pressing the START button to launch the menu.
 
 The MTX emulated is a base MTX-512 system with 64K of RAM... This should allow most games to run.
 
@@ -270,6 +270,10 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.7: 05-Sept-2022 by wavemotion-dave
+* MegaROMs now supported up to 1024k
+* Minor cleanup across the board.
+
 V7.6: 28-June-2022 by wavemotion-dave
 * Cleanup of Cassette Menu handling.
 * Improved MSX compatibility.
