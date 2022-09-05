@@ -513,7 +513,7 @@ void ITCM_CODE RefreshLine3(u8 uY) {
  * Emulator calls this function to write byte 'value' into a VDP register 'iReg'
  ********************************************************************************/
 u8 VDP_RegisterMasks[] __attribute__((section(".dtcm"))) = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };
-static const byte SprHeights[4] = { 8,16,16,32 };
+byte SprHeights[4] __attribute__((section(".dtcm"))) = { 8,16,16,32 };
 
 byte Write9918(u8 iReg, u8 value) 
 { 

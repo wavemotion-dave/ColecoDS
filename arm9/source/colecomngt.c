@@ -238,7 +238,7 @@ u8 colecoInit(char *szGame)
   // ----------------------------------------------------------------------------------  
   // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory
   // ----------------------------------------------------------------------------------  
-  memset(ROM_Memory, 0xFF, (512 * 1024));
+  memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
   
   if (bForceMSXLoad) msx_mode = 1;
   if (msx_mode)      AY_Enable=true;
@@ -504,15 +504,15 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   FILE* handle = fopen(path, "rb");  
   if (handle != NULL) 
   {
-    memset(ROM_Memory, 0xFF, (512 * 1024));          // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
+    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));          // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
     
     fseek(handle, 0, SEEK_END);                     // Figure out how big the file is
-    int iSSize = ftell(handle);
+    int romSize = ftell(handle);
     sg1000_double_reset = false;
     
-    if (sg1000_mode && (iSSize == (2048 * 1024)))   // Look for .sc Multicart
+    if (sg1000_mode && (romSize == (2048 * 1024)))   // Look for .sc Multicart
     {
-        fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
+        fseek(handle, romSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
         fread((void*) ROM_Memory, 0x8000, 1, handle);  // Read 32K from that last block
         memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         fclose(handle);
@@ -523,9 +523,9 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         return bOK;
     }
     else
-    if (sg1000_mode && (iSSize == (4096 * 1024)))   // Look for .sc Megacart
+    if (sg1000_mode && (romSize == (4096 * 1024)))   // Look for .sc Megacart
     {
-        fseek(handle, iSSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
+        fseek(handle, romSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
         fread((void*) ROM_Memory, 0x8000, 1, handle);  // Read 32K from that last block
         memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         fclose(handle);
@@ -536,20 +536,20 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         return bOK;
     }
     else        
-    if(iSSize <= (512 * 1024))  // Max size cart is 512KB - that's pretty huge...
+    if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB - that's pretty huge...
     {
         fseek(handle, 0, SEEK_SET);
-        fread((void*) ROM_Memory, iSSize, 1, handle); 
+        fread((void*) ROM_Memory, romSize, 1, handle); 
         fclose(handle);
         
         if (file_crc == 0x68c85890) // M5 Up Up Balloon needs a patch to add 0x00 at the front
         {
-            for (u16 i=iSSize; i>0; i--)
+            for (u16 i=romSize; i>0; i--)
             {
                 ROM_Memory[i] = ROM_Memory[i-1];  // Shift everything up 1 byte
             }
             ROM_Memory[0] = 0x00;    // Add 0x00 to the first byte which is the patch
-            iSSize++;               // Make sure the size is now correct
+            romSize++;               // Make sure the size is now correct
         }
         
         romBankMask = 0x00;         // No bank mask until proven otherwise
@@ -562,10 +562,10 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
-            tape_len = iSSize;  // For MSX, the tape size is saved for showing tape load progress
+            tape_len = romSize;  // For MSX, the tape size is saved for showing tape load progress
             tape_pos = 0;
             last_tape_pos = 9999;
-            MSX_InitialMemoryLayout(iSSize);
+            MSX_InitialMemoryLayout(romSize);
         }
         // ---------------------------------------------------------------------------
         // For ADAM mode, we need to setup the memory banks and tape/disk access...
@@ -588,30 +588,30 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 strcpy(lastAdamDataPath, path);
             }
         }
-        else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 512K
+        else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {
-            tape_len = iSSize;  // The tape size is saved for showing tape load progress
+            tape_len = romSize;  // The tape size is saved for showing tape load progress
             tape_pos = 0;
             last_tape_pos = 9999;
         }
         else if (einstein_mode)
         {
             strcpy(lastAdamDataPath, path);
-            tape_len = iSSize;  
-            if (iSSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
+            tape_len = romSize;  
+            if (romSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
             {
-                memcpy(RAM_Memory+0x4000, ROM_Memory, iSSize);   // only for Diagnostics ROM
+                memcpy(RAM_Memory+0x4000, ROM_Memory, romSize);   // only for Diagnostics ROM
             }
         }
         else if (creativision_mode)
         {
             memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
-            if (iSSize == 4096) // 4K
+            if (romSize == 4096) // 4K
             {
-                memcpy(RAM_Memory+0x9000, ROM_Memory, iSSize);
-                memcpy(RAM_Memory+0xB000, ROM_Memory, iSSize);
+                memcpy(RAM_Memory+0x9000, ROM_Memory, romSize);
+                memcpy(RAM_Memory+0xB000, ROM_Memory, romSize);
             }
-            if (iSSize == 1024 * 6) // 6K
+            if (romSize == 1024 * 6) // 6K
             {
                 memcpy(RAM_Memory+0xB000, ROM_Memory+0x0000, 0x1000);   // main 4k at 0xB000
                 memcpy(RAM_Memory+0xA800, ROM_Memory+0x1000, 0x0800);   // main 2k at 0xA800
@@ -621,12 +621,12 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(RAM_Memory+0x8800, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
                 memcpy(RAM_Memory+0x8000, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
             }
-            if (iSSize == 8192) // 8K
+            if (romSize == 8192) // 8K
             {
-                memcpy(RAM_Memory+0x8000, ROM_Memory, iSSize);
-                memcpy(RAM_Memory+0xA000, ROM_Memory, iSSize);
+                memcpy(RAM_Memory+0x8000, ROM_Memory, romSize);
+                memcpy(RAM_Memory+0xA000, ROM_Memory, romSize);
             }
-            if (iSSize == 1024 * 10) // 10K
+            if (romSize == 1024 * 10) // 10K
             {
                 memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
                 memcpy(RAM_Memory+0x7800, ROM_Memory+0x2000, 0x0800);    // second 2Kb at 0x7800
@@ -641,7 +641,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(RAM_Memory+0x4800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
                 memcpy(RAM_Memory+0x4000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
             }
-            if (iSSize == 1024 * 12) // 12K
+            if (romSize == 1024 * 12) // 12K
             {
                 memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
                 memcpy(RAM_Memory+0x7000, ROM_Memory+0x2000, 0x1000);    // second 4Kb at 0x7000
@@ -650,12 +650,12 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(RAM_Memory+0x6000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x6000
                 memcpy(RAM_Memory+0x4000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x4000
             }
-            if (iSSize == 1024 * 16) // 16K
+            if (romSize == 1024 * 16) // 16K
             {
                 memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
                 memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
             }
-            if (iSSize == 1024 * 18) // 18K
+            if (romSize == 1024 * 18) // 18K
             {
                 memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb at 0xA000
                 memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
@@ -674,7 +674,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
-        if (iSSize <= (((sg1000_mode) ? 48:32)*1024)) // Allow SG ROMs to be up to 48K, otherwise 32K limit
+        if (romSize <= (((sg1000_mode) ? 48:32)*1024)) // Allow SG ROMs to be up to 48K, otherwise 32K limit
         {
             memcpy(ptr, ROM_Memory, nmemb);
         }
@@ -688,7 +688,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             // --------------------------------------------------------------
             bMagicMegaCart = ((ROM_Memory[0xC000] == 0x55 && ROM_Memory[0xC001] == 0xAA) ? 1:0);
             lastBank = 199;                                 // Force load of the first bank when asked to bankswitch
-            if ((iSSize == (64 * 1024)) && !bMagicMegaCart)
+            if ((romSize == (64 * 1024)) && !bMagicMegaCart)
             {
                 bActivisionPCB = 1;
                 memcpy(ptr, ROM_Memory, 0x4000);                     // bank 0
@@ -698,14 +698,14 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             else    // We will assume Megacart then...
             {
                 bMagicMegaCart = 1;
-                memcpy(ptr, ROM_Memory+(iSSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
+                memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
                 MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
                 
-                if      (iSSize == (64  * 1024)) romBankMask = 0x03;
-                else if (iSSize == (128 * 1024)) romBankMask = 0x07;
-                else if (iSSize == (256 * 1024)) romBankMask = 0x0F;
-                else if (iSSize == (512 * 1024)) romBankMask = 0x1F;
-                else romBankMask = 0x3F;    // Not sure what to do... good enough - this allows a wide range of banks
+                if      (romSize == (64  * 1024)) romBankMask = 0x03;
+                else if (romSize == (128 * 1024)) romBankMask = 0x07;
+                else if (romSize == (256 * 1024)) romBankMask = 0x0F;
+                else if (romSize == (512 * 1024)) romBankMask = 0x1F;
+                else                             romBankMask = 0x3F;    // Up to 1024KB... huge!
             }
         }
         bOK = 1;

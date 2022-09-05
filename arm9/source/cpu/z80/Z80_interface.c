@@ -23,13 +23,13 @@
 // ----------------------------------------------------------------------------
 struct DrZ80 drz80 __attribute((aligned(4))) __attribute__((section(".dtcm")));
 
-u16 cpuirequest     __attribute__((section(".dtcm"))) = 0;
-u8 lastBank         __attribute__((section(".dtcm"))) = 199;
-s32 cycle_deficit   __attribute__((section(".dtcm"))) = 0;
-u8 lastBlock[4]     __attribute__((section(".dtcm"))) = {99,99,99,99};
-u32 msx_offset      __attribute__((section(".dtcm"))) = 0;
-u8 msx_sram_at_8000 __attribute__((section(".dtcm"))) = 0;
-u8 msx_scc_enable   __attribute__((section(".dtcm"))) = 0;
+u16 cpuirequest       __attribute__((section(".dtcm"))) = 0;
+u8 lastBank           __attribute__((section(".dtcm"))) = 199;
+s32 cycle_deficit     __attribute__((section(".dtcm"))) = 0;
+u8 lastBlock[4]       __attribute__((section(".dtcm"))) = {99,99,99,99};
+u32 msx_offset        __attribute__((section(".dtcm"))) = 0;
+u8 msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
+u8 msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
 u8 einstein_ram_dirty __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
@@ -475,10 +475,11 @@ void cpu_writemem16 (u8 value,u16 address)
         {
             if (mapperMask)
             {
-                // ---------------------------------------------------------
-                // Up to 128K we can fetch from fast VRAM shadow copy
-                // otherwise we are forced to fetch from slow ROM_Memory[]
-                // ---------------------------------------------------------
+                // -------------------------------------------------------------
+                // Compute the block and offset of the new memory and we 
+                // can map it into place... this is fast since we are just
+                // moving pointers around and not trying to copy memory blocks.
+                // -------------------------------------------------------------
                 u32 block = (value & mapperMask);
                 msx_offset = block * msx_block_size;
                 u32 *src = (u32*)((u8*)ROM_Memory + msx_offset);
