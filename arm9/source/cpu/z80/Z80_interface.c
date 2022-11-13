@@ -248,7 +248,7 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
             MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
             lastBlock[3] = block;
         }
-    }                        
+    }
 }
 
 
@@ -624,7 +624,17 @@ void cpu_writemem16 (u8 value,u16 address)
                 }
                 else if (mapperType == SCC8)
                 {
-                    if ((address & 0x0FFF) != 0) return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes which are not yet supported
+                    if ((address & 0x0FFF) != 0)
+                    {
+                        // ----------------------------------------------------
+                        // Are we writing to the SCC chip memory mapped area?
+                        // ----------------------------------------------------
+                        if (msx_scc_enable && ((address & 0xFF00)==0x9800))
+                        {
+                            FakeSCC_WriteData(address, value);
+                        }
+                        return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes which are not yet supported
+                    }
                     HandleKonamiSCC8(src, block, address, value);
                 }
                 else if (mapperType == ASC16)

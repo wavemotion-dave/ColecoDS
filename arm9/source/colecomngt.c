@@ -32,6 +32,8 @@
 u8 adam_128k_mode     = 0;
 u8 sg1000_double_reset = false;
 
+extern u8 msx_scc_enable;
+
 // -------------------------------------
 // Some IO Port and Memory Map vars...
 // -------------------------------------
@@ -121,6 +123,8 @@ u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global fil
 // -----------------------------------------------------------
 SN76496 sncol   __attribute__((section(".dtcm")));
 SN76496 aycol   __attribute__((section(".dtcm")));
+SN76496 sccABC  __attribute__((section(".dtcm")));
+SN76496 sccDE   __attribute__((section(".dtcm")));
 
 // ---------------------------------------------------------
 // Reset the Super Game Module vars... we reset back to 
@@ -1122,6 +1126,12 @@ ITCM_CODE u32 LoopZ80()
           extern u16 envelope_counter;
           extern u16 envelope_period;
           if (++envelope_counter > envelope_period) FakeAY_Loop();
+      }
+      
+      // If the MSX is trying to use the SCC sound chip, call into that loop here...
+      if (msx_scc_enable)
+      {
+          FakeSCC_Loop();
       }
 
       // ------------------------------------------------------------------

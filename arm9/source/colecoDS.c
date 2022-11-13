@@ -77,7 +77,7 @@ u32 debug4=0;
 // up the memory into the RAM_Memory[] buffer and point into that as a single 64k layout.
 // -------------------------------------------------------------------------------------------
 
-u8 ROM_Memory[MAX_CART_SIZE * 1024]   ALIGN(32) = {0};        // ROM Carts up to 1MB (that's pretty huge in the Z80 world!)
+u8 ROM_Memory[MAX_CART_SIZE * 1024]   ALIGN(32) = {0};        // ROM Carts up to 512K (that's pretty huge in the Z80 world!)
 u8 RAM_Memory[0x20000]                ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
 u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
@@ -134,6 +134,8 @@ u8 key_ctrl  __attribute__((section(".dtcm"))) = false;
 // ------------------------------------------------------------------------------------------
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
 extern SN76496 aycol;       // The AY sound chip is for the Super Game Moudle
+extern SN76496 sccABC;      // The SCC sound chip for MSX games that suport it (5 channels so we use these 3 and "steal" two more from sncol which is otherwise unused on MSX
+extern SN76496 sccDE;       // The SCC sound chip for MSX games that suport it (5 channels so we use these 3 and "steal" two more from sncol which is otherwise unused on MSX
        SN76496 snmute;      // We keep this handy as a simple way to mute the sound
 
 // ---------------------------------------------------------------------------
@@ -340,41 +342,80 @@ void SoundUnPause(void)
 
 mm_ds_system sys  __attribute__((section(".dtcm")));
 mm_stream myStream __attribute__((section(".dtcm")));
-s16 mixbuf1[2048];      // When we have SN and AY sound we have to mix 3+3 channels
-s16 mixbuf2[2048];      // into a single output so we render to mix buffers first.
+u16 mixbuf1[2048];      // When we have SN and AY sound we have to mix 3+3 channels
+u16 mixbuf2[2048];      // into a single output so we render to mix buffers first.
+u16 mixbuf3[2048];      // into a single output so we render to mix buffers first.
+u16 mixbuf4[2048];      // into a single output so we render to mix buffers first.
 
 // -------------------------------------------------------------------------------------------
 // maxmod will call this routine when the buffer is half-empty and requests that
 // we fill the sound buffer with more samples. They will request 'len' samples and
 // we will fill exactly that many. If the sound is paused, we fill with 'mute' samples.
 // -------------------------------------------------------------------------------------------
+u16 last_sample = 0;
 mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 {
     if (soundEmuPause)  // If paused, just "mix" in mute sound chip... all channels are OFF
     {
-        sn76496Mixer(len*4, dest, &snmute);
+        u16 *p = (u16*)dest;
+        for (int i=0; i<len*2; i++)
+        {
+           *p++ = last_sample;      // To prevent pops and clicks... just keep outputting the last sample
+        }
     }
     else
     {
         if (machine_mode & (MODE_MSX | MODE_SVI | MODE_EINSTEIN))
         {
-            ay76496Mixer(len*4, dest, &aycol);
+          if (msx_scc_enable)   // If SCC is enabled, we need to mix in 3 sound chips worth of channels... whew!
+          {
+              ay76496Mixer(len*4, mixbuf1, &aycol);
+              ay76496Mixer(len*4, mixbuf3, &sccABC);
+              ay76496Mixer(len*4, mixbuf4, &sccDE);
+              u16 *p = (u16*)dest;
+              for (int i=0; i<len*2; i++)
+              {
+                  // ------------------------------------------------------------------------
+                  // We normalize the samples and mix them carefully to minimize clipping...
+                  // ------------------------------------------------------------------------
+                  s32 combined = mixbuf1[i];
+                  combined += (s16)(mixbuf3[i] - 32768);
+                  combined += (s16)(mixbuf4[i] - 32768);
+                  if (combined > 65535) combined = 65535;
+                  *p++ = (u16)combined;
+              }
+              p--; last_sample = *p;
+          }
+          else  // Pretty simple... just AY
+          {
+              ay76496Mixer(len*4, dest, &aycol);
+              last_sample = ((u16*)dest)[len*2 - 1];
+          }
         }
         else if (AY_Enable)  // If AY is enabled we mix the normal SN chip with the AY chip sound
         {
-          ay76496Mixer(len*4, mixbuf1, &aycol);
-          sn76496Mixer(len*4, mixbuf2, &sncol);
-          s16 *p = (s16*)dest;
-          for (int i=0; i<len*2; i++)
-          {
-            *p++ = (s16) ((((s32)mixbuf1[i] + (s32)mixbuf2[i])) / 2); // In theory we should divide this by 2 so we don't overflow... but that halves the sound in many cases due to one channel being off
-          }
+            ay76496Mixer(len*4, mixbuf1, &aycol);
+            sn76496Mixer(len*4, mixbuf2, &sncol);
+            u16 *p = (u16*)dest;
+            for (int i=0; i<len*2; i++)
+            {
+                // ------------------------------------------------------------------------
+                // We normalize the samples and mix them carefully to minimize clipping...
+                // ------------------------------------------------------------------------
+                s32 combined = mixbuf1[i];
+                combined += (s16)(mixbuf2[i] - 32768);
+                if (combined > 65535) combined = 65535;
+                *p++ = (u16)combined;
+            }
+            p--; last_sample = *p;
         }
         else  // This is the 'normal' case of just Colecovision SN sound chip output
         {
             sn76496Mixer(len*4, dest, &sncol);
+            last_sample = ((u16*)dest)[len*2 - 1];
         }
     }
+    
     return  len;
 }
 
@@ -385,13 +426,15 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 // -------------------------------------------------------------------------------------------
 void setupStream(void) 
 {
+    
   //----------------------------------------------------------------
-  //  initialize maxmod with our small 2-effect soundbank
+  //  initialize maxmod with our small 3-effect soundbank
   //----------------------------------------------------------------
   mmInitDefaultMem((mm_addr)soundbank_bin);
 
   mmLoadEffect(SFX_CLICKNOQUIT);
   mmLoadEffect(SFX_KEYCLICK);
+  mmLoadEffect(SFX_MUS_INTRO);
 
   //----------------------------------------------------------------
   //  open stream
@@ -490,6 +533,49 @@ void dsInstallSoundEmuFIFO(void)
     
   sn76496Mixer(8, mixbuf2, &aycol);  // Do an initial mix conversion to clear the output
   
+    
+  //  -----------------------------------------------------------------------
+  //  The "Fake SCC" sound chip channels ABC for games using this sound chip
+  //  -----------------------------------------------------------------------
+  ay76496Reset(2, &sccABC);         // Reset the "AY" sound chip
+    
+  ay76496W(0x80 | 0x00,&sccABC);    // Write new Frequency for Channel A
+  ay76496W(0x00 | 0x00,&sccABC);    // Write new Frequency for Channel A
+  ay76496W(0x90 | 0x0F,&sccABC);    // Write new Volume for Channel A
+    
+  ay76496W(0xA0 | 0x00,&sccABC);    // Write new Frequency for Channel B
+  ay76496W(0x00 | 0x00,&sccABC);    // Write new Frequency for Channel B
+  ay76496W(0xB0 | 0x0F,&sccABC);    // Write new Volume for Channel B
+    
+  ay76496W(0xC0 | 0x00,&sccABC);    // Write new Frequency for Channel C
+  ay76496W(0x00 | 0x00,&sccABC);    // Write new Frequency for Channel C
+  ay76496W(0xD0 | 0x0F,&sccABC);    // Write new Volume for Channel C
+
+  ay76496W(0xFF,  &sccABC);         // Disable Noise Channel  (not used in SCC)
+    
+  sn76496Mixer(8, mixbuf3, &sccABC);  // Do an initial mix conversion to clear the output
+
+  //  -----------------------------------------------------------------------
+  //  The "Fake SCC" sound chip channels ABC for games using this sound chip
+  //  -----------------------------------------------------------------------
+  ay76496Reset(2, &sccDE);         // Reset the "AY" sound chip
+    
+  ay76496W(0x80 | 0x00,&sccDE);    // Write new Frequency for Channel D
+  ay76496W(0x00 | 0x00,&sccDE);    // Write new Frequency for Channel D
+  ay76496W(0x90 | 0x0F,&sccDE);    // Write new Volume for Channel D
+    
+  ay76496W(0xA0 | 0x00,&sccDE);    // Write new Frequency for Channel E
+  ay76496W(0x00 | 0x00,&sccDE);    // Write new Frequency for Channel E
+  ay76496W(0xB0 | 0x0F,&sccDE);    // Write new Volume for Channel E
+    
+  ay76496W(0xC0 | 0x00,&sccDE);    // Write new Frequency for Channel F (not used)
+  ay76496W(0x00 | 0x00,&sccDE);    // Write new Frequency for Channel  F (not used)
+  ay76496W(0xD0 | 0x0F,&sccDE);    // Write new Volume for Channel  F (not used)
+
+  ay76496W(0xFF,  &sccDE);         // Disable Noise Channel (not used in SCC)
+    
+  sn76496Mixer(8, mixbuf4, &sccDE);  // Do an initial mix conversion to clear the output
+
   setupStream();    // Setup maxmod stream...
 
   bStartSoundEngine = true; // Volume will 'unpause' after 1 frame in the main loop.
@@ -508,6 +594,7 @@ static u8 last_pv2000_mode = 0;
 static u8 last_sordm5_mode = 0;
 static u8 last_memotech_mode = 0;
 static u8 last_msx_mode = 0;
+static u8 last_msx_scc_enable = 0;
 static u8 last_svi_mode = 0;
 static u8 last_adam_mode = 0;
 static u8 last_scc_mode = 0;
@@ -528,6 +615,7 @@ void ResetStatusFlags(void)
   last_sordm5_mode = 0;
   last_memotech_mode = 0;
   last_msx_mode = 0;
+  last_msx_scc_enable = 0;
   last_svi_mode = 0;
   last_scc_mode = 0;
   last_adam_mode = 0;
@@ -849,6 +937,11 @@ void DisplayStatusLine(bool bForce)
             siprintf(tmp, "MSX %dK ", (int)(LastROMSize/1024));
             AffChaine(23,0,6, tmp);
             last_pal_mode = 99;
+        }
+        if (last_msx_scc_enable != msx_scc_enable)
+        {
+            AffChaine(19,0,6, "SCC");
+            last_msx_scc_enable = msx_scc_enable;
         }
         if ((last_tape_pos != tape_pos) && (msx_mode == 2))
         {
@@ -1313,7 +1406,7 @@ void colecoDS_main(void)
 
   // Returns when  user has asked for a game to run...
   showMainMenu();
-
+    
   // Get the Coleco Machine Emualtor ready
   colecoInit(gpFic[ucGameAct].szName);
 
@@ -2551,7 +2644,6 @@ int main(int argc, char **argv)
 {
   //  Init sound
   consoleDemoInit();
-  soundEnable();
     
   if  (!fatInitDefault()) {
      iprintf("Unable to initialize libfat!\n");
@@ -2561,15 +2653,15 @@ int main(int argc, char **argv)
   highscore_init();
 
   lcdMainOnTop();
-
-  //  Show the fade-away intro logo...
-  intro_logo();
-  
+    
   //  Init timer for frame management
   TIMER2_DATA=0;
   TIMER2_CR=TIMER_ENABLE|TIMER_DIV_1024;  
   dsInstallSoundEmuFIFO();
-    
+
+  //  Show the fade-away intro logo...
+  intro_logo();
+  
   SetYtrigger(190); //trigger 2 lines before vsync    
     
   irqSet(IRQ_VBLANK,  irqVBlank);

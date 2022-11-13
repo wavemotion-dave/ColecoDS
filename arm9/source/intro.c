@@ -10,10 +10,11 @@
 // =====================================================================================
 #include <nds.h>
 #include <stdio.h>
+#include <maxmod9.h>
 
 #include "colecogeneric.h"
 
-#include "mus_intro_wav.h"
+#include "soundbank.h"
 #include "pdev_tbg0.h"
 #include "pdev_bg0.h"
 
@@ -44,6 +45,8 @@ void intro_logo(void) {
 
   REG_BLDCNT = BLEND_FADE_BLACK | BLEND_SRC_BG0 | BLEND_DST_BG0; REG_BLDY = 16;
   REG_BLDCNT_SUB = BLEND_FADE_BLACK | BLEND_SRC_BG0 | BLEND_DST_BG0; REG_BLDY_SUB = 16;
+    
+  mmEffect(SFX_MUS_INTRO);
 
   // Show portabledev
   decompress(pdev_tbg0Tiles, bgGetGfxPtr(bg1), LZ77Vram);
@@ -56,10 +59,8 @@ void intro_logo(void) {
 
   FadeToColor(0,BLEND_FADE_BLACK | BLEND_SRC_BG0 | BLEND_DST_BG0,3,0,3);
 
-  soundPlaySample((const void *) mus_intro_wav, SoundFormat_ADPCM, mus_intro_wav_size, 22050, 127, 64, false, 0);
-
   bOK=false;
-  while (!bOK) { if ( !(keysCurrent() & 0x1FFF) ) bOK=true; } // 0x1FFF = key or pen
+  while (!bOK) { if ( !(keysCurrent() & 0x1FFF) ) bOK=true; } // 0x1FFF = key or touch screen
   vusCptVBL=0;bOK=false;
   while (!bOK && (vusCptVBL<3*60)) { if (keysCurrent() & 0x1FFF ) bOK=true; }
   bOK=false;

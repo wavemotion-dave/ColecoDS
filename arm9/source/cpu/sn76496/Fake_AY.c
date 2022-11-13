@@ -48,10 +48,15 @@ extern u8 sgm_enable;
 extern u8 ay_reg_idx;
 extern u16 sgm_low_addr;
 extern SN76496 aycol;
+extern SN76496 sccABC;
+extern SN76496 sccDE;
 
 u8 Volumes[16]       __attribute__((section(".dtcm"))) = { 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 };
 u16 envelope_period  __attribute__((section(".dtcm"))) = 0;
 u16 envelope_counter __attribute__((section(".dtcm"))) = 0;
+u16 scc_counter      __attribute__((section(".dtcm"))) = 0;
+
+u8 scc_registers[256] = {0};
 
 unsigned char Envelopes[16][32] __attribute__((section(".dtcm"))) =
 {
@@ -402,5 +407,220 @@ void FakeAY_WriteData(u8 Value)
               break;
       }
 }
+
+#define WAVE_A 0
+#define WAVE_B 1
+#define WAVE_C 2
+#define WAVE_D 3    // D and E share same waveform on SCC chip
+#define WAVE_E 3    // D and E share same waveform on SCC chip
+
+u8 scc_waveform(u8 wave, u8 volume)
+{
+    return volume;  // For now we are ignoring the wavetable completely... suprisingly enough, the music sounds reasonably good anyway.
+}
+
+void UpdateSccToneA(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel A tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (scc_registers[0x8F] & 0x01)
+    {
+        freq = (scc_registers[0x81] << 8) | scc_registers[0x80];
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
+        ay76496W(0x80 | (freq & 0xF), &sccABC);
+        ay76496W((freq >> 4) & 0x7F, &sccABC);
+        if (freq > 0)
+            ay76496W(0x90 | Volumes[(scc_waveform(WAVE_A, scc_registers[0x8A]) & 0x0F)], &sccABC);
+        else 
+            ay76496W(0x9F, &sccABC); // Turn off tone sound on Channel A
+    }
+    else
+    {
+        ay76496W(0x9F, &sccABC); // Turn off tone sound on Channel A
+    }    
+}
+
+void UpdateSccToneB(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel B tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (scc_registers[0x8F] & 0x02)
+    {
+        freq = (scc_registers[0x83] << 8) | scc_registers[0x82];
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
+        ay76496W(0xA0 | (freq & 0xF), &sccABC);
+        ay76496W((freq >> 4) & 0x7F, &sccABC);
+        if (freq > 0)
+            ay76496W(0xB0 | Volumes[(scc_waveform(WAVE_B, scc_registers[0x8B]) & 0x0F)], &sccABC);
+        else 
+            ay76496W(0xBF, &sccABC); // Turn off tone sound on Channel B
+    }
+    else
+    {
+        ay76496W(0xBF, &sccABC); // Turn off tone sound on Channel B
+    }    
+}
+
+void UpdateSccToneC(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel C tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (scc_registers[0x8F] & 0x04)
+    {
+        freq = (scc_registers[0x85] << 8) | scc_registers[0x84];
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
+        ay76496W(0xC0 | (freq & 0xF), &sccABC);
+        ay76496W((freq >> 4) & 0x7F, &sccABC);
+        if (freq > 0)
+            ay76496W(0xD0 | Volumes[(scc_waveform(WAVE_C, scc_registers[0x8C]) & 0x0F)], &sccABC);
+        else 
+            ay76496W(0xDF, &sccABC); // Turn off tone sound on Channel C
+    }
+    else
+    {
+        ay76496W(0xDF, &sccABC); // Turn off tone sound on Channel C
+    }    
+}
+
+void UpdateSccToneD(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel A tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (scc_registers[0x8F] & 0x08)
+    {
+        freq = (scc_registers[0x87] << 8) | scc_registers[0x86];
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
+        ay76496W(0x80 | (freq & 0xF), &sccDE);
+        ay76496W((freq >> 4) & 0x7F, &sccDE);
+        if (freq > 0)
+            ay76496W(0x90 | Volumes[(scc_waveform(WAVE_D, scc_registers[0x8D]) & 0x0F)], &sccDE);
+        else 
+            ay76496W(0x9F, &sccDE); // Turn off tone sound on Channel D
+    }
+    else
+    {
+        ay76496W(0x9F, &sccDE); // Turn off tone sound on Channel D
+    }    
+}
+
+void UpdateSccToneE(void)
+{
+    u16 freq=0;
+    
+    // ----------------------------------------------------------------------
+    // If Channel E tone is enabled - set frequency and update SN sound core
+    // ----------------------------------------------------------------------
+    if (scc_registers[0x8F] & 0x10)
+    {
+        freq = (scc_registers[0x89] << 8) | scc_registers[0x88];
+        freq = ((freq & 0x0800) ? 0x7FF : freq&0x7FF);
+        ay76496W(0xA0 | (freq & 0xF), &sccDE);
+        ay76496W((freq >> 4) & 0x7F, &sccDE);
+        if (freq > 0)
+            ay76496W(0xB0 | Volumes[(scc_waveform(WAVE_E, scc_registers[0x8E]) & 0x0F)], &sccDE);
+        else 
+            ay76496W(0xBF, &sccDE); // Turn off tone sound on Channel E
+    }
+    else
+    {
+        ay76496W(0xBF, &sccDE); // Turn off tone sound on Channel E
+    }    
+}
+
+// ================================================
+// Address         Function
+// 9800h - 981Fh   waveform channel 1
+// 9820h - 983Fh   waveform channel 2
+// 9840h - 985Fh   waveform channel 3
+// 9860h - 987Fh   waveform channel 4 and 5
+// 9880h - 9881h   frequency channel 1
+// 9882h - 9883h   frequency channel 2
+// 9884h - 9885h   frequency channel 3
+// 9886h - 9887h   frequency channel 4
+// 9888h - 9889h   frequency channel 5
+// 988Ah           volume channel 1
+// 988Bh           volume channel 2
+// 988Ch           volume channel 3
+// 988Dh           volume channel 4
+// 988Eh           volume channel 5
+// 988Fh           on/off switch channel 1 to 5
+// ================================================
+
+// -----------------------------------------------------------------------
+// Check if any of the Tone Channels ABCDE needs to be updated/output
+// -----------------------------------------------------------------------
+void UpdateSccTonesAY(void)
+{
+    UpdateSccToneA();
+    UpdateSccToneB();
+    UpdateSccToneC();
+    UpdateSccToneD();
+    UpdateSccToneE();
+}
+
+void FakeSCC_Loop(void)
+{
+    // ---------------------------------------------------------------------
+    // Amazingly enough, we are completely ignoring the waveform table... 
+    // and, surprisingly enough, the music is still fairly reasonable
+    // for the six (6) Konami SCC games that use it!
+    // ---------------------------------------------------------------------
+}
+
+void FakeSCC_WriteData(u16 address, u8 value)
+{
+    u8 reg = address & 0xFF;
+    scc_registers[reg] = value;
+    if (reg & 0x80) // These registers come after the waveform table...
+    {
+        // ------------------------------------------------------------------
+        // Check to see if the register affects one of the 5 SCC channels...
+        // ------------------------------------------------------------------
+        switch (reg)
+        {
+            case 0x80:
+            case 0x81:
+            case 0x8A:
+                UpdateSccToneA();
+                break;
+            case 0x82:
+            case 0x83:
+            case 0x8B:
+                UpdateSccToneB();
+                break;
+            case 0x84:
+            case 0x85:
+            case 0x8C:
+                UpdateSccToneC();
+                break;
+            case 0x86:
+            case 0x87:
+            case 0x8D:
+                UpdateSccToneD();
+                break;
+            case 0x88:
+            case 0x89:
+            case 0x8E:
+                UpdateSccToneE();
+                break;
+            case 0x8F:
+                UpdateSccTonesAY();
+                break;
+        }
+    }
+}
+
 
 // End of file
