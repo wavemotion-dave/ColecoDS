@@ -33,7 +33,7 @@ extern u8 mapperMask;
 #define CTC_SOUND_DIV     280
 #define MTX_CTC_SOUND_DIV 260
 
-#define MAX_CART_SIZE     1024  // 1MB of ROM Cart... huge!
+#define MAX_CART_SIZE     512  // 512K of ROM Cart... that's pretty big!
 
 extern u8 ROM_Memory[MAX_CART_SIZE * 1024];
 extern u8 RAM_Memory[0x20000];
@@ -50,6 +50,10 @@ extern u8 adam_128k_mode;
 
 extern SN76496 sncol;
 extern SN76496 aycol;
+extern SN76496 sccABC;
+extern SN76496 sccDE;
+
+extern u8 msx_scc_enable;
 
 extern u8 JoyMode;                      // Joystick / Paddle management
 extern u32 JoyState;                    // Joystick / Paddle management

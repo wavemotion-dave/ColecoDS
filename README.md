@@ -88,7 +88,7 @@ Known Issues :
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
-* MSX Konami SCC sound chip is not emulated (Gradius 2/3, Salamander, etc. won't have proper music but otherwise play fine).
+* MSX Konami SCC sound chip is partially emulated but is not perfectly accurate (Gradius 2/3, Parodius, Salamander, etc. will have music but the pitch won't be perfect - good enough!).
 
 BIOS Files :
 -----------------------
@@ -270,6 +270,10 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.8: 13-Nov-2022 by wavemotion-dave
+* Partial MSX SCC added. Music on Gradius 2/3, Parodius, King's Valley 2, F1 Spirit and Salamander!
+* Better audio channel combinging so that games with multiple channels of sound don't sound 'half as loud'.
+
 V7.7: 05-Sept-2022 by wavemotion-dave
 * MegaROMs now supported up to 1024k
 * Minor cleanup across the board.
