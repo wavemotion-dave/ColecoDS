@@ -272,7 +272,7 @@ Versions :
 -----------------------
 V7.8: 13-Nov-2022 by wavemotion-dave
 * Partial MSX SCC added. Music on Gradius 2/3, Parodius, King's Valley 2, F1 Spirit and Salamander!
-* Better audio channel combinging so that games with multiple channels of sound don't sound 'half as loud'.
+* Better audio channel combining so that games with multiple channels of sound don't sound 'half as loud'.
 
 V7.7: 05-Sept-2022 by wavemotion-dave
 * MegaROMs now supported up to 1024k
