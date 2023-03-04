@@ -84,7 +84,6 @@ Without Marat - this emulator simply wouldn't exist.
 
 Known Issues :
 -----------------------
-* Borders are not correctly rendered - only a few games utilize them and are still fully playable without this.
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
