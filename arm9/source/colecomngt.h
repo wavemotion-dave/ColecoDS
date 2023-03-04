@@ -33,7 +33,7 @@ extern u8 mapperMask;
 #define CTC_SOUND_DIV     280
 #define MTX_CTC_SOUND_DIV 260
 
-#define MAX_CART_SIZE     512  // 512K of ROM Cart... that's pretty big!
+#define MAX_CART_SIZE     1024  // 1MB of ROM Cart... that's pretty big!
 
 extern u8 ROM_Memory[MAX_CART_SIZE * 1024];
 extern u8 RAM_Memory[0x20000];

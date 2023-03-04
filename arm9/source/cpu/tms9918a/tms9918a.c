@@ -98,6 +98,37 @@ u16 ColTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 ChrGenM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 
+/** RefreshBorder() ******************************************/
+/** This function is called from RefreshLine#() to refresh  **/
+/** the screen border.                                      **/
+/*************************************************************/
+ITCM_CODE void RefreshBorder(byte Y)
+{
+    if (ScrMode == 0)
+    {
+      byte *P;
+      int J,N;
+
+      /* Screen buffer */
+      P=XBuf;
+      J=256*Y;
+
+      /* For the first line, refresh top border */
+      if(Y) P+=J;
+      else for(;J;J--) P++;
+
+      /* Calculate number of pixels */
+      N=16;
+
+      /* Refresh left border */
+      for(J=N;J;J--) P++;
+
+      /* Refresh right border */
+      P+=256-(N<<1);
+      for(J=N;J;J--) *P++=BGColor;
+    }
+}
+
 
 /** CheckSprites() *******************************************/
 /** This function is periodically called to check for the   **/
@@ -180,9 +211,10 @@ byte ITCM_CODE CheckSprites(void) {
 /*************************************************************/
 int ITCM_CODE ScanSprites(register byte Y,unsigned int *Mask)
 {
-  register byte *AT;
-  register u8 L,K,C1,C2;
-  register unsigned int M;
+  byte *AT;
+  u8 L,C1,C2;
+  s16 K;
+  unsigned int M;
 
   /* No 5th sprite yet */
   VDPStatus &= ~(TMS9918_STAT_5THNUM|TMS9918_STAT_5THSPR);
@@ -379,6 +411,8 @@ void RefreshLine0(u8 Y)
       P+=6;T++;
     }
   }
+    
+  RefreshBorder(Y);
 }
 
 /** RefreshLine1() *******************************************/

@@ -16,7 +16,7 @@
 #include "cpu/z80/Z80_interface.h"
 #include "C24XX.h"
 
-#define VERSIONCLDS "7.8"
+#define VERSIONCLDS "7.9"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG
