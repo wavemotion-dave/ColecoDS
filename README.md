@@ -270,7 +270,7 @@ would personally try them:
 
 Versions :
 -----------------------
-V7.9: 13-Nov-2023 by wavemotion-dave
+V7.9: 3-Mar-2023 by wavemotion-dave
 * Fixed TMS9918a driver so we show sprites that cut-off near the edge of the top screen.
 * Fixed TMS9918a driver so we refresh the borders on text-based games.
 
