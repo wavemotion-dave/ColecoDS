@@ -270,6 +270,10 @@ would personally try them:
 
 Versions :
 -----------------------
+V7.9: 13-Nov-2022 by wavemotion-dave
+* Fixed TMS9918a driver so we show sprites that cut-off near the edge of the top screen.
+* Fixed TMS9918a driver so we refresh the borders on text-based games.
+
 V7.8: 13-Nov-2022 by wavemotion-dave
 * Partial MSX SCC added. Music on Gradius 2/3, Parodius, King's Valley 2, F1 Spirit and Salamander!
 * Better audio channel combining so that games with multiple channels of sound don't sound 'half as loud'.
