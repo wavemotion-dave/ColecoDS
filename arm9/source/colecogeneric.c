@@ -1659,13 +1659,13 @@ u8 display_options_list(bool bFullDisplay)
         }
 
         // Blank out rest of the screen... option menus are of different lengths...
-        for (int i=len; i<15; i++) 
+        for (int i=len; i<16; i++) 
         {
             dsPrintValue(1,5+i, 0, (char *)"                               ");
         }
     }
 
-    dsPrintValue(2,22, 0, (char *)" B=EXIT, X=MORE, START=SAVE ");
+    dsPrintValue(1,22, 0, (char *)"  B=EXIT, X=MORE, START=SAVE  ");
     return len;    
 }
 
