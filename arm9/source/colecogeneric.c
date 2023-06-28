@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2002 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
@@ -20,7 +20,6 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 
-#include "sprMario.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
 
@@ -604,37 +603,11 @@ void colecoDSInitScreenUp(void) {
 }
 
 // ----------------------------------------------------------------------------
-// This stuff handles the 'random' Mario sprite walk around the top screen...
+// This stuff handles the 'random' screen snapshot at the top screen...
 // ----------------------------------------------------------------------------
-u8 uFlp=0;
-signed char iDirAlex=2;
-signed short iXAlex=0;
-u8 uSprAlex=0,uYAlex=140;
-
-void affMario(void) {
+void showRandomPreviewSnaps(void) {
   u16 *pusEcran=(u16*) bgGetMapPtr(bg1);
   u32 uX,uY;
-
-  uFlp++;
-  if ((uFlp & 0x04)) {
-    uFlp= 0;
-    iXAlex += iDirAlex;
-    uSprAlex = (uSprAlex == 4 ? 0 : 4);
-    if (iXAlex<0) {
-      iDirAlex = 2;
-      uYAlex = rand() & 176;
-    }
-    if (iXAlex>256) {
-      iDirAlex = -2;
-      uYAlex = rand() & 176;
-    }
-    OAMCopy[0].attribute[0] = uYAlex | ATTR0_SQUARE | ATTR0_COLOR_16;  
-    OAMCopy[0].attribute[1] = iXAlex | ATTR1_SIZE_16 | (iDirAlex > 0 ?  ATTR1_FLIP_X : 0);
-    OAMCopy[0].attribute[2] = uSprAlex | ATTR2_PRIORITY(0) | ATTR2_PALETTE(0);
-    for(uY= 0; uY< 128 * sizeof(SpriteEntry) / 4 ; uY++) {
-      ((uint32*)OAM)[uY] = ((uint32*)OAMCopy)[uY];
-    }
-  }
 
   if (vusCptVBL>=5*60) {
     u8 uEcran = rand() % 6;
@@ -1069,7 +1042,7 @@ u8 colecoDSLoadFile(void)
         AffChaine(1,8+romSelected,2,szName);
       }
     }
-    affMario();
+    showRandomPreviewSnaps();
     swiWaitForVBlank();
   }
     
@@ -1746,7 +1719,7 @@ void colecoDSGameOptions(void)
                 break;
             }
         }
-        affMario();
+        showRandomPreviewSnaps();
         swiWaitForVBlank();
     }
 
@@ -1921,7 +1894,7 @@ void colecoDSChangeKeymap(void)
             ;
         WAITVBL
     }
-    affMario();
+    showRandomPreviewSnaps();
     swiWaitForVBlank();
   }
   while (keysCurrent() & KEY_B);
@@ -2100,7 +2073,7 @@ void ReadFileCRCAndConfig(void)
 // --------------------------------------------------------------------
 void colecoDSChangeOptions(void) 
 {
-  u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 8, bOK=0, bBcl;
+  u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 8, bOK=0;
   
   // Affiche l'ecran en haut
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -2115,20 +2088,6 @@ void colecoDSChangeOptions(void)
   unsigned short dmaVal =  *(bgGetMapPtr(bg0) + 51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
   AffChaine(28,23,1,"V");AffChaine(29,23,1,VERSIONCLDS);
-
-    // Init sprites
-  for (bBcl=0;bBcl<128;bBcl++) {
-    OAMCopy[bBcl].attribute[0] = ATTR0_DISABLED;  
-  }
-    // Init sprites
-  dmaCopy((void*) sprMarioTiles,(void*) SPRITE_GFX,sizeof(sprMarioTiles));
-  dmaCopy((void*) sprMarioPal,(void*) SPRITE_PALETTE,16*2);
-  OAMCopy[0].attribute[0] = 192 | ATTR0_SQUARE | ATTR0_COLOR_16;  
-  OAMCopy[0].attribute[1] = 0 | ATTR1_SIZE_16;
-  OAMCopy[0].attribute[2] = 0 | ATTR2_PRIORITY(0) | ATTR2_PALETTE(0);
-	for(bBcl= 0; bBcl< 128 * sizeof(SpriteEntry) / 4 ; bBcl++) {
-		((uint32*)OAM)[bBcl] = ((uint32*)OAMCopy)[bBcl];
-	}
 
   // Affiche le clavier en bas
   bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
@@ -2249,7 +2208,7 @@ void colecoDSChangeOptions(void)
         NoGameSelected(ucY);
       }
     }
-    affMario();
+    showRandomPreviewSnaps();
     swiWaitForVBlank();
   }
   while (keysCurrent()  & (KEY_START | KEY_A));
