@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2002 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
@@ -16,7 +16,7 @@
 #include "cpu/z80/Z80_interface.h"
 #include "C24XX.h"
 
-#define VERSIONCLDS "7.9"
+#define VERSIONCLDS "8.0"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG
