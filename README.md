@@ -193,7 +193,7 @@ A future version of the emulator will support .DSK files directly... but it's co
 
 Creativision Compatibility :
 -----------------------
-The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games run properly under ColecoDS.
+The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games run properly under ColecoDS although the sound is not perfect in several games.
 
 
 Controllers :

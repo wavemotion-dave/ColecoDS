@@ -57,7 +57,7 @@ struct __attribute__((__packed__)) Config_t
     u8  ayEnvelope;
     u8  colecoRAM;
     u8  msxBeeper;
-    u8  reservedA3;
+    u8  cvisionLoad;
     u8  reservedB0;
     u8  reservedB1;
     u8  reservedB2;

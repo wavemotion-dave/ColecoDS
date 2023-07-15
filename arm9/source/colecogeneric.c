@@ -1182,7 +1182,7 @@ void SetDefaultGameConfig(void)
     myConfig.ayEnvelope  = 0;
     myConfig.colecoRAM   = COLECO_RAM_NORMAL_MIRROR;
     myConfig.msxBeeper   = 0;    
-    myConfig.reservedA3  = 0;    
+    myConfig.cvisionLoad = 0; 
     myConfig.reservedB0  = 0xA5;    // So it's easy to spot on an "upgrade"
     myConfig.reservedB1  = 0xA5;    // So it's easy to spot on an "upgrade"
     myConfig.reservedB2  = 0xA5;    // So it's easy to spot on an "upgrade"
@@ -1607,7 +1607,8 @@ const struct options_t Option_Table[2][20] =
         {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
-        {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},    
+        {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
+        {"CVISION LOAD",   {"LEGACY", "LINEAR", "32K BANKSWAP"},                                                                                                                                &myConfig.cvisionLoad,3},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     }
 };              
