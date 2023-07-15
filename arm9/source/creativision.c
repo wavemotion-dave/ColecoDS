@@ -93,6 +93,9 @@ void creativision_input(void)
     
     KEYTBL[14] = 0xFF;
     KEYTBL[13] = 0xFF;
+    KEYTBL[11] = 0xFF;
+    KEYTBL[7]  = 0xFF;
+    
     if (JoyState & JST_FIREL)   KEYTBL[14] &= 0x7f;  // P1 Right Button
     if (JoyState & JST_FIRER)   KEYTBL[13] &= 0x7f;  // P1 Left Button
 
@@ -101,12 +104,20 @@ void creativision_input(void)
     if (JoyState & JST_LEFT)    KEYTBL[14] &= 0xdf;  // P1 left
     if (JoyState & JST_RIGHT)   KEYTBL[14] &= 0xfb;  // P1 right
 
-    if (JoyState == JST_1)      Int6502(&m6502, INT_NMI);   // Game Reset (note, this is needed to start games)
+    if (JoyState == JST_1)      KEYTBL[14] &= 0xf3;  // 1      
     if (JoyState == JST_2)      KEYTBL[13] &= 0xcf;  // 2
     if (JoyState == JST_3)      KEYTBL[13] &= 0x9f;  // 3
+    if (JoyState == JST_4)      KEYTBL[13] &= 0xd7;  // 4
+    if (JoyState == JST_5)      KEYTBL[13] &= 0xb7;  // 5
+    if (JoyState == JST_6)      KEYTBL[13] &= 0xaf;  // 6
+
+    if (JoyState == JST_7)      KEYTBL[11] &= 0xf3;  // SPACE
+    if (JoyState == JST_8)      KEYTBL[7]  &= 0xfa;  // Y
+    if (JoyState == JST_9)      KEYTBL[7]  &= 0xaf;  // N
+    if (JoyState == JST_0)      KEYTBL[7]  &= 0xf6;  // RETURN
     
-    if (JoyState == JST_POUND)  KEYTBL[7]  &= 0xf6; else KEYTBL[7]  |= ~0xF6; // RETURN
-    if (JoyState == JST_STAR)   KEYTBL[11] &= 0xf3; else KEYTBL[11] |= ~0xF3; // SPACE
+    if (JoyState == JST_STAR)   Int6502(&m6502, INT_NMI);   // Game Reset (note, this is needed to start games)
+    if (JoyState == JST_POUND)  KEYTBL[7] &= 0xed;          // 0 but graphic shows ST=START
 }
 
 // ========================================================================================

@@ -615,7 +615,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(RAM_Memory+0x9000, ROM_Memory, romSize);
                 memcpy(RAM_Memory+0xB000, ROM_Memory, romSize);
             }
-            if (romSize == 1024 * 6) // 6K
+            else if (romSize == 1024 * 6) // 6K
             {
                 memcpy(RAM_Memory+0xB000, ROM_Memory+0x0000, 0x1000);   // main 4k at 0xB000
                 memcpy(RAM_Memory+0xA800, ROM_Memory+0x1000, 0x0800);   // main 2k at 0xA800
@@ -625,12 +625,12 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(RAM_Memory+0x8800, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
                 memcpy(RAM_Memory+0x8000, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
             }
-            if (romSize == 8192) // 8K
+            else if (romSize == 8192) // 8K
             {
                 memcpy(RAM_Memory+0x8000, ROM_Memory, romSize);
                 memcpy(RAM_Memory+0xA000, ROM_Memory, romSize);
             }
-            if (romSize == 1024 * 10) // 10K
+            else if (romSize == 1024 * 10) // 10K
             {
                 memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
                 memcpy(RAM_Memory+0x7800, ROM_Memory+0x2000, 0x0800);    // second 2Kb at 0x7800
@@ -645,33 +645,37 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 memcpy(RAM_Memory+0x4800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
                 memcpy(RAM_Memory+0x4000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
             }
-            if (romSize == 1024 * 12) // 12K
+            else if (romSize == 1024 * 12) // 12K
             {
-                memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
-                memcpy(RAM_Memory+0x7000, ROM_Memory+0x2000, 0x1000);    // second 4Kb at 0x7000
+                memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);   // main 8Kb	at 0xA000
+                memcpy(RAM_Memory+0x7000, ROM_Memory+0x2000, 0x1000);   // second 4Kb at 0x7000
                 memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
                 memcpy(RAM_Memory+0x5000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x5000
                 memcpy(RAM_Memory+0x6000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x6000
                 memcpy(RAM_Memory+0x4000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x4000
             }
-            if (romSize == 1024 * 16) // 16K
+            else if (romSize == 1024 * 16) // 16K
             {
                 memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
                 memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
             }
-            if (romSize == 1024 * 18) // 18K
+            else if (romSize == 1024 * 18) // 18K
             {
                 memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb at 0xA000
                 memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
                 memcpy(RAM_Memory+0x7800, ROM_Memory+0x4000, 0x0800);    // final 2Kb at 0x7800
                 
-                memcpy(RAM_Memory+0x6800, RAM_Memory+0x7800, 0x0800);   // And then the odd mirrors...
+                memcpy(RAM_Memory+0x6800, RAM_Memory+0x7800, 0x0800);    // And then the odd mirrors...
                 memcpy(RAM_Memory+0x5800, RAM_Memory+0x7800, 0x0800);
                 memcpy(RAM_Memory+0x4800, RAM_Memory+0x7800, 0x0800);
                 memcpy(RAM_Memory+0x7000, RAM_Memory+0x7800, 0x0800);
                 memcpy(RAM_Memory+0x6000, RAM_Memory+0x7800, 0x0800);
                 memcpy(RAM_Memory+0x5000, RAM_Memory+0x7800, 0x0800);
                 memcpy(RAM_Memory+0x4000, RAM_Memory+0x7800, 0x0800);
+            }
+            else if (romSize <= 1024 * 32) // 32K or less (load Linear at 0xC000 - romSize)
+            {
+                memcpy(RAM_Memory+(0xC000-romSize), ROM_Memory+0x0000, romSize);    // load linear at 4000-BFFF
             }
         }
         else
