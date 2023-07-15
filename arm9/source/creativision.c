@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <fat.h>
 
+#include "colecogeneric.h"
 #include "cpu/m6502/M6502.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/sn76496/SN76496.h"
@@ -24,6 +25,7 @@
 M6502 m6502 __attribute__((section(".dtcm")));        // Our core 6502 CPU
 
 extern u8 RAM_Memory[];
+extern u8 ROM_Memory[];
 extern byte Loop9918(void);
 extern int debug1, debug2, debug3, debug4;
 extern SN76496 sncol;
@@ -191,6 +193,20 @@ void Wr6502(register word Addr,register byte Value)
             if ((Addr & 1)==0) WrData9918(Value);
             else if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);
             break;
+            
+        case 0x4000:
+        case 0x5000:
+        case 0x6000:
+        case 0x7000:
+        case 0x8000:
+        case 0x9000:
+        case 0xA000:
+        case 0xB000:
+        case 0xC000:
+        case 0xD000:
+        case 0xE000:
+            RAM_Memory[(Addr & 0x3FF) + 0x000] = Value;
+            break;
     }
 }
 
@@ -237,6 +253,88 @@ byte Rd6502(register word Addr)
     }
 
     return RAM_Memory[Addr];
+}
+
+void creativision_loadrom(int romSize)
+{
+    memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
+    
+    if (myConfig.cvisionLoad == 2)  // 32K BANKSWAP
+    {
+        memcpy(RAM_Memory+0x4000, ROM_Memory+0x4000, romSize/2);
+        memcpy(RAM_Memory+0x8000, ROM_Memory, romSize/2);
+    }
+    else if (myConfig.cvisionLoad == 1)  // Linear Load
+    {
+        memcpy(RAM_Memory+(0xC000-romSize), ROM_Memory+0x0000, romSize);    // load linear at 4000-BFFF
+    }
+    else if (romSize == 4096) // 4K
+    {
+        memcpy(RAM_Memory+0x9000, ROM_Memory, romSize);
+        memcpy(RAM_Memory+0xB000, ROM_Memory, romSize);
+    }
+    else if (romSize == 1024 * 6) // 6K
+    {
+        memcpy(RAM_Memory+0xB000, ROM_Memory+0x0000, 0x1000);   // main 4k at 0xB000
+        memcpy(RAM_Memory+0xA800, ROM_Memory+0x1000, 0x0800);   // main 2k at 0xA800
+
+        memcpy(RAM_Memory+0x9000, RAM_Memory+0xB000, 0x1000);   // Mirror 4k
+        memcpy(RAM_Memory+0xA000, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
+        memcpy(RAM_Memory+0x8800, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
+        memcpy(RAM_Memory+0x8000, RAM_Memory+0xA800, 0x0800);   // Mirror 2k
+    }
+    else if (romSize == 8192) // 8K
+    {
+        memcpy(RAM_Memory+0x8000, ROM_Memory, romSize);
+        memcpy(RAM_Memory+0xA000, ROM_Memory, romSize);
+    }
+    else if (romSize == 1024 * 10) // 10K
+    {
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
+        memcpy(RAM_Memory+0x7800, ROM_Memory+0x2000, 0x0800);    // second 2Kb at 0x7800
+
+        memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
+
+        memcpy(RAM_Memory+0x5800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k at 0x5800
+        memcpy(RAM_Memory+0x7000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+        memcpy(RAM_Memory+0x6800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+        memcpy(RAM_Memory+0x6000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+        memcpy(RAM_Memory+0x5000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+        memcpy(RAM_Memory+0x4800, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+        memcpy(RAM_Memory+0x4000, RAM_Memory+0x7800, 0x0800);   // Mirror 2k
+    }
+    else if (romSize == 1024 * 12) // 12K
+    {
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);   // main 8Kb	at 0xA000
+        memcpy(RAM_Memory+0x7000, ROM_Memory+0x2000, 0x1000);   // second 4Kb at 0x7000
+        memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
+        memcpy(RAM_Memory+0x5000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x5000
+        memcpy(RAM_Memory+0x6000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x6000
+        memcpy(RAM_Memory+0x4000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x4000
+    }
+    else if (romSize == 1024 * 16) // 16K
+    {
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
+        memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
+    }
+    else if (romSize == 1024 * 18) // 18K
+    {
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb at 0xA000
+        memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
+        memcpy(RAM_Memory+0x7800, ROM_Memory+0x4000, 0x0800);    // final 2Kb at 0x7800
+
+        memcpy(RAM_Memory+0x6800, RAM_Memory+0x7800, 0x0800);    // And then the odd mirrors...
+        memcpy(RAM_Memory+0x5800, RAM_Memory+0x7800, 0x0800);
+        memcpy(RAM_Memory+0x4800, RAM_Memory+0x7800, 0x0800);
+        memcpy(RAM_Memory+0x7000, RAM_Memory+0x7800, 0x0800);
+        memcpy(RAM_Memory+0x6000, RAM_Memory+0x7800, 0x0800);
+        memcpy(RAM_Memory+0x5000, RAM_Memory+0x7800, 0x0800);
+        memcpy(RAM_Memory+0x4000, RAM_Memory+0x7800, 0x0800);
+    }
+    else if (romSize <= 1024 * 32) // 32K or less (load Linear at 0xC000 - romSize)
+    {
+        memcpy(RAM_Memory+(0xC000-romSize), ROM_Memory+0x0000, romSize);    // load linear at 4000-BFFF
+    }    
 }
 
 // End of file

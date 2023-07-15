@@ -196,6 +196,7 @@ extern void SVI_HandleCassette(register Z80 *r);
 extern void svi_restore_bios(void);
 extern void memotech_restore_bios(void);
 extern void adam_setup_bios(void);
+extern void creativision_loadrom(int romSize);
 
 extern u8 *creativision_get_cpu(u16 *cv_cpu_size);
 extern void creativision_put_cpu(u8 *mem);
