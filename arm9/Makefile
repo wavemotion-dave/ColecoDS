@@ -72,7 +72,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o alpha.o msx_sm.o msx_full.o adam_full.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o sprMario.o 
+OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o alpha.o msx_sm.o msx_full.o adam_full.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o  
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -206,9 +206,6 @@ pdev_bg0.s pdev_bg0.h : pdev_bg0.png
 pdev_tbg0.s pdev_tbg0.h : pdev_tbg0.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
-# Sprites------------------------
-sprMario.s sprMario.h : sprMario.png
-	grit $^ -o $@  -fa -fts -gt -m! -gB4 -Mw2 -Mh2
   
 -include $(DEPENDS)
  
