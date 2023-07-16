@@ -725,7 +725,7 @@ void ResetColecovision(void)
   else if (creativision_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(RAM_Memory+0xF800,CreativisionBios,0x800);
+      creativision_restore_bios();
       creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
   }        
   else
@@ -2451,7 +2451,7 @@ void colecoDSInitCPU(void)
   }    
   else if (creativision_mode)
   {
-      memcpy(RAM_Memory+0xF800,CreativisionBios,0x800);
+      creativision_restore_bios();
   }    
   else  // Finally we get to the Coleco BIOS
   {

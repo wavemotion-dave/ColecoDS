@@ -2067,6 +2067,12 @@ void ReadFileCRCAndConfig(void)
     }
     
     FindAndLoadConfig();    // Try to find keymap and config for this file...
+    
+    // --------------------------------------------
+    // A few special cases for the CreatiVision
+    // --------------------------------------------
+    if (file_crc == 0x4dc35c39) myConfig.cvisionLoad = 99;  // Special load of 16K Laser 2001 BIOS at C000-FFFF
+
 }
 
 // --------------------------------------------------------------------
