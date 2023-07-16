@@ -30,6 +30,7 @@ extern u8 CreativisionBios[];
 extern byte Loop9918(void);
 extern SN76496 sncol;
 
+#define KBD_KEY_F1  5
 #define KBD_KEY_RET 20
 
 
@@ -312,7 +313,7 @@ void creativision_input(void)
         if (kbd_key == 'Q')         KEYBD[2] &= 0xe7;   // Q
         if (kbd_key == 'R')         KEYBD[2] &= 0xdb;   // R
         if (kbd_key == 'S')         KEYBD[2] &= 0xde;   // S
-        if (kbd_key == 'T')         KEYBD[4] &= 0xdd;   // T
+        if (kbd_key == 'T')         KEYBD[2] &= 0xbb;   // T
         if (kbd_key == 'U')         KEYBD[4] &= 0xfc;   // U
         if (kbd_key == 'V')         KEYBD[2] &= 0xbd;   // V
         if (kbd_key == 'W')         KEYBD[2] &= 0xf3;   // W
@@ -321,6 +322,7 @@ void creativision_input(void)
         if (kbd_key == 'Z')         KEYBD[2] &= 0xf5;   // Z
         if (kbd_key == ' ')         KEYBD[3] &= 0xf3;   // SPACE
         if (kbd_key == KBD_KEY_RET) KEYBD[4] &= 0xf6;   // RETURN
+        if (kbd_key == KBD_KEY_F1)  Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
     }
 }
 
