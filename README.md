@@ -28,7 +28,7 @@ Features :
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
 * Tatung Einstein support (.com run-time files only) - requires einstein.rom BIOS
 * Memotech MTX game support (.mtx or .run or .com files) - single loader games only.
-* Creativision game support (.cv) - requires bioscv.rom BIOS
+* Creativision game support (.cv) - requires bioscv.rom BIOS - supports ROMs up to 32K.
 * Full Controller button mapping and touch-screen input.
 * High-Score support - 10 scores per game.
 * Save/Load Game State (one slot).
@@ -193,7 +193,7 @@ A future version of the emulator will support .DSK files directly... but it's co
 
 Creativision Compatibility :
 -----------------------
-The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS.
+The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS. Games default to loading in "Legacy A/B" mode (meaning it will try to load into memory with the same locations/mirrors as the original commercial releases) but you can switch this to "Linear" which is a more modern way to load the game up against C000h or even 32k Bankswapped (many of the games have been converted to run on a MegaCart in this format).
 
 
 Controllers :

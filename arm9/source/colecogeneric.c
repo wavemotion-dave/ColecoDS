@@ -1608,7 +1608,7 @@ const struct options_t Option_Table[2][20] =
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
-        {"CVISION LOAD",   {"LEGACY", "LINEAR", "32K BANKSWAP"},                                                                                                                                &myConfig.cvisionLoad,3},
+        {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP"},                                                                                                                          &myConfig.cvisionLoad,3},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     }
 };              
