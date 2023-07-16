@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <fat.h>
 
+#include "colecoDS.h"
 #include "colecogeneric.h"
 #include "cpu/m6502/M6502.h"
 #include "cpu/tms9918a/tms9918a.h"
@@ -29,9 +30,6 @@ extern u8 ROM_Memory[];
 extern u8 CreativisionBios[];
 extern byte Loop9918(void);
 extern SN76496 sncol;
-
-#define KBD_KEY_F1  5
-#define KBD_KEY_RET 20
 
 
 /* PIA handling courtesy of the creatiVision emulator:  https://sourceforge.net/projects/creativisionemulator/ 
@@ -62,12 +60,7 @@ M6821 pia0 = {0};
 M6821 pia1 = {0};
 
 int total_cycles = 0;
-
-int EmuQuit = 0;
-int have_io = 0;
 unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
-unsigned char JOYSM[2] = { 255, 255 };
-int io_timeout = 0;
  								   
 /**
  * PIA_Write
@@ -159,16 +152,16 @@ unsigned char PIA_Read(word addr)
             switch(pia0.PDR)
             {
             case 0xf7:      /* Keyboard Mux 8 */
-                pia1.PDR = KEYBD[4];
+                pia1.PDR = KEYBD[PA3];
                 break;
             case 0xfb:      /* Keyboard Mux 4 */
-                pia1.PDR = KEYBD[3];
+                pia1.PDR = KEYBD[PA2];
                 break;
             case 0xfd:      /* Keyboard Mux 2 */
-                pia1.PDR = KEYBD[2];
+                pia1.PDR = KEYBD[PA1];
                 break;
             case 0xfe:      /* Keyboard Mux 1 */
-                pia1.PDR = KEYBD[1];
+                pia1.PDR = KEYBD[PA0];
                 break;
             default:
                 if (pia1.DDR == PIA_OUTALL) {
@@ -222,106 +215,83 @@ u32 creativision_run(void)
     return 0;
 }
 
-
-#define JST_UP              0x0100
-#define JST_RIGHT           0x0200
-#define JST_DOWN            0x0400
-#define JST_LEFT            0x0800
-#define JST_FIRER           0x0040
-#define JST_FIREL           0x4000
-#define JST_0               0x0005
-#define JST_1               0x0002
-#define JST_2               0x0008
-#define JST_3               0x0003
-#define JST_4               0x000D
-#define JST_5               0x000C
-#define JST_6               0x0001
-#define JST_7               0x000A
-#define JST_8               0x000E
-#define JST_9               0x0004
-#define JST_STAR            0x0006
-#define JST_POUND           0x0009
-#define JST_PURPLE          0x0007
-#define JST_BLUE            0x000B
-#define JST_RED             JST_FIRER
-#define JST_YELLOW          JST_FIREL
-
-extern u8 kbd_key;
-
 void creativision_input(void)
 {
     extern u32 JoyState;
     
-    KEYBD[4] = 0xFF;
-    KEYBD[3] = 0xFF;
-    KEYBD[2] = 0xFF;
-    KEYBD[1] = 0xFF;
+    KEYBD[PA3] = 0xFF;
+    KEYBD[PA2] = 0xFF;
+    KEYBD[PA1] = 0xFF;
+    KEYBD[PA0] = 0xFF;
     
-    if (JoyState & JST_FIREL)   KEYBD[1] &= 0x7f;  // P1 Right Button
-    if (JoyState & JST_FIRER)   KEYBD[2] &= 0x7f;  // P1 Left Button
+    if (JoyState & JST_FIREL)   KEYBD[PA0] &= 0x7f;  // P1 Right Button
+    if (JoyState & JST_FIRER)   KEYBD[PA1] &= 0x7f;  // P1 Left Button
 
-    if (JoyState & JST_UP)      KEYBD[1] &= 0xf7;  // P1 up
-    if (JoyState & JST_DOWN)    KEYBD[1] &= 0xfd;  // P1 down
-    if (JoyState & JST_LEFT)    KEYBD[1] &= 0xdf;  // P1 left
-    if (JoyState & JST_RIGHT)   KEYBD[1] &= 0xfb;  // P1 right
+    if (JoyState & JST_UP)      KEYBD[PA0] &= 0xf7;  // P1 up
+    if (JoyState & JST_DOWN)    KEYBD[PA0] &= 0xfd;  // P1 down
+    if (JoyState & JST_LEFT)    KEYBD[PA0] &= 0xdf;  // P1 left
+    if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right
 
-    if (JoyState == JST_1)      KEYBD[1] &= 0xf3;  // 1      
-    if (JoyState == JST_2)      KEYBD[2] &= 0xcf;  // 2
-    if (JoyState == JST_3)      KEYBD[2] &= 0x9f;  // 3
-    if (JoyState == JST_4)      KEYBD[2] &= 0xd7;  // 4
-    if (JoyState == JST_5)      KEYBD[2] &= 0xb7;  // 5
-    if (JoyState == JST_6)      KEYBD[2] &= 0xaf;  // 6
-
-    if (JoyState == JST_7)      KEYBD[3] &= 0xf3;   // SPACE
-    if (JoyState == JST_8)      KEYBD[4] &= 0xfa;   // Y
-    if (JoyState == JST_9)      KEYBD[4] &= 0xaf;   // N
-    if (JoyState == JST_0)      KEYBD[4] &= 0xf6;   // RETURN
+    if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1      
+    if (JoyState == JST_2)      KEYBD[PA1] &= 0xcf;  // 2
+    if (JoyState == JST_3)      KEYBD[PA1] &= 0x9f;  // 3
+    if (JoyState == JST_4)      KEYBD[PA1] &= 0xd7;  // 4
+    if (JoyState == JST_5)      KEYBD[PA1] &= 0xb7;  // 5
+    if (JoyState == JST_6)      KEYBD[PA1] &= 0xaf;  // 6
+    if (JoyState == JST_7)      KEYBD[PA3] &= 0xf9;  // 7
+    
+    if (JoyState == JST_8)      KEYBD[PA3] &= 0xfa;  // Y
+    if (JoyState == JST_9)      KEYBD[PA3] &= 0xaf;  // N
+    if (JoyState == JST_0)      KEYBD[PA3] &= 0xf6;  // RETURN
     
     if (JoyState == JST_STAR)   Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
-    if (JoyState == JST_POUND)  KEYBD[4] &= 0xed;          // 0 but graphic shows ST=START
+    if (JoyState == JST_POUND)  KEYBD[PA1] &= 0xaf;          // 6 but graphic overlay shows ST=START (which is how it works on a real overlay for the CV)
     
     // And now the keyboard maps...
     if (kbd_key)
     {
-        if (kbd_key == '0')         KEYBD[4] &= 0xed;   // 0
-        if (kbd_key == '1')         KEYBD[1] &= 0xf3;   // 1      
-        if (kbd_key == '2')         KEYBD[2] &= 0xcf;   // 2
-        if (kbd_key == '3')         KEYBD[2] &= 0x9f;   // 3
-        if (kbd_key == '4')         KEYBD[2] &= 0xd7;   // 4
-        if (kbd_key == '5')         KEYBD[2] &= 0xb7;   // 5
-        if (kbd_key == '6')         KEYBD[2] &= 0xaf;   // 6
-        if (kbd_key == '7')         KEYBD[4] &= 0xf9;   // 7
-        if (kbd_key == '8')         KEYBD[4] &= 0xbd;   // 8
-        if (kbd_key == '9')         KEYBD[4] &= 0xdd;   // 9
+        if (kbd_key == '0')         KEYBD[PA3] &= 0xed;   // 0
+        if (kbd_key == '1')         KEYBD[PA0] &= 0xf3;   // 1      
+        if (kbd_key == '2')         KEYBD[PA1] &= 0xcf;   // 2
+        if (kbd_key == '3')         KEYBD[PA1] &= 0x9f;   // 3
+        if (kbd_key == '4')         KEYBD[PA1] &= 0xd7;   // 4
+        if (kbd_key == '5')         KEYBD[PA1] &= 0xb7;   // 5
+        if (kbd_key == '6')         KEYBD[PA1] &= 0xaf;   // 6
+        if (kbd_key == '7')         KEYBD[PA3] &= 0xf9;   // 7
+        if (kbd_key == '8')         KEYBD[PA3] &= 0xbd;   // 8
+        if (kbd_key == '9')         KEYBD[PA3] &= 0xdd;   // 9
         
-        if (kbd_key == 'A')         KEYBD[2] &= 0xee;   // A
-        if (kbd_key == 'B')         KEYBD[2] &= 0xf9;   // B
-        if (kbd_key == 'C')         KEYBD[2] &= 0xdd;   // C        
-        if (kbd_key == 'D')         KEYBD[2] &= 0xbe;   // D
-        if (kbd_key == 'E')         KEYBD[2] &= 0xeb;   // E
-        if (kbd_key == 'F')         KEYBD[2] &= 0xfc;   // F
-        if (kbd_key == 'G')         KEYBD[2] &= 0xfa;   // G
-        if (kbd_key == 'H')         KEYBD[4] &= 0xbb;   // H
-        if (kbd_key == 'I')         KEYBD[4] &= 0xbe;   // I        
-        if (kbd_key == 'J')         KEYBD[4] &= 0xdb;   // J
-        if (kbd_key == 'K')         KEYBD[4] &= 0xeb;   // K
-        if (kbd_key == 'L')         KEYBD[4] &= 0xf3;   // L
-        if (kbd_key == 'M')         KEYBD[4] &= 0xb7;   // M
-        if (kbd_key == 'N')         KEYBD[4] &= 0xaf;   // N
-        if (kbd_key == 'O')         KEYBD[4] &= 0xde;   // O
-        if (kbd_key == 'P')         KEYBD[4] &= 0xee;   // P
-        if (kbd_key == 'Q')         KEYBD[2] &= 0xe7;   // Q
-        if (kbd_key == 'R')         KEYBD[2] &= 0xdb;   // R
-        if (kbd_key == 'S')         KEYBD[2] &= 0xde;   // S
-        if (kbd_key == 'T')         KEYBD[2] &= 0xbb;   // T
-        if (kbd_key == 'U')         KEYBD[4] &= 0xfc;   // U
-        if (kbd_key == 'V')         KEYBD[2] &= 0xbd;   // V
-        if (kbd_key == 'W')         KEYBD[2] &= 0xf3;   // W
-        if (kbd_key == 'X')         KEYBD[2] &= 0xed;   // X        
-        if (kbd_key == 'Y')         KEYBD[4] &= 0xfa;   // Y
-        if (kbd_key == 'Z')         KEYBD[2] &= 0xf5;   // Z
-        if (kbd_key == ' ')         KEYBD[3] &= 0xf3;   // SPACE
-        if (kbd_key == KBD_KEY_RET) KEYBD[4] &= 0xf6;   // RETURN
+        if (kbd_key == 'A')         KEYBD[PA1] &= 0xee;   // A
+        if (kbd_key == 'B')         KEYBD[PA1] &= 0xf9;   // B
+        if (kbd_key == 'C')         KEYBD[PA1] &= 0xdd;   // C        
+        if (kbd_key == 'D')         KEYBD[PA1] &= 0xbe;   // D
+        if (kbd_key == 'E')         KEYBD[PA1] &= 0xeb;   // E
+        if (kbd_key == 'F')         KEYBD[PA1] &= 0xfc;   // F
+        if (kbd_key == 'G')         KEYBD[PA1] &= 0xfa;   // G
+        if (kbd_key == 'H')         KEYBD[PA3] &= 0xbb;   // H
+        if (kbd_key == 'I')         KEYBD[PA3] &= 0xbe;   // I        
+        if (kbd_key == 'J')         KEYBD[PA3] &= 0xdb;   // J
+        if (kbd_key == 'K')         KEYBD[PA3] &= 0xeb;   // K
+        if (kbd_key == 'L')         KEYBD[PA3] &= 0xf3;   // L
+        if (kbd_key == 'M')         KEYBD[PA3] &= 0xb7;   // M
+        if (kbd_key == 'N')         KEYBD[PA3] &= 0xaf;   // N
+        if (kbd_key == 'O')         KEYBD[PA3] &= 0xde;   // O
+        if (kbd_key == 'P')         KEYBD[PA3] &= 0xee;   // P
+        if (kbd_key == 'Q')         KEYBD[PA1] &= 0xe7;   // Q
+        if (kbd_key == 'R')         KEYBD[PA1] &= 0xdb;   // R
+        if (kbd_key == 'S')         KEYBD[PA1] &= 0xde;   // S
+        if (kbd_key == 'T')         KEYBD[PA1] &= 0xbb;   // T
+        if (kbd_key == 'U')         KEYBD[PA3] &= 0xfc;   // U
+        if (kbd_key == 'V')         KEYBD[PA1] &= 0xbd;   // V
+        if (kbd_key == 'W')         KEYBD[PA1] &= 0xf3;   // W
+        if (kbd_key == 'X')         KEYBD[PA1] &= 0xed;   // X        
+        if (kbd_key == 'Y')         KEYBD[PA3] &= 0xfa;   // Y
+        if (kbd_key == 'Z')         KEYBD[PA1] &= 0xf5;   // Z
+        if (kbd_key == '?')         KEYBD[PA3] &= 0x7f;   // EQUALS
+        if (kbd_key == '.')         KEYBD[PA3] &= 0x9f;   // PERIOD
+        if (kbd_key == ' ')         KEYBD[PA2] &= 0xf3;   // SPACE
+        if (kbd_key == KBD_KEY_DEL) KEYBD[PA1] &= 0xf6;   // LEFT/BS
+        if (kbd_key == KBD_KEY_RET) KEYBD[PA3] &= 0xf6;   // RETURN
         if (kbd_key == KBD_KEY_F1)  Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
     }
 }
@@ -345,14 +315,21 @@ void Wr6502(register word Addr,register byte Value)
 {
     switch (Addr & 0xF000)
     {
-        case 0x0000:
-            RAM_Memory[(Addr & 0x3FF) + 0x000] = Value;
-            RAM_Memory[(Addr & 0x3FF) + 0x400] = Value;
-            RAM_Memory[(Addr & 0x3FF) + 0x800] = Value;
-            RAM_Memory[(Addr & 0x3FF) + 0xC00] = Value;
+        case 0x0000:    // Zero-Page RAM writes
+            if (myConfig.colecoRAM == COLECO_RAM_NORMAL_MIRROR) // Mirror RAM?
+            {
+                RAM_Memory[(Addr & 0x3FF) + 0x000] = Value;
+                RAM_Memory[(Addr & 0x3FF) + 0x400] = Value;
+                RAM_Memory[(Addr & 0x3FF) + 0x800] = Value;
+                RAM_Memory[(Addr & 0x3FF) + 0xC00] = Value;
+            } 
+            else
+            {
+                RAM_Memory[Addr] = Value;
+            }
             break;
 
-        case 0x1000:            // PIA
+        case 0x1000:    // PIA Writes
           PIA_Write(Addr, Value);
           break;
             
@@ -360,7 +337,8 @@ void Wr6502(register word Addr,register byte Value)
             if ((Addr & 1)==0) WrData9918(Value);
             else if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);
             break;
-            
+
+        // Expanded RAM... very little uses this... but for future homebrews
         case 0x4000:
         case 0x5000:
         case 0x6000:
@@ -372,7 +350,8 @@ void Wr6502(register word Addr,register byte Value)
         case 0xC000:
         case 0xD000:
         case 0xE000:
-            RAM_Memory[(Addr & 0x3FF) + 0x000] = Value;
+        case 0xF000:
+            RAM_Memory[Addr] = Value;
             break;
     }
 }
@@ -381,11 +360,11 @@ byte Rd6502(register word Addr)
 {
     switch (Addr & 0xF000)
     {
-        case 0x1000:                // PIA
+        case 0x1000:    // PIA Read
           return PIA_Read(Addr);      
           break;
             
-        case 0x2000:  // VDP read 0x2000 to 0x2FFF
+        case 0x2000:  // VDP Read
           if ((Addr & 1)==0) return(RdData9918());
           return(RdCtrl9918());
           break;
@@ -409,6 +388,32 @@ void creativision_restore_bios(void)
 // linear load which places the ROM binary up against 0xC000 (the important vector information is right before this) and there is also
 // a special handler for the 32K bankswapped ROMs which were available for things like the MegaCart. It's all a bit confusing in spots... 
 // but this generally works fine. 
+//
+//
+// From @username@ in the CreatiVemu forums:
+// 4K ROMs
+// Load directly to $B000
+// 
+// 6K ROMs
+// Tank Attack - 4K to $B000, 2K to $A800
+// Deep Sea Rescue, Planet Defender, Tennis, TennisD1, TennisD2 - 4K to $B000, 2K to $A000
+// Note Deep Sea Rescue needs the byte at $B4C8 fixed from $AF to $A7
+// 
+// 8K ROMs
+// Load directly to $A000
+// 
+// 10K ROMs
+// Locomotive - 8K to $A000, 2K to $7000
+// 
+// 12K ROMs
+// Load 8K to $A000, 4K to $7000
+// Note BASIC82A and BASIC82B change byte at $7223 from $40 to $70
+// 
+// 16K ROMs
+// Load 8K to $A000, 8K to $8000
+// 
+// 18K ROMs
+// Load 8K to $A000, 8K to $8000 and 2K to $7800
 // -----------------------------------------------------------------------------------------------------------------------------------------
 
 void creativision_loadrom(int romSize)

@@ -268,11 +268,11 @@ void show_scores(short foundIdx, bool bShowLegend)
     
     if (bShowLegend)
     {
-        dsPrintValue(2,16,0, (char*)"                             ");
-        dsPrintValue(2,18,0, (char*)"PRESS X FOR NEW HI SCORE     ");
-        dsPrintValue(2,19,0, (char*)"PRESS Y FOR NOTES/OPTIONS    ");
-        dsPrintValue(2,20,0, (char*)"PRESS B TO EXIT              ");
-        dsPrintValue(2,21,0, (char*)"SCORES AUTO SORT AFTER ENTRY ");
+        dsPrintValue(1,16,0, (char*)"                              ");
+        dsPrintValue(1,18,0, (char*)" PRESS X FOR NEW HI SCORE     ");
+        dsPrintValue(1,19,0, (char*)" PRESS Y FOR NOTES/OPTIONS    ");
+        dsPrintValue(1,20,0, (char*)" PRESS B TO EXIT              ");
+        dsPrintValue(1,21,0, (char*)" SCORES AUTO SORT AFTER ENTRY ");
     }
     highscore_showoptions(highscores.highscore_table[foundIdx].options);
 }
@@ -487,17 +487,17 @@ void highscore_entry(short foundIdx, u32 crc)
 void highscore_options(short foundIdx, u32 crc)
 {
     u16 options = 0x0000;
-    char notes[21];
+    static char notes[21];
     char bEntryDone = 0;
     char blink=0;
     unsigned short entry_idx=0;
     char dampen=0;
     
-    dsPrintValue(3,16,0, (char*)"NOTE: ");
-    dsPrintValue(3,19,0, (char*)"UP/DN/LEFT/RIGHT ENTER NOTES");
-    dsPrintValue(3,20,0, (char*)"X=TOGGLE SORT, L+R=CLR SCORE");
-    dsPrintValue(3,21,0, (char*)"PRESS START TO SAVE OPTIONS ");
-    dsPrintValue(3,22,0, (char*)"PRESS SELECT TO CANCEL      ");
+    dsPrintValue(2,16,0, (char*)" NOTE: ");
+    dsPrintValue(2,19,0, (char*)" UP/DN/LEFT/RIGHT ENTER NOTES");
+    dsPrintValue(2,20,0, (char*)" X=TOGGLE SORT, L+R=CLR SCORE");
+    dsPrintValue(2,21,0, (char*)" PRESS START TO SAVE OPTIONS ");
+    dsPrintValue(2,22,0, (char*)" PRESS SELECT TO CANCEL      ");
 
     strcpy(notes, highscores.highscore_table[foundIdx].notes);
     options = highscores.highscore_table[foundIdx].options;
