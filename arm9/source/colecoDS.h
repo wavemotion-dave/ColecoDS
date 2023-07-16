@@ -13,7 +13,6 @@
 
 #include <nds.h>
 #include <string.h>
-#include "cpu/z80/Z80_interface.h"
 #include "C24XX.h"
 
 #define VERSIONCLDS "8.0"

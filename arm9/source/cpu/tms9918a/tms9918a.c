@@ -24,6 +24,7 @@
 
 #include "../../colecoDS.h"
 #include "../../colecogeneric.h"
+#include "../z80/Z80_interface.h"
 
 #include "tms9918a.h"
 
