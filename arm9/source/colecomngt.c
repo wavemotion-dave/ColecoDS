@@ -646,7 +646,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 else if (romSize == (128 * 1024)) romBankMask = 0x07;
                 else if (romSize == (256 * 1024)) romBankMask = 0x0F;
                 else if (romSize == (512 * 1024)) romBankMask = 0x1F;
-                else                             romBankMask = 0x3F;    // Up to 1024KB... huge!
+                else                              romBankMask = 0x3F;    // Up to 1024KB... huge!
             }
         }
         bOK = 1;

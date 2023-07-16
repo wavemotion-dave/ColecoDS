@@ -1393,6 +1393,363 @@ void CassetteMenu(void)
 // ------------------------------------------------------------------------
 inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9 || myConfig.overlay == 10) ? 1:0);}
 
+static u8 adam_key = 0;
+void handle_full_keyboard_press(u16 iTx, u16 iTy)
+{
+    if (!adam_mode)
+    {
+        if ((iTy >= 28) && (iTy < 51))        // Row 1 (top row)
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '0';
+            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = '1';
+            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = '2';
+            else if ((iTx >= 101) && (iTx < 123))  kbd_key = '3';
+            else if ((iTx >= 123) && (iTx < 145))  kbd_key = '4';
+            else if ((iTx >= 145) && (iTx < 167))  kbd_key = '5';
+            else if ((iTx >= 167) && (iTx < 189))  kbd_key = '6';
+            else if ((iTx >= 189) && (iTx < 211))  kbd_key = '7';
+            else if ((iTx >= 211) && (iTx < 233))  kbd_key = '8';
+            else if ((iTx >= 233) && (iTx < 255))  kbd_key = '9';
+
+        }
+        else if ((iTy >= 51) && (iTy < 75))   // Row 2
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'A';
+            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'B';
+            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'C';
+            else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'D';
+            else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'E';
+            else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'F';
+            else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'G';
+            else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'H';
+            else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'I';
+            else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'J';
+        }
+        else if ((iTy >= 75) && (iTy < 99))  // Row 3
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'K';
+            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'L';
+            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'M';
+            else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'N';
+            else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'O';
+            else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'P';
+            else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'Q';
+            else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'R';
+            else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'S';
+            else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'T';
+        }
+        else if ((iTy >= 99) && (iTy < 123)) // Row 4
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'U';
+            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'V';
+            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'W';
+            else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'X';
+            else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'Y';
+            else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'Z';
+            else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_UP;
+            else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_DOWN;
+            else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_LEFT;
+            else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RIGHT;
+        }
+        else if ((iTy >= 123) && (iTy < 146)) // Row 5
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '.';
+            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = ',';
+            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = ':';
+            else if ((iTx >= 101) && (iTx < 123))  kbd_key = '#';
+            else if ((iTx >= 123) && (iTx < 145))  kbd_key = '/';
+            else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_QUOTE;
+            else if ((iTx >= 167) && (iTx < 189))  kbd_key = '=';
+            else if ((iTx >= 189) && (iTx < 211))  kbd_key = '[';
+            else if ((iTx >= 211) && (iTx < 233))  kbd_key = ']';
+            else if ((iTx >= 233) && (iTx < 255))  kbd_key = '-';
+        }
+        else if ((iTy >= 146) && (iTy < 169)) // Row 6
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = KBD_KEY_ESC;
+            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_BRK;
+            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_BRK;
+            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_F1;
+            else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_F2;
+            else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_F3;
+            else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_F4;
+            else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_F5;
+            else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_F6;
+            else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_F7;
+            else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_F8;
+        }
+        else if ((iTy >= 169) && (iTy < 192)) // Row 7
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
+            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_CAPS;
+            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_CAPS;
+            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_DEL;
+            else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_DEL;
+            else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_HOME;
+            else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_HOME;
+            else if ((iTx >= 167) && (iTx < 189))  kbd_key = ' ';
+            else if ((iTx >= 189) && (iTx < 211))  kbd_key = ' ';
+            else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_RET;
+            else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RET;
+        }
+    }
+    else // Adam Keyboard ~60 keys
+    {
+        if ((iTy >= 28) && (iTy < 51))        // Row 1 (top row)
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   adam_key = '0';
+            else if ((iTx >= 57)  && (iTx < 79))   adam_key = '1';
+            else if ((iTx >= 79)  && (iTx < 101))  adam_key = '2';
+            else if ((iTx >= 101) && (iTx < 123))  adam_key = '3';
+            else if ((iTx >= 123) && (iTx < 145))  adam_key = '4';
+            else if ((iTx >= 145) && (iTx < 167))  adam_key = '5';
+            else if ((iTx >= 167) && (iTx < 189))  adam_key = '6';
+            else if ((iTx >= 189) && (iTx < 211))  adam_key = '7';
+            else if ((iTx >= 211) && (iTx < 233))  adam_key = '8';
+            else if ((iTx >= 233) && (iTx < 255))  adam_key = '9';
+        }
+        else if ((iTy >= 51) && (iTy < 75))   // Row 2
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'A';
+            else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'B';
+            else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'C';
+            else if ((iTx >= 101) && (iTx < 123))  adam_key = 'D';
+            else if ((iTx >= 123) && (iTx < 145))  adam_key = 'E';
+            else if ((iTx >= 145) && (iTx < 167))  adam_key = 'F';
+            else if ((iTx >= 167) && (iTx < 189))  adam_key = 'G';
+            else if ((iTx >= 189) && (iTx < 211))  adam_key = 'H';
+            else if ((iTx >= 211) && (iTx < 233))  adam_key = 'I';
+            else if ((iTx >= 233) && (iTx < 255))  adam_key = 'J';
+        }
+        else if ((iTy >= 75) && (iTy < 99))  // Row 3
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'K';
+            else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'L';
+            else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'M';
+            else if ((iTx >= 101) && (iTx < 123))  adam_key = 'N';
+            else if ((iTx >= 123) && (iTx < 145))  adam_key = 'O';
+            else if ((iTx >= 145) && (iTx < 167))  adam_key = 'P';
+            else if ((iTx >= 167) && (iTx < 189))  adam_key = 'Q';
+            else if ((iTx >= 189) && (iTx < 211))  adam_key = 'R';
+            else if ((iTx >= 211) && (iTx < 233))  adam_key = 'S';
+            else if ((iTx >= 233) && (iTx < 255))  adam_key = 'T';
+        }
+        else if ((iTy >= 99) && (iTy < 123)) // Row 4
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'U';
+            else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'V';
+            else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'W';
+            else if ((iTx >= 101) && (iTx < 123))  adam_key = 'X';
+            else if ((iTx >= 123) && (iTx < 145))  adam_key = 'Y';
+            else if ((iTx >= 145) && (iTx < 167))  adam_key = 'Z';
+            else if ((iTx >= 167) && (iTx < 189))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_UP);
+            else if ((iTx >= 189) && (iTx < 211))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_DOWN);
+            else if ((iTx >= 211) && (iTx < 233))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_LEFT);
+            else if ((iTx >= 233) && (iTx < 255))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_RIGHT);
+        }
+        else if ((iTy >= 123) && (iTy < 146)) // Row 5
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
+            else if ((iTx >= 35)  && (iTx < 57))   adam_key = '.';
+            else if ((iTx >= 57)  && (iTx < 79))   adam_key = ',';
+            else if ((iTx >= 79)  && (iTx < 101))  adam_key = ':';
+            else if ((iTx >= 101) && (iTx < 123))  adam_key = '#';
+            else if ((iTx >= 123) && (iTx < 145))  adam_key = '/';
+            else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_QUOTE;
+            else if ((iTx >= 167) && (iTx < 189))  adam_key = '=';
+            else if ((iTx >= 189) && (iTx < 211))  adam_key = '[';
+            else if ((iTx >= 211) && (iTx < 233))  adam_key = ']';
+            else if ((iTx >= 233) && (iTx < 255))  adam_key = '-';
+        }
+        else if ((iTy >= 146) && (iTy < 169)) // Row 6 (function key row)
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   adam_key = ADAM_KEY_F1;
+            else if ((iTx >= 35)  && (iTx < 57))   adam_key = ADAM_KEY_F2;
+            else if ((iTx >= 57)  && (iTx < 79))   adam_key = ADAM_KEY_F2;
+            else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_F3;
+            else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_F3;
+            else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_F4;
+            else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_F4;
+            else if ((iTx >= 167) && (iTx < 189))  adam_key = ADAM_KEY_F5;
+            else if ((iTx >= 189) && (iTx < 211))  adam_key = ADAM_KEY_F5;
+            else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_F6;
+            else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_F6;
+        }
+        else if ((iTy >= 169) && (iTy < 192)) // Row 7
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
+            else if ((iTx >= 35)  && (iTx < 57))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
+            else if ((iTx >= 57)  && (iTx < 79))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
+            else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_BS;
+            else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_BS;
+            else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_ESC;
+            else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_ESC;
+            else if ((iTx >= 167) && (iTx < 189))  adam_key = ' ';
+            else if ((iTx >= 189) && (iTx < 211))  adam_key = ' ';
+            else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_ENTER;
+            else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_ENTER;
+        }
+        else {adam_key = 0; last_adam_key = 0;}
+
+        if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
+        {
+            PutKBD(adam_key | (((adam_CapsLock && (adam_key >= 'A') && (adam_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
+            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+        }
+        if (last_adam_key != 255) last_adam_key = adam_key;
+    }    
+}
+
+
+void handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Smaller alpha-only keyboard
+{
+    if (!adam_mode)
+    {
+        if ((iTy >= 28) && (iTy < 56))        // Row 1 (top row)
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = '0';
+            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = '1';
+            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = '2';
+            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = '3';
+            else if ((iTx >= 127) && (iTx < 158))  kbd_key = '4';
+            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'A';
+            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'B';
+            else if ((iTx >= 220) && (iTx < 255))  kbd_key = 'C';
+        }
+        else if ((iTy >= 56) && (iTy < 84))   // Row 2
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = 'D';
+            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = 'E';
+            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = 'F';
+            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = 'G';
+            else if ((iTx >= 127) && (iTx < 158))  kbd_key = 'H';
+            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'I';
+            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'J';
+            else if ((iTx >= 220) && (iTx < 255))  kbd_key = 'K';
+        }
+        else if ((iTy >= 84) && (iTy < 112))  // Row 3
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = 'L';
+            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = 'M';
+            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = 'N';
+            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = 'O';
+            else if ((iTx >= 127) && (iTx < 158))  kbd_key = 'P';
+            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'Q';
+            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'R';
+            else if ((iTx >= 220) && (iTx < 255))  kbd_key = 'S';
+        }
+        else if ((iTy >= 112) && (iTy < 140))  // Row 4
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = 'T';
+            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = 'U';
+            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = 'V';
+            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = 'W';
+            else if ((iTx >= 127) && (iTx < 158))  kbd_key = 'X';
+            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'Y';
+            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'Z';
+            else if ((iTx >= 220) && (iTx < 255))  kbd_key = '.';
+        }
+        else if ((iTy >= 140) && (iTy < 169))  // Row 5
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = '5';
+            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = '6';
+            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = '7';
+            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = '8';
+            else if ((iTx >= 127) && (iTx < 158))  kbd_key = '9';
+            else if ((iTx >= 158) && (iTx < 189))  kbd_key = KBD_KEY_F1;
+            else if ((iTx >= 189) && (iTx < 220))  kbd_key = '?';
+            else if ((iTx >= 220) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
+        }
+        else if ((iTy >= 169) && (iTy < 192))  // Row 6
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
+            else if ((iTx >= 166) && (iTx < 211))  kbd_key = ' ';
+            else if ((iTx >= 211) && (iTx < 256))  kbd_key = KBD_KEY_RET;
+        }
+    }
+    else // Adam Mode
+    {
+        if ((iTy >= 28) && (iTy < 56))        // Row 1 (top row)
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   adam_key = '0';
+            else if ((iTx >= 34)  && (iTx < 65))   adam_key = '1';
+            else if ((iTx >= 65)  && (iTx < 96))   adam_key = '2';
+            else if ((iTx >= 96)  && (iTx < 127))  adam_key = '3';
+            else if ((iTx >= 127) && (iTx < 158))  adam_key = '4';
+            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'A';
+            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'B';
+            else if ((iTx >= 220) && (iTx < 255))  adam_key = 'C';
+        }
+        else if ((iTy >= 56) && (iTy < 84))   // Row 2
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'D';
+            else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'E';
+            else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'F';
+            else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'G';
+            else if ((iTx >= 127) && (iTx < 158))  adam_key = 'H';
+            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'I';
+            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'J';
+            else if ((iTx >= 220) && (iTx < 255))  adam_key = 'K';
+        }
+        else if ((iTy >= 84) && (iTy < 112))  // Row 3
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'L';
+            else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'M';
+            else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'N';
+            else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'O';
+            else if ((iTx >= 127) && (iTx < 158))  adam_key = 'P';
+            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'Q';
+            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'R';
+            else if ((iTx >= 220) && (iTx < 255))  adam_key = 'S';
+        }
+        else if ((iTy >= 112) && (iTy < 140))  // Row 4
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'T';
+            else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'U';
+            else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'V';
+            else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'W';
+            else if ((iTx >= 127) && (iTx < 158))  adam_key = 'X';
+            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'Y';
+            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'Z';
+            else if ((iTx >= 220) && (iTx < 255))  adam_key = '.';
+        }
+        else if ((iTy >= 140) && (iTy < 169))  // Row 5
+        {
+            if      ((iTx >= 1)   && (iTx < 34))   adam_key = '5';
+            else if ((iTx >= 34)  && (iTx < 65))   adam_key = '6';
+            else if ((iTx >= 65)  && (iTx < 96))   adam_key = '7';
+            else if ((iTx >= 96)  && (iTx < 127))  adam_key = '8';
+            else if ((iTx >= 127) && (iTx < 158))  adam_key = '9';
+            else if ((iTx >= 158) && (iTx < 189))  adam_key = ADAM_KEY_F1;
+            else if ((iTx >= 189) && (iTx < 220))  adam_key = '?';
+            else if ((iTx >= 220) && (iTx < 255))  adam_key = ADAM_KEY_BS;
+        }
+        else if ((iTy >= 169) && (iTy < 192))  // Row 6
+        {
+            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
+            else if ((iTx >= 166) && (iTx < 211))  adam_key = ' ';
+            else if ((iTx >= 211) && (iTx < 256))  adam_key = ADAM_KEY_ENTER;
+        }
+        else {adam_key = 0; last_adam_key = 0;}
+
+        if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
+        {
+            PutKBD(adam_key | (((adam_CapsLock && (adam_key >= 'A') && (adam_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
+            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+        }
+        if (last_adam_key != 255) last_adam_key = adam_key;
+    }
+}
+
 // ------------------------------------------------------------------------
 // The main emulation loop is here... call into the Z80, VDP and PSG 
 // ------------------------------------------------------------------------
@@ -1532,7 +1889,8 @@ void colecoDS_main(void)
       // ------------------------------------------
       ucUN  = 0;
       kbd_key = 0;
-      if  (keysCurrent() & KEY_TOUCH) {
+      if  (keysCurrent() & KEY_TOUCH) 
+      {
         touchPosition touch;
         touchRead(&touch);
         iTx = touch.px;
@@ -1655,316 +2013,17 @@ void colecoDS_main(void)
             }
         }
           
-        u8 adam_key = 0;
-  
         // --------------------------------------------------------------------------
-        // Test the touchscreen rendering of the ADAM/MSX/SVI full keybaord
+        // Test the touchscreen rendering of the ADAM/MSX/SVI full/alpha keybaord
         // --------------------------------------------------------------------------
         if (myConfig.overlay == 9) // Full Keyboard
         {
-            if (!adam_mode)
-            {
-                if ((iTy >= 28) && (iTy < 51))        // Row 1 (top row)
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '0';
-                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = '1';
-                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = '2';
-                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = '3';
-                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = '4';
-                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = '5';
-                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = '6';
-                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = '7';
-                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = '8';
-                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = '9';
+            handle_full_keyboard_press(iTx, iTy);
 
-                }
-                else if ((iTy >= 51) && (iTy < 75))   // Row 2
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'A';
-                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'B';
-                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'C';
-                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'D';
-                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'E';
-                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'F';
-                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'G';
-                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'H';
-                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'I';
-                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'J';
-                }
-                else if ((iTy >= 75) && (iTy < 99))  // Row 3
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'K';
-                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'L';
-                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'M';
-                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'N';
-                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'O';
-                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'P';
-                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'Q';
-                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'R';
-                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'S';
-                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'T';
-                }
-                else if ((iTy >= 99) && (iTy < 123)) // Row 4
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'U';
-                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'V';
-                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'W';
-                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'X';
-                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'Y';
-                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'Z';
-                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_UP;
-                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_DOWN;
-                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_LEFT;
-                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RIGHT;
-                }
-                else if ((iTy >= 123) && (iTy < 146)) // Row 5
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '.';
-                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = ',';
-                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = ':';
-                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = '#';
-                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = '/';
-                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_QUOTE;
-                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = '=';
-                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = '[';
-                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = ']';
-                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = '-';
-                }
-                else if ((iTy >= 146) && (iTy < 169)) // Row 6
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   kbd_key = KBD_KEY_ESC;
-                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_BRK;
-                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_BRK;
-                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_F1;
-                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_F2;
-                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_F3;
-                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_F4;
-                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_F5;
-                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_F6;
-                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_F7;
-                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_F8;
-                }
-                else if ((iTy >= 169) && (iTy < 192)) // Row 7
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-                    else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_CAPS;
-                    else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_CAPS;
-                    else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_DEL;
-                    else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_DEL;
-                    else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_HOME;
-                    else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_HOME;
-                    else if ((iTx >= 167) && (iTx < 189))  kbd_key = ' ';
-                    else if ((iTx >= 189) && (iTx < 211))  kbd_key = ' ';
-                    else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_RET;
-                    else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RET;
-                }
-            }
-            else // Adam Keyboard ~60 keys
-            {
-                if ((iTy >= 28) && (iTy < 51))        // Row 1 (top row)
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   adam_key = '0';
-                    else if ((iTx >= 57)  && (iTx < 79))   adam_key = '1';
-                    else if ((iTx >= 79)  && (iTx < 101))  adam_key = '2';
-                    else if ((iTx >= 101) && (iTx < 123))  adam_key = '3';
-                    else if ((iTx >= 123) && (iTx < 145))  adam_key = '4';
-                    else if ((iTx >= 145) && (iTx < 167))  adam_key = '5';
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = '6';
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = '7';
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = '8';
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = '9';
-                }
-                else if ((iTy >= 51) && (iTy < 75))   // Row 2
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'A';
-                    else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'B';
-                    else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'C';
-                    else if ((iTx >= 101) && (iTx < 123))  adam_key = 'D';
-                    else if ((iTx >= 123) && (iTx < 145))  adam_key = 'E';
-                    else if ((iTx >= 145) && (iTx < 167))  adam_key = 'F';
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = 'G';
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = 'H';
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = 'I';
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = 'J';
-                }
-                else if ((iTy >= 75) && (iTy < 99))  // Row 3
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'K';
-                    else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'L';
-                    else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'M';
-                    else if ((iTx >= 101) && (iTx < 123))  adam_key = 'N';
-                    else if ((iTx >= 123) && (iTx < 145))  adam_key = 'O';
-                    else if ((iTx >= 145) && (iTx < 167))  adam_key = 'P';
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = 'Q';
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = 'R';
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = 'S';
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = 'T';
-                }
-                else if ((iTy >= 99) && (iTy < 123)) // Row 4
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'U';
-                    else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'V';
-                    else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'W';
-                    else if ((iTx >= 101) && (iTx < 123))  adam_key = 'X';
-                    else if ((iTx >= 123) && (iTx < 145))  adam_key = 'Y';
-                    else if ((iTx >= 145) && (iTx < 167))  adam_key = 'Z';
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_UP);
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_DOWN);
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_LEFT);
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_RIGHT);
-                }
-                else if ((iTy >= 123) && (iTy < 146)) // Row 5
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-                    else if ((iTx >= 35)  && (iTx < 57))   adam_key = '.';
-                    else if ((iTx >= 57)  && (iTx < 79))   adam_key = ',';
-                    else if ((iTx >= 79)  && (iTx < 101))  adam_key = ':';
-                    else if ((iTx >= 101) && (iTx < 123))  adam_key = '#';
-                    else if ((iTx >= 123) && (iTx < 145))  adam_key = '/';
-                    else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_QUOTE;
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = '=';
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = '[';
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = ']';
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = '-';
-                }
-                else if ((iTy >= 146) && (iTy < 169)) // Row 6 (function key row)
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   adam_key = ADAM_KEY_F1;
-                    else if ((iTx >= 35)  && (iTx < 57))   adam_key = ADAM_KEY_F2;
-                    else if ((iTx >= 57)  && (iTx < 79))   adam_key = ADAM_KEY_F2;
-                    else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_F3;
-                    else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_F3;
-                    else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_F4;
-                    else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_F4;
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = ADAM_KEY_F5;
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = ADAM_KEY_F5;
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_F6;
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_F6;
-                }
-                else if ((iTy >= 169) && (iTy < 192)) // Row 7
-                {
-                    if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-                    else if ((iTx >= 35)  && (iTx < 57))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
-                    else if ((iTx >= 57)  && (iTx < 79))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
-                    else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_BS;
-                    else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_BS;
-                    else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_ESC;
-                    else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_ESC;
-                    else if ((iTx >= 167) && (iTx < 189))  adam_key = ' ';
-                    else if ((iTx >= 189) && (iTx < 211))  adam_key = ' ';
-                    else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_ENTER;
-                    else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_ENTER;
-                }
-                else {adam_key = 0; last_adam_key = 0;}
-
-                if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
-                {
-                    PutKBD(adam_key | (((adam_CapsLock && (adam_key >= 'A') && (adam_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
-                    mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-                }
-                if (last_adam_key != 255) last_adam_key = adam_key;
-            }
         }
         else if (myConfig.overlay == 10) // Alpha Keyboard
         {
-            if ((iTy >= 28) && (iTy < 56))        // Row 1 (top row)
-            {
-                if      ((iTx >= 1)   && (iTx < 34))   adam_key = '0';
-                else if ((iTx >= 34)  && (iTx < 65))   adam_key = '1';
-                else if ((iTx >= 65)  && (iTx < 96))   adam_key = '2';
-                else if ((iTx >= 96)  && (iTx < 127))  adam_key = '3';
-                else if ((iTx >= 127) && (iTx < 158))  adam_key = '4';
-                else if ((iTx >= 158) && (iTx < 189))  adam_key = 'A';
-                else if ((iTx >= 189) && (iTx < 220))  adam_key = 'B';
-                else if ((iTx >= 220) && (iTx < 255))  adam_key = 'C';
-            }
-            else if ((iTy >= 56) && (iTy < 84))   // Row 2
-            {
-                if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'D';
-                else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'E';
-                else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'F';
-                else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'G';
-                else if ((iTx >= 127) && (iTx < 158))  adam_key = 'H';
-                else if ((iTx >= 158) && (iTx < 189))  adam_key = 'I';
-                else if ((iTx >= 189) && (iTx < 220))  adam_key = 'J';
-                else if ((iTx >= 220) && (iTx < 255))  adam_key = 'K';
-            }
-            else if ((iTy >= 84) && (iTy < 112))  // Row 3
-            {
-                if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'L';
-                else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'M';
-                else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'N';
-                else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'O';
-                else if ((iTx >= 127) && (iTx < 158))  adam_key = 'P';
-                else if ((iTx >= 158) && (iTx < 189))  adam_key = 'Q';
-                else if ((iTx >= 189) && (iTx < 220))  adam_key = 'R';
-                else if ((iTx >= 220) && (iTx < 255))  adam_key = 'S';
-            }
-            else if ((iTy >= 112) && (iTy < 140))  // Row 4
-            {
-                if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'T';
-                else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'U';
-                else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'V';
-                else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'W';
-                else if ((iTx >= 127) && (iTx < 158))  adam_key = 'X';
-                else if ((iTx >= 158) && (iTx < 189))  adam_key = 'Y';
-                else if ((iTx >= 189) && (iTx < 220))  adam_key = 'Z';
-                else if ((iTx >= 220) && (iTx < 255))  adam_key = '.';
-            }
-            else if ((iTy >= 140) && (iTy < 169))  // Row 5
-            {
-                if      ((iTx >= 1)   && (iTx < 34))   adam_key = ADAM_KEY_F1;
-                else if ((iTx >= 34)  && (iTx < 65))   adam_key = ADAM_KEY_F2;
-                else if ((iTx >= 65)  && (iTx < 96))   adam_key = ADAM_KEY_F3;
-                else if ((iTx >= 96)  && (iTx < 127))  adam_key = ADAM_KEY_F4;
-                else if ((iTx >= 127) && (iTx < 158))  adam_key = ADAM_KEY_F5;
-                else if ((iTx >= 158) && (iTx < 189))  adam_key = ADAM_KEY_F6;
-                else if ((iTx >= 189) && (iTx < 220))  adam_key = '?';
-                else if ((iTx >= 220) && (iTx < 255))  adam_key = ADAM_KEY_BS;
-            }
-            else if ((iTy >= 169) && (iTy < 192))  // Row 6
-            {
-                if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-                else if ((iTx >= 166) && (iTx < 211))  adam_key = ' ';
-                else if ((iTx >= 211) && (iTx < 256))  adam_key = ADAM_KEY_ENTER;
-            }
-            else {adam_key = 0; last_adam_key = 0;}
-            
-            if (adam_mode)
-            {
-                if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
-                {
-                    PutKBD(adam_key | (((adam_CapsLock && (adam_key >= 'A') && (adam_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
-                    mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-                }
-            }
-            else // All other machines...
-            {
-                if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
-                {
-                    if      (adam_key == ADAM_KEY_F1)    kbd_key = KBD_KEY_F1;
-                    else if (adam_key == ADAM_KEY_F2)    kbd_key = KBD_KEY_F2;
-                    else if (adam_key == ADAM_KEY_F3)    kbd_key = KBD_KEY_F3;
-                    else if (adam_key == ADAM_KEY_F4)    kbd_key = KBD_KEY_F4;
-                    else if (adam_key == ADAM_KEY_F5)    kbd_key = KBD_KEY_F5;
-                    else if (adam_key == ADAM_KEY_F6)    kbd_key = KBD_KEY_F6;
-                    else if (adam_key == ADAM_KEY_ENTER) kbd_key = KBD_KEY_RET;
-                    else if (adam_key == ADAM_KEY_BS)    kbd_key = KBD_KEY_DEL;
-                    else if (adam_key == '?')            ucUN = JST_5;  // User defined
-                    else kbd_key = adam_key;
-                }
-            }
-            
-            if (last_adam_key != 255) last_adam_key = adam_key;
+            handle_alpha_keyboard_press(iTx, iTy);
         }
         else    // Normal 12 button virtual keypad
         {
