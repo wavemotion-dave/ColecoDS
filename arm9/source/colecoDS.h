@@ -15,7 +15,7 @@
 #include <string.h>
 #include "C24XX.h"
 
-#define VERSIONCLDS "8.0"
+#define VERSIONCLDS "8.1"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG

@@ -18,6 +18,7 @@
 #include "ecranBas.h"
 #include "ecranBasSel.h"
 #include "ecranHaut.h"
+#include "printf.h"
 
 // ------------------------------------------------------------------------------
 // With only 125 released games plus 25-50 prototypes and 50-ish homebrews,

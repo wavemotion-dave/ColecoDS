@@ -25,6 +25,8 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
+#include "printf.h"
+
 #define NORAM 0xFF
 
 #define COLECODS_SAVE_VER 0x0017        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.

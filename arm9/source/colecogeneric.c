@@ -24,6 +24,7 @@
 #include "ecranHaut.h"
 
 #include "CRC32.h"
+#include "printf.h"
 
 typedef enum {FT_NONE,FT_FILE,FT_DIR} FILE_TYPE;
 extern u8 bMSXBiosFound;
@@ -1429,15 +1430,29 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x8dac567c)                 myConfig.memWipe = 4;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
     if (file_crc == 0xae4d50e9)                 myConfig.memWipe = 4;  // zork i - the great underground empire (1981) (infocom).dsk
     
+    // For ADAM .dsk games, we want to see if this is a CP/M game and adjust the memwipe
+    if (adam_mode)
+    {
+        for (int i=0; i<0x1000; i++)
+        {
+            if ((ROM_Memory[i] == 'C') && (ROM_Memory[i+1] == 'P') && (ROM_Memory[i+2] == '/') && (ROM_Memory[i+3] == 'M')) // Look for CP/M
+            {
+                myConfig.memWipe = 4;  // Set to CPM clear pattern by default
+                myConfig.overlay = 9;  // And most CPM games are going to want a full keyboard
+                break;
+            }
+        }
+    }
+    
     // ---------------------------------------------------------------------------------------------
     // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
     // ---------------------------------------------------------------------------------------------
-    if (file_crc == 0x90f5f414) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp
-    if (file_crc == 0x5e169d35) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
-    if (file_crc == 0xe66eaed9) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
-    if (file_crc == 0x785fc789) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)    
-    if (file_crc == 0xe50d6e60) myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (cassette)    
-    if (file_crc == 0x73f37230) myConfig.ayEnvelope = 1; // MSX Killer Station
+    if (file_crc == 0x90f5f414)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp
+    if (file_crc == 0x5e169d35)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
+    if (file_crc == 0xe66eaed9)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
+    if (file_crc == 0x785fc789)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)    
+    if (file_crc == 0xe50d6e60)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (cassette)    
+    if (file_crc == 0x73f37230)                 myConfig.ayEnvelope = 1; // MSX Killer Station
     
     // ----------------------------------------------------------------------------
     // For these machines, we default to clearing interrupts only on VDP read...
@@ -2287,5 +2302,7 @@ void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr,
     }
   }
 }
+
+void _putchar(char character) {}
 
 // End of file

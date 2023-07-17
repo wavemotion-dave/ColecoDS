@@ -16,6 +16,8 @@
 #include <unistd.h>
 #include <fat.h>
 
+#include "printf.h"
+
 #include "colecoDS.h"
 #include "AdamNet.h"
 #include "FDIDisk.h"
@@ -192,7 +194,7 @@ void colecoWipeRAM(void)
   {
     // ADAM has special handling...
       u8 pattern = 0x00;                               // Default to all-clear
-      if (myConfig.memWipe == 1) pattern = 0x02;       // The 0x02 pattern tends to make most things start up properly... don't ask.
+      if (myConfig.memWipe == 1) pattern = 0x30;       // The 0x30 pattern tends to make most things start up properly... don't ask.
       if (myConfig.memWipe == 4) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
       for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? pattern : (rand() & 0xFF));
   }
@@ -580,7 +582,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             Port20 = 0x00;               // Adam Net default
             adam_128k_mode = 0;          // Normal 64K ADAM to start
             SetupAdam(false);
-            // The .ddp is now in ROM_Memory[]
+            // The .ddp or .dsk is now in ROM_Memory[]
             if (strstr(path, ".ddp") != 0)
             {
                 ChangeTape(0, path);
@@ -591,6 +593,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
                 ChangeDisk(0, path);
                 strcpy(lastAdamDataPath, path);
             }
+            
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {

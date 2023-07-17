@@ -21,7 +21,7 @@
 #include "cpu/m6502/M6502.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/sn76496/SN76496.h"
-#define NORAM 0xFF
+#include "printf.h"
 
 M6502 m6502 __attribute__((section(".dtcm")));        // Our core 6502 CPU
 

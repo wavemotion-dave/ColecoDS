@@ -377,9 +377,13 @@ case DAA:
 
 default:
   if(CPU.TrapBadOps)
+  {
+#if 0      
     printf
     (
       "[Z80 %lX] Unrecognized instruction: %02X at PC=%04X\n",
       (long)CPU.User,OpZ80(CPU.PC.W-1),CPU.PC.W-1
     );
+#endif      
+  }
   break;

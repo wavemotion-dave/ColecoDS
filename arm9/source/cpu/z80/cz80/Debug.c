@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include "../../printf.h"
 
 #ifdef FMSX
 #include "AY8910.h"

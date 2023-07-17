@@ -14,6 +14,7 @@
 #include "../../colecogeneric.h"
 #include "../../AdamNet.h"
 #include "../../C24XX.h"
+#include "../../printf.h"
 
 #define DR_INT_IRQ 0x01
 #define DR_NMI_IRQ 0x02
