@@ -24,6 +24,8 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
+#include "printf.h"
+
 #define NORAM 0xFF
 
 // ------------------------------------------------------------------

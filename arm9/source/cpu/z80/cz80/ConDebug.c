@@ -14,6 +14,8 @@
 /*************************************************************/
 #ifdef DEBUG
 
+#include "../../printf.h"
+
 #ifndef CONDEBUG
 /** Normal DebugZ80() ****************************************/
 /** When CONDEBUG #undefined, we use plain command line.    **/

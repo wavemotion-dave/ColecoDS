@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "CRC32.h"
+#include "printf.h"
 
 #define CRC32_POLY 0x04C11DB7
 

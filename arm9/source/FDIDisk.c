@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include "printf.h"
 
 #define IMAGE_SIZE(Fmt) \
   (Formats[Fmt].Sides*Formats[Fmt].Tracks*    \

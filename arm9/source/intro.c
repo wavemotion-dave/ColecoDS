@@ -17,6 +17,7 @@
 #include "soundbank.h"
 #include "pdev_tbg0.h"
 #include "pdev_bg0.h"
+#include "printf.h"
 
 extern unsigned int vusCptVBL;
 

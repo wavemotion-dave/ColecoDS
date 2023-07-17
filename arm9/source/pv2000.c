@@ -21,6 +21,8 @@
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
+#include "printf.h"
+
 #define NORAM 0xFF
 
 // ------------------------------------------------------------------

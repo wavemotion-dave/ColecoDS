@@ -14,6 +14,7 @@
 #include "C24XX.h"
 #include <stdio.h>
 #include <string.h>
+#include "printf.h"
 
 /** Internal Chip States *************************************/
 #define RECV_CMD  0

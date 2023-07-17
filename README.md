@@ -185,7 +185,7 @@ The base 64K machine is emulated. Right now only .COM files will play. Out in th
 
 dsktool from https://github.com/charlierobson/einsdein-vitamins
 or 
-EDIP v1e which you can find in the extras folder on the ColecoDS github page.
+EDIP version 1e which you can find in the extras folder on the ColecoDS github page.
 
 With either of these tools, you should be able to extract more than 50 .COM games that currently work.
 
@@ -193,7 +193,7 @@ A future version of the emulator will support .DSK files directly... but it's co
 
 Creativision Compatibility :
 -----------------------
-The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS. Games default to loading in "Legacy A/B" mode (meaning it will try to load into memory with the same locations/mirrors as the original commercial releases) but you can switch this to "Linear" which is a more modern way to load the game up against C000h or even 32k Bankswapped (many of the games have been converted to run on a MegaCart in this format).
+The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS. Games default to loading in "Legacy A/B" mode (meaning it will try to load into memory with the same locations/mirrors as the original commercial releases) but you can switch this to "Linear" which is a more modern way to load the game up against C000h or even 32k Bankswapped (many of the games have been converted to run on a MegaCart in this format).  Cassette loading is not supported.
 
 
 Controllers :
@@ -269,6 +269,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.1: NOT YET RELEASED
+* Major rework of the CreatiVision driver for much improved compatibility.
+* Swap out bloated printf/sprintf for embedded versions.
+* Added screen snapshot by holding L+R buttons while in-game.
+* Other cleanups as time permitted.
+
 V8.0: 28-Jun-2023 by wavemotion-dave
 * Minor cleanups only.
 

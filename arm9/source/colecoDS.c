@@ -52,10 +52,13 @@
 #include "MSX_CBIOS.h"
 #include "MTX_BIOS.h"
 #include "C24XX.h"
+#include "screenshot.h"
 
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
 #include "cpu/z80/Z80_interface.h"
+
+#include "printf.h"
 
 extern Z80 CPU;
 u32 debug1=0;
@@ -2085,8 +2088,14 @@ void colecoDS_main(void)
             lcdSwap();
             WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
       }
-      else        
-      if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
+      else if ((nds_key & KEY_L) && (nds_key & KEY_R))
+      {
+            AffChaine(5,0,0,"SNAPSHOT");
+            screenshot();
+            WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+            AffChaine(5,0,0,"        ");
+      }
+      else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
       {
           if (IsFullKeyboard() && ((nds_key & KEY_L) || (nds_key & KEY_R)))
           {

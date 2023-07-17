@@ -16,6 +16,7 @@
 #include "Z80.h"
 #include "Tables.h"
 #include <stdio.h>
+#include "../../../printf.h"
 
 extern Z80 CPU;
 

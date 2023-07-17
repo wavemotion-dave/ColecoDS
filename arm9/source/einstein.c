@@ -22,6 +22,8 @@
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
+#include "printf.h"
+
 #define NORAM 0xFF
 
 u16 einstein_ram_start = 0x8000;

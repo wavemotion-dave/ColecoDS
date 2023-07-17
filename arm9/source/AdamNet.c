@@ -20,6 +20,7 @@
 #include "colecomngt.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/z80/Z80_interface.h"
+#include "printf.h"
 
 FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
 FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
@@ -34,7 +35,7 @@ word savedLEN = 0;
 byte last_command_read=false;
 byte io_show_status=0;
 
-#define DELAY_IO 10
+#define DELAY_IO    10
 
 /** RAM Access Macro *****************************************/
 #define RAM(A)         (RAM_Memory[A])
