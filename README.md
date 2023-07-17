@@ -154,6 +154,10 @@ Spectravideo SVI Compatibility :
 -----------------------
 This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common bload and run commands.
 
+Sega SG-1000 Compatibility :
+-----------------------
+This emulator supports .sg files as ROM loads. Generally all SG-1000 games run with high compatibility (mostly thanks to the very simple architecture which is quite like the Colecovision).
+
 Sega SC-3000 Compatibility :
 -----------------------
 This emulator supports .sc files as ROM only (not cassettes) but ColecoDS will support the amazing SC-3000 Survivors Multi-Cart and MEGA-Cart. Strongly prefer the Multi-Cart as it's smaller and contains the same selection of tape games. Just rename the 2MB or 4MB binary as .sc to load in ColecoDS.
@@ -187,9 +191,7 @@ dsktool from https://github.com/charlierobson/einsdein-vitamins
 or 
 EDIP version 1e which you can find in the extras folder on the ColecoDS github page.
 
-With either of these tools, you should be able to extract more than 50 .COM games that currently work.
-
-A future version of the emulator will support .DSK files directly... but it's complicated and I haven't got it all figured out yet.
+With either of these tools, you should be able to extract more than 50 .COM games that currently work. This is definitely the least well supported "cousin system" in terms of compatibilty... but there is enough working that you can get a taste for the machine. A future version of the emulator might support .DSK files directly... but it's complicated and I haven't got it all figured out yet.
 
 Creativision Compatibility :
 -----------------------
