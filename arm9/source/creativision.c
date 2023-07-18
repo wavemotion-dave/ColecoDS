@@ -1,8 +1,8 @@
 // =====================================================================================
 // Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
-// Copying and distribution of this emulator, it's source code and associated 
-// readme files, with or without modification, are permitted in any medium without 
+// Copying and distribution of this emulator, it's source code and associated
+// readme files, with or without modification, are permitted in any medium without
 // royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
 // Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
 //
@@ -32,14 +32,13 @@ extern byte Loop9918(void);
 extern SN76496 sncol;
 
 
-/* PIA handling courtesy of the creatiVision emulator:  https://sourceforge.net/projects/creativisionemulator/ 
+/* PIA handling courtesy of the creatiVision emulator:  https://sourceforge.net/projects/creativisionemulator/
    and used with permission. Do not use this code unless you contact the authors of the emulator at the URL above */
 #define PA0         1
 #define PA1         2
 #define PA2         3
 #define PA3         4
 
-#define PIA_INPUT   0
 #define PIA_OUTALL  0xff
 #define PIA_PDR     4
 #define PIA_DDR     0
@@ -57,7 +56,7 @@ M6821 pia1 = {0};
 
 short  total_cycles = 0;
 unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
- 								   
+
 /**
  * PIA_Write
  *
@@ -92,7 +91,7 @@ void PIA_Write(word addr, byte data)
 
                 /* Output to SN76489 */
                 sn76496W(data, &sncol);
-                //SN76496SPWrite(0,data);
+
                 pia1.prev_cycles = total_cycles;
 
                 /* Set IRQ as complete */
@@ -211,45 +210,53 @@ u32 creativision_run(void)
     return 0;
 }
 
+// -----------------------------------------------------------------------------------
+// Here we map all of the DS keys (buttons or touch-screen) to their CreatiVision
+// equivilents. This is just a matter of setting (or, in this case, clearing) the
+// right bits in the keyboard map which will be reported back to the program via PIA.
+// -----------------------------------------------------------------------------------
 void creativision_input(void)
 {
     extern u32 JoyState;
     extern u8 key_shift, key_ctrl;
 
-    
     KEYBD[PA3] = 0xFF;
     KEYBD[PA2] = 0xFF;
     KEYBD[PA1] = 0xFF;
     KEYBD[PA0] = 0xFF;
-    
-    if (JoyState & JST_FIREL)   KEYBD[PA0] &= 0x7f;  // P1 Right Button
-    if (JoyState & JST_FIRER)   KEYBD[PA1] &= 0x7f;  // P1 Left Button
 
-    if (JoyState & JST_UP)      KEYBD[PA0] &= 0xf7;  // P1 up
-    if (JoyState & JST_DOWN)    KEYBD[PA0] &= 0xfd;  // P1 down
-    if (JoyState & JST_LEFT)    KEYBD[PA0] &= 0xdf;  // P1 left
-    if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right
+    // First the DS button maps...
+    if (JoyState)
+    {
+        if (JoyState & JST_FIREL)   KEYBD[PA0] &= 0x7f;  // P1 Right Button
+        if (JoyState & JST_FIRER)   KEYBD[PA1] &= 0x7f;  // P1 Left Button
 
-    if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1      
-    if (JoyState == JST_2)      KEYBD[PA1] &= 0xcf;  // 2
-    if (JoyState == JST_3)      KEYBD[PA1] &= 0x9f;  // 3
-    if (JoyState == JST_4)      KEYBD[PA1] &= 0xd7;  // 4
-    if (JoyState == JST_5)      KEYBD[PA1] &= 0xb7;  // 5
-    if (JoyState == JST_6)      KEYBD[PA1] &= 0xaf;  // 6
-    if (JoyState == JST_7)      KEYBD[PA3] &= 0xf9;  // 7
-    
-    if (JoyState == JST_8)      KEYBD[PA3] &= 0xfa;  // Y
-    if (JoyState == JST_9)      KEYBD[PA3] &= 0xaf;  // N
-    if (JoyState == JST_0)      KEYBD[PA3] &= 0xf6;  // RETURN
-    
-    if (JoyState == JST_STAR)   Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
-    if (JoyState == JST_POUND)  KEYBD[PA1] &= 0xaf;          // 6 but graphic overlay shows ST=START (which is how it works on a real overlay for the CV)
-    
+        if (JoyState & JST_UP)      KEYBD[PA0] &= 0xf7;  // P1 up
+        if (JoyState & JST_DOWN)    KEYBD[PA0] &= 0xfd;  // P1 down
+        if (JoyState & JST_LEFT)    KEYBD[PA0] &= 0xdf;  // P1 left
+        if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right
+
+        if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1
+        if (JoyState == JST_2)      KEYBD[PA1] &= 0xcf;  // 2
+        if (JoyState == JST_3)      KEYBD[PA1] &= 0x9f;  // 3
+        if (JoyState == JST_4)      KEYBD[PA1] &= 0xd7;  // 4
+        if (JoyState == JST_5)      KEYBD[PA1] &= 0xb7;  // 5
+        if (JoyState == JST_6)      KEYBD[PA1] &= 0xaf;  // 6
+        if (JoyState == JST_7)      KEYBD[PA3] &= 0xf9;  // 7
+
+        if (JoyState == JST_8)      KEYBD[PA3] &= 0xfa;  // Y
+        if (JoyState == JST_9)      KEYBD[PA3] &= 0xaf;  // N
+        if (JoyState == JST_0)      KEYBD[PA3] &= 0xf6;  // RETURN
+
+        if (JoyState == JST_STAR)   Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
+        if (JoyState == JST_POUND)  KEYBD[PA1] &= 0xaf;          // 6 but graphic overlay shows ST=START (which is how it works on a real overlay for the CV)
+    }
+
     // And now the keyboard maps...
     if (kbd_key)
     {
         if (kbd_key == '0')         KEYBD[PA3] &= 0xed;   // 0
-        if (kbd_key == '1')         KEYBD[PA0] &= 0xf3;   // 1      
+        if (kbd_key == '1')         KEYBD[PA0] &= 0xf3;   // 1
         if (kbd_key == '2')         KEYBD[PA1] &= 0xcf;   // 2
         if (kbd_key == '3')         KEYBD[PA1] &= 0x9f;   // 3
         if (kbd_key == '4')         KEYBD[PA1] &= 0xd7;   // 4
@@ -258,16 +265,16 @@ void creativision_input(void)
         if (kbd_key == '7')         KEYBD[PA3] &= 0xf9;   // 7
         if (kbd_key == '8')         KEYBD[PA3] &= 0xbd;   // 8
         if (kbd_key == '9')         KEYBD[PA3] &= 0xdd;   // 9
-        
+
         if (kbd_key == 'A')         KEYBD[PA1] &= 0xee;   // A
         if (kbd_key == 'B')         KEYBD[PA1] &= 0xf9;   // B
-        if (kbd_key == 'C')         KEYBD[PA1] &= 0xdd;   // C        
+        if (kbd_key == 'C')         KEYBD[PA1] &= 0xdd;   // C
         if (kbd_key == 'D')         KEYBD[PA1] &= 0xbe;   // D
         if (kbd_key == 'E')         KEYBD[PA1] &= 0xeb;   // E
         if (kbd_key == 'F')         KEYBD[PA1] &= 0xfc;   // F
         if (kbd_key == 'G')         KEYBD[PA1] &= 0xfa;   // G
         if (kbd_key == 'H')         KEYBD[PA3] &= 0xbb;   // H
-        if (kbd_key == 'I')         KEYBD[PA3] &= 0xbe;   // I        
+        if (kbd_key == 'I')         KEYBD[PA3] &= 0xbe;   // I
         if (kbd_key == 'J')         KEYBD[PA3] &= 0xdb;   // J
         if (kbd_key == 'K')         KEYBD[PA3] &= 0xeb;   // K
         if (kbd_key == 'L')         KEYBD[PA3] &= 0xf3;   // L
@@ -282,22 +289,22 @@ void creativision_input(void)
         if (kbd_key == 'U')         KEYBD[PA3] &= 0xfc;   // U
         if (kbd_key == 'V')         KEYBD[PA1] &= 0xbd;   // V
         if (kbd_key == 'W')         KEYBD[PA1] &= 0xf3;   // W
-        if (kbd_key == 'X')         KEYBD[PA1] &= 0xed;   // X        
+        if (kbd_key == 'X')         KEYBD[PA1] &= 0xed;   // X
         if (kbd_key == 'Y')         KEYBD[PA3] &= 0xfa;   // Y
         if (kbd_key == 'Z')         KEYBD[PA1] &= 0xf5;   // Z
         if (kbd_key == '?')         KEYBD[PA3] &= 0x7f;   // EQUALS (only on small keyboard so we repurpose)
         if (kbd_key == '=')         KEYBD[PA3] &= 0x7f;   // EQUALS
-        if (kbd_key == '.')         KEYBD[PA3] &= 0x9f;   // PERIOD        
-        
+        if (kbd_key == '.')         KEYBD[PA3] &= 0x9f;   // PERIOD
+
         if (kbd_key == ',')         KEYBD[PA3] &= 0xd7;   // COMMA
         if (kbd_key == ':')         KEYBD[PA3] &= 0xf5;   // COLON
         if (kbd_key == '/')         KEYBD[PA3] &= 0xcf;   // SLASH
         if (kbd_key == '#')         KEYBD[PA3] &= 0xcf;   // SEMI COLON
-        
+
         if (kbd_key == ' ')         KEYBD[PA2] &= 0xf3;   // SPACE
         if (kbd_key == KBD_KEY_DEL) KEYBD[PA1] &= 0xf6;   // LEFT/BS
         if (kbd_key == KBD_KEY_RET) KEYBD[PA3] &= 0xf6;   // RETURN
-        
+
         if (key_shift)              KEYBD[PA0] &= 0x7f;   // SHIFT
         if (key_ctrl)               KEYBD[PA1] &= 0x7f;   // CTRL
         if (kbd_key == KBD_KEY_F1)  Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
@@ -306,31 +313,28 @@ void creativision_input(void)
 
 
 // ========================================================================================
-// Memory Map:
-// 
+// CreatiVision Memory Map:
+//
 // $0000 - $03FF: 1K RAM (mirrored thrice at $0400 - $07FF, $0800 - $0BFF, $0C00 - $0FFF)
 // $1000 - $1FFF: PIA (joysticks, sound)
 // $2000 - $2FFF: VDP read
 // $3000 - $3FFF: VDP write
 // $4000 - $7FFF: 16K ROM2 (we map RAM here if not used by ROM)
 // $8000 - $BFFF: 16K ROM1 (we map RAM here if not used by ROM)
-// $C000 - $E7FF: 10K Unused
-// $E800 - $EFFF: 2K I/O interface
-// $F000 - $F7FF: 2K Unused
-// $F800 - $FFFF: 2K ROM0 (BIOS)
+// $C000 - $FFFF: 16K ROM0 (CV BIOS is the 2K from $F800 to $FFFF and the CSL BIOS uses all 16K)
 // ========================================================================================
 void Wr6502(register word Addr,register byte Value)
 {
     switch (Addr & 0xF000)
     {
         case 0x0000:    // Zero-Page RAM writes
-            if (myConfig.colecoRAM == COLECO_RAM_NORMAL_MIRROR) // Mirror RAM?
+            if (myConfig.colecoRAM == COLECO_RAM_NORMAL_MIRROR) // Mirror RAM? Nothing really relies on this but a real CreatiVision machine will 'see' the replication.
             {
                 RAM_Memory[(Addr & 0x3FF) + 0x000] = Value;
                 RAM_Memory[(Addr & 0x3FF) + 0x400] = Value;
                 RAM_Memory[(Addr & 0x3FF) + 0x800] = Value;
                 RAM_Memory[(Addr & 0x3FF) + 0xC00] = Value;
-            } 
+            }
             else
             {
                 RAM_Memory[Addr] = Value;
@@ -340,12 +344,14 @@ void Wr6502(register word Addr,register byte Value)
         case 0x1000:    // PIA Writes
           PIA_Write(Addr, Value);
           break;
-            
+
         case 0x3000:    // VDP Writes
             if (Addr & 1) {if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);}
             else WrData9918(Value);
 
         // Expanded RAM... very little uses this... but for future homebrews or for the CSL bios load
+        // In theory we should guard against writes to areas where ROM is mapped, but we are going to 
+        // assume well-behaved programs and save the time/effort. So far this has worked fine.
         case 0x4000:
         case 0x5000:
         case 0x6000:
@@ -359,23 +365,31 @@ void Wr6502(register word Addr,register byte Value)
     }
 }
 
+// ------------------------------------------------------------------------------------
+// Reads mostly return from our 64K memory but we trap out reads from the PIA and VDP.
+// Unused areas should return 0xFF but this is already well handled by pre-filling
+// the unused areas of our 64K memory map with 0xFF so we don't have to do that here.
+// ------------------------------------------------------------------------------------
 byte Rd6502(register word Addr)
 {
     switch (Addr & 0xF000)
     {
         case 0x1000:    // PIA Read
-          return PIA_Read(Addr);      
+          return PIA_Read(Addr);
           break;
-            
+
         case 0x2000:  // VDP Read
           if (Addr & 1) return(RdCtrl9918());
-          else return(RdData9918());          
+          else return(RdData9918());
           break;
     }
 
     return RAM_Memory[Addr];
 }
 
+// ----------------------------------------------------------------
+// With each new game load, we must restore the BIOS to be safe...
+// ----------------------------------------------------------------
 void creativision_restore_bios(void)
 {
     if (myConfig.cvisionLoad != 3) // 3=CSL or similar BIOS
@@ -387,43 +401,42 @@ void creativision_restore_bios(void)
 
 // -----------------------------------------------------------------------------------------------------------------------------------------
 // Most of the legacy commercial games were distributed on two PROMs and due to the way in which the carts were wired up, present the ROM
-// in somewhat odd ways... The driver here will handle legacy A/B based on size of the ROM but the user can override this and select a 
+// in somewhat odd ways... The driver here will handle legacy A/B based on size of the ROM but the user can override this and select a
 // linear load which places the ROM binary up against 0xC000 (the important vector information is right before this) and there is also
-// a special handler for the 32K bankswapped ROMs which were available for things like the MegaCart. It's all a bit confusing in spots... 
-// but this generally works fine. 
+// a special handler for the 32K bankswapped ROMs which were available for things like the MegaCart. It's all a bit confusing in spots...
+// but this generally works fine.
 //
 //
 // From @username@ in the CreatiVemu forums:
 // 4K ROMs
 // Load directly to $B000
-// 
+//
 // 6K ROMs
 // Tank Attack - 4K to $B000, 2K to $A800
 // Deep Sea Rescue, Planet Defender, Tennis, TennisD1, TennisD2 - 4K to $B000, 2K to $A000
 // Note Deep Sea Rescue needs the byte at $B4C8 fixed from $AF to $A7
-// 
+//
 // 8K ROMs
 // Load directly to $A000
-// 
+//
 // 10K ROMs
 // Locomotive - 8K to $A000, 2K to $7000
-// 
+//
 // 12K ROMs
 // Load 8K to $A000, 4K to $7000
 // Note BASIC82A and BASIC82B change byte at $7223 from $40 to $70
-// 
+//
 // 16K ROMs
 // Load 8K to $A000, 8K to $8000
-// 
+//
 // 18K ROMs
 // Load 8K to $A000, 8K to $8000 and 2K to $7800
 // -----------------------------------------------------------------------------------------------------------------------------------------
-
 void creativision_loadrom(int romSize)
 {
     memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
     memset(RAM_Memory+0x4000, 0x00, 0x8000);    // Blank everything between RAM and the BIOS at 0xF800
-    
+
     if (myConfig.cvisionLoad == 3) // Special load of CSL or similar BIOS into C000-FFFF
     {
         memcpy(RAM_Memory+0xC000, ROM_Memory, romSize);
@@ -459,7 +472,7 @@ void creativision_loadrom(int romSize)
     }
     else if (romSize == 1024 * 10) // 10K
     {
-        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);   // main 8Kb	at 0xA000
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);   // main 8Kb at 0xA000
         memcpy(RAM_Memory+0x7800, ROM_Memory+0x2000, 0x0800);   // second 2Kb at 0x7800
 
         memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
@@ -474,7 +487,7 @@ void creativision_loadrom(int romSize)
     }
     else if (romSize == 1024 * 12) // 12K
     {
-        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);   // main 8Kb	at 0xA000
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);   // main 8Kb at 0xA000
         memcpy(RAM_Memory+0x7000, ROM_Memory+0x2000, 0x1000);   // second 4Kb at 0x7000
         memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
         memcpy(RAM_Memory+0x5000, RAM_Memory+0x7000, 0x1000);   // Mirror 4k at 0x5000
@@ -483,7 +496,7 @@ void creativision_loadrom(int romSize)
     }
     else if (romSize == 1024 * 16) // 16K
     {
-        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb    at 0xA000
         memcpy(RAM_Memory+0x8000, ROM_Memory+0x2000, 0x2000);    // second 8Kb at 0x8000
     }
     else if (romSize == 1024 * 18) // 18K
@@ -502,8 +515,8 @@ void creativision_loadrom(int romSize)
     }
     else if (romSize <= 1024 * 32) // 32K or less (load Linear at 0xC000 - romSize)
     {
-        memcpy(RAM_Memory+(0xC000-romSize), ROM_Memory+0x0000, romSize);    // load linear at 4000-BFFF
-    }    
+        memcpy(RAM_Memory+(0xC000-romSize), ROM_Memory+0x0000, romSize);    // load linear at 4000-BFFF up against the $C000 (where the vectors are)
+    }
 }
 
 // End of file
