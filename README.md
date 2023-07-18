@@ -11,7 +11,7 @@ Because the chips used in the Colecovision Hardware were so common in that era, 
 to be very close to the CV in terms of hardware. Often only the IO/Memory was different. As such,
 ColecoDS also allows cartridge and sometimes tapegames from "cousin" systems to be played - namely 
 the Sord M5, the Memotech MTX, the SG-1000/3000, the Spectravision 3x8 SVI, Casio PV-2000, Hanimex 
-Pencil II, Creativision, the Tatung Einstein and the venerable MSX1.
+Pencil II, CreatiVision, the Tatung Einstein and the venerable MSX1.
 
 Features :
 -----------------------
@@ -193,10 +193,11 @@ EDIP version 1e which you can find in the extras folder on the ColecoDS github p
 
 With either of these tools, you should be able to extract more than 50 .COM games that currently work. This is definitely the least well supported "cousin system" in terms of compatibilty... but there is enough working that you can get a taste for the machine. A future version of the emulator might support .DSK files directly... but it's complicated and I haven't got it all figured out yet.
 
-Creativision Compatibility :
+CreatiVision Compatibility :
 -----------------------
-The Creativision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS. Games default to loading in "Legacy A/B" mode (meaning it will try to load into memory with the same locations/mirrors as the original commercial releases) but you can switch this to "Linear" which is a more modern way to load the game up against C000h or even 32k Bankswapped (many of the games have been converted to run on a MegaCart in this format).  Cassette loading is not supported.
+The VTech CreatiVision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS. Games default to loading in "Legacy A/B" mode (meaning it will try to load into memory with the same locations/mirrors as the original commercial releases) but you can switch this to "Linear" which is a more modern way to load the game up against C000h or even 32k Bankswapped (many of the games have been converted to run on a MegaCart in this format).  Cassette loading is not supported.
 
+For the CV enthusiast only: experimental loading of the CSL BIOS is allowed. If you take a 16K CSL BIOS (don't ask), and rename as .cv you can load it with this emulator. It will load up from C000h-FFFFh and you can enjoy the improved BIOS/BASIC functionality with a full 32K of expanded memory (much like a Laser 2001 or Salora Manager).
 
 Controllers :
 -----------------------
