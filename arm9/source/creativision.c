@@ -34,32 +34,28 @@ extern SN76496 sncol;
 
 /* PIA handling courtesy of the creatiVision emulator:  https://sourceforge.net/projects/creativisionemulator/ 
    and used with permission. Do not use this code unless you contact the authors of the emulator at the URL above */
-#define PA0 1
-#define PA1 2
-#define PA2 3
-#define PA3 4
+#define PA0         1
+#define PA1         2
+#define PA2         3
+#define PA3         4
 
-#define PIA_INPUT    0
-#define PIA_OUTALL 0xff
-#define PIA_KEY0   0xf7
-#define PIA_KEY1   0xfb
-#define PIA_KEY2   0xfd
-#define PIA_KEY3   0xfe
-#define PIA_PDR    4
-#define PIA_DDR    0
+#define PIA_INPUT   0
+#define PIA_OUTALL  0xff
+#define PIA_PDR     4
+#define PIA_DDR     0
 
 typedef struct {
-    int PDR;  /* Peripheral Data Register */
-    int DDR;  /* Data Direction Register */
-    int CR;   /* Control Register */
-    unsigned long long int prev_cycles;
+    short int PDR;  /* Peripheral Data Register */
+    short int DDR;  /* Data Direction Register */
+    short int CR;   /* Control Register */
+    unsigned short int prev_cycles;
 } M6821;
 
 /* PIA 0 and 1 */
 M6821 pia0 = {0};
 M6821 pia1 = {0};
 
-int total_cycles = 0;
+short  total_cycles = 0;
 unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
  								   
 /**
@@ -218,6 +214,8 @@ u32 creativision_run(void)
 void creativision_input(void)
 {
     extern u32 JoyState;
+    extern u8 key_shift, key_ctrl;
+
     
     KEYBD[PA3] = 0xFF;
     KEYBD[PA2] = 0xFF;
@@ -287,11 +285,21 @@ void creativision_input(void)
         if (kbd_key == 'X')         KEYBD[PA1] &= 0xed;   // X        
         if (kbd_key == 'Y')         KEYBD[PA3] &= 0xfa;   // Y
         if (kbd_key == 'Z')         KEYBD[PA1] &= 0xf5;   // Z
-        if (kbd_key == '?')         KEYBD[PA3] &= 0x7f;   // EQUALS
-        if (kbd_key == '.')         KEYBD[PA3] &= 0x9f;   // PERIOD
+        if (kbd_key == '?')         KEYBD[PA3] &= 0x7f;   // EQUALS (only on small keyboard so we repurpose)
+        if (kbd_key == '=')         KEYBD[PA3] &= 0x7f;   // EQUALS
+        if (kbd_key == '.')         KEYBD[PA3] &= 0x9f;   // PERIOD        
+        
+        if (kbd_key == ',')         KEYBD[PA3] &= 0xd7;   // COMMA
+        if (kbd_key == ':')         KEYBD[PA3] &= 0xf5;   // COLON
+        if (kbd_key == '/')         KEYBD[PA3] &= 0xcf;   // SLASH
+        if (kbd_key == '#')         KEYBD[PA3] &= 0xcf;   // SEMI COLON
+        
         if (kbd_key == ' ')         KEYBD[PA2] &= 0xf3;   // SPACE
         if (kbd_key == KBD_KEY_DEL) KEYBD[PA1] &= 0xf6;   // LEFT/BS
         if (kbd_key == KBD_KEY_RET) KEYBD[PA3] &= 0xf6;   // RETURN
+        
+        if (key_shift)              KEYBD[PA0] &= 0x7f;   // SHIFT
+        if (key_ctrl)               KEYBD[PA1] &= 0x7f;   // CTRL
         if (kbd_key == KBD_KEY_F1)  Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
     }
 }
@@ -306,9 +314,9 @@ void creativision_input(void)
 // $3000 - $3FFF: VDP write
 // $4000 - $7FFF: 16K ROM2 (we map RAM here if not used by ROM)
 // $8000 - $BFFF: 16K ROM1 (we map RAM here if not used by ROM)
-// $C000 - $E7FF: 10K Unused - we map RAM here
-// $E800 - $EFFF: 2K I/O interface - we map RAM here
-// $F000 - $F7FF: 2K Unused - we map RAM here
+// $C000 - $E7FF: 10K Unused
+// $E800 - $EFFF: 2K I/O interface
+// $F000 - $F7FF: 2K Unused
 // $F800 - $FFFF: 2K ROM0 (BIOS)
 // ========================================================================================
 void Wr6502(register word Addr,register byte Value)
@@ -334,11 +342,10 @@ void Wr6502(register word Addr,register byte Value)
           break;
             
         case 0x3000:    // VDP Writes
-            if ((Addr & 1)==0) WrData9918(Value);
-            else if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);
-            break;
+            if (Addr & 1) {if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);}
+            else WrData9918(Value);
 
-        // Expanded RAM... very little uses this... but for future homebrews
+        // Expanded RAM... very little uses this... but for future homebrews or for the CSL bios load
         case 0x4000:
         case 0x5000:
         case 0x6000:
@@ -347,10 +354,6 @@ void Wr6502(register word Addr,register byte Value)
         case 0x9000:
         case 0xA000:
         case 0xB000:
-        case 0xC000:
-        case 0xD000:
-        case 0xE000:
-        case 0xF000:
             RAM_Memory[Addr] = Value;
             break;
     }
@@ -365,8 +368,8 @@ byte Rd6502(register word Addr)
           break;
             
         case 0x2000:  // VDP Read
-          if ((Addr & 1)==0) return(RdData9918());
-          return(RdCtrl9918());
+          if (Addr & 1) return(RdCtrl9918());
+          else return(RdData9918());          
           break;
     }
 
@@ -375,7 +378,7 @@ byte Rd6502(register word Addr)
 
 void creativision_restore_bios(void)
 {
-    if (myConfig.cvisionLoad != 99) // Special Laser 2001 BIOS 16K load
+    if (myConfig.cvisionLoad != 3) // 3=CSL or similar BIOS
     {
         memcpy(RAM_Memory+0xF800,CreativisionBios,0x800);
     }
@@ -419,8 +422,9 @@ void creativision_restore_bios(void)
 void creativision_loadrom(int romSize)
 {
     memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
+    memset(RAM_Memory+0x4000, 0x00, 0x8000);    // Blank everything between RAM and the BIOS at 0xF800
     
-    if (myConfig.cvisionLoad == 99) // Special Laser 2001 BIOS 16K load - experimental...
+    if (myConfig.cvisionLoad == 3) // Special load of CSL or similar BIOS into C000-FFFF
     {
         memcpy(RAM_Memory+0xC000, ROM_Memory, romSize);
     }
@@ -455,8 +459,8 @@ void creativision_loadrom(int romSize)
     }
     else if (romSize == 1024 * 10) // 10K
     {
-        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);    // main 8Kb	at 0xA000
-        memcpy(RAM_Memory+0x7800, ROM_Memory+0x2000, 0x0800);    // second 2Kb at 0x7800
+        memcpy(RAM_Memory+0xA000, ROM_Memory+0x0000, 0x2000);   // main 8Kb	at 0xA000
+        memcpy(RAM_Memory+0x7800, ROM_Memory+0x2000, 0x0800);   // second 2Kb at 0x7800
 
         memcpy(RAM_Memory+0x8000, RAM_Memory+0xA000, 0x2000);   // Mirror 8k at 0x8000
 
