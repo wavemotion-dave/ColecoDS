@@ -197,7 +197,7 @@ CreatiVision Compatibility :
 -----------------------
 The VTech CreatiVision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .CV so the correct driver will load and the bioscv.ROM must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS. Games default to loading in "Legacy A/B" mode (meaning it will try to load into memory with the same locations/mirrors as the original commercial releases) but you can switch this to "Linear" which is a more modern way to load the game up against C000h or even 32k Bankswapped (many of the games have been converted to run on a MegaCart in this format).  Cassette loading is not supported.
 
-For the CV enthusiast only: experimental loading of the CSL BIOS is allowed. If you take a 16K CSL BIOS (don't ask), and rename as .cv you can load it with this emulator. It will load up from C000h-FFFFh and you can enjoy the improved BIOS/BASIC functionality with a full 32K of expanded memory (much like a Laser 2001 or Salora Manager).
+For the CV enthusiast only: experimental loading of the CSL BIOS is allowed. If you take a 16K CSL BIOS (don't ask), and rename as .cv you can load it with this emulator. It will load up from C000h-FFFFh and you can enjoy the improved BIOS/BASIC functionality with a full 32K of expanded memory (much like a Laser 2001 or Salora Manager). If the emulator does not detect this as a valid CSL BIOS, you can force the issue in configuration (page 2:  set the CVISION load to BIOS).
 
 Controllers :
 -----------------------
