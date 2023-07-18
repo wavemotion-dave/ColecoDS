@@ -1623,7 +1623,7 @@ const struct options_t Option_Table[2][20] =
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
-        {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP"},                                                                                                                          &myConfig.cvisionLoad,3},
+        {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     }
 };              
@@ -2086,7 +2086,9 @@ void ReadFileCRCAndConfig(void)
     // --------------------------------------------
     // A few special cases for the CreatiVision
     // --------------------------------------------
-    if (file_crc == 0x4dc35c39) myConfig.cvisionLoad = 99;  // Special load of 16K Laser 2001 BIOS at C000-FFFF
+    if (file_crc == 0x8375203e) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
+    if (file_crc == 0x77afd38b) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
+    
 
 }
 
