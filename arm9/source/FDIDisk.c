@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <ctype.h>
+#include "colecomngt.h"
 #include "printf.h"
 
 #define IMAGE_SIZE(Fmt) \
@@ -90,11 +91,11 @@ byte *NewFDI(FDIDisk *D,int Sides,int Tracks,int Sectors,int SecSize)
   I = Sides*Tracks*(Sectors+1)*7+14;
   
   // -----------------------------------------------------------
-  // Re-use the 512K ROM_Memory[] array as it has no other
+  // Re-use the huge ROM_Memory[] array as it has no other
   // use at this point and it's more efficient than allocating
   // another big chunk of memory off the heap!
   // -----------------------------------------------------------
-  P = (byte*)ROM_Memory;
+  P = (byte*)ROM_Memory+((MAX_CART_SIZE/2)*1024);   // index halfway into the big buffer... leave the first 512K pristine
   memset(P,0x00,I+K);
 
   /* Eject previous disk image */
