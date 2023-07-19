@@ -62,7 +62,7 @@ unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
  *
  * Called from cpu on access to memory in the range $1000 - $1FFF
  */
-void PIA_Write(word addr, byte data)
+ITCM_CODE void PIA_Write(word addr, byte data)
 {
 
     switch (addr & 3) {
@@ -115,7 +115,7 @@ void PIA_Write(word addr, byte data)
  *
  * Updated to reflect the disassembly of the PIA diagnostic cart
  */
-unsigned char PIA_Read(word addr)
+ITCM_CODE unsigned char PIA_Read(word addr)
 {
     switch( addr & 3 )
     {
@@ -210,12 +210,18 @@ u32 creativision_run(void)
     return 0;
 }
 
+#define JOY_SE 0
+#define JOY_NE 1
+#define JOY_NW 2
+#define JOY_SW 3
+unsigned char jdmap[4] = { 0x07, 0x4c, 0x38, 0x62 };
+
 // -----------------------------------------------------------------------------------
 // Here we map all of the DS keys (buttons or touch-screen) to their CreatiVision
 // equivilents. This is just a matter of setting (or, in this case, clearing) the
 // right bits in the keyboard map which will be reported back to the program via PIA.
 // -----------------------------------------------------------------------------------
-void creativision_input(void)
+ITCM_CODE void creativision_input(void)
 {
     extern u32 JoyState;
     extern u8 key_shift, key_ctrl;
@@ -231,10 +237,17 @@ void creativision_input(void)
         if (JoyState & JST_FIREL)   KEYBD[PA0] &= 0x7f;  // P1 Right Button
         if (JoyState & JST_FIRER)   KEYBD[PA1] &= 0x7f;  // P1 Left Button
 
-        if (JoyState & JST_UP)      KEYBD[PA0] &= 0xf7;  // P1 up
-        if (JoyState & JST_DOWN)    KEYBD[PA0] &= 0xfd;  // P1 down
-        if (JoyState & JST_LEFT)    KEYBD[PA0] &= 0xdf;  // P1 left
-        if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right
+        if      ((JoyState & JST_UP) && (JoyState & JST_LEFT))     KEYBD[PA0] &= ~jdmap[JOY_NW];
+        else if ((JoyState & JST_UP) && (JoyState & JST_RIGHT))    KEYBD[PA0] &= ~jdmap[JOY_NE];
+        else if ((JoyState & JST_DOWN) && (JoyState & JST_LEFT))   KEYBD[PA0] &= ~jdmap[JOY_SW];
+        else if ((JoyState & JST_DOWN) && (JoyState & JST_RIGHT))  KEYBD[PA0] &= ~jdmap[JOY_SE];
+        else
+        {
+            if (JoyState & JST_UP)      KEYBD[PA0] &= 0xf7;  // P1 up
+            if (JoyState & JST_DOWN)    KEYBD[PA0] &= 0xfd;  // P1 down
+            if (JoyState & JST_LEFT)    KEYBD[PA0] &= 0xdf;  // P1 left
+            if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right
+        }
 
         if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1
         if (JoyState == JST_2)      KEYBD[PA1] &= 0xcf;  // 2
@@ -323,7 +336,7 @@ void creativision_input(void)
 // $8000 - $BFFF: 16K ROM1 (we map RAM here if not used by ROM)
 // $C000 - $FFFF: 16K ROM0 (CV BIOS is the 2K from $F800 to $FFFF and the CSL BIOS uses all 16K)
 // ========================================================================================
-void Wr6502(register word Addr,register byte Value)
+ITCM_CODE void Wr6502(register word Addr,register byte Value)
 {
     switch (Addr & 0xF000)
     {
@@ -370,7 +383,7 @@ void Wr6502(register word Addr,register byte Value)
 // Unused areas should return 0xFF but this is already well handled by pre-filling
 // the unused areas of our 64K memory map with 0xFF so we don't have to do that here.
 // ------------------------------------------------------------------------------------
-byte Rd6502(register word Addr)
+ITCM_CODE byte Rd6502(register word Addr)
 {
     switch (Addr & 0xF000)
     {
