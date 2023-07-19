@@ -7,6 +7,12 @@
 // Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
 //
 // The ColecoDS emulator is offered as-is, without any warranty.
+//
+// This CreatiVision driver comes from a lot of pioneers who have done a great job
+// of experimenting, sleuthing and documenting this somewhat mysterious machine. 
+// Much of this information was gleaned from looking at the discussion on the 
+// CreatiVemu forums: http://www.madrigaldesign.it/forum/ 
+// 
 // =====================================================================================
 #include <nds.h>
 
@@ -23,7 +29,7 @@
 #include "cpu/sn76496/SN76496.h"
 #include "printf.h"
 
-M6502 m6502 __attribute__((section(".dtcm")));        // Our core 6502 CPU
+M6502 m6502 __attribute__((section(".dtcm")));        // Our core 6502 CPU in fast NDS memory cache
 
 extern u8 RAM_Memory[];
 extern u8 ROM_Memory[];
@@ -33,7 +39,7 @@ extern SN76496 sncol;
 
 
 /* PIA handling courtesy of the creatiVision emulator:  https://sourceforge.net/projects/creativisionemulator/
-   and used with permission. Do not use this code unless you contact the authors of the emulator at the URL above */
+   and used with permission. Do not use this code unless you contact the author of the emulator at the URL above */
 #define PA0         1
 #define PA1         2
 #define PA2         3
@@ -54,7 +60,7 @@ typedef struct {
 M6821 pia0 = {0};
 M6821 pia1 = {0};
 
-short  total_cycles = 0;
+short  total_cycles = 0; //TODO: hook this into the main CPU emulation cycle counter
 unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
 
 /**
@@ -210,11 +216,6 @@ u32 creativision_run(void)
     return 0;
 }
 
-#define JOY_SE 0
-#define JOY_NE 1
-#define JOY_NW 2
-#define JOY_SW 3
-unsigned char jdmap[4] = { 0x07, 0x4c, 0x38, 0x62 };
 
 // -----------------------------------------------------------------------------------
 // Here we map all of the DS keys (buttons or touch-screen) to their CreatiVision
@@ -226,10 +227,11 @@ ITCM_CODE void creativision_input(void)
     extern u32 JoyState;
     extern u8 key_shift, key_ctrl;
 
-    KEYBD[PA3] = 0xFF;
-    KEYBD[PA2] = 0xFF;
-    KEYBD[PA1] = 0xFF;
+    // Assume nothing pressed... will clear bits as needed below
     KEYBD[PA0] = 0xFF;
+    KEYBD[PA1] = 0xFF;
+    KEYBD[PA2] = 0xFF;
+    KEYBD[PA3] = 0xFF;
 
     // First the DS button maps...
     if (JoyState)
@@ -237,16 +239,22 @@ ITCM_CODE void creativision_input(void)
         if (JoyState & JST_FIREL)   KEYBD[PA0] &= 0x7f;  // P1 Right Button
         if (JoyState & JST_FIRER)   KEYBD[PA1] &= 0x7f;  // P1 Left Button
 
-        if      ((JoyState & JST_UP) && (JoyState & JST_LEFT))     KEYBD[PA0] &= ~jdmap[JOY_NW];
-        else if ((JoyState & JST_UP) && (JoyState & JST_RIGHT))    KEYBD[PA0] &= ~jdmap[JOY_NE];
-        else if ((JoyState & JST_DOWN) && (JoyState & JST_LEFT))   KEYBD[PA0] &= ~jdmap[JOY_SW];
-        else if ((JoyState & JST_DOWN) && (JoyState & JST_RIGHT))  KEYBD[PA0] &= ~jdmap[JOY_SE];
+        // ----------------------------------------------------------------------------------------------
+        // Handle diagonals first... these are not just the same bits in the PIA as: NE = UP+RIGHT,
+        // SW = DN+LEFT, etc. so we have to check them seperately... most CreatiVision games don't seem
+        // to use diagonals but we may as well support it. In theory there are 16 directions on the
+        // joystick but we are only mapping 8 of them which is fine for gameplay.
+        // ----------------------------------------------------------------------------------------------
+        if      ((JoyState & JST_UP) && (JoyState & JST_LEFT))     KEYBD[PA0] &= 0xc7; // P1 NW
+        else if ((JoyState & JST_UP) && (JoyState & JST_RIGHT))    KEYBD[PA0] &= 0xb3; // P1 NE
+        else if ((JoyState & JST_DOWN) && (JoyState & JST_LEFT))   KEYBD[PA0] &= 0x9d; // P1 SW
+        else if ((JoyState & JST_DOWN) && (JoyState & JST_RIGHT))  KEYBD[PA0] &= 0xf8; // P1 SE
         else
         {
-            if (JoyState & JST_UP)      KEYBD[PA0] &= 0xf7;  // P1 up
-            if (JoyState & JST_DOWN)    KEYBD[PA0] &= 0xfd;  // P1 down
-            if (JoyState & JST_LEFT)    KEYBD[PA0] &= 0xdf;  // P1 left
-            if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right
+            if (JoyState & JST_UP)      KEYBD[PA0] &= 0xf7;  // P1 up    (N)
+            if (JoyState & JST_DOWN)    KEYBD[PA0] &= 0xfd;  // P1 down  (S)
+            if (JoyState & JST_LEFT)    KEYBD[PA0] &= 0xdf;  // P1 left  (W)
+            if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right (E)
         }
 
         if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1
@@ -262,10 +270,10 @@ ITCM_CODE void creativision_input(void)
         if (JoyState == JST_0)      KEYBD[PA3] &= 0xf6;  // RETURN
 
         if (JoyState == JST_STAR)   Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
-        if (JoyState == JST_POUND)  KEYBD[PA1] &= 0xaf;          // 6 but graphic overlay shows ST=START (which is how it works on a real overlay for the CV)
+        if (JoyState == JST_POUND)  KEYBD[PA1] &= 0xaf;        // 6 but graphic overlay shows ST=START (which is how it works on a real overlay for the CV)
     }
 
-    // And now the keyboard maps...
+    // And now the full keyboard maps...
     if (kbd_key)
     {
         if (kbd_key == '0')         KEYBD[PA3] &= 0xed;   // 0
@@ -326,9 +334,9 @@ ITCM_CODE void creativision_input(void)
 
 
 // ========================================================================================
-// CreatiVision Memory Map:
+// CreatiVision Memory Map (simplified):
 //
-// $0000 - $03FF: 1K RAM (mirrored thrice at $0400 - $07FF, $0800 - $0BFF, $0C00 - $0FFF)
+// $0000 - $03FF: 1K RAM (mirrored at $0400 - $07FF, $0800 - $0BFF, $0C00 - $0FFF)
 // $1000 - $1FFF: PIA (joysticks, sound)
 // $2000 - $2FFF: VDP read
 // $3000 - $3FFF: VDP write
@@ -362,7 +370,7 @@ ITCM_CODE void Wr6502(register word Addr,register byte Value)
             if (Addr & 1) {if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);}
             else WrData9918(Value);
 
-        // Expanded RAM... very little uses this... but for future homebrews or for the CSL bios load
+        // Expanded RAM... very little uses this... but for future homebrews or for CSL bios use.
         // In theory we should guard against writes to areas where ROM is mapped, but we are going to 
         // assume well-behaved programs and save the time/effort. So far this has worked fine.
         case 0x4000:
@@ -447,19 +455,19 @@ void creativision_restore_bios(void)
 // -----------------------------------------------------------------------------------------------------------------------------------------
 void creativision_loadrom(int romSize)
 {
-    memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Blank everything between RAM and the BIOS at 0xF800
-    memset(RAM_Memory+0x4000, 0x00, 0x8000);    // Blank everything between RAM and the BIOS at 0xF800
+    memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Set all bytes to unused/unconnected (0xFF) between RAM and the BIOS at 0xF800
+    memset(RAM_Memory+0x4000, 0x00, 0x8000);    // Then blank (zero) everything between RAM and the BIOS at 0xF800 - we use this for expanded RAM
 
-    if (myConfig.cvisionLoad == 3) // Special load of CSL or similar BIOS into C000-FFFF
+    if (myConfig.cvisionLoad == 3) // Special load of CSL or similar BIOS into C000-FFFF (overwrites normal BIOS)
     {
         memcpy(RAM_Memory+0xC000, ROM_Memory, romSize);
     }
-    else if (myConfig.cvisionLoad == 2)  // 32K BANKSWAP
+    else if (myConfig.cvisionLoad == 2)  // 32K BANKSWAP (some ROMs for MegaCart use are in this format)
     {
         memcpy(RAM_Memory+0x4000, ROM_Memory+0x4000, romSize/2);
         memcpy(RAM_Memory+0x8000, ROM_Memory, romSize/2);
     }
-    else if (myConfig.cvisionLoad == 1)  // Linear Load
+    else if (myConfig.cvisionLoad == 1)  // Linear Load (this is the sensible format... loading right up against C000h and leaving the rest of the middle 32K free for RAM)
     {
         memcpy(RAM_Memory+(0xC000-romSize), ROM_Memory+0x0000, romSize);    // load linear at 4000-BFFF
     }
