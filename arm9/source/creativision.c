@@ -36,6 +36,9 @@ extern u8 ROM_Memory[];
 extern u8 CreativisionBios[];
 extern byte Loop9918(void);
 extern SN76496 sncol;
+extern u8 BufferedKeys[32];
+extern u8 BufferedKeysWriteIdx;
+extern u8 BufferedKeysReadIdx;
 
 
 /* PIA handling courtesy of the creatiVision emulator:  https://sourceforge.net/projects/creativisionemulator/
@@ -232,12 +235,28 @@ ITCM_CODE void creativision_input(void)
     KEYBD[PA1] = 0xFF;
     KEYBD[PA2] = 0xFF;
     KEYBD[PA3] = 0xFF;
+    
+    // When Cassette icon is pressed, we insert the 'RUN' command automatically
+    static int cv_dampen=5;
+    if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+    {
+        kbd_key = BufferedKeys[BufferedKeysReadIdx];
+        if (--cv_dampen == 0)
+        {
+            BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
+            cv_dampen=5;
+            return;
+        }
+    } else cv_dampen=5;
+    
 
     // First the DS button maps...
     if (JoyState)
     {
-        if (JoyState & JST_FIREL)   KEYBD[PA0] &= 0x7f;  // P1 Right Button
-        if (JoyState & JST_FIRER)   KEYBD[PA1] &= 0x7f;  // P1 Left Button
+        if (JoyState & JST_FIREL)       KEYBD[PA0] &= 0x7f;  // P1 Right Button
+        if (JoyState & JST_FIRER)       KEYBD[PA1] &= 0x7f;  // P1 Left Button
+        if (JoyState & JST_FIREL<<16)   KEYBD[PA2] &= 0x7f;  // P2 Right Button
+        if (JoyState & JST_FIRER<<16)   KEYBD[PA3] &= 0x7f;  // P2 Left Button
 
         // ----------------------------------------------------------------------------------------------
         // Handle diagonals first... these are not just the same bits in the PIA as: NE = UP+RIGHT,
@@ -245,6 +264,8 @@ ITCM_CODE void creativision_input(void)
         // to use diagonals but we may as well support it. In theory there are 16 directions on the
         // joystick but we are only mapping 8 of them which is fine for gameplay.
         // ----------------------------------------------------------------------------------------------
+        
+        // Player 1
         if      ((JoyState & JST_UP) && (JoyState & JST_LEFT))     KEYBD[PA0] &= 0xc7; // P1 NW
         else if ((JoyState & JST_UP) && (JoyState & JST_RIGHT))    KEYBD[PA0] &= 0xb3; // P1 NE
         else if ((JoyState & JST_DOWN) && (JoyState & JST_LEFT))   KEYBD[PA0] &= 0x9d; // P1 SW
@@ -257,6 +278,19 @@ ITCM_CODE void creativision_input(void)
             if (JoyState & JST_RIGHT)   KEYBD[PA0] &= 0xfb;  // P1 right (E)
         }
 
+        // Player 2
+        if      ((JoyState & JST_UP<<16) && (JoyState & JST_LEFT)<<16)     KEYBD[PA2] &= 0xc7; // P2 NW
+        else if ((JoyState & JST_UP<<16) && (JoyState & JST_RIGHT<<16))    KEYBD[PA2] &= 0xb3; // P2 NE
+        else if ((JoyState & JST_DOWN<<16) && (JoyState & JST_LEFT<<16))   KEYBD[PA2] &= 0x9d; // P2 SW
+        else if ((JoyState & JST_DOWN<<16) && (JoyState & JST_RIGHT<<16))  KEYBD[PA2] &= 0xf8; // P2 SE
+        else
+        {
+            if (JoyState & JST_UP<<16)      KEYBD[PA2] &= 0xf7;  // P2 up    (N)
+            if (JoyState & JST_DOWN<<16)    KEYBD[PA2] &= 0xfd;  // P2 down  (S)
+            if (JoyState & JST_LEFT<<16)    KEYBD[PA2] &= 0xdf;  // P2 left  (W)
+            if (JoyState & JST_RIGHT<<16)   KEYBD[PA2] &= 0xfb;  // P2 right (E)
+        }
+        
         if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1
         if (JoyState == JST_2)      KEYBD[PA1] &= 0xcf;  // 2
         if (JoyState == JST_3)      KEYBD[PA1] &= 0x9f;  // 3
@@ -313,18 +347,21 @@ ITCM_CODE void creativision_input(void)
         if (kbd_key == 'X')         KEYBD[PA1] &= 0xed;   // X
         if (kbd_key == 'Y')         KEYBD[PA3] &= 0xfa;   // Y
         if (kbd_key == 'Z')         KEYBD[PA1] &= 0xf5;   // Z
-        if (kbd_key == '?')         KEYBD[PA3] &= 0x7f;   // EQUALS (only on small keyboard so we repurpose)
-        if (kbd_key == '=')         KEYBD[PA3] &= 0x7f;   // EQUALS
+        if (kbd_key == '?')         KEYBD[PA3] &= 0x7f;   // DASH/Equals (only on small keyboard so we repurpose)
         if (kbd_key == '.')         KEYBD[PA3] &= 0x9f;   // PERIOD
 
         if (kbd_key == ',')         KEYBD[PA3] &= 0xd7;   // COMMA
         if (kbd_key == ':')         KEYBD[PA3] &= 0xf5;   // COLON
         if (kbd_key == '/')         KEYBD[PA3] &= 0xcf;   // SLASH
-        if (kbd_key == '#')         KEYBD[PA3] &= 0xcf;   // SEMI COLON
+        if (kbd_key == ';')         KEYBD[PA3] &= 0xe7;   // SEMI COLON
+        if (kbd_key == '#')         KEYBD[PA3] &= 0xe7;   // repurpose to SEMI COLON 
+        if (kbd_key == '-')         KEYBD[PA3] &= 0x7f;   // DASH
 
         if (kbd_key == ' ')         KEYBD[PA2] &= 0xf3;   // SPACE
         if (kbd_key == KBD_KEY_DEL) KEYBD[PA1] &= 0xf6;   // LEFT/BS
         if (kbd_key == KBD_KEY_RET) KEYBD[PA3] &= 0xf6;   // RETURN
+        if (kbd_key == KBD_KEY_LEFT)  KEYBD[PA1] &= 0xf6; // LEFT ARROW
+        if (kbd_key == KBD_KEY_RIGHT) KEYBD[PA2] &= 0x7f; // RIGHT ARROW
 
         if (key_shift)              KEYBD[PA0] &= 0x7f;   // SHIFT
         if (key_ctrl)               KEYBD[PA1] &= 0x7f;   // CTRL
@@ -538,6 +575,93 @@ void creativision_loadrom(int romSize)
     {
         memcpy(RAM_Memory+(0xC000-romSize), ROM_Memory+0x0000, romSize);    // load linear at 4000-BFFF up against the $C000 (where the vectors are)
     }
+}
+
+
+/** LoadListing() ********************************************/
+/** Loads "load.txt" data into VRAM from $1C00 to $3FFF     **/
+/** (used to load BASIC listings)                           **/
+/**                                                         **/
+/** Taken from FunnyMU 0.49 and adapted for ColecoDS use.   **/
+/*************************************************************/
+char line[64];
+char temp[64], temp2[64];
+int count=0;
+void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce memory and stack usage... less error checking but we can't afford the large buffer on the small DS
+{
+  #define START_CHECK   0x1800
+  #define START_VID     0x1c00
+  #define END_VID       0x4000
+  #define SECOND_CHECK  0x1400
+  #define MEM_SIZE (END_VID - START_VID)
+    
+  // We always load a .BAS file that has the same base filename as the ROM we loaded
+  strcpy(line, lastAdamDataPath);
+  int j = strlen(line)-1;
+  while (line[j] != '.') j--;
+  line[++j]='B';
+  line[++j]='A';
+  line[++j]='S';
+  line[++j]= 0;    
+
+  FILE *fp;
+  fp=fopen(line, "r");
+  if (fp) 
+  {
+    int prevlen = 0xdc00;
+    int offset_mem = 0;
+    int offset_check = 0;
+      
+    memset(&pVDPVidMem[START_CHECK], 0xff, START_VID-START_CHECK);
+    memset(&pVDPVidMem[START_VID], 0x00, END_VID-START_VID);
+      
+    while (!feof(fp) && fgets(line, 64, fp)) 
+    {
+      int start = 0;
+      int len = strlen(line);
+      int num_line = -1;
+
+      while (start < len && line[start] != ' ')             // parsing string to find line number
+      {
+         temp[start] = line[start]; start++;
+      }
+      temp[start] = 0;
+
+      if (start > 0)                                        // ok, line number found
+      {
+        num_line = atoi(temp);                              // this is the line number
+        while (start < len && line[start] == ' ') start++;  // skip white spaces after line number
+        memcpy(temp2, &line[start], len - start + 1);       // inserting only allowed line numbers
+          
+        sprintf(line, "%-4u %s", num_line, temp2 );         // formatting line
+          
+        int cc = 0;
+
+        while (cc < strlen(line) && line[cc] != 0x0d && line[cc] != 0x0a)   // copy formatted line into VDP memory
+        {
+            pVDPVidMem[START_VID + offset_mem++] = line[cc++];
+        }
+        pVDPVidMem[START_VID + offset_mem++] = 0x0d;        // adding end of line
+
+        unsigned char high = (prevlen / 256);
+        unsigned char low = (unsigned char)(prevlen - ((int)high * 256));
+
+        pVDPVidMem[SECOND_CHECK + offset_check * 2] = high;
+        pVDPVidMem[SECOND_CHECK + offset_check * 2+1] = low;
+
+        prevlen += (cc + 1);
+
+        high = (num_line / 256);
+        low = (unsigned char)(num_line - (high * 256));
+
+        pVDPVidMem[START_CHECK + offset_check * 2] = high;
+        pVDPVidMem[START_CHECK + offset_check * 2 + 1] = low;
+
+        offset_check++;
+      }
+    }
+    fclose(fp);
+  }
 }
 
 // End of file

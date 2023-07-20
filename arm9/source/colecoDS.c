@@ -1202,6 +1202,20 @@ void CassetteMenu(void)
 
   SoundPause();
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
+    
+  if (creativision_mode)
+  {
+      AffChaine(5,0,0, "BAS LOADING");
+      creativision_loadBAS();
+      WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+      BufferKey('R');
+      BufferKey('U');
+      BufferKey('N');
+      BufferKey(KBD_KEY_RET);
+      AffChaine(5,0,0, "           ");
+      SoundUnPause();
+      return;
+  }
 
   CassetteMenuShow(true, menuSelection);
 

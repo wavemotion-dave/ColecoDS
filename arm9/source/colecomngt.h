@@ -200,7 +200,7 @@ extern void creativision_loadrom(int romSize);
 extern void creativision_restore_bios(void);
 extern u8 *creativision_get_cpu(u16 *cv_cpu_size);
 extern void creativision_put_cpu(u8 *mem);
-
+extern void creativision_loadBAS(void);
 
 extern void msxSaveEEPROM(void);
 extern void msxLoadEEPROM(void);
