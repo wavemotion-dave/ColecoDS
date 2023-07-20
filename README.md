@@ -198,7 +198,7 @@ CreatiVision Compatibility :
 The VTech CreatiVision uses a different CPU - the m6502 (same as used in the Apple II). The system requires roms be renamed to .cv so the correct driver will load and the bioscv.rom must be present in the normal BIOS area. All known Creativision games and utilities run properly under ColecoDS. Games default to loading in "Legacy A/B" mode (meaning it will try to load into memory with the same locations/mirrors as the original commercial releases) but you can switch this to "Linear" which is a more modern way to load the game up against C000h or even 32k Bankswapped (many of the games have been converted to run on a MegaCart in this format where the two 16K banks are laid out in reverse order).
 
 Cassette loading is not directly supported but you can load in BASIC listings from an ASCII source such as you would find at https://www.madrigaldesign.it/creativemu/ 
-To get BASIC programs to work, you copy any CreatiVision BASIC version and name it as the same base filename as the .BAS file. Note: there are 4 versions released and some CV BASIC games were designed for a specific version and might not run right in other versions.
+To get BASIC programs to work, you copy any CreatiVision BASIC ROM version and name it as the same base filename as the .BAS file. Note: there are 4 versions released and some CV BASIC games were designed for a specific version and might not run right in other versions.
 
 For example, if you want to run kapooka.bas (a fun game!), take one of the basic ROM files and rename it kapooka.cv.  When you load kapooka.cv it will launch BASIC and then you can hit 
 the little Cassette Icon to automatically load the corresponding kapooka.bas file into memory and run it.
