@@ -612,6 +612,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         }
         else if (creativision_mode)
         {
+            strcpy(lastAdamDataPath, path);
             creativision_loadrom(romSize);
         }
         else
