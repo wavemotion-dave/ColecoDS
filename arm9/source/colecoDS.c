@@ -29,6 +29,7 @@
 #include "intro.h"
 #include "ecranBas.h"
 #include "adam_sm.h"
+#include "cvision_kbd.h"
 #include "msx_sm.h"
 #include "msx_full.h"
 #include "adam_full.h"
@@ -1408,7 +1409,7 @@ void CassetteMenu(void)
 // ------------------------------------------------------------------------
 // Return 1 if we are showing full keyboard... otherwise 0
 // ------------------------------------------------------------------------
-inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9 || myConfig.overlay == 10) ? 1:0);}
+inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9 || myConfig.overlay == 10 || myConfig.overlay == 11) ? 1:0);}
 
 static u8 adam_key = 0;
 void handle_full_keyboard_press(u16 iTx, u16 iTy)
@@ -1767,6 +1768,75 @@ void handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Smaller alpha-only keyboa
     }
 }
 
+void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for the CreatiVision
+{
+    if ((iTy >= 12) && (iTy < 50))        // Row 1 (top row)
+    {
+        if      ((iTx >= 0)   && (iTx < 21))   kbd_key = '1';
+        else if ((iTx >= 21)  && (iTx < 42))   kbd_key = '2';
+        else if ((iTx >= 42)  && (iTx < 63))   kbd_key = '3';
+        else if ((iTx >= 63)  && (iTx < 84))   kbd_key = '4';
+        else if ((iTx >= 84)  && (iTx < 105))  kbd_key = '5';
+        else if ((iTx >= 105) && (iTx < 128))  kbd_key = '6';
+        else if ((iTx >= 128) && (iTx < 150))  kbd_key = '7';
+        else if ((iTx >= 150) && (iTx < 171))  kbd_key = '8';
+        else if ((iTx >= 171) && (iTx < 192))  kbd_key = '9';
+        else if ((iTx >= 192) && (iTx < 213))  kbd_key = '0';
+        else if ((iTx >= 213) && (iTx < 234))  kbd_key = ':';
+        else if ((iTx >= 235) && (iTx < 256))  kbd_key = '-';
+    }
+    else if ((iTy >= 50) && (iTy < 89))   // Row 2
+    {
+        if      ((iTx >= 0)   && (iTx < 21))   kbd_key = KBD_KEY_CTRL;
+        else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Q';
+        else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'W';
+        else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'E';
+        else if ((iTx >= 84)  && (iTx < 105))  kbd_key = 'R';
+        else if ((iTx >= 105) && (iTx < 128))  kbd_key = 'T';
+        else if ((iTx >= 128) && (iTx < 150))  kbd_key = 'Y';
+        else if ((iTx >= 150) && (iTx < 171))  kbd_key = 'U';
+        else if ((iTx >= 171) && (iTx < 192))  kbd_key = 'I';
+        else if ((iTx >= 192) && (iTx < 213))  kbd_key = 'O';
+        else if ((iTx >= 213) && (iTx < 234))  kbd_key = 'P';
+        else if ((iTx >= 235) && (iTx < 256))  kbd_key = KBD_KEY_RET;
+    }
+    else if ((iTy >= 89) && (iTy < 128))  // Row 3
+    {
+        if      ((iTx >= 0)   && (iTx < 21))   kbd_key = KBD_KEY_LEFT;
+        else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'A';
+        else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'S';
+        else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'D';
+        else if ((iTx >= 84)  && (iTx < 105))  kbd_key = 'F';
+        else if ((iTx >= 105) && (iTx < 128))  kbd_key = 'G';
+        else if ((iTx >= 128) && (iTx < 150))  kbd_key = 'H';
+        else if ((iTx >= 150) && (iTx < 171))  kbd_key = 'J';
+        else if ((iTx >= 171) && (iTx < 192))  kbd_key = 'K';
+        else if ((iTx >= 192) && (iTx < 213))  kbd_key = 'L';
+        else if ((iTx >= 213) && (iTx < 234))  kbd_key = ';';
+        else if ((iTx >= 235) && (iTx < 256))  kbd_key = KBD_KEY_RIGHT;
+    }
+    else if ((iTy >= 128) && (iTy < 167))  // Row 4
+    {
+        if      ((iTx >= 0)   && (iTx < 21))   kbd_key = KBD_KEY_SHIFT;
+        else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Z';
+        else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'X';
+        else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'C';
+        else if ((iTx >= 84)  && (iTx < 105))  kbd_key = 'V';
+        else if ((iTx >= 105) && (iTx < 128))  kbd_key = 'B';
+        else if ((iTx >= 128) && (iTx < 150))  kbd_key = 'N';
+        else if ((iTx >= 150) && (iTx < 171))  kbd_key = 'M';
+        else if ((iTx >= 171) && (iTx < 192))  kbd_key = ',';
+        else if ((iTx >= 192) && (iTx < 213))  kbd_key = '.';
+        else if ((iTx >= 213) && (iTx < 234))  kbd_key = '/';
+        else if ((iTx >= 235) && (iTx < 256))  kbd_key = ' ';
+    }
+    else if ((iTy >= 167) && (iTy < 192))  // Row 5
+    {
+        if      ((iTx >= 0)   && (iTx < 35))   kbd_key = KBD_KEY_F1; // Reset for the CreatiVision
+        else if ((iTx >= 220) && (iTx < 255))  CassetteMenu();
+    }
+}
+
 // ------------------------------------------------------------------------
 // The main emulation loop is here... call into the Z80, VDP and PSG 
 // ------------------------------------------------------------------------
@@ -1915,6 +1985,7 @@ void colecoDS_main(void)
     
         // Test if "Reset Game" selected
         if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=28) && (iTx<= 35) && (iTy<51))) ||
+             (myConfig.overlay == 11 && ((iTx>=0) && (iTy>=168) && (iTx<= 37) && (iTy<192))) ||
             (((myConfig.overlay < 9)) && ((iTx>=6) && (iTy>=40) && (iTx<=130) && (iTy<67))))
         {
           if  (!ResetNow) {
@@ -1938,6 +2009,7 @@ void colecoDS_main(void)
         // Test if "End Game" selected
         if  ((myConfig.overlay == 9  && ((iTx>=1) && (iTy>=51) && (iTx<= 35) && (iTy<75)))    ||
              (myConfig.overlay == 10 && ((iTx>=35) && (iTy>=169) && (iTx<= 78) && (iTy<192))) ||
+             (myConfig.overlay == 11 && ((iTx>=180) && (iTy>=168) && (iTx<= 220) && (iTy<192))) ||
             ((myConfig.overlay < 9)  && ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95))))
         {
           //  Stop sound
@@ -1956,6 +2028,7 @@ void colecoDS_main(void)
 
         // Test if "High Score" selected
         if  ((myConfig.overlay == 9 && ((iTx>=1) && (iTy>=75) && (iTx<= 35) && (iTy<99))) ||
+             (myConfig.overlay == 11 && ((iTx>=37) && (iTy>=168) && (iTx<= 85) && (iTy<192))) ||
             ((myConfig.overlay < 9) && ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125))))
         {
           //  Stop sound
@@ -1968,6 +2041,7 @@ void colecoDS_main(void)
         // Test if "Save State" selected
         if  ((myConfig.overlay == 9 && ((iTx>=1) && (iTy>=99) && (iTx<= 35) && (iTy<123))) ||
              (myConfig.overlay == 10 && ((iTx>=78) && (iTy>=169) && (iTx<= 122) && (iTy<192))) ||
+             (myConfig.overlay == 11 && ((iTx>=85) && (iTy>=168) && (iTx<= 135) && (iTy<192))) ||
              ((myConfig.overlay < 9) && ((iTx>=6) && (iTy>=125) && (iTx<=130) && (iTy<155))))
         {
           if  (!SaveNow) 
@@ -1996,6 +2070,7 @@ void colecoDS_main(void)
         // Test if "Load State" selected
         if  ((myConfig.overlay == 9 && ((iTx>=1) && (iTy>=123) && (iTx<= 35) && (iTy<146))) ||
              (myConfig.overlay == 10 && ((iTx>=123) && (iTy>=169) && (iTx<= 166) && (iTy<192))) ||
+             (myConfig.overlay == 11 && ((iTx>=135) && (iTy>=168) && (iTx<= 182) && (iTy<192))) ||
              ((myConfig.overlay < 9) && ((iTx>=6) && (iTy>=155) && (iTx<=130) && (iTy<184))))
         {
           if  (!LoadNow) 
@@ -2036,11 +2111,14 @@ void colecoDS_main(void)
         if (myConfig.overlay == 9) // Full Keyboard
         {
             handle_full_keyboard_press(iTx, iTy);
-
         }
         else if (myConfig.overlay == 10) // Alpha Keyboard
         {
             handle_alpha_keyboard_press(iTx, iTy);
+        }
+        else if (myConfig.overlay == 11) // Creativision Keyboard
+        {
+            handle_cvision_keyboard_press(iTx, iTy);
         }
         else    // Normal 12 button virtual keypad
         {
@@ -2395,7 +2473,7 @@ void InitBottomScreen(void)
           decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
-#else        
+#else   
         if (!adam_mode) // Show generic full keybaord
         {
           //  Init bottom screen
@@ -2416,11 +2494,19 @@ void InitBottomScreen(void)
     }
     else if (myConfig.overlay == 10)  //Alpha Keyboard
     {
-          //  Init bottom screen
-          decompress(alphaTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(alphaMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) alphaPal,(void*) BG_PALETTE_SUB,256*2);
+      //  Init bottom screen
+      decompress(alphaTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(alphaMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) alphaPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 11) // CreatiVision Keypad
+    {
+      //  Init bottom screen
+      decompress(cvision_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(cvision_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) cvision_kbdPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay
     {
