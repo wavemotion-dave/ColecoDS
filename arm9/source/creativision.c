@@ -220,6 +220,9 @@ u32 creativision_run(void)
 }
 
 
+u8 last_creativision_special_key = 0;
+u8 last_creativision_special_key_dampen = 0;
+
 // -----------------------------------------------------------------------------------
 // Here we map all of the DS keys (buttons or touch-screen) to their CreatiVision
 // equivilents. This is just a matter of setting (or, in this case, clearing) the
@@ -363,9 +366,33 @@ ITCM_CODE void creativision_input(void)
         if (kbd_key == KBD_KEY_LEFT)  KEYBD[PA1] &= 0xf6; // LEFT ARROW
         if (kbd_key == KBD_KEY_RIGHT) KEYBD[PA2] &= 0x7f; // RIGHT ARROW
 
-        if (key_shift)              KEYBD[PA0] &= 0x7f;   // SHIFT
-        if (key_ctrl)               KEYBD[PA1] &= 0x7f;   // CTRL
+        if (key_shift)              KEYBD[PA1] &= 0x7f;   // SHIFT
+        if (key_ctrl)               KEYBD[PA0] &= 0x7f;   // CTRL
         if (kbd_key == KBD_KEY_F1)  Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
+    }
+    
+    // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
+    if ((last_creativision_special_key_dampen > 0) && (last_creativision_special_key_dampen != 10))
+    {
+        if (--last_creativision_special_key_dampen == 0)
+        {
+            last_creativision_special_key = 0;
+            AffChaine(4,0,6, "    ");
+        }
+    }
+    if (last_creativision_special_key == KBD_KEY_SHIFT) 
+    { 
+        AffChaine(4,0,6, "SHFT");
+        KEYBD[PA1] &= 0x7f;   // SHIFT
+    }
+    if (last_creativision_special_key == KBD_KEY_CTRL)  
+    {
+        AffChaine(4,0,6, "CTRL");
+        KEYBD[PA0] &= 0x7f;   // CTRL
+    }
+    if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL))
+    {
+        if (last_creativision_special_key_dampen == 10) last_creativision_special_key_dampen = 9;
     }
 }
 
@@ -492,6 +519,9 @@ void creativision_restore_bios(void)
 // -----------------------------------------------------------------------------------------------------------------------------------------
 void creativision_loadrom(int romSize)
 {
+    last_creativision_special_key = 0;
+    last_creativision_special_key_dampen = 0;
+    
     memset(RAM_Memory+0x1000, 0xFF, 0xE800);    // Set all bytes to unused/unconnected (0xFF) between RAM and the BIOS at 0xF800
     memset(RAM_Memory+0x4000, 0x00, 0x8000);    // Then blank (zero) everything between RAM and the BIOS at 0xF800 - we use this for expanded RAM
 

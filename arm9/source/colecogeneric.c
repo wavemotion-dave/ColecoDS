@@ -1412,6 +1412,23 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xae4d50e9)                 myConfig.overlay = 9;  // zork i - the great underground empire (1981) (infocom).dsk
 
     // ----------------------------------------------------------------------------------
+    // Some CreatiVision games that want the new CV overlay keypad/keybaord
+    // ----------------------------------------------------------------------------------
+    if (file_crc == 0x4aee923e)                 myConfig.overlay = 11; // BASIC 82A
+    if (file_crc == 0x1849efd0)                 myConfig.overlay = 11; // BASIC 82B
+    if (file_crc == 0x10409a1d)                 myConfig.overlay = 11; // BASIC 83A
+    if (file_crc == 0x044adbe8)                 myConfig.overlay = 11; // BASIC 83C
+    if (file_crc == 0x8258ee6c)                 myConfig.overlay = 11; // BASIC 83H
+    if (file_crc == 0x8375203e)                 myConfig.overlay = 11; // CSL BIOS A
+    if (file_crc == 0x77afd38b)                 myConfig.overlay = 11; // CSL BIOS B
+    if (file_crc == 0x9e584ce2)                 myConfig.overlay = 11; // DIAG A
+    if (file_crc == 0x4d92ff4e)                 myConfig.overlay = 11; // DIAG B
+    if (file_crc == 0xadb11067)                 myConfig.overlay = 11; // DIAG DEMO
+    if (file_crc == 0xc2ba6a99)                 myConfig.overlay = 11; // WERBENE
+    if (file_crc == 0xf8383d33)                 myConfig.overlay = 11; // MUSIC MAKER
+    
+    
+    // ----------------------------------------------------------------------------------
     // A bunch of CP/M games for the Adam need a special memory wipe to load properly...
     // ----------------------------------------------------------------------------------
     if (file_crc == 0x07c07a56)                 myConfig.memWipe = 4;  // sorcerer (198x) (infocom).dsk

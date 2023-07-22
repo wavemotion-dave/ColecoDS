@@ -73,6 +73,9 @@ Emulator MEMO which helped me get some
 preliminary and simple MTX-500 support 
 included.
 
+Thanks to Darryl Hirschler for the CreatiVision
+keypad/keyboard graphic.
+
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
 core emulation (specifically TMS9918 VDP
@@ -278,8 +281,9 @@ would personally try them:
 
 Versions :
 -----------------------
-V8.1: NOT YET RELEASED
+V8.1: 22-Jul-2023 by wavemotion-dave
 * Major rework of the CreatiVision driver for much improved compatibility and loading of BASIC listings.
+* New CreatiVision keypad/keyboard overlay with stylings from 1981!
 * Swap out bloated printf/sprintf for embedded versions.
 * Added screen snapshot by holding L+R buttons while in-game.
 * Other cleanups as time permitted.
