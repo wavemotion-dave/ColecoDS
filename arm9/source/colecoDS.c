@@ -1770,6 +1770,8 @@ void handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Smaller alpha-only keyboa
 
 void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for the CreatiVision
 {
+    extern u8 last_creativision_special_key, last_creativision_special_key_dampen;
+    
     if ((iTy >= 12) && (iTy < 50))        // Row 1 (top row)
     {
         if      ((iTx >= 0)   && (iTx < 21))   kbd_key = '1';
@@ -1787,7 +1789,7 @@ void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for 
     }
     else if ((iTy >= 50) && (iTy < 89))   // Row 2
     {
-        if      ((iTx >= 0)   && (iTx < 21))   kbd_key = KBD_KEY_CTRL;
+        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_CTRL; last_creativision_special_key = KBD_KEY_CTRL; last_creativision_special_key_dampen = 10;}
         else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Q';
         else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'W';
         else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'E';
@@ -1817,7 +1819,7 @@ void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for 
     }
     else if ((iTy >= 128) && (iTy < 167))  // Row 4
     {
-        if      ((iTx >= 0)   && (iTx < 21))   kbd_key = KBD_KEY_SHIFT;
+        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_SHIFT; last_creativision_special_key = KBD_KEY_SHIFT; last_creativision_special_key_dampen = 10;}
         else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Z';
         else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'X';
         else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'C';
