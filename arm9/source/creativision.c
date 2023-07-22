@@ -585,7 +585,7 @@ void creativision_loadrom(int romSize)
 /** Taken from FunnyMU 0.49 and adapted for ColecoDS use.   **/
 /*************************************************************/
 char line[64];
-char temp[64], temp2[64];
+char temp[64];
 int count=0;
 void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce memory and stack usage... less error checking but we can't afford the large buffer on the small DS
 {
@@ -609,8 +609,8 @@ void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce mem
   if (fp) 
   {
     int prevlen = 0xdc00;
-    int offset_mem = 0;
-    int offset_check = 0;
+    short int offset_mem = 0;
+    short int offset_check = 0;
       
     memset(&pVDPVidMem[START_CHECK], 0xff, START_VID-START_CHECK);
     memset(&pVDPVidMem[START_VID], 0x00, END_VID-START_VID);
@@ -618,8 +618,8 @@ void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce mem
     while (!feof(fp) && fgets(line, 64, fp)) 
     {
       int start = 0;
-      int len = strlen(line);
-      int num_line = -1;
+      short int len = (short int)strlen(line);
+      short int num_line = -1;
 
       while (start < len && line[start] != ' ')             // parsing string to find line number
       {
@@ -629,15 +629,15 @@ void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce mem
 
       if (start > 0)                                        // ok, line number found
       {
-        num_line = atoi(temp);                              // this is the line number
+        num_line = (short int)atoi(temp);                   // this is the line number
         while (start < len && line[start] == ' ') start++;  // skip white spaces after line number
-        memcpy(temp2, &line[start], len - start + 1);       // inserting only allowed line numbers
+        memcpy(temp, &line[start], len - start + 1);        // inserting only allowed line numbers
           
-        sprintf(line, "%-4u %s", num_line, temp2 );         // formatting line
+        sprintf(line, "%-4u %s", (unsigned)num_line, temp); // formatting line
           
-        int cc = 0;
+        short int cc = 0;
 
-        while (cc < strlen(line) && line[cc] != 0x0d && line[cc] != 0x0a)   // copy formatted line into VDP memory
+        while (cc < (short int)strlen(line) && line[cc] != 0x0d && line[cc] != 0x0a)   // copy formatted line into VDP memory
         {
             pVDPVidMem[START_VID + offset_mem++] = line[cc++];
         }
@@ -655,7 +655,7 @@ void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce mem
         low = (unsigned char)(num_line - (high * 256));
 
         pVDPVidMem[START_CHECK + offset_check * 2] = high;
-        pVDPVidMem[START_CHECK + offset_check * 2 + 1] = low;
+        pVDPVidMem[START_CHECK + offset_check * 2+1] = low;
 
         offset_check++;
       }
