@@ -4,17 +4,15 @@
 #define MAX_ROMS        1500
 #define MAX_ROM_LENGTH  160
 
-#define MAX_CONFIGS      1360
-#define CONFIG_VER       0x000A
-#define CONFIG_VER_OLD1  0x0008
-#define CONFIG_VER_OLD2  0x0008
+#define MAX_CONFIGS     1358
+#define CONFIG_VER      0x000B
 
-#define COLROM        0x01
-#define DIRECT        0x02
+#define COLROM          0x01
+#define DIRECT          0x02
 
-#define ID_SHM_CANCEL 0x00
-#define ID_SHM_YES    0x01
-#define ID_SHM_NO     0x02
+#define ID_SHM_CANCEL   0x00
+#define ID_SHM_YES      0x01
+#define ID_SHM_NO       0x02
 
 #define DPAD_NORMAL     0
 #define DPAD_DIAGONALS  1
@@ -22,21 +20,45 @@
 #define CPU_CLEAR_INT_ON_VDP_READ   0
 #define CPU_CLEAR_INT_AUTOMATICALLY 1
 
-#define COLECO_RAM_NORMAL_MIRROR   0
-#define COLECO_RAM_NO_MIRROR       1
+#define COLECO_RAM_NO_MIRROR        0
+#define COLECO_RAM_NORMAL_MIRROR    1
 
 typedef struct {
-  char szName[MAX_ROM_LENGTH];
+  char szName[MAX_ROM_LENGTH+1];
   u8 uType;
   u32 uCrc;
 } FICcoleco;
 
-struct __attribute__((__packed__)) Config_t
+
+struct __attribute__((__packed__)) GlobalConfig_t
 {
     u16 config_ver;
+    u32 bios_checksums;
+    char szLastRom[MAX_ROM_LENGTH+1];
+    char szLastPath[MAX_ROM_LENGTH+1];
+    u8  showBiosInfo;
+    u8  showFPS;
+    u8  global_03;
+    u8  global_04;
+    u8  global_05;
+    u8  global_06;
+    u8  global_07;
+    u8  global_08;
+    u8  global_09;
+    u8  global_10;
+    u8  global_11;
+    u8  global_12;
+    u8  global_13;
+    u8  global_14;
+    u8  global_15;
+    u32 config_checksum;
+};
+
+struct __attribute__((__packed__)) Config_t
+{
     u32 game_crc;
     u8  keymap[12];
-    u8  showFPS;
+    u8  reservedA0;
     u8  frameSkip;
     u8  frameBlend;
     u8  msxMapper;
@@ -55,20 +77,23 @@ struct __attribute__((__packed__)) Config_t
     u8  clearInt;
     u8  cvEESize;
     u8  ayEnvelope;
-    u8  colecoRAM;
+    u8  mirrorRAM;
     u8  msxBeeper;
     u8  cvisionLoad;
     u8  reservedB0;
     u8  reservedB1;
     u8  reservedB2;
     u8  reservedB3;
-    u32 reservedC;
+    u8  reservedC0;
+    u8  reservedC1;
+    u32 reservedC2;
 };
  
 
 extern struct Config_t myConfig;
+extern struct GlobalConfig_t myGlobalConfig;
 
-extern void FindAndLoadConfig(void);
+extern void LoadConfig(void);
 
 extern FICcoleco gpFic[MAX_ROMS];  
 extern int uNbRoms;

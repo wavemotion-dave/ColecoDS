@@ -29,8 +29,6 @@
 typedef enum {FT_NONE,FT_FILE,FT_DIR} FILE_TYPE;
 extern u8 bMSXBiosFound;
 
-SpriteEntry OAMCopy[128];
-
 int countCV=0;
 int ucGameAct=0;
 int ucGameChoice = -1;
@@ -41,6 +39,7 @@ u32 file_size = 0;
 
 struct Config_t AllConfigs[MAX_CONFIGS];
 struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm")));
+struct GlobalConfig_t myGlobalConfig;
 extern u32 file_crc;
 
 u8 dev_z80_cycles = 0;
@@ -1066,10 +1065,11 @@ void SaveConfig(bool bShow)
     if (bShow) dsPrintValue(6,0,0, (char*)"SAVING CONFIGURATION");
 
     // Set the global configuration version number...
-    myConfig.config_ver = CONFIG_VER;
+    myGlobalConfig.config_ver = CONFIG_VER;
 
     // If there is a game loaded, save that into a slot... re-use the same slot if it exists
     myConfig.game_crc = file_crc;
+    
     // Find the slot we should save into...
     for (slot=0; slot<MAX_CONFIGS; slot++)
     {
@@ -1086,7 +1086,10 @@ void SaveConfig(bool bShow)
     // --------------------------------------------------------------------------
     // Copy our current game configuration to the main configuration database...
     // --------------------------------------------------------------------------
+    if (myConfig.game_crc != 0x00000000)
+    {
     memcpy(&AllConfigs[slot], &myConfig, sizeof(struct Config_t));
+    }
 
     // --------------------------------------------------
     // Now save the config file out o the SD card...
@@ -1103,7 +1106,8 @@ void SaveConfig(bool bShow)
     fp = fopen("/data/ColecoDS.DAT", "wb+");
     if (fp != NULL)
     {
-        fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);
+        fwrite(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp); // Write the global config
+        fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);         // Write the array of all configurations
         fclose(fp);
     } else dsPrintValue(4,0,0, (char*)"ERROR SAVING CONFIG FILE");
 
@@ -1146,8 +1150,17 @@ void MapPlayer1(void)
     myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
 }
 
+void SetDefaultGlobalConfig(void)
+{
+    // A few global defaults...
+    memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
+    myGlobalConfig.showBiosInfo = 1;    // Show BIOS info at startup by default
+    myGlobalConfig.showFPS      = 0;    // Don't show FPS counter by default
+}
+
 void SetDefaultGameConfig(void)
 {
+    myConfig.game_crc    = 0;    // No game in this slot yet
     myConfig.keymap[0]   = 0;    // NDS D-Pad mapped to CV Joystick UP
     myConfig.keymap[1]   = 1;    // NDS D-Pad mapped to CV Joystick DOWN
     myConfig.keymap[2]   = 2;    // NDS D-Pad mapped to CV Joystick LEFT
@@ -1162,35 +1175,38 @@ void SetDefaultGameConfig(void)
     myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
     myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
     
-    myConfig.showFPS     = 0;
-    myConfig.frameSkip   = (isDSiMode() ? 0:1);    // For DSi we don't need FrameSkip, but for older DS-LITE we turn on light frameskip
-    myConfig.frameBlend  = 0;
-    myConfig.msxMapper   = GUESS;
-    myConfig.autoFire1   = 0;
-    myConfig.isPAL       = 0;
-    myConfig.overlay     = 0;
-    myConfig.maxSprites  = 0;
-    myConfig.vertSync    = (isDSiMode() ? 1:0);    // Default is Vertical Sync ON for DSi and OFF for DS-LITE
-    myConfig.spinSpeed   = 0;    
-    myConfig.touchPad    = 0;
-    myConfig.cpuCore     = 1;   // Default to CZ80 core
-    myConfig.msxBios     = (bMSXBiosFound ? 1:0);    // Default to real MSX bios unless we can't find it
-    myConfig.msxKey5     = 0;   // Default key map
-    myConfig.dpad        = DPAD_NORMAL;   // Normal DPAD use - mapped to joystick
-    myConfig.memWipe     = 0;    
-    myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY;
-    myConfig.cvEESize    = C24XX_24C256;
-    myConfig.ayEnvelope  = 0;
-    myConfig.colecoRAM   = COLECO_RAM_NORMAL_MIRROR;
-    myConfig.msxBeeper   = 0;    
-    myConfig.cvisionLoad = 0; 
-    myConfig.reservedB0  = 0xA5;    // So it's easy to spot on an "upgrade"
-    myConfig.reservedB1  = 0xA5;    // So it's easy to spot on an "upgrade"
-    myConfig.reservedB2  = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.frameSkip   = (isDSiMode() ? 0:1);         // For DSi we don't need FrameSkip, but for older DS-LITE we turn on light frameskip
+    myConfig.frameBlend  = 0;                           // No frame blending needed for most games
+    myConfig.msxMapper   = GUESS;                       // MSX mapper takes its best guess
+    myConfig.autoFire1   = 0;                           // Default to no auto-fire on either button
+    myConfig.isPAL       = 0;                           // Default to NTSC
+    myConfig.overlay     = 0;                           // Default to normal CV overlay
+    myConfig.maxSprites  = 0;                           // 0 means allow 32 sprites... 1 means limit to the original 4 sprites of the VDP
+    myConfig.vertSync    = (isDSiMode() ? 1:0);         // Default is Vertical Sync ON for DSi and OFF for DS-LITE
+    myConfig.spinSpeed   = 0;                           // Default spin speed is normal
+    myConfig.touchPad    = 0;                           // Nothing special about the touch-pad by default
+    myConfig.cpuCore     = 1;                           // Default to the more accurate CZ80 core
+    myConfig.msxBios     = (bMSXBiosFound ? 1:0);       // Default to real MSX bios unless we can't find it
+    myConfig.msxKey5     = 0;                           // Default key map for MSX key 5 (question mark)
+    myConfig.dpad        = DPAD_NORMAL;                 // Normal DPAD use - mapped to joystick
+    myConfig.memWipe     = 0;                           // Default to RANDOM memory
+    myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY; // By default clear VDP interrupts automatically
+    myConfig.cvEESize    = C24XX_24C256;                // Default CV EEPROM size is 32K
+    myConfig.ayEnvelope  = 0;                           // By default AY envelopes are enabled
+    myConfig.mirrorRAM   = COLECO_RAM_NORMAL_MIRROR;    // By default use the normal Colecovision (and CreatiVision) memory mirrors
+    myConfig.msxBeeper   = 0;                           // Assume no MSX beeper required - only a few games need this
+    myConfig.cvisionLoad = 0;                           // Default to normal Legacy A/B load for CreatiVision games
+    myConfig.reservedB0  = 0;   
+    myConfig.reservedB1  = 0;
+    myConfig.reservedB2  = 0;
     myConfig.reservedB3  = 0;    
-    myConfig.reservedC   = 0;    
-    
-    // And a few games don't want more than 4 max sprites (they pull tricks that rely on it)
+    myConfig.reservedC0  = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reservedC1  = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reservedC2  = 0x00000000;
+  
+    // ----------------------------------------------------------------------------------
+    // A few games don't want more than 4 max sprites (they pull tricks that rely on it)
+    // ----------------------------------------------------------------------------------
     if (file_crc == 0xee530ad2) myConfig.maxSprites  = 1;  // QBiqs
     if (file_crc == 0x275c800e) myConfig.maxSprites  = 1;  // Antartic Adventure
     if (file_crc == 0xa66e5ed1) myConfig.maxSprites  = 1;  // Antartic Adventure Prototype  
@@ -1283,7 +1299,7 @@ void SetDefaultGameConfig(void)
         {
             if (file_crc == cv_no_mirror_games[idx])
             {
-                myConfig.colecoRAM = COLECO_RAM_NO_MIRROR;
+                myConfig.mirrorRAM = COLECO_RAM_NO_MIRROR;
                 break;
             }
             idx++;
@@ -1535,18 +1551,19 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xdddd1396)                 myConfig.cvEESize = C24XX_256B; // Black Onyx is 256 bytes... Boxxle is 32K. Other EE are unknown...
     
     if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
+    if (file_crc == 0x011899cf)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max (32K version)
 
     if (myConfig.isPAL)                         myConfig.vertSync= 0;   // If we are PAL, we can't sync to the DS 60Hz
 }
 
-// -------------------------------------------------------------------------
-// Find the ColecoDS.DAT file and load it... if it doesn't exist, then
-// default values will be used for the entire configuration database...
-// -------------------------------------------------------------------------
-void FindAndLoadConfig(void)
+// ----------------------------------------------------------
+// Load configuration into memory where we can use it. 
+// The configuration is stored in ColecoDS.DAT 
+// ----------------------------------------------------------
+void LoadConfig(void)
 {
     FILE *fp;
-
+    
     // -----------------------------------------------------------------
     // Start with defaults.. if we find a match in our config database
     // below, we will fill in the config with data read from the file.
@@ -1556,43 +1573,44 @@ void FindAndLoadConfig(void)
     fp = fopen("/data/ColecoDS.DAT", "rb");
     if (fp != NULL)
     {
-        fread(&AllConfigs, sizeof(AllConfigs), 1, fp);
-        fclose(fp);
+        fread(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp);  // Read Global Config
+        fread(&AllConfigs, sizeof(AllConfigs), 1, fp);          // Read the full array of game configs
+        fclose(fp);                                             // Close file - we work from memory now
         
-        if (((AllConfigs[0].config_ver == CONFIG_VER_OLD1) || (AllConfigs[0].config_ver == CONFIG_VER_OLD2)) && isDSiMode())    // If we are DSi we simply bump up the ver... if older DS-LITE/PHAT we wipe config
-        {
-            for (u16 slot=0; slot<MAX_CONFIGS; slot++)
-            {
-                AllConfigs[slot].config_ver = CONFIG_VER;
-                AllConfigs[slot].cpuCore = (file_crc == 0x9b547ba8) ? 0:1;  // Boulder Dash is DrZ80... everything else is CZ80
-            }
-        }        
-        
-        if (AllConfigs[0].config_ver != CONFIG_VER)
+        if (myGlobalConfig.config_ver != CONFIG_VER)
         {
             memset(&AllConfigs, 0x00, sizeof(AllConfigs));
             SetDefaultGameConfig();
+            SetDefaultGlobalConfig();
             SaveConfig(FALSE);
-        }
-        else
-        {
-            for (u16 slot=0; slot<MAX_CONFIGS; slot++)
-            {
-                if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
-                {
-                    memcpy(&myConfig, &AllConfigs[slot], sizeof(struct Config_t));
-                    if (myConfig.dpad > DPAD_DIAGONALS) myConfig.dpad = DPAD_DIAGONALS; // We downgraded this one
-                    if (myConfig.cvEESize == 0) myConfig.cvEESize = (file_crc == 0xdddd1396) ? C24XX_256B:C24XX_24C256;       // We repurposed this one... nothing has 128B EE
-                    break;                           
-                }
-            }
         }
     }
     else    // Not found... init the entire database...
     {
         memset(&AllConfigs, 0x00, sizeof(AllConfigs));
         SetDefaultGameConfig();
+        SetDefaultGlobalConfig();
         SaveConfig(FALSE);
+    }}
+
+// -------------------------------------------------------------------------
+// Try to match our loaded game to a configuration my matching CRCs
+// -------------------------------------------------------------------------
+void FindConfig(void)
+{
+    // -----------------------------------------------------------------
+    // Start with defaults.. if we find a match in our config database
+    // below, we will fill in the config with data read from the file.
+    // -----------------------------------------------------------------
+    SetDefaultGameConfig();
+    
+    for (u16 slot=0; slot<MAX_CONFIGS; slot++)
+    {
+        if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
+        {
+            memcpy(&myConfig, &AllConfigs[slot], sizeof(struct Config_t));
+            break;                           
+        }
     }
 }
 
@@ -1612,11 +1630,11 @@ struct options_t
     u8           option_max;
 };
 
-const struct options_t Option_Table[2][20] =
+const struct options_t Option_Table[3][20] =
 {
+    // Page 1
     {
         {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "FULL KEYBOARD", "ALPHA KEYBD", "CREATIVISION"},&myConfig.overlay,    12},
-        {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myConfig.showFPS,    3},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
@@ -1630,7 +1648,7 @@ const struct options_t Option_Table[2][20] =
         {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE", "ADAM CPM"},                                                                                                   &myConfig.memWipe,    5},
-        {"COLECO RAM",     {"MIRRORED","NO MIRROR"},                                                                                                                                            &myConfig.colecoRAM,  2},
+        {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Page 2
@@ -1641,6 +1659,12 @@ const struct options_t Option_Table[2][20] =
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
+        {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
+    },
+    // Global Options
+    {
+        {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,     3},
+        {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     }
 };              
@@ -1679,7 +1703,7 @@ u8 display_options_list(bool bFullDisplay)
 //*****************************************************************************
 // Change Game Options for the current game
 //*****************************************************************************
-void colecoDSGameOptions(void)
+void colecoDSGameOptions(bool bIsGlobal)
 {
     u8 optionHighlighted;
     u8 idx;
@@ -1688,6 +1712,8 @@ void colecoDSGameOptions(void)
     int last_keys_pressed = 999;
     char strBuf[35];
 
+    option_table = (bIsGlobal ? 2:0);
+    
     idx=display_options_list(true);
     optionHighlighted = 0;
     while (keysCurrent() != 0)
@@ -1738,7 +1764,7 @@ void colecoDSGameOptions(void)
             }
             if (keysCurrent() & (KEY_X)) // Toggle Table
             {
-                option_table = (option_table + 1) % 2;
+                option_table = (bIsGlobal ? 2: ((option_table + 1) % 2));
                 idx=display_options_list(true);
                 optionHighlighted = 0;
                 while (keysCurrent() != 0)
@@ -1762,6 +1788,7 @@ void colecoDSGameOptions(void)
         swiWaitForVBlank();
     }
     
+    // We can't support PAL with Vertical Sync 
     if (myConfig.isPAL) myConfig.vertSync = 0;
     
     return;
@@ -1960,9 +1987,9 @@ void affInfoOptions(u32 uY)
     AffChaine(2, 8,(uY== 8 ? 2 : 0),("         LOAD  GAME         "));
     AffChaine(2,10,(uY==10 ? 2 : 0),("         PLAY  GAME         "));
     AffChaine(2,12,(uY==12 ? 2 : 0),("     REDEFINE  KEYS         "));
-    AffChaine(2,14,(uY==14 ? 2 : 0),("        GAME   OPTIONS      "));
-    AffChaine(2,16,(uY==16 ? 2 : 0),("        QUIT   EMULATOR     "));
-    AffChaine(6,18,0,("USE D-PAD  A=SELECT"));
+    AffChaine(2,14,(uY==14 ? 2 : 0),("         GAME  OPTIONS      "));
+    AffChaine(2,16,(uY==16 ? 2 : 0),("       GLOBAL  OPTIONS      "));
+    AffChaine(2,18,(uY==18 ? 2 : 0),("         QUIT  EMULATOR     "));
 }
 
 // --------------------------------------------------------------------
@@ -2098,7 +2125,7 @@ void ReadFileCRCAndConfig(void)
         }
     }
     
-    FindAndLoadConfig();    // Try to find keymap and config for this file...
+    FindConfig();    // Try to find keymap and config for this file...
     
     // --------------------------------------------
     // A few special cases for the CreatiVision
@@ -2151,7 +2178,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
         affInfoOptions(32);
-        ucY = (ucY == 8 ? 16 : ucY -2);
+        ucY = (ucY == 8 ? 18 : ucY -2);
         ucHaut=0x01;
         affInfoOptions(ucY);
       }
@@ -2166,7 +2193,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         affInfoOptions(32);
-        ucY = (ucY == 16 ? 8 : ucY +2);
+        ucY = (ucY == 18 ? 8 : ucY +2);
         ucBas=0x01;
         affInfoOptions(ucY);
       }
@@ -2219,7 +2246,7 @@ void colecoDSChangeOptions(void)
           case 14 :     // GAME OPTIONS
             if (ucGameChoice != -1) 
             { 
-                colecoDSGameOptions();
+                colecoDSGameOptions(false);
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
                 affInfoOptions(ucY);
                 DisplayFileName();
@@ -2230,10 +2257,16 @@ void colecoDSChangeOptions(void)
             }
             break;                
                 
-          case 16 :     // QUIT EMULATOR
-            exit(1);
+          case 16 :     // GLOBAL OPTIONS
+            colecoDSGameOptions(true);
+            dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
+            affInfoOptions(ucY);
+            DisplayFileName();
             break;
                 
+          case 18 :     // QUIT EMULATOR
+            exit(1);
+            break;
         }
       }
     }
