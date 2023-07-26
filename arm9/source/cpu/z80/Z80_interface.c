@@ -360,7 +360,7 @@ void cpu_writemem16 (u8 value,u16 address)
         }    
         else if((address>0x5FFF)&&(address<0x8000)) // Normal memory RAM write... with mirrors...
         {
-            if (myConfig.colecoRAM == COLECO_RAM_NORMAL_MIRROR)
+            if (myConfig.mirrorRAM == COLECO_RAM_NORMAL_MIRROR)
             {
                 address&=0x03FF;
                 RAM_Memory[0x6400+address]=RAM_Memory[0x6800+address]=RAM_Memory[0x7400+address]=RAM_Memory[0x7C00+address]=value;

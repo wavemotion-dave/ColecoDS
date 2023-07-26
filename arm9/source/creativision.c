@@ -413,7 +413,7 @@ ITCM_CODE void Wr6502(register word Addr,register byte Value)
     switch (Addr & 0xF000)
     {
         case 0x0000:    // Zero-Page RAM writes
-            if (myConfig.colecoRAM == COLECO_RAM_NORMAL_MIRROR) // Mirror RAM? Nothing really relies on this but a real CreatiVision machine will 'see' the replication.
+            if (myConfig.mirrorRAM == COLECO_RAM_NORMAL_MIRROR) // Mirror RAM? Nothing really relies on this but a real CreatiVision machine will 'see' the replication.
             {
                 RAM_Memory[(Addr & 0x3FF) + 0x000] = Value;
                 RAM_Memory[(Addr & 0x3FF) + 0x400] = Value;

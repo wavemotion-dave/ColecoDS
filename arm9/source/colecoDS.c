@@ -888,7 +888,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(23,0,6, (sg1000_mode == 2 ? "SC-3000":"SG-1000"));
             last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
+        if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
@@ -926,7 +926,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(8,0,6, tmp);
             last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL && !myConfig.showFPS)
+        if (last_pal_mode != myConfig.isPAL && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
@@ -955,7 +955,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(8,0,6, tmp);
             last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
+        if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
@@ -1027,7 +1027,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(20,0,6, "CREATIVISION");
             last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
+        if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
@@ -1040,7 +1040,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(22,0,6, "EINSTEIN");
             last_pal_mode = 99;
         }
-        if (last_pal_mode != myConfig.isPAL  && !myConfig.showFPS)
+        if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
@@ -1905,7 +1905,7 @@ void colecoDS_main(void)
             TIMER1_DATA = 0;
             TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
             emuFps = emuActFrames;
-            if (myConfig.showFPS)
+            if (myGlobalConfig.showFPS)
             {
                 if (emuFps == 61) emuFps=60;
                 else if (emuFps == 59) emuFps=60;            
@@ -1964,7 +1964,7 @@ void colecoDS_main(void)
             // --------------------------------------------
             while(TIMER2_DATA < ((myConfig.isPAL ? 656:546)*(timingFrames+1)))
             {
-                if (myConfig.showFPS == 2) break;   // If Full Speed, break out...
+                if (myGlobalConfig.showFPS == 2) break;   // If Full Speed, break out...
             }
         }
         
@@ -2842,6 +2842,12 @@ int main(int argc, char **argv)
   // -----------------------------------------------------------------
   LoadBIOSFiles();
     
+  // -----------------------------------------------------------------  
+  // And do an initial load of configuration... We'll match it up
+  // with the game that was selected later...
+  // -----------------------------------------------------------------  
+  LoadConfig();
+    
   //  Handle command line argument... mostly for TWL++
   if  (argc > 1) 
   {
@@ -2884,24 +2890,27 @@ int main(int argc, char **argv)
     // ---------------------------------------------------------------
     if (bColecoBiosFound)
     {
-        u8 idx = 6;
-        AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
-                                     AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND"); 
-        if (bMSXBiosFound)          {AffChaine(2,idx++,0,"msx.rom        BIOS FOUND"); }
-        if (bSVIBiosFound)          {AffChaine(2,idx++,0,"svi.rom        BIOS FOUND"); }
-        if (bSordBiosFound)         {AffChaine(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
-        if (bPV2000BiosFound)       {AffChaine(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
-        if (bPencilBiosFound)       {AffChaine(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
-        if (bEinsteinBiosFound)     {AffChaine(2,idx++,0,"einstein.rom   BIOS FOUND"); }
-        if (bCreativisionBiosFound) {AffChaine(2,idx++,0,"bioscv.rom     BIOS FOUND"); }    
-        if (bAdamBiosFound)         {AffChaine(2,idx++,0,"eos.rom        BIOS FOUND"); }
-        if (bAdamBiosFound)         {AffChaine(2,idx++,0,"writer.rom     BIOS FOUND"); }
-        AffChaine(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
-        AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
-        
-        while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
-        while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
-        while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
+        if (myGlobalConfig.showBiosInfo)
+        {
+            u8 idx = 6;
+            AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
+                                         AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND"); 
+            if (bMSXBiosFound)          {AffChaine(2,idx++,0,"msx.rom        BIOS FOUND"); }
+            if (bSVIBiosFound)          {AffChaine(2,idx++,0,"svi.rom        BIOS FOUND"); }
+            if (bSordBiosFound)         {AffChaine(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
+            if (bPV2000BiosFound)       {AffChaine(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
+            if (bPencilBiosFound)       {AffChaine(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
+            if (bEinsteinBiosFound)     {AffChaine(2,idx++,0,"einstein.rom   BIOS FOUND"); }
+            if (bCreativisionBiosFound) {AffChaine(2,idx++,0,"bioscv.rom     BIOS FOUND"); }    
+            if (bAdamBiosFound)         {AffChaine(2,idx++,0,"eos.rom        BIOS FOUND"); }
+            if (bAdamBiosFound)         {AffChaine(2,idx++,0,"writer.rom     BIOS FOUND"); }
+            AffChaine(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
+            AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
+
+            while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
+            while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
+            while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
+        }
     }
     else
     {
