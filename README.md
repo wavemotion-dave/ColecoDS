@@ -85,8 +85,10 @@ updated Sprite/Line handling from ColEM 5.6
 
 Without Marat - this emulator simply wouldn't exist.
 
-Known Issues :
+Known Issues and Limitations:
 -----------------------
+* No more than 1024 files per directory - split ROM files up as needed.
+* Path and filename to a ROM can't be longer than 160 characters. Keep them on the shorter side.
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
@@ -243,7 +245,7 @@ On the DSi using this new mode renders those games really bright and visible.
 The DSi XL/LL has a slower refresh on the LCD and it more closely approximates the old tube TVs... 
 so blend mode is not needed for the XL/LL models.
 
-However! Using blend mode comes at at 25% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
+However! Using blend mode comes at at 20% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
 struggle a bit on more complicated games. 
 
 So my recommendation is as follows:
