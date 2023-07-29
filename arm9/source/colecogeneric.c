@@ -34,6 +34,7 @@ int ucGameAct=0;
 int ucGameChoice = -1;
 FICcoleco gpFic[MAX_ROMS];  
 char szName[256];
+char szFile[256];
 u8 bForceMSXLoad = false;
 u32 file_size = 0;
 
@@ -638,7 +639,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
 {
   u16 ucBcl,ucGame;
   u8 maxLen;
-  char szName2[80];
+  char szName2[40];
   
   AffChaine(30,8,0,(NoDebGame>0 ? "<" : " "));
   AffChaine(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
@@ -696,7 +697,6 @@ int colecoFilescmp (const void *c1, const void *c2)
 void colecoDSFindFiles(void) 
 {
   u32 uNbFile;
-  char szFile[256];
   DIR *dir;
   struct dirent *pent;
 
@@ -831,8 +831,8 @@ void colecoDSFindFiles(void)
 u8 colecoDSLoadFile(void) 
 {
   bool bDone=false;
-  u32 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00,romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
-  s32 uLenFic=0, ucFlip=0, ucFlop=0;
+  u16 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00, romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
+  s16 uLenFic=0, ucFlip=0, ucFlop=0;
 
   // Show the menu...
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
@@ -1178,7 +1178,7 @@ void SetDefaultGameConfig(void)
     myConfig.frameSkip   = (isDSiMode() ? 0:1);         // For DSi we don't need FrameSkip, but for older DS-LITE we turn on light frameskip
     myConfig.frameBlend  = 0;                           // No frame blending needed for most games
     myConfig.msxMapper   = GUESS;                       // MSX mapper takes its best guess
-    myConfig.autoFire1   = 0;                           // Default to no auto-fire on either button
+    myConfig.autoFire    = 0;                           // Default to no auto-fire on either button
     myConfig.isPAL       = 0;                           // Default to NTSC
     myConfig.overlay     = 0;                           // Default to normal CV overlay
     myConfig.maxSprites  = 0;                           // 0 means allow 32 sprites... 1 means limit to the original 4 sprites of the VDP
@@ -1196,13 +1196,14 @@ void SetDefaultGameConfig(void)
     myConfig.mirrorRAM   = COLECO_RAM_NORMAL_MIRROR;    // By default use the normal Colecovision (and CreatiVision) memory mirrors
     myConfig.msxBeeper   = 0;                           // Assume no MSX beeper required - only a few games need this
     myConfig.cvisionLoad = 0;                           // Default to normal Legacy A/B load for CreatiVision games
-    myConfig.reservedB0  = 0;   
-    myConfig.reservedB1  = 0;
-    myConfig.reservedB2  = 0;
-    myConfig.reservedB3  = 0;    
-    myConfig.reservedC0  = 0xA5;    // So it's easy to spot on an "upgrade"
-    myConfig.reservedC1  = 0xA5;    // So it's easy to spot on an "upgrade"
-    myConfig.reservedC2  = 0x00000000;
+    myConfig.reserved0   = 0;   
+    myConfig.reserved1   = 0;
+    myConfig.reserved2   = 0;
+    myConfig.reserved3   = 0;    
+    myConfig.reserved4   = 0;    
+    myConfig.reserved5   = 0;    
+    myConfig.reserved6   = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reserved32  = 0x00000000;
   
     // ----------------------------------------------------------------------------------
     // A few games don't want more than 4 max sprites (they pull tricks that rely on it)
@@ -1313,14 +1314,14 @@ void SetDefaultGameConfig(void)
         if (file_crc == 0x70142655)             myConfig.spinSpeed = 0;         // Victory
     }
     
-    if (sg1000_mode == 2)                       myConfig.overlay = 9;  // SC-3000 uses the keyboard
+    if (sg1000_mode == 2)                       myConfig.overlay = 10; // SC-3000 uses the full keyboard
     if (msx_mode == 2)                          myConfig.msxBios = 1;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
-    if (memotech_mode)                          myConfig.overlay = 9;  // Memotech MTX default to full keyboard
-    if (svi_mode)                               myConfig.overlay = 9;  // SVI default to full keyboard    
-    if (msx_mode == 2)                          myConfig.overlay = 9;  // MSX with .cas defaults to full keyboard    
-    if (einstein_mode)                          myConfig.overlay = 9;  // Tatung Einstein defaults to full keyboard
+    if (memotech_mode)                          myConfig.overlay = 10; // Memotech MTX default to full keyboard
+    if (svi_mode)                               myConfig.overlay = 10; // SVI default to full keyboard    
+    if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard    
+    if (einstein_mode)                          myConfig.overlay = 10; // Tatung Einstein defaults to full keyboard
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
@@ -1634,13 +1635,13 @@ const struct options_t Option_Table[3][20] =
 {
     // Page 1
     {
-        {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "FULL KEYBOARD", "ALPHA KEYBD", "CREATIVISION"},&myConfig.overlay,    12},
+        {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "ADAM KEYBOARD", "MSX/SVI KBD", "CREATIVISION"},&myConfig.overlay,    12},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
         {"MAX SPRITES",    {"32",  "4"},                                                                                                                                                        &myConfig.maxSprites, 2},
         {"VERT SYNC",      {"OFF", "ON"},                                                                                                                                                       &myConfig.vertSync,   2},    
-        {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire1,  4},
+        {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire,   4},
         {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
         {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
         {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},

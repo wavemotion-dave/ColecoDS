@@ -24,6 +24,16 @@ extern u32 debug2;
 extern u32 debug3;
 extern u32 debug4;
 
+// These are the various special icons/menu operations
+#define MENU_CHOICE_NONE        0x00
+#define MENU_CHOICE_RESET_GAME  0x01
+#define MENU_CHOICE_END_GAME    0x02
+#define MENU_CHOICE_SAVE_GAME   0x03
+#define MENU_CHOICE_LOAD_GAME   0x04
+#define MENU_CHOICE_HI_SCORE    0x05
+#define MENU_CHOICE_CASSETTE    0x06
+#define MENU_CHOICE_MENU        0xFF        // Special brings up a menu of choices
+
 #define JST_NONE            0x0000
 #define JST_KEYPAD          0x000F
 
@@ -157,10 +167,13 @@ extern u32 debug4;
 #define KBD_KEY_SEL         19
 #define KBD_KEY_RET         20
 #define KBD_KEY_DEL         21
-#define KBD_KEY_BRK         21
-#define KBD_KEY_HOME        21
-#define KBD_KEY_QUOTE       22
-#define KBD_KEY_CAPS        23
+#define KBD_KEY_INS         22
+#define KBD_KEY_BRK         23
+#define KBD_KEY_HOME        24
+#define KBD_KEY_QUOTE       25
+#define KBD_KEY_CAPS        26
+#define KBD_KEY_TAB         27
+#define KBD_KEY_BS          28
 #define KBD_KEY_CAS         255
 
 extern u16 emuFps;

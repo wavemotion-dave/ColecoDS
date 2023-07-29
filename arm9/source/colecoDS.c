@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2022 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
@@ -46,7 +46,6 @@
 #include "quest.h"
 #include "hal2010.h"
 #include "cvision.h"
-#include "alpha.h"
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -122,7 +121,6 @@ C24XX EEPROM;
 u8 adam_CapsLock        = 0;
 u8 adam_unsaved_data    = 0;
 u8 write_EE_counter     = 0;
-u8 last_adam_key        = 255;
 u32 last_tape_pos       = 9999;
 
 // --------------------------------------------------------------------------
@@ -923,7 +921,7 @@ void DisplayStatusLine(bool bForce)
             last_tape_pos = tape_pos;
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
-            AffChaine(8,0,6, tmp);
+            AffChaine(9,0,6, tmp);
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL && !myGlobalConfig.showFPS)
@@ -952,7 +950,7 @@ void DisplayStatusLine(bool bForce)
             last_tape_pos = tape_pos;
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
-            AffChaine(8,0,6, tmp);
+            AffChaine(9,0,6, tmp);
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
@@ -985,7 +983,7 @@ void DisplayStatusLine(bool bForce)
             last_tape_pos = tape_pos;
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
-            AffChaine(8,0,6, tmp);
+            AffChaine(9,0,6, tmp);
         }
         if (last_pal_mode != myConfig.isPAL)
         {
@@ -1406,372 +1404,322 @@ void CassetteMenu(void)
 }
 
 
+
+// ------------------------------------------------------------------------
+// Show the Mini Menu - highlight the selected row. 
+// ------------------------------------------------------------------------
+u8 mini_menu_items = 0;
+void MiniMenuShow(bool bClearScreen, u8 sel)
+{
+    mini_menu_items = 0;
+    if (bClearScreen)
+    {
+      // ---------------------------------------------------    
+      // Put up a generic background for this mini-menu...
+      // ---------------------------------------------------    
+      dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
+      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); 
+      dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
+      swiWaitForVBlank();
+    }
+    
+    AffChaine(8,7,6,                                           " CV MINI MENU  ");
+    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " RESET  GAME   ");  mini_menu_items++;
+    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " QUIT   GAME   ");  mini_menu_items++;
+    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " HIGH   SCORE  ");  mini_menu_items++;
+    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " SAVE   STATE  ");  mini_menu_items++;
+    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " LOAD   STATE  ");  mini_menu_items++;
+    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " EXIT   MENU   ");  mini_menu_items++;
+}
+
+// ------------------------------------------------------------------------
+// Handle mini-menu interface...
+// ------------------------------------------------------------------------
+u8 MiniMenu(void)
+{
+  u8 retVal = MENU_CHOICE_NONE;
+  u8 menuSelection = 0;
+    
+  SoundPause();
+  while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
+
+  MiniMenuShow(true, menuSelection);
+
+  while (true) 
+  {
+    nds_key = keysCurrent();
+    if (nds_key)
+    {
+        if (nds_key & KEY_UP)  
+        {
+            menuSelection = (menuSelection > 0) ? (menuSelection-1):(mini_menu_items-1);
+            MiniMenuShow(false, menuSelection);
+        }
+        if (nds_key & KEY_DOWN)  
+        {
+            menuSelection = (menuSelection+1) % mini_menu_items;
+            MiniMenuShow(false, menuSelection);
+        }
+        if (nds_key & KEY_A)  
+        {
+            if      (menuSelection == 0) retVal = MENU_CHOICE_RESET_GAME;
+            else if (menuSelection == 1) retVal = MENU_CHOICE_END_GAME;
+            else if (menuSelection == 2) retVal = MENU_CHOICE_HI_SCORE;
+            else if (menuSelection == 3) retVal = MENU_CHOICE_SAVE_GAME;
+            else if (menuSelection == 4) retVal = MENU_CHOICE_LOAD_GAME;
+            else if (menuSelection == 5) retVal = MENU_CHOICE_NONE;
+            else retVal = MENU_CHOICE_NONE;
+            break;
+        }
+        if (nds_key & KEY_B)  
+        {
+            retVal = MENU_CHOICE_NONE;
+            break;
+        }
+        
+        while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
+        WAITVBL;WAITVBL;
+    }
+  }
+
+  while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
+  WAITVBL;WAITVBL;
+    
+  InitBottomScreen();  // Could be generic or overlay...
+
+  SoundUnPause();
+    
+  return retVal;
+}
+
+
 // ------------------------------------------------------------------------
 // Return 1 if we are showing full keyboard... otherwise 0
 // ------------------------------------------------------------------------
 inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9 || myConfig.overlay == 10 || myConfig.overlay == 11) ? 1:0);}
 
-static u8 adam_key = 0;
-void handle_full_keyboard_press(u16 iTx, u16 iTy)
+u8 last_special_key = 0;
+u8 last_special_key_dampen = 0;
+u8 last_kbd_key = 0;
+
+u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
 {
-    if (!adam_mode)
+    if ((iTy >= 12) && (iTy < 42))        // Row 1 (top row with I-VI Smartkeys)
     {
-        if ((iTy >= 28) && (iTy < 51))        // Row 1 (top row)
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '0';
-            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = '1';
-            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = '2';
-            else if ((iTx >= 101) && (iTx < 123))  kbd_key = '3';
-            else if ((iTx >= 123) && (iTx < 145))  kbd_key = '4';
-            else if ((iTx >= 145) && (iTx < 167))  kbd_key = '5';
-            else if ((iTx >= 167) && (iTx < 189))  kbd_key = '6';
-            else if ((iTx >= 189) && (iTx < 211))  kbd_key = '7';
-            else if ((iTx >= 211) && (iTx < 233))  kbd_key = '8';
-            else if ((iTx >= 233) && (iTx < 255))  kbd_key = '9';
-
-        }
-        else if ((iTy >= 51) && (iTy < 75))   // Row 2
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'A';
-            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'B';
-            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'C';
-            else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'D';
-            else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'E';
-            else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'F';
-            else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'G';
-            else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'H';
-            else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'I';
-            else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'J';
-        }
-        else if ((iTy >= 75) && (iTy < 99))  // Row 3
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'K';
-            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'L';
-            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'M';
-            else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'N';
-            else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'O';
-            else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'P';
-            else if ((iTx >= 167) && (iTx < 189))  kbd_key = 'Q';
-            else if ((iTx >= 189) && (iTx < 211))  kbd_key = 'R';
-            else if ((iTx >= 211) && (iTx < 233))  kbd_key = 'S';
-            else if ((iTx >= 233) && (iTx < 255))  kbd_key = 'T';
-        }
-        else if ((iTy >= 99) && (iTy < 123)) // Row 4
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = 'U';
-            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = 'V';
-            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = 'W';
-            else if ((iTx >= 101) && (iTx < 123))  kbd_key = 'X';
-            else if ((iTx >= 123) && (iTx < 145))  kbd_key = 'Y';
-            else if ((iTx >= 145) && (iTx < 167))  kbd_key = 'Z';
-            else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_UP;
-            else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_DOWN;
-            else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_LEFT;
-            else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RIGHT;
-        }
-        else if ((iTy >= 123) && (iTy < 146)) // Row 5
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = '.';
-            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = ',';
-            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = ':';
-            else if ((iTx >= 101) && (iTx < 123))  kbd_key = '#';
-            else if ((iTx >= 123) && (iTx < 145))  kbd_key = '/';
-            else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_QUOTE;
-            else if ((iTx >= 167) && (iTx < 189))  kbd_key = '=';
-            else if ((iTx >= 189) && (iTx < 211))  kbd_key = '[';
-            else if ((iTx >= 211) && (iTx < 233))  kbd_key = ']';
-            else if ((iTx >= 233) && (iTx < 255))  kbd_key = '-';
-        }
-        else if ((iTy >= 146) && (iTy < 169)) // Row 6
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   kbd_key = KBD_KEY_ESC;
-            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_BRK;
-            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_BRK;
-            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_F1;
-            else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_F2;
-            else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_F3;
-            else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_F4;
-            else if ((iTx >= 167) && (iTx < 189))  kbd_key = KBD_KEY_F5;
-            else if ((iTx >= 189) && (iTx < 211))  kbd_key = KBD_KEY_F6;
-            else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_F7;
-            else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_F8;
-        }
-        else if ((iTy >= 169) && (iTy < 192)) // Row 7
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-            else if ((iTx >= 35)  && (iTx < 57))   kbd_key = KBD_KEY_CAPS;
-            else if ((iTx >= 57)  && (iTx < 79))   kbd_key = KBD_KEY_CAPS;
-            else if ((iTx >= 79)  && (iTx < 101))  kbd_key = KBD_KEY_DEL;
-            else if ((iTx >= 101) && (iTx < 123))  kbd_key = KBD_KEY_DEL;
-            else if ((iTx >= 123) && (iTx < 145))  kbd_key = KBD_KEY_HOME;
-            else if ((iTx >= 145) && (iTx < 167))  kbd_key = KBD_KEY_HOME;
-            else if ((iTx >= 167) && (iTx < 189))  kbd_key = ' ';
-            else if ((iTx >= 189) && (iTx < 211))  kbd_key = ' ';
-            else if ((iTx >= 211) && (iTx < 233))  kbd_key = KBD_KEY_RET;
-            else if ((iTx >= 233) && (iTx < 255))  kbd_key = KBD_KEY_RET;
-        }
+        if      ((iTx >= 0)   && (iTx < 25))   kbd_key = ADAM_KEY_ESC;
+        else if ((iTx >= 25)  && (iTx < 59))   kbd_key = ADAM_KEY_F1;
+        else if ((iTx >= 59)  && (iTx < 88))   kbd_key = ADAM_KEY_F2;
+        else if ((iTx >= 88)  && (iTx < 117))  kbd_key = ADAM_KEY_F3;
+        else if ((iTx >= 117) && (iTx < 146))  kbd_key = ADAM_KEY_F4;
+        else if ((iTx >= 146) && (iTx < 176))  kbd_key = ADAM_KEY_F5;
+        else if ((iTx >= 176) && (iTx < 210))  kbd_key = ADAM_KEY_F6;
+        else if ((iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_BS;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_HOME;
     }
-    else // Adam Keyboard ~60 keys
-    {
-        if ((iTy >= 28) && (iTy < 51))        // Row 1 (top row)
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   adam_key = '0';
-            else if ((iTx >= 57)  && (iTx < 79))   adam_key = '1';
-            else if ((iTx >= 79)  && (iTx < 101))  adam_key = '2';
-            else if ((iTx >= 101) && (iTx < 123))  adam_key = '3';
-            else if ((iTx >= 123) && (iTx < 145))  adam_key = '4';
-            else if ((iTx >= 145) && (iTx < 167))  adam_key = '5';
-            else if ((iTx >= 167) && (iTx < 189))  adam_key = '6';
-            else if ((iTx >= 189) && (iTx < 211))  adam_key = '7';
-            else if ((iTx >= 211) && (iTx < 233))  adam_key = '8';
-            else if ((iTx >= 233) && (iTx < 255))  adam_key = '9';
-        }
-        else if ((iTy >= 51) && (iTy < 75))   // Row 2
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'A';
-            else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'B';
-            else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'C';
-            else if ((iTx >= 101) && (iTx < 123))  adam_key = 'D';
-            else if ((iTx >= 123) && (iTx < 145))  adam_key = 'E';
-            else if ((iTx >= 145) && (iTx < 167))  adam_key = 'F';
-            else if ((iTx >= 167) && (iTx < 189))  adam_key = 'G';
-            else if ((iTx >= 189) && (iTx < 211))  adam_key = 'H';
-            else if ((iTx >= 211) && (iTx < 233))  adam_key = 'I';
-            else if ((iTx >= 233) && (iTx < 255))  adam_key = 'J';
-        }
-        else if ((iTy >= 75) && (iTy < 99))  // Row 3
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'K';
-            else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'L';
-            else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'M';
-            else if ((iTx >= 101) && (iTx < 123))  adam_key = 'N';
-            else if ((iTx >= 123) && (iTx < 145))  adam_key = 'O';
-            else if ((iTx >= 145) && (iTx < 167))  adam_key = 'P';
-            else if ((iTx >= 167) && (iTx < 189))  adam_key = 'Q';
-            else if ((iTx >= 189) && (iTx < 211))  adam_key = 'R';
-            else if ((iTx >= 211) && (iTx < 233))  adam_key = 'S';
-            else if ((iTx >= 233) && (iTx < 255))  adam_key = 'T';
-        }
-        else if ((iTy >= 99) && (iTy < 123)) // Row 4
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   adam_key = 'U';
-            else if ((iTx >= 57)  && (iTx < 79))   adam_key = 'V';
-            else if ((iTx >= 79)  && (iTx < 101))  adam_key = 'W';
-            else if ((iTx >= 101) && (iTx < 123))  adam_key = 'X';
-            else if ((iTx >= 123) && (iTx < 145))  adam_key = 'Y';
-            else if ((iTx >= 145) && (iTx < 167))  adam_key = 'Z';
-            else if ((iTx >= 167) && (iTx < 189))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_UP);
-            else if ((iTx >= 189) && (iTx < 211))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_DOWN);
-            else if ((iTx >= 211) && (iTx < 233))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_LEFT);
-            else if ((iTx >= 233) && (iTx < 255))  adam_key = (key_shift ? ADAM_KEY_HOME : ADAM_KEY_RIGHT);
-        }
-        else if ((iTy >= 123) && (iTy < 146)) // Row 5
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   adam_key = 0;
-            else if ((iTx >= 35)  && (iTx < 57))   adam_key = '.';
-            else if ((iTx >= 57)  && (iTx < 79))   adam_key = ',';
-            else if ((iTx >= 79)  && (iTx < 101))  adam_key = ':';
-            else if ((iTx >= 101) && (iTx < 123))  adam_key = '#';
-            else if ((iTx >= 123) && (iTx < 145))  adam_key = '/';
-            else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_QUOTE;
-            else if ((iTx >= 167) && (iTx < 189))  adam_key = '=';
-            else if ((iTx >= 189) && (iTx < 211))  adam_key = '[';
-            else if ((iTx >= 211) && (iTx < 233))  adam_key = ']';
-            else if ((iTx >= 233) && (iTx < 255))  adam_key = '-';
-        }
-        else if ((iTy >= 146) && (iTy < 169)) // Row 6 (function key row)
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   adam_key = ADAM_KEY_F1;
-            else if ((iTx >= 35)  && (iTx < 57))   adam_key = ADAM_KEY_F2;
-            else if ((iTx >= 57)  && (iTx < 79))   adam_key = ADAM_KEY_F2;
-            else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_F3;
-            else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_F3;
-            else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_F4;
-            else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_F4;
-            else if ((iTx >= 167) && (iTx < 189))  adam_key = ADAM_KEY_F5;
-            else if ((iTx >= 189) && (iTx < 211))  adam_key = ADAM_KEY_F5;
-            else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_F6;
-            else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_F6;
-        }
-        else if ((iTy >= 169) && (iTy < 192)) // Row 7
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-            else if ((iTx >= 35)  && (iTx < 57))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
-            else if ((iTx >= 57)  && (iTx < 79))   {if (last_adam_key != 255) adam_CapsLock = 1-adam_CapsLock; last_adam_key=255;}
-            else if ((iTx >= 79)  && (iTx < 101))  adam_key = ADAM_KEY_BS;
-            else if ((iTx >= 101) && (iTx < 123))  adam_key = ADAM_KEY_BS;
-            else if ((iTx >= 123) && (iTx < 145))  adam_key = ADAM_KEY_ESC;
-            else if ((iTx >= 145) && (iTx < 167))  adam_key = ADAM_KEY_ESC;
-            else if ((iTx >= 167) && (iTx < 189))  adam_key = ' ';
-            else if ((iTx >= 189) && (iTx < 211))  adam_key = ' ';
-            else if ((iTx >= 211) && (iTx < 233))  adam_key = ADAM_KEY_ENTER;
-            else if ((iTx >= 233) && (iTx < 255))  adam_key = ADAM_KEY_ENTER;
-        }
-        else {adam_key = 0; last_adam_key = 0;}
-
-        if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
-        {
-            PutKBD(adam_key | (((adam_CapsLock && (adam_key >= 'A') && (adam_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
-            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-        }
-        if (last_adam_key != 255) last_adam_key = adam_key;
-    }    
-}
-
-
-void handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Smaller alpha-only keyboard
-{
-    if (!adam_mode)
-    {
-        if ((iTy >= 28) && (iTy < 56))        // Row 1 (top row)
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = '0';
-            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = '1';
-            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = '2';
-            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = '3';
-            else if ((iTx >= 127) && (iTx < 158))  kbd_key = '4';
-            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'A';
-            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'B';
-            else if ((iTx >= 220) && (iTx < 255))  kbd_key = 'C';
-        }
-        else if ((iTy >= 56) && (iTy < 84))   // Row 2
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = 'D';
-            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = 'E';
-            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = 'F';
-            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = 'G';
-            else if ((iTx >= 127) && (iTx < 158))  kbd_key = 'H';
-            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'I';
-            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'J';
-            else if ((iTx >= 220) && (iTx < 255))  kbd_key = 'K';
-        }
-        else if ((iTy >= 84) && (iTy < 112))  // Row 3
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = 'L';
-            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = 'M';
-            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = 'N';
-            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = 'O';
-            else if ((iTx >= 127) && (iTx < 158))  kbd_key = 'P';
-            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'Q';
-            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'R';
-            else if ((iTx >= 220) && (iTx < 255))  kbd_key = 'S';
-        }
-        else if ((iTy >= 112) && (iTy < 140))  // Row 4
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = 'T';
-            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = 'U';
-            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = 'V';
-            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = 'W';
-            else if ((iTx >= 127) && (iTx < 158))  kbd_key = 'X';
-            else if ((iTx >= 158) && (iTx < 189))  kbd_key = 'Y';
-            else if ((iTx >= 189) && (iTx < 220))  kbd_key = 'Z';
-            else if ((iTx >= 220) && (iTx < 255))  kbd_key = '.';
-        }
-        else if ((iTy >= 140) && (iTy < 169))  // Row 5
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   kbd_key = '5';
-            else if ((iTx >= 34)  && (iTx < 65))   kbd_key = '6';
-            else if ((iTx >= 65)  && (iTx < 96))   kbd_key = '7';
-            else if ((iTx >= 96)  && (iTx < 127))  kbd_key = '8';
-            else if ((iTx >= 127) && (iTx < 158))  kbd_key = '9';
-            else if ((iTx >= 158) && (iTx < 189))  kbd_key = KBD_KEY_F1;
-            else if ((iTx >= 189) && (iTx < 220))  kbd_key = '?';
-            else if ((iTx >= 220) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
-        }
-        else if ((iTy >= 169) && (iTy < 192))  // Row 6
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-            else if ((iTx >= 166) && (iTx < 211))  kbd_key = ' ';
-            else if ((iTx >= 211) && (iTx < 256))  kbd_key = KBD_KEY_RET;
-        }
+    else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
+    {            
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '\\';
+        else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
+        else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
+        else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
+        else if ((iTx >= 61)  && (iTx < 75))   kbd_key = '4';
+        else if ((iTx >= 75)  && (iTx < 91))   kbd_key = '5';
+        else if ((iTx >= 91)  && (iTx < 106))  kbd_key = '6';
+        else if ((iTx >= 106) && (iTx < 121))  kbd_key = '7';
+        else if ((iTx >= 121) && (iTx < 135))  kbd_key = '8';
+        else if ((iTx >= 135) && (iTx < 151))  kbd_key = '9';
+        else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
+        else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
+        else if ((iTx >= 181) && (iTx < 195))  kbd_key = '+';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '^';
+        else if ((iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_INS;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_DEL;
     }
-    else // Adam Mode
+    else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
     {
-        if ((iTy >= 28) && (iTy < 56))        // Row 1 (top row)
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   adam_key = '0';
-            else if ((iTx >= 34)  && (iTx < 65))   adam_key = '1';
-            else if ((iTx >= 65)  && (iTx < 96))   adam_key = '2';
-            else if ((iTx >= 96)  && (iTx < 127))  adam_key = '3';
-            else if ((iTx >= 127) && (iTx < 158))  adam_key = '4';
-            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'A';
-            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'B';
-            else if ((iTx >= 220) && (iTx < 255))  adam_key = 'C';
-        }
-        else if ((iTy >= 56) && (iTy < 84))   // Row 2
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'D';
-            else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'E';
-            else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'F';
-            else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'G';
-            else if ((iTx >= 127) && (iTx < 158))  adam_key = 'H';
-            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'I';
-            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'J';
-            else if ((iTx >= 220) && (iTx < 255))  adam_key = 'K';
-        }
-        else if ((iTy >= 84) && (iTy < 112))  // Row 3
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'L';
-            else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'M';
-            else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'N';
-            else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'O';
-            else if ((iTx >= 127) && (iTx < 158))  adam_key = 'P';
-            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'Q';
-            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'R';
-            else if ((iTx >= 220) && (iTx < 255))  adam_key = 'S';
-        }
-        else if ((iTy >= 112) && (iTy < 140))  // Row 4
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   adam_key = 'T';
-            else if ((iTx >= 34)  && (iTx < 65))   adam_key = 'U';
-            else if ((iTx >= 65)  && (iTx < 96))   adam_key = 'V';
-            else if ((iTx >= 96)  && (iTx < 127))  adam_key = 'W';
-            else if ((iTx >= 127) && (iTx < 158))  adam_key = 'X';
-            else if ((iTx >= 158) && (iTx < 189))  adam_key = 'Y';
-            else if ((iTx >= 189) && (iTx < 220))  adam_key = 'Z';
-            else if ((iTx >= 220) && (iTx < 255))  adam_key = '.';
-        }
-        else if ((iTy >= 140) && (iTy < 169))  // Row 5
-        {
-            if      ((iTx >= 1)   && (iTx < 34))   adam_key = '5';
-            else if ((iTx >= 34)  && (iTx < 65))   adam_key = '6';
-            else if ((iTx >= 65)  && (iTx < 96))   adam_key = '7';
-            else if ((iTx >= 96)  && (iTx < 127))  adam_key = '8';
-            else if ((iTx >= 127) && (iTx < 158))  adam_key = '9';
-            else if ((iTx >= 158) && (iTx < 189))  adam_key = ADAM_KEY_F1;
-            else if ((iTx >= 189) && (iTx < 220))  adam_key = '?';
-            else if ((iTx >= 220) && (iTx < 255))  adam_key = ADAM_KEY_BS;
-        }
-        else if ((iTy >= 169) && (iTy < 192))  // Row 6
-        {
-            if      ((iTx >= 1)   && (iTx < 35))   CassetteMenu();
-            else if ((iTx >= 166) && (iTx < 211))  adam_key = ' ';
-            else if ((iTx >= 211) && (iTx < 256))  adam_key = ADAM_KEY_ENTER;
-        }
-        else {adam_key = 0; last_adam_key = 0;}
-
-        if (adam_key != last_adam_key && (adam_key != 0) && (last_adam_key != 255))
-        {
-            PutKBD(adam_key | (((adam_CapsLock && (adam_key >= 'A') && (adam_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
-            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-        }
-        if (last_adam_key != 255) last_adam_key = adam_key;
+        if      ((iTx >= 0)   && (iTx < 23))   kbd_key = ADAM_KEY_TAB;
+        else if ((iTx >= 23)  && (iTx < 39))   kbd_key = 'Q';
+        else if ((iTx >= 39)  && (iTx < 54))   kbd_key = 'W';
+        else if ((iTx >= 54)  && (iTx < 69))   kbd_key = 'E';
+        else if ((iTx >= 69)  && (iTx < 83))   kbd_key = 'R';
+        else if ((iTx >= 83)  && (iTx < 99))   kbd_key = 'T';
+        else if ((iTx >= 99)  && (iTx < 113))  kbd_key = 'Y';
+        else if ((iTx >= 113) && (iTx < 129))  kbd_key = 'U';
+        else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
+        else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
+        else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
+        else if ((iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_UNDO;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_CLEAR;
     }
-}
+    else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
+    {
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = 0; last_kbd_key = 0; last_special_key = KBD_KEY_CTRL; AffChaine(4,0,6, "CTRL");}
+        else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
+        else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
+        else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
+        else if ((iTx >= 72)  && (iTx < 87))   kbd_key = 'F';
+        else if ((iTx >= 87)  && (iTx < 102))  kbd_key = 'G';
+        else if ((iTx >= 102) && (iTx < 117))  kbd_key = 'H';
+        else if ((iTx >= 117) && (iTx < 132))  kbd_key = 'J';
+        else if ((iTx >= 132) && (iTx < 147))  kbd_key = 'K';
+        else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
+        else if ((iTx >= 161) && (iTx < 178))  kbd_key = ';';
+        else if ((iTx >= 178) && (iTx < 192))  kbd_key = ADAM_KEY_QUOTE;
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = ADAM_KEY_ENTER;            
+        else if ((iTx >= 214) && (iTx < 235))  kbd_key = ADAM_KEY_UP;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_DOWN;
+    }
+    else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
+    {
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = 0;  last_kbd_key = 0; last_special_key = KBD_KEY_SHIFT; AffChaine(4,0,6, "SHFT");}
+        else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
+        else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
+        else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
+        else if ((iTx >= 78)  && (iTx < 94))   kbd_key = 'V';
+        else if ((iTx >= 94)  && (iTx < 109))  kbd_key = 'B';
+        else if ((iTx >= 109) && (iTx < 123))  kbd_key = 'N';
+        else if ((iTx >= 123) && (iTx < 139))  kbd_key = 'M';
+        else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
+        else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
+        else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = ADAM_KEY_ENTER;            
+        else if ((iTx >= 214) && (iTx < 235))  kbd_key = ADAM_KEY_LEFT;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_RIGHT;
+    }
+    else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 33))   {if (last_kbd_key != 255) adam_CapsLock = 1-adam_CapsLock; last_kbd_key=255;}
+        else if ((iTx >= 33)  && (iTx < 190))  kbd_key = ' ';
+        else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+    else {kbd_key = 0; last_kbd_key = 0;}
 
-void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for the CreatiVision
-{
-    extern u8 last_creativision_special_key, last_creativision_special_key_dampen;
+    if (kbd_key != last_kbd_key && (kbd_key != 0) && (last_kbd_key != 255))
+    {
+        if (last_special_key == KBD_KEY_CTRL)
+        {
+            PutKBD(CON_CONTROL | kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
+        }
+        else if (last_special_key == KBD_KEY_SHIFT)
+        {
+            PutKBD(CON_SHIFT | kbd_key);
+        }
+        else
+        {
+            PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
+        }
+        
+        last_special_key = 0;
+        //mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+        AffChaine(4,0,6, "    ");
+    }
+    if (last_kbd_key != 255) last_kbd_key = kbd_key;
     
+    return MENU_CHOICE_NONE;
+}
+
+
+u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
+{
+    if ((iTy >= 12) && (iTy < 42))        // Row 1 (top row with I-VI Smartkeys)
+    {
+        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;
+        else if ((iTx >= 22)  && (iTx < 44))   kbd_key = KBD_KEY_HOME;
+        else if ((iTx >= 44)  && (iTx < 73))   kbd_key = KBD_KEY_F1;
+        else if ((iTx >= 73)  && (iTx < 102))  kbd_key = KBD_KEY_F2;
+        else if ((iTx >= 102) && (iTx < 131))  kbd_key = KBD_KEY_F3;
+        else if ((iTx >= 131) && (iTx < 160))  kbd_key = KBD_KEY_F4;
+        else if ((iTx >= 160) && (iTx < 190))  kbd_key = KBD_KEY_F5;
+        else if ((iTx >= 190) && (iTx < 212))  kbd_key = KBD_KEY_BS;
+        else if ((iTx >= 212) && (iTx < 235))  kbd_key = KBD_KEY_INS;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
+    }
+    else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
+    {            
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = 0;     // Not yet used...
+        else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
+        else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
+        else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
+        else if ((iTx >= 61)  && (iTx < 75))   kbd_key = '4';
+        else if ((iTx >= 75)  && (iTx < 91))   kbd_key = '5';
+        else if ((iTx >= 91)  && (iTx < 106))  kbd_key = '6';
+        else if ((iTx >= 106) && (iTx < 121))  kbd_key = '7';
+        else if ((iTx >= 121) && (iTx < 135))  kbd_key = '8';
+        else if ((iTx >= 135) && (iTx < 151))  kbd_key = '9';
+        else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
+        else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
+        else if ((iTx >= 181) && (iTx < 195))  kbd_key = '=';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '\\';
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_SEL;
+    }
+    else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
+    {
+        if      ((iTx >= 0)   && (iTx < 23))   kbd_key = KBD_KEY_TAB;
+        else if ((iTx >= 23)  && (iTx < 39))   kbd_key = 'Q';
+        else if ((iTx >= 39)  && (iTx < 54))   kbd_key = 'W';
+        else if ((iTx >= 54)  && (iTx < 69))   kbd_key = 'E';
+        else if ((iTx >= 69)  && (iTx < 83))   kbd_key = 'R';
+        else if ((iTx >= 83)  && (iTx < 99))   kbd_key = 'T';
+        else if ((iTx >= 99)  && (iTx < 113))  kbd_key = 'Y';
+        else if ((iTx >= 113) && (iTx < 129))  kbd_key = 'U';
+        else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
+        else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
+        else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+    }
+    else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
+    {
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 10;}
+        else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
+        else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
+        else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
+        else if ((iTx >= 72)  && (iTx < 87))   kbd_key = 'F';
+        else if ((iTx >= 87)  && (iTx < 102))  kbd_key = 'G';
+        else if ((iTx >= 102) && (iTx < 117))  kbd_key = 'H';
+        else if ((iTx >= 117) && (iTx < 132))  kbd_key = 'J';
+        else if ((iTx >= 132) && (iTx < 147))  kbd_key = 'K';
+        else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
+        else if ((iTx >= 161) && (iTx < 178))  kbd_key = KBD_KEY_QUOTE;
+        else if ((iTx >= 178) && (iTx < 192))  kbd_key = ';';
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+        else if ((iTx >= 214) && (iTx < 235))  kbd_key = KBD_KEY_UP;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_DOWN;
+    }
+    else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
+    {
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 10;}
+        else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
+        else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
+        else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
+        else if ((iTx >= 78)  && (iTx < 94))   kbd_key = 'V';
+        else if ((iTx >= 94)  && (iTx < 109))  kbd_key = 'B';
+        else if ((iTx >= 109) && (iTx < 123))  kbd_key = 'N';
+        else if ((iTx >= 123) && (iTx < 139))  kbd_key = 'M';
+        else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
+        else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
+        else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+        else if ((iTx >= 214) && (iTx < 235))  kbd_key = KBD_KEY_LEFT;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_RIGHT;
+    }
+    else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 33))   kbd_key = KBD_KEY_CAPS;
+        else if ((iTx >= 33)  && (iTx < 190))  kbd_key = ' ';
+        else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+    
+    return MENU_CHOICE_NONE;
+}
+
+u8 handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for the CreatiVision
+{
     if ((iTy >= 12) && (iTy < 50))        // Row 1 (top row)
     {
         if      ((iTx >= 0)   && (iTx < 21))   kbd_key = '1';
@@ -1789,7 +1737,7 @@ void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for 
     }
     else if ((iTy >= 50) && (iTy < 89))   // Row 2
     {
-        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_CTRL; last_creativision_special_key = KBD_KEY_CTRL; last_creativision_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 10;}
         else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Q';
         else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'W';
         else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'E';
@@ -1819,7 +1767,7 @@ void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for 
     }
     else if ((iTy >= 128) && (iTy < 167))  // Row 4
     {
-        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_SHIFT; last_creativision_special_key = KBD_KEY_SHIFT; last_creativision_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 10;}
         else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Z';
         else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'X';
         else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'C';
@@ -1834,9 +1782,53 @@ void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for 
     }
     else if ((iTy >= 167) && (iTy < 192))  // Row 5
     {
-        if      ((iTx >= 0)   && (iTx < 35))   kbd_key = KBD_KEY_F1; // Reset for the CreatiVision
-        else if ((iTx >= 220) && (iTx < 255))  CassetteMenu();
+        if      ((iTx >= 0)   && (iTx < 36))   kbd_key = KBD_KEY_F1; // Reset for the CreatiVision
+        else if ((iTx >= 36)  && (iTx < 85))   return MENU_CHOICE_MENU;
+        else if ((iTx >= 85)  && (iTx < 134))  return MENU_CHOICE_SAVE_GAME;
+        else if ((iTx >= 134) && (iTx < 184))  return MENU_CHOICE_LOAD_GAME;
+        else if ((iTx >= 184) && (iTx < 220))  return MENU_CHOICE_END_GAME;    
+        else if ((iTx >= 220) && (iTx < 255))  return MENU_CHOICE_CASSETTE;
     }
+    
+    return MENU_CHOICE_NONE;
+}
+
+u8 handle_normal_virtual_keypad(u16 iTx, u16 iTy)  // All other normal overlays with keypad on the right and menu choices on the left
+{
+    // For ADAM, the standard overlay has a CASSETTE icon to save data...
+    if (adam_mode && (myConfig.overlay == 0))
+    {
+        if ((iTy >= 9) && (iTy < 30) && (iTx >= 120) && (iTx <= 155))
+        {
+            return MENU_CHOICE_CASSETTE;
+        }
+    }
+    
+    if ((iTx >= 6) && (iTx <= 130))     // We're on the left-side of the screen...
+    {
+        if ((iTy>=40) && (iTy<67))      // RESET
+        {
+            return MENU_CHOICE_RESET_GAME;
+        }
+        else if ((iTy>=67) && (iTy<95)) // END GAME
+        {
+            return MENU_CHOICE_END_GAME;
+        }
+        else if ((iTy>=95) && (iTy<125)) // HI SCORE
+        {
+            return MENU_CHOICE_HI_SCORE;
+        }
+        else if ((iTy>=125) && (iTy<155)) // SAVE GAME
+        {
+            return MENU_CHOICE_SAVE_GAME;
+        }
+        else if ((iTy>=155) && (iTy<184)) // LOAD GAME
+        {
+            return MENU_CHOICE_LOAD_GAME;
+        }
+    }
+
+    return MENU_CHOICE_NONE;
 }
 
 // ------------------------------------------------------------------------
@@ -1845,10 +1837,11 @@ void handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for 
 void colecoDS_main(void) 
 {
   u16 iTx,  iTy;
-  u16 ResetNow  = 0, SaveNow = 0, LoadNow = 0;
+  u16 SaveNow = 0, LoadNow = 0;
   u32 ucUN, ucDEUX;
   static u32 lastUN = 0;
   static u8 dampenClick = 0;
+  u8 meta_key = 0;
 
   // Returns when  user has asked for a game to run...
   showMainMenu();
@@ -1985,145 +1978,25 @@ void colecoDS_main(void)
         iTx = touch.px;
         iTy = touch.py;
     
-        // Test if "Reset Game" selected
-        if  (((myConfig.overlay == 9) && ((iTx>=1) && (iTy>=28) && (iTx<= 35) && (iTy<51))) ||
-             (myConfig.overlay == 11 && ((iTx>=0) && (iTy>=168) && (iTx<= 37) && (iTy<192))) ||
-            (((myConfig.overlay < 9)) && ((iTx>=6) && (iTy>=40) && (iTx<=130) && (iTy<67))))
-        {
-          if  (!ResetNow) {
-            ResetNow = 1;
-            SoundPause();
-            
-            // Ask for verification
-            if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES) 
-            { 
-                ResetColecovision();
-            }
-              
-            showMainMenu();
-            SoundUnPause();
-          }
-        }
-        else {
-          ResetNow  = 0;
-        }
-        
-        // Test if "End Game" selected
-        if  ((myConfig.overlay == 9  && ((iTx>=1) && (iTy>=51) && (iTx<= 35) && (iTy<75)))    ||
-             (myConfig.overlay == 10 && ((iTx>=35) && (iTy>=169) && (iTx<= 78) && (iTy<192))) ||
-             (myConfig.overlay == 11 && ((iTx>=180) && (iTy>=168) && (iTx<= 220) && (iTy<192))) ||
-            ((myConfig.overlay < 9)  && ((iTx>=6) && (iTy>=67) && (iTx<=130) && (iTy<95))))
-        {
-          //  Stop sound
-          SoundPause();
-    
-          //  Ask for verification
-          if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES) 
-          { 
-              memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
-              return;
-          }
-          showMainMenu();
-          DisplayStatusLine(true);            
-          SoundUnPause();
-        }
-
-        // Test if "High Score" selected
-        if  ((myConfig.overlay == 9 && ((iTx>=1) && (iTy>=75) && (iTx<= 35) && (iTy<99))) ||
-             (myConfig.overlay == 11 && ((iTx>=37) && (iTy>=168) && (iTx<= 85) && (iTy<192))) ||
-            ((myConfig.overlay < 9) && ((iTx>=6) && (iTy>=95) && (iTx<=130) && (iTy<125))))
-        {
-          //  Stop sound
-          SoundPause();
-          highscore_display(file_crc);
-          DisplayStatusLine(true);
-          SoundUnPause();
-        }
-          
-        // Test if "Save State" selected
-        if  ((myConfig.overlay == 9 && ((iTx>=1) && (iTy>=99) && (iTx<= 35) && (iTy<123))) ||
-             (myConfig.overlay == 10 && ((iTx>=78) && (iTy>=169) && (iTx<= 122) && (iTy<192))) ||
-             (myConfig.overlay == 11 && ((iTx>=85) && (iTy>=168) && (iTx<= 135) && (iTy<192))) ||
-             ((myConfig.overlay < 9) && ((iTx>=6) && (iTy>=125) && (iTx<=130) && (iTy<155))))
-        {
-          if  (!SaveNow) 
-          {
-              // Stop sound
-              SoundPause();
-              if (IsFullKeyboard())
-              {
-                  if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES) 
-                  {                      
-                    SaveNow = 1;
-                    colecoSaveState();
-                  }
-              }
-              else
-              {
-                    SaveNow = 1;
-                    colecoSaveState();
-              }
-              SoundUnPause();
-          }
-        }
-        else
-          SaveNow = 0;
-          
-        // Test if "Load State" selected
-        if  ((myConfig.overlay == 9 && ((iTx>=1) && (iTy>=123) && (iTx<= 35) && (iTy<146))) ||
-             (myConfig.overlay == 10 && ((iTx>=123) && (iTy>=169) && (iTx<= 166) && (iTy<192))) ||
-             (myConfig.overlay == 11 && ((iTx>=135) && (iTy>=168) && (iTx<= 182) && (iTy<192))) ||
-             ((myConfig.overlay < 9) && ((iTx>=6) && (iTy>=155) && (iTx<=130) && (iTy<184))))
-        {
-          if  (!LoadNow) 
-          {
-            // Stop sound
-            SoundPause();
-              if (IsFullKeyboard())
-              {
-                  if  (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES) 
-                  {                      
-                    LoadNow = 1;
-                    colecoLoadState();
-                  }
-              }
-              else
-              {
-                    LoadNow = 1;
-                    colecoLoadState();
-              }
-             SoundUnPause();
-          }
-        }
-        else
-          LoadNow = 0;
-          
-        // For ADAM, the standard overlay has a CASSETTE icon to save data...
-        if (adam_mode && (myConfig.overlay == 0))
-        {
-            if ((iTy >= 9) && (iTy < 30) && (iTx >= 120) && (iTx <= 155))
-            {
-                CassetteMenu();
-            }
-        }
-          
         // --------------------------------------------------------------------------
-        // Test the touchscreen rendering of the ADAM/MSX/SVI full/alpha keybaord
+        // Test the touchscreen rendering of the ADAM/MSX/SVI/CreatiVision keybaords
         // --------------------------------------------------------------------------
-        if (myConfig.overlay == 9) // Full Keyboard
+        if (myConfig.overlay == 9) // ADAM Keyboard
         {
-            handle_full_keyboard_press(iTx, iTy);
+            meta_key = handle_adam_keyboard_press(iTx, iTy);
         }
-        else if (myConfig.overlay == 10) // Alpha Keyboard
+        else if (myConfig.overlay == 10) // MSX/SVI/MTX/Einstein Keyboard
         {
-            handle_alpha_keyboard_press(iTx, iTy);
+            meta_key = handle_msx_keyboard_press(iTx, iTy);
         }
         else if (myConfig.overlay == 11) // Creativision Keyboard
         {
-            handle_cvision_keyboard_press(iTx, iTy);
+            meta_key = handle_cvision_keyboard_press(iTx, iTy);
         }
         else    // Normal 12 button virtual keypad
         {
+            meta_key = handle_normal_virtual_keypad(iTx, iTy);
+            
             ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
             ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
             ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
@@ -2139,6 +2012,99 @@ void colecoDS_main(void)
             ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
             ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
             ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
+        }
+             
+        // If the special menu key indicates we should show the choice menu, do so here...
+        if (meta_key == MENU_CHOICE_MENU)
+        {
+            meta_key = MiniMenu();
+        }
+         
+        // -------------------------------------------------------------------
+        // If one of the special meta keys was picked, we handle that here...
+        // -------------------------------------------------------------------
+        switch (meta_key)
+        {
+            case MENU_CHOICE_RESET_GAME: 
+                SoundPause();
+                // Ask for verification
+                if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES) 
+                { 
+                    ResetColecovision();
+                }
+                showMainMenu();
+                SoundUnPause();
+                break;
+            
+            case MENU_CHOICE_END_GAME:
+                  SoundPause();
+                  //  Ask for verification
+                  if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES) 
+                  { 
+                      memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
+                      return;
+                  }
+                  showMainMenu();
+                  DisplayStatusLine(true);            
+                  SoundUnPause();                
+                break;
+            
+            case MENU_CHOICE_HI_SCORE:
+                SoundPause();
+                highscore_display(file_crc);
+                DisplayStatusLine(true);
+                SoundUnPause();
+                break;
+            
+            case MENU_CHOICE_SAVE_GAME:
+                if  (!SaveNow) 
+                {
+                    SoundPause();
+                    if (IsFullKeyboard())
+                    {
+                        if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES) 
+                        {                      
+                          SaveNow = 1;
+                          colecoSaveState();
+                        }
+                    }
+                    else
+                    {
+                        SaveNow = 1;
+                        colecoSaveState();
+                    }
+                    SoundUnPause();
+                }
+                break;
+            
+            case MENU_CHOICE_LOAD_GAME:
+                if  (!LoadNow) 
+                {
+                    SoundPause();
+                    if (IsFullKeyboard())
+                    {
+                        if  (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES) 
+                        {                      
+                          LoadNow = 1;
+                          colecoLoadState();
+                        }
+                    }
+                    else
+                    {
+                        LoadNow = 1;
+                        colecoLoadState();
+                    }
+                   SoundUnPause();
+                }
+                break;
+            
+            case MENU_CHOICE_CASSETTE:
+                CassetteMenu();
+                break;
+            
+            default:
+                SaveNow = 0;
+                LoadNow = 0;
         }
 
         // ---------------------------------------------------------------------
@@ -2157,9 +2123,9 @@ void colecoDS_main(void)
       } //  SCR_TOUCH
       else  
       {
-        ResetNow=SaveNow=LoadNow = 0;
+        SaveNow=LoadNow = 0;
         lastUN = 0;  dampenClick = 0;
-        last_adam_key = 0;
+        last_kbd_key = 0;
       }
 
       // ---------------------------------------------------
@@ -2339,11 +2305,11 @@ void colecoDS_main(void)
       // Handle Auto-Fire if enabled in configuration...
       // --------------------------------------------------
       static u8 autoFireTimer[2]={0,0};
-      if ((myConfig.autoFire1 & 0x01) && (JoyState & JST_FIRER))  // Fire Button 1
+      if ((myConfig.autoFire & 0x01) && (JoyState & JST_FIRER))  // Fire Button 1
       {
          if ((++autoFireTimer[0] & 7) > 4)  JoyState &= ~JST_FIRER;
       }
-      if ((myConfig.autoFire1 & 0x02) && (JoyState & JST_FIREL))  // Fire Button 2
+      if ((myConfig.autoFire & 0x02) && (JoyState & JST_FIREL))  // Fire Button 2
       {
           if ((++autoFireTimer[1] & 7) > 4) JoyState &= ~JST_FIREL;
       }
@@ -2467,40 +2433,21 @@ void InitBottomScreen(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) hal2010Pal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 9)  // Full Keyboard - show the right one based on mode
-    {
-#ifdef DEBUG_Z80
-          //  Init bottom screen
-          decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
-#else   
-        if (!adam_mode) // Show generic full keybaord
-        {
-          //  Init bottom screen
-          decompress(msx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(msx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
-        }
-        else    // Show ADAM keybaord
-        {
-          //  Init bottom screen
-          decompress(adam_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(adam_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
-        }
-#endif        
-    }
-    else if (myConfig.overlay == 10)  //Alpha Keyboard
+    else if (myConfig.overlay == 9)  // ADAM Keyboard
     {
       //  Init bottom screen
-      decompress(alphaTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(alphaMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      decompress(adam_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(adam_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) alphaPal,(void*) BG_PALETTE_SUB,256*2);
+      dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 10)  //MSX/SVI/MTX Keyboard
+    {
+      //  Init bottom screen
+      decompress(msx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(msx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else if (myConfig.overlay == 11) // CreatiVision Keypad
     {

@@ -58,11 +58,10 @@ struct __attribute__((__packed__)) Config_t
 {
     u32 game_crc;
     u8  keymap[12];
-    u8  reservedA0;
     u8  frameSkip;
     u8  frameBlend;
     u8  msxMapper;
-    u8  autoFire1;
+    u8  autoFire;
     u8  isPAL;
     u8  overlay;
     u8  maxSprites;
@@ -80,18 +79,22 @@ struct __attribute__((__packed__)) Config_t
     u8  mirrorRAM;
     u8  msxBeeper;
     u8  cvisionLoad;
-    u8  reservedB0;
-    u8  reservedB1;
-    u8  reservedB2;
-    u8  reservedB3;
-    u8  reservedC0;
-    u8  reservedC1;
-    u32 reservedC2;
+    u8  reserved0;
+    u8  reserved1;
+    u8  reserved2;
+    u8  reserved3;
+    u8  reserved4;
+    u8  reserved5;
+    u8  reserved6;
+    u32 reserved32;
 };
  
 
 extern struct Config_t myConfig;
 extern struct GlobalConfig_t myGlobalConfig;
+
+extern u8 last_special_key;
+extern u8 last_special_key_dampen;
 
 extern void LoadConfig(void);
 
