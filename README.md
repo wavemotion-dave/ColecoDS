@@ -119,6 +119,7 @@ For the MSX, we support 4 optional BIOS ROMs. To be honest, after quite a bit of
 * hb-10.rom - Sony HitBit JP Machine (uses the Japanese matrix)
 * fs-1300.rom - National JP Machine (uses the Japanese matrix)
 ```
+Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names) - place them into your usual BIOS directory.
 
 ADAM Compatibility :
 -----------------------
@@ -235,7 +236,7 @@ For the MSX emulation, the colecovision keypad is mapped as follows:
   
   4   ?   STP
   
-  M1  M2  M3
+  F1  F2  F3
   
   SPC 0   RET
 ```
@@ -301,6 +302,7 @@ Versions :
 V8.2: 01-Aug-2023 by wavemotion-dave
 * Major rework of the keyboard handler for improved visuals and emulation of the ADAM, MSX, MTX and more.
 * New global configuration handling.
+* New MSX BIOS roms can be optionally installed: cx5m.rom, hx-10.rom, hb-10.rom, fs-1300.rom
 * Other tweaks and improvements as time permitted.
 
 V8.1: 22-Jul-2023 by wavemotion-dave
