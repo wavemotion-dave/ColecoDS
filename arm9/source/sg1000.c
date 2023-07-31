@@ -343,9 +343,9 @@ unsigned char cpu_readport_sg(register unsigned short Port)
       if ((Port_PPI_C & 0x07) == 0x06)  // Row 6
       {
           if (kbd_key == KBD_KEY_BRK)     joy2 |= 0x01;
-          if (key_shift)                  joy2 |= 0x04;
-          if (kbd_key == KBD_KEY_SHIFT)   joy2 |= 0x04;
-          if (kbd_key == KBD_KEY_CTRL)    joy2 |= 0x08;
+          if (kbd_key == KBD_KEY_CTRL)    joy2 |= 0x04;
+          if (key_shift)                  joy2 |= 0x08;
+          if (kbd_key == KBD_KEY_SHIFT)   joy2 |= 0x08;
       }
       if ((Port_PPI_C & 0x07) == 0x07)  // Row 7 (joystick)
       {

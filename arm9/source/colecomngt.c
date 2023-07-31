@@ -259,7 +259,7 @@ u8 colecoInit(char *szGame)
   // -----------------------------------------------------------------
   videoSetMode(MODE_5_2D | DISPLAY_BG3_ACTIVE);
   vramSetBankA(VRAM_A_MAIN_BG_0x06000000);      // This is our top emulation screen (where the game is played)
-  vramSetBankB(VRAM_B_LCD);                     // 128K of Video Memory mapped at 0x6820000
+  //TODO: not using this yet...   vramSetBankB(VRAM_B_LCD);                     // 128K of Video Memory mapped at 0x6820000
   REG_BG3CNT = BG_BMP8_256x256;
   REG_BG3PA = (1<<8); 
   REG_BG3PB = 0;

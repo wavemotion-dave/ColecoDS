@@ -32,6 +32,8 @@
 #include "cvision_kbd.h"
 #include "msx_sm.h"
 #include "msx_full.h"
+#include "mtx_full.h"
+#include "msx_japan.h"
 #include "adam_full.h"
 #include "pv2000_sm.h"
 #include "ecranDebug.h"
@@ -102,13 +104,13 @@ u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K 
 u8 ColecoBios[0x2000]     = {0};  // We keep the Coleco  8K BIOS around to swap in/out
 u8 SordM5Bios[0x2000]     = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
 u8 PV2000Bios[0x4000]     = {0};  // We keep the Casio PV-2000 16K BIOS around to swap in/out
-u8 MSXBios[0x8000]        = {0};  // We keep the MSX 32K BIOS around to swap in/out
 u8 AdamEOS[0x2000]        = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
 u8 AdamWRITER[0x8000]     = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
 u8 SVIBios[0x8000]        = {0};  // We keep the SVI 32K BIOS around to swap in/out
 u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
+u8 FS_1300_Bios[0x8000]   = {0};  // We store several kinds of MSX bios files in VRAM and copy out the one we want to use in msx_restore_bios() but we need 32K more for the FS-1300 bios
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -129,6 +131,8 @@ u32 last_tape_pos       = 9999;
 // --------------------------------------------------------------------------
 u8 key_shift __attribute__((section(".dtcm"))) = false;
 u8 key_ctrl  __attribute__((section(".dtcm"))) = false;
+u8 key_code  __attribute__((section(".dtcm"))) = false;
+u8 key_graph __attribute__((section(".dtcm"))) = false;
 
 // ------------------------------------------------------------------------------------------
 // Various sound chips in the system. We emulate the SN and AY sound chips but both of 
@@ -1317,14 +1321,14 @@ void CassetteMenu(void)
                   BufferKey('A');
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(':');
+                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
                   BufferKey('R');
                   BufferKey(KBD_KEY_RET);
@@ -1336,14 +1340,14 @@ void CassetteMenu(void)
                   BufferKey('U');
                   BufferKey('N');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(':');
+                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(KBD_KEY_RET);
                   break;
             }
@@ -1496,7 +1500,7 @@ u8 MiniMenu(void)
 // ------------------------------------------------------------------------
 // Return 1 if we are showing full keyboard... otherwise 0
 // ------------------------------------------------------------------------
-inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9 || myConfig.overlay == 10 || myConfig.overlay == 11) ? 1:0);}
+inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9 || myConfig.overlay == 10 || myConfig.overlay == 11 || myConfig.overlay == 12) ? 1:0);}
 
 u8 last_special_key = 0;
 u8 last_special_key_dampen = 0;
@@ -1613,7 +1617,6 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         }
         
         last_special_key = 0;
-        //mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
         AffChaine(4,0,6, "    ");
     }
     if (last_kbd_key != 255) last_kbd_key = kbd_key;
@@ -1624,7 +1627,14 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
 
 u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
 {
-    if ((iTy >= 12) && (iTy < 42))        // Row 1 (top row with I-VI Smartkeys)
+    if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
+    {
+        if      (iTy < 120)   kbd_key = KBD_KEY_UP;
+        else if (iTy > 145)   kbd_key = KBD_KEY_DOWN;
+        else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
+        else                  kbd_key = KBD_KEY_RIGHT;
+    }   
+    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with I-VI Smartkeys)
     {
         if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;
         else if ((iTx >= 22)  && (iTx < 44))   kbd_key = KBD_KEY_HOME;
@@ -1639,7 +1649,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
     {            
-        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = 0;     // Not yet used...
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '`';
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
         else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
@@ -1687,8 +1697,6 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 161) && (iTx < 178))  kbd_key = KBD_KEY_QUOTE;
         else if ((iTx >= 178) && (iTx < 192))  kbd_key = ';';
         else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
-        else if ((iTx >= 214) && (iTx < 235))  kbd_key = KBD_KEY_UP;
-        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_DOWN;
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
@@ -1704,13 +1712,115 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
         else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
         else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
-        else if ((iTx >= 214) && (iTx < 235))  kbd_key = KBD_KEY_LEFT;
-        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_RIGHT;
     }
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
-        if      ((iTx >= 1)   && (iTx < 33))   kbd_key = KBD_KEY_CAPS;
-        else if ((iTx >= 33)  && (iTx < 190))  kbd_key = ' ';
+        if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
+        else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 10;}
+        else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
+        else if ((iTx >= 163) && (iTx < 190))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 10;}
+        else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+    
+    return MENU_CHOICE_NONE;
+}
+
+u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
+{
+    if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
+    {
+        if      (iTy < 120)   kbd_key = KBD_KEY_UP;
+        else if (iTy > 145)   kbd_key = KBD_KEY_DOWN;
+        else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
+        else                  kbd_key = KBD_KEY_RIGHT;
+    }   
+    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with F1 thru F8)
+    {
+        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;        
+        else if ((iTx >= 22)  && (iTx < 49))   kbd_key = KBD_KEY_F1;
+        else if ((iTx >= 49)  && (iTx < 75))   kbd_key = KBD_KEY_F2;
+        else if ((iTx >= 75)  && (iTx < 101))  kbd_key = KBD_KEY_F3;
+        else if ((iTx >= 101) && (iTx < 127))  kbd_key = KBD_KEY_F4;
+        else if ((iTx >= 127) && (iTx < 153))  kbd_key = KBD_KEY_F5;
+        else if ((iTx >= 153) && (iTx < 180))  kbd_key = KBD_KEY_F6;
+        else if ((iTx >= 180) && (iTx < 205))  kbd_key = KBD_KEY_F7;
+        else if ((iTx >= 205) && (iTx < 232))  kbd_key = KBD_KEY_F8;
+        else if ((iTx >= 232) && (iTx < 255))  kbd_key = KBD_KEY_HOME;
+    }
+    else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
+    {            
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '`';
+        else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
+        else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
+        else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
+        else if ((iTx >= 61)  && (iTx < 75))   kbd_key = '4';
+        else if ((iTx >= 75)  && (iTx < 91))   kbd_key = '5';
+        else if ((iTx >= 91)  && (iTx < 106))  kbd_key = '6';
+        else if ((iTx >= 106) && (iTx < 121))  kbd_key = '7';
+        else if ((iTx >= 121) && (iTx < 135))  kbd_key = '8';
+        else if ((iTx >= 135) && (iTx < 151))  kbd_key = '9';
+        else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
+        else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
+        else if ((iTx >= 181) && (iTx < 195))  kbd_key = '^';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '\\';
+        else if ((iTx >= 210) && (iTx < 235))  kbd_key = KBD_KEY_BS;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
+    }
+    else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
+    {
+        if      ((iTx >= 0)   && (iTx < 23))   kbd_key = KBD_KEY_TAB;
+        else if ((iTx >= 23)  && (iTx < 39))   kbd_key = 'Q';
+        else if ((iTx >= 39)  && (iTx < 54))   kbd_key = 'W';
+        else if ((iTx >= 54)  && (iTx < 69))   kbd_key = 'E';
+        else if ((iTx >= 69)  && (iTx < 83))   kbd_key = 'R';
+        else if ((iTx >= 83)  && (iTx < 99))   kbd_key = 'T';
+        else if ((iTx >= 99)  && (iTx < 113))  kbd_key = 'Y';
+        else if ((iTx >= 113) && (iTx < 129))  kbd_key = 'U';
+        else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
+        else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
+        else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+    }
+    else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
+    {
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 10;}
+        else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
+        else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
+        else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
+        else if ((iTx >= 72)  && (iTx < 87))   kbd_key = 'F';
+        else if ((iTx >= 87)  && (iTx < 102))  kbd_key = 'G';
+        else if ((iTx >= 102) && (iTx < 117))  kbd_key = 'H';
+        else if ((iTx >= 117) && (iTx < 132))  kbd_key = 'J';
+        else if ((iTx >= 132) && (iTx < 147))  kbd_key = 'K';
+        else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
+        else if ((iTx >= 161) && (iTx < 178))  kbd_key = ':';
+        else if ((iTx >= 178) && (iTx < 192))  kbd_key = ';';
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+    }
+    else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
+    {
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 10;}
+        else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
+        else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
+        else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
+        else if ((iTx >= 78)  && (iTx < 94))   kbd_key = 'V';
+        else if ((iTx >= 94)  && (iTx < 109))  kbd_key = 'B';
+        else if ((iTx >= 109) && (iTx < 123))  kbd_key = 'N';
+        else if ((iTx >= 123) && (iTx < 139))  kbd_key = 'M';
+        else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
+        else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
+        else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+    }
+    else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
+        else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 10;}
+        else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
+        else if ((iTx >= 163) && (iTx < 190))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 10;}
         else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
@@ -1989,7 +2099,11 @@ void colecoDS_main(void)
         {
             meta_key = handle_msx_keyboard_press(iTx, iTy);
         }
-        else if (myConfig.overlay == 11) // Creativision Keyboard
+        else if (myConfig.overlay == 11) // Memotech MTX Keyboard (good enough for Einstein too)
+        {
+            meta_key = handle_mtx_keyboard_press(iTx, iTy);
+        }
+        else if (myConfig.overlay == 12) // Creativision Keyboard
         {
             meta_key = handle_cvision_keyboard_press(iTx, iTy);
         }
@@ -2112,7 +2226,7 @@ void colecoDS_main(void)
         // ---------------------------------------------------------------------
         if (myConfig.touchPad) ucUN = ucUN << 16;
           
-        if (++dampenClick > 2)  // Make sure the key is pressed for an appreciable amount of time...
+        if (++dampenClick > 1)  // Make sure the key is pressed for an appreciable amount of time...
         {
             if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
             {
@@ -2141,6 +2255,9 @@ void colecoDS_main(void)
       // ------------------------------------------------------------------------
       key_shift = false;
       key_ctrl = false;
+      key_code = false;
+      key_graph = false;
+            
       ucDEUX  = 0;  
       nds_key  = keysCurrent();
       if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X)) 
@@ -2222,14 +2339,14 @@ void colecoDS_main(void)
                   BufferKey('A');
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(':');
+                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
                   BufferKey('R');
                   BufferKey(KBD_KEY_RET);
@@ -2240,14 +2357,14 @@ void colecoDS_main(void)
                   BufferKey('U');
                   BufferKey('N');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(':');
+                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_QUOTE);
+                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(KBD_KEY_RET);
               }
               WAITVBL;WAITVBL;WAITVBL;
@@ -2318,6 +2435,18 @@ void colecoDS_main(void)
 }
 
 
+// ----------------------------------------------------------------------------------------
+// We steal 128K of the VRAM to hold the MSX BIOS flavors and 16K for one look-up table.
+// ----------------------------------------------------------------------------------------
+void useVRAM(void)
+{
+  vramSetBankE(VRAM_E_LCD );                 // Not using this  for video but 64K of faster RAM always useful!  Mapped  at 0x06880000 -   We use this block of 128K memory to store 4x MSX BIOS flavors
+  vramSetBankF(VRAM_F_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06890000 -   ..
+  vramSetBankG(VRAM_G_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06894000 -   ..
+  vramSetBankH(VRAM_H_LCD );                 // Not using this  for video but 32K of faster RAM always useful!  Mapped  at 0x06898000 -   ..
+  vramSetBankI(VRAM_I_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x068A0000 -   16K Used for the Look Up Table
+}
+
 /*********************************************************************************
  * Init DS Emulator - setup VRAM banks and background screen rendering banks
  ********************************************************************************/
@@ -2331,12 +2460,6 @@ void colecoDSInit(void)
   vramSetBankC(VRAM_C_SUB_BG);
   vramSetBankD(VRAM_D_SUB_SPRITE);
     
-  vramSetBankE(VRAM_E_LCD );                 // Not using this  for video but 64K of faster RAM always useful!  Mapped  at 0x06880000 - This block of faster RAM used for the first 128K of bankswitching 
-  vramSetBankF(VRAM_F_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06890000 -   ..
-  vramSetBankG(VRAM_G_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06894000 -   ..
-  vramSetBankH(VRAM_H_LCD );                 // Not using this  for video but 32K of faster RAM always useful!  Mapped  at 0x06898000 -   ..
-  vramSetBankI(VRAM_I_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x068A0000 -   Used for the Look Up Table
-
   //  Stop blending effect of intro
   REG_BLDCNT=0; REG_BLDCNT_SUB=0; REG_BLDY=0; REG_BLDY_SUB=0;
   
@@ -2441,15 +2564,33 @@ void InitBottomScreen(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 10)  //MSX/SVI/MTX Keyboard
+    else if (myConfig.overlay == 10)  //MSX/SVI Keyboard
     {
       //  Init bottom screen
-      decompress(msx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(msx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
+      if (msx_mode && msx_keyboard_matrix)
+      {
+          decompress(msx_japanTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(msx_japanMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) msx_japanPal,(void*) BG_PALETTE_SUB,256*2);
+      }
+      else
+      {
+          decompress(msx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(msx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
+      }
     }
-    else if (myConfig.overlay == 11) // CreatiVision Keypad
+    else if (myConfig.overlay == 11) // Memotech MTX
+    {
+      //  Init bottom screen
+      decompress(mtx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(mtx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) mtx_fullPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 12) // CreatiVision Keypad
     {
       //  Init bottom screen
       decompress(cvision_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -2647,18 +2788,122 @@ void LoadBIOSFiles(void)
     if (fp != NULL)
     {
         bMSXBiosFound = true;
-        fread(MSXBios, 0x8000, 1, fp);
+        fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
         
         // Patch the BIOS for Cassette Access...
-        MSXBios[0x00e1] = 0xed; MSXBios[0x00e2] = 0xfe; MSXBios[0x00e3] = 0xc9;
-        MSXBios[0x00e4] = 0xed; MSXBios[0x00e5] = 0xfe; MSXBios[0x00e6] = 0xc9;
-        MSXBios[0x00e7] = 0xed; MSXBios[0x00e8] = 0xfe; MSXBios[0x00e9] = 0xc9;
-        MSXBios[0x00ea] = 0xed; MSXBios[0x00eb] = 0xfe; MSXBios[0x00ec] = 0xc9;
-        MSXBios[0x00ed] = 0xed; MSXBios[0x00ee] = 0xfe; MSXBios[0x00ef] = 0xc9;
-        MSXBios[0x00f0] = 0xed; MSXBios[0x00f1] = 0xfe; MSXBios[0x00f2] = 0xc9;
-        MSXBios[0x00f3] = 0xed; MSXBios[0x00f4] = 0xfe; MSXBios[0x00f5] = 0xc9;
+        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
+        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
+        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
+        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
+        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
+        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
+        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
+        
+        
+        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        u8 *ptr = (u8*) (0x06880000 + 0x0000);
+        memcpy(ptr, BIOS_Memory, 0x8000);
     }
+    
+    fp = fopen("cx5m.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/cx5m.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/cx5m.rom", "rb");
+    if (fp != NULL)
+    {
+        bMSXBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
+        
+        // Patch the BIOS for Cassette Access...
+        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
+        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
+        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
+        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
+        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
+        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
+        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
+        
+        
+        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        u8 *ptr = (u8*) (0x06880000 + 0x8000);
+        memcpy(ptr, BIOS_Memory, 0x8000);
+    }
+
+    // Toshiba HX-10
+    fp = fopen("hx-10.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/hx-10.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/hx-10.rom", "rb");
+    if (fp != NULL)
+    {
+        bMSXBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
+        
+        // Patch the BIOS for Cassette Access...
+        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
+        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
+        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
+        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
+        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
+        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
+        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
+        
+        
+        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        u8 *ptr = (u8*) (0x06880000 + 0x10000);
+        memcpy(ptr, BIOS_Memory, 0x8000);
+    }
+    
+    // Sony Hit-Bit HB-10 (Japan)
+    fp = fopen("hb-10.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/hb-10.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/hb-10.rom", "rb");
+    if (fp != NULL)
+    {
+        bMSXBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
+        
+        // Patch the BIOS for Cassette Access...
+        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
+        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
+        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
+        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
+        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
+        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
+        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
+        
+        
+        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        u8 *ptr = (u8*) (0x06880000 + 0x18000);
+        memcpy(ptr, BIOS_Memory, 0x8000);
+    }
+
+    // National FS-1300 (Japan)
+    fp = fopen("fs-1300.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/fs-1300.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/fs-1300.rom", "rb");
+    if (fp != NULL)
+    {
+        bMSXBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
+        
+        // Patch the BIOS for Cassette Access...
+        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
+        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
+        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
+        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
+        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
+        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
+        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
+        
+        
+        // Now store this BIOS so we can use it later in msx_restore_bios()
+        memcpy(FS_1300_Bios, BIOS_Memory, 0x8000);
+    }    
+    
 
     // -----------------------------------------------------------
     // Next try to load the SVI.ROM
@@ -2787,6 +3032,7 @@ int main(int argc, char **argv)
   // -----------------------------------------------------------------
   // Grab the BIOS before we try to switch any directories around...
   // -----------------------------------------------------------------
+  useVRAM();
   LoadBIOSFiles();
     
   // -----------------------------------------------------------------  

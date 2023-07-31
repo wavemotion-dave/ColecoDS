@@ -48,6 +48,7 @@ void scan_keyboard(void)
       if (!(keyboard_w & 0x01))
       {
           if (kbd_key == KBD_KEY_BRK)   myKeyData |= 0x01;
+          if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x02;  // F0
           if (kbd_key == KBD_KEY_F7)    myKeyData |= 0x04;
           if (kbd_key == KBD_KEY_HOME)  myKeyData |= 0x08;
           if (kbd_key == KBD_KEY_CAPS)  myKeyData |= 0x10;

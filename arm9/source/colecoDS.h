@@ -15,7 +15,7 @@
 #include <string.h>
 #include "C24XX.h"
 
-#define VERSIONCLDS "8.1"
+#define VERSIONCLDS "8.2"
 
 //#define DEBUG_Z80   YES
 //#define FULL_DEBUG
@@ -174,6 +174,9 @@ extern u32 debug4;
 #define KBD_KEY_CAPS        26
 #define KBD_KEY_TAB         27
 #define KBD_KEY_BS          28
+#define KBD_KEY_CODE        29
+#define KBD_KEY_GRAPH       30
+#define KBD_KEY_DEAD        31
 #define KBD_KEY_CAS         255
 
 extern u16 emuFps;
@@ -228,6 +231,7 @@ extern u16 NDS_keyMap[];
 
 extern u8 soundEmuPause;
 extern u8 write_EE_counter;
+extern u8 msx_keyboard_matrix;
 
 extern int bg0, bg1, bg0b,bg1b;
 
