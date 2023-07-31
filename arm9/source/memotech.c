@@ -101,6 +101,33 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       
       u8 scan_matrix = ~MTX_KBD_DRIVE & 0xFF;
       u8 key1 = 0x00;
+      
+      // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
+      if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
+      {
+          if (--last_special_key_dampen == 0)
+          {
+              last_special_key = 0;
+              AffChaine(4,0,6, "    ");
+          }
+      }
+      
+      if (last_special_key == KBD_KEY_SHIFT) 
+      { 
+        AffChaine(4,0,6, "SHFT");
+        key_shift = 1;
+      }
+      else if (last_special_key == KBD_KEY_CTRL)  
+      {
+        AffChaine(4,0,6, "CTRL");
+        key_ctrl = 1;
+      }
+      
+      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
+      {
+          if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
+      }
+      
 
       if (scan_matrix & 0x01)
       {
@@ -112,6 +139,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == '7')           key1 |= 0x08;
               if (kbd_key == '9')           key1 |= 0x10;
               if (kbd_key == '-')           key1 |= 0x20;
+              if (kbd_key == '\\')          key1 |= 0x40;
           }          
           if (nds_key)
           {
@@ -196,7 +224,6 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == 'U')           key1 |= 0x08;
               if (kbd_key == 'O')           key1 |= 0x10;
               if (kbd_key == '@')           key1 |= 0x20;
-              if (kbd_key == '=')           key1 |= 0x40;
               if (kbd_key == KBD_KEY_LEFT)  key1 |= 0x80;              
           }          
           if (nds_key)
@@ -284,6 +311,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               if (kbd_key == 'N')           key1 |= 0x08;
               if (kbd_key == ',')           key1 |= 0x10;
               if (kbd_key == '/')           key1 |= 0x20;
+              if (kbd_key == '-')           key1 |= 0x40;
               if (kbd_key == KBD_KEY_DOWN)  key1 |= 0x80;              
           }          
           

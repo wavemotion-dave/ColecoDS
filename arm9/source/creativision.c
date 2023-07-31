@@ -368,7 +368,7 @@ ITCM_CODE void creativision_input(void)
     }
     
     // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
-    if ((last_special_key_dampen > 0) && (last_special_key_dampen != 10))
+    if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
     {
         if (--last_special_key_dampen == 0)
         {
@@ -388,7 +388,7 @@ ITCM_CODE void creativision_input(void)
     }
     if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL))
     {
-        if (last_special_key_dampen == 10) last_special_key_dampen = 9;
+        if (last_special_key_dampen == 20) last_special_key_dampen = 19;
     }
 }
 

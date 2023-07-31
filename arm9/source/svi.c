@@ -114,6 +114,43 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       // ------------------------------------------------------------------------
       
       u8 key1 = 0x00;
+      
+      // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
+      if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
+      {
+          if (--last_special_key_dampen == 0)
+          {
+              last_special_key = 0;
+              AffChaine(4,0,6, "    ");
+          }
+      }
+      
+      if (last_special_key == KBD_KEY_SHIFT) 
+      { 
+        AffChaine(4,0,6, "SHFT");
+        key_shift = 1;
+      }
+      else if (last_special_key == KBD_KEY_CTRL)  
+      {
+        AffChaine(4,0,6, "CTRL");
+        key_ctrl = 1;
+      }
+      else if (last_special_key == KBD_KEY_CODE)
+      {
+        AffChaine(4,0,6, "CODE");
+        key_code = 1;
+      }
+      else if (last_special_key == KBD_KEY_GRAPH)
+      {
+        AffChaine(4,0,6, "GRPH");
+        key_graph = 1;
+      }
+      
+      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
+      {
+          if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
+      }
+      
       if ((Port_PPI_C & 0x0F) == 0)      // Row 0
       {
           // -----------------------------------------------------------
@@ -154,13 +191,13 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               }
           }
       }      
-      else if ((Port_PPI_C & 0x0F) == 1)
+      else if ((Port_PPI_C & 0x0F) == 1) // Row 1
       {
           if (kbd_key)
           {
               if (kbd_key == '8')           key1 = 0x01;
               if (kbd_key == '9')           key1 = 0x02;
-              if (kbd_key == ':')           key1 = 0x04;
+              if (kbd_key == ';')           key1 = 0x04;
               if (kbd_key == KBD_KEY_QUOTE) key1 = 0x08;
               if (kbd_key == ',')           key1 = 0x10;
               if (kbd_key == '=')           key1 = 0x20;
@@ -271,7 +308,8 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == 'Y')           key1 = 0x02;
               if (kbd_key == 'Z')           key1 = 0x04;
               if (kbd_key == '[')           key1 = 0x08;
-              if (kbd_key == ']')           key1 = 0x10;
+              if (kbd_key == '\\')          key1 = 0x10;
+              if (kbd_key == ']')           key1 = 0x20;
               if (kbd_key == KBD_KEY_DEL)   key1 = 0x40;              
               if (kbd_key == KBD_KEY_UP)    key1 = 0x80;
           }          
@@ -288,12 +326,12 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       }      
       else if ((Port_PPI_C & 0x0F) == 6) // Row 6
       {
-          // Handle the Shift Key ... two ways
-          if (key_shift || (kbd_key == KBD_KEY_SHIFT))  key1 = 0x01;
-          
           if (kbd_key)
           {
+              if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
               if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
+              if (kbd_key == KBD_KEY_GRAPH) key1 = 0x04;
+              if (kbd_key == KBD_KEY_CODE)  key1 = 0x08;
               if (kbd_key == KBD_KEY_ESC)   key1 = 0x10;
               if (kbd_key == KBD_KEY_STOP)  key1 = 0x20;
               if (kbd_key == KBD_KEY_RET)   key1 = 0x40;
@@ -309,6 +347,11 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT))   key1 |= 0x80;
               }
           }
+          // Handle the Shift Key and Control Key
+          if (key_shift)  key1 |= 0x01;
+          if (key_ctrl)   key1 |= 0x02;
+          if (key_graph)  key1 |= 0x04;
+          if (key_code)   key1 |= 0x08;
       }
       else if ((Port_PPI_C & 0x0F) == 7) // Row 7
       {
@@ -319,6 +362,8 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (kbd_key == KBD_KEY_F3)    key1 = 0x04;
               if (kbd_key == KBD_KEY_F4)    key1 = 0x08;
               if (kbd_key == KBD_KEY_F5)    key1 = 0x10;
+              if (kbd_key == KBD_KEY_HOME)  key1 = 0x20;
+              if (kbd_key == KBD_KEY_INS)   key1 = 0x40;
               if (kbd_key == KBD_KEY_DOWN)  key1 = 0x80;              
           }          
           if (nds_key)
@@ -337,8 +382,11 @@ unsigned char cpu_readport_svi(register unsigned short Port)
           if (kbd_key)
           {
               if (kbd_key == ' ')           key1 = 0x01;
+              if (kbd_key == KBD_KEY_TAB)   key1 = 0x02;
+              if (kbd_key == KBD_KEY_DEL)   key1 = 0x04;
+              if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;
+              if (kbd_key == KBD_KEY_SEL)   key1 = 0x10;
               if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
-              if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;              
           }          
           if (nds_key)
           {

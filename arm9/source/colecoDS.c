@@ -1684,7 +1684,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
-        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
         else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
         else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
         else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
@@ -1700,7 +1700,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
-        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
         else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
         else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
         else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
@@ -1716,9 +1716,9 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
-        else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 10;}
+        else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
         else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 190))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 10;}
+        else if ((iTx >= 163) && (iTx < 190))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}
         else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
@@ -1750,7 +1750,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
     {            
-        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '`';
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '\\';
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
         else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
@@ -1763,7 +1763,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
         else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
         else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
         else if ((iTx >= 181) && (iTx < 195))  kbd_key = '^';
-        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '\\';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '@';
         else if ((iTx >= 210) && (iTx < 235))  kbd_key = KBD_KEY_BS;
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
     }
@@ -1786,7 +1786,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
-        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
         else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
         else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
         else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
@@ -1802,7 +1802,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
-        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
         else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
         else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
         else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
@@ -1818,9 +1818,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
-        else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 10;}
-        else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 190))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 10;}
+        else if ((iTx >= 30)  && (iTx < 190))  kbd_key = ' ';
         else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
@@ -1847,7 +1845,7 @@ u8 handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for th
     }
     else if ((iTy >= 50) && (iTy < 89))   // Row 2
     {
-        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
         else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Q';
         else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'W';
         else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'E';
@@ -1877,7 +1875,7 @@ u8 handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for th
     }
     else if ((iTy >= 128) && (iTy < 167))  // Row 4
     {
-        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 10;}
+        if      ((iTx >= 0)   && (iTx < 21))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
         else if ((iTx >= 21)  && (iTx < 42))   kbd_key = 'Z';
         else if ((iTx >= 42)  && (iTx < 63))   kbd_key = 'X';
         else if ((iTx >= 63)  && (iTx < 84))   kbd_key = 'C';
