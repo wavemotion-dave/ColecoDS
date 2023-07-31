@@ -233,6 +233,10 @@ For the MSX emulation, the colecovision keypad is mapped as follows:
 That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '?' key to be any mappable MSX key. For the few games that still require the MSX arrows to play - you can emulate that via the D-PAD in Game Options.
 As of version 6.1 there is also a custom overlay for "MSX Full" keyboard.
 
+Keyboards :
+-----------------------
+[https://github.com/wavemotion-dave/ColecoDS/blob/main/adam.png]
+
 Blend Mode (DSi) :
 -----------------------
 ColecoDS supports a "blend mode" which I borrowed from my scheme on StellaDS. In this mode, 
