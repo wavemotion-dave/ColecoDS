@@ -44,6 +44,33 @@ void scan_keyboard(void)
     }
     else
     {
+        
+      // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
+      if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
+      {
+          if (--last_special_key_dampen == 0)
+          {
+              last_special_key = 0;
+              AffChaine(4,0,6, "    ");
+          }
+      }
+      
+      if (last_special_key == KBD_KEY_SHIFT) 
+      { 
+        AffChaine(4,0,6, "SHFT");
+        key_shift = 1;
+      }
+      else if (last_special_key == KBD_KEY_CTRL)  
+      {
+        AffChaine(4,0,6, "CTRL");
+        key_ctrl = 1;
+      }
+      
+      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
+      {
+          if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
+      }
+        
       myKeyData = 0x00;
       if (!(keyboard_w & 0x01))
       {
@@ -72,8 +99,9 @@ void scan_keyboard(void)
           if (kbd_key == 'O')           myKeyData |= 0x02;
           if (kbd_key == 'P')           myKeyData |= 0x04;
           if (kbd_key == KBD_KEY_LEFT)  myKeyData |= 0x08;
-          if (kbd_key == '-')           myKeyData |= 0x10;
+          if (kbd_key == '@')           myKeyData |= 0x10;
           if (kbd_key == KBD_KEY_DOWN)  myKeyData |= 0x20;
+          if (kbd_key == '\\')          myKeyData |= 0x40;
           if (kbd_key == '0')           myKeyData |= 0x80;
           for (u8 i=0; i<12; i++)
           {
@@ -93,8 +121,9 @@ void scan_keyboard(void)
           if (kbd_key == ';')           myKeyData |= 0x04;
           if (kbd_key == ':')           myKeyData |= 0x08;
           if (kbd_key == KBD_KEY_RIGHT) myKeyData |= 0x10;
+          if (kbd_key == KBD_KEY_BS)    myKeyData |= 0x20;
           if (kbd_key == '9')           myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x80;
+          if (kbd_key == KBD_KEY_F5)    myKeyData |= 0x80;
           for (u8 i=0; i<12; i++)
           {
               if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_K))      myKeyData |= 0x01;
@@ -115,7 +144,7 @@ void scan_keyboard(void)
           if (kbd_key == '/')           myKeyData |= 0x04;
           if (kbd_key == '8')           myKeyData |= 0x08;
           if (kbd_key == KBD_KEY_DEL)   myKeyData |= 0x10;
-          if (kbd_key == '=')           myKeyData |= 0x20;
+          if (kbd_key == '-')           myKeyData |= 0x20;
           if (kbd_key == KBD_KEY_UP)    myKeyData |= 0x40;
           if (kbd_key == KBD_KEY_F4)    myKeyData |= 0x80;
           for (u8 i=0; i<12; i++)

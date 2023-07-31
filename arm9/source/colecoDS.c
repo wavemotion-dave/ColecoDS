@@ -110,7 +110,7 @@ u8 SVIBios[0x8000]        = {0};  // We keep the SVI 32K BIOS around to swap in/
 u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
-u8 FS_1300_Bios[0x8000]   = {0};  // We store several kinds of MSX bios files in VRAM and copy out the one we want to use in msx_restore_bios() but we need 32K more for the FS-1300 bios
+u8 MSX_Bios[0x8000]       = {0};  // We store several kinds of MSX bios files in VRAM and copy out the one we want to use in msx_restore_bios() but this is for the ubiquitious MSX.ROM
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -1649,7 +1649,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
     {            
-        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '`';
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = (msx_keyboard_matrix ? ']' : '`');
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
         else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
@@ -1678,8 +1678,8 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
         else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
-        else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
-        else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = (msx_keyboard_matrix ? '`' : '[');
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = (msx_keyboard_matrix ? '[' : '[');
         else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
@@ -2800,8 +2800,7 @@ void LoadBIOSFiles(void)
         
         
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x0000);
-        memcpy(ptr, BIOS_Memory, 0x8000);
+        memcpy(MSX_Bios, BIOS_Memory, 0x8000);
     }
     
     fp = fopen("cx5m.rom", "rb");
@@ -2824,7 +2823,7 @@ void LoadBIOSFiles(void)
         
         
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x8000);
+        u8 *ptr = (u8*) (0x06880000 + 0x0000);
         memcpy(ptr, BIOS_Memory, 0x8000);
     }
 
@@ -2849,7 +2848,7 @@ void LoadBIOSFiles(void)
         
         
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x10000);
+        u8 *ptr = (u8*) (0x06880000 + 0x8000);
         memcpy(ptr, BIOS_Memory, 0x8000);
     }
     
@@ -2874,7 +2873,7 @@ void LoadBIOSFiles(void)
         
         
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x18000);
+        u8 *ptr = (u8*) (0x06880000 + 0x10000);
         memcpy(ptr, BIOS_Memory, 0x8000);
     }
 
@@ -2897,9 +2896,9 @@ void LoadBIOSFiles(void)
         BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
         BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
         
-        
-        // Now store this BIOS so we can use it later in msx_restore_bios()
-        memcpy(FS_1300_Bios, BIOS_Memory, 0x8000);
+        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        u8 *ptr = (u8*) (0x06880000 + 0x18000);
+        memcpy(ptr, BIOS_Memory, 0x8000);
     }    
     
 
