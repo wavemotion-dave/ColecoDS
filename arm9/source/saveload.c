@@ -47,11 +47,11 @@ struct RomOffset Offsets[8];
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
 u8  spare[512] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
+extern char szFile[128];
 void colecoSaveState() 
 {
   u32 uNbO;
   long pSvg;
-  char szFile[128];
   char szCh1[32];
     
   // Init filename = romname and SAV in place of ROM

@@ -133,12 +133,11 @@ unsigned char cpu_readport_m5(register unsigned short Port)
       if (kbd_key == '9')      joy1 |= 0x01;
       if (kbd_key == '0')      joy1 |= 0x02;
       if (kbd_key == '-')      joy1 |= 0x04;
-      if (kbd_key == '>')      joy1 |= 0x08;
+      if (kbd_key == '^')      joy1 |= 0x08;
       if (kbd_key == '.')      joy1 |= 0x10;
       if (kbd_key == '/')      joy1 |= 0x20;
-      if (kbd_key == '|')      joy1 |= 0x40;
-      if (kbd_key == '<')      joy1 |= 0x80;
-      
+      if (kbd_key == '-')      joy1 |= 0x40;
+      if (kbd_key == '\\')     joy1 |= 0x80;
       return joy1;
   }
   else if (Port == 0x36)    // Y6
@@ -148,11 +147,11 @@ unsigned char cpu_readport_m5(register unsigned short Port)
       if (kbd_key == 'O')      joy1 |= 0x01;
       if (kbd_key == 'P')      joy1 |= 0x02;
       if (kbd_key == '@')      joy1 |= 0x04;
-      if (kbd_key == ']')      joy1 |= 0x08;
+      if (kbd_key == '[')      joy1 |= 0x08;
       if (kbd_key == 'L')      joy1 |= 0x10;
       if (kbd_key == ';')      joy1 |= 0x20;
       if (kbd_key == ':')      joy1 |= 0x40;
-      if (kbd_key == '[')      joy1 |= 0x80;
+      if (kbd_key == ']')      joy1 |= 0x80;
       
       return joy1;
   }

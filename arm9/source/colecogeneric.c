@@ -1156,6 +1156,7 @@ void SetDefaultGlobalConfig(void)
     memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
     myGlobalConfig.showBiosInfo = 1;    // Show BIOS info at startup by default
     myGlobalConfig.showFPS      = 0;    // Don't show FPS counter by default
+    myGlobalConfig.defaultMSX   = 1;    // Default to the MSX.ROM if available
 }
 
 void SetDefaultGameConfig(void)
@@ -1186,7 +1187,7 @@ void SetDefaultGameConfig(void)
     myConfig.spinSpeed   = 0;                           // Default spin speed is normal
     myConfig.touchPad    = 0;                           // Nothing special about the touch-pad by default
     myConfig.cpuCore     = 1;                           // Default to the more accurate CZ80 core
-    myConfig.msxBios     = (bMSXBiosFound ? 1:0);       // Default to real MSX bios unless we can't find it
+    myConfig.msxBios     = (bMSXBiosFound ? myGlobalConfig.defaultMSX:0); // Default to real MSX bios unless we can't find it
     myConfig.msxKey5     = 0;                           // Default key map for MSX key 5 (question mark)
     myConfig.dpad        = DPAD_NORMAL;                 // Normal DPAD use - mapped to joystick
     myConfig.memWipe     = 0;                           // Default to RANDOM memory
@@ -1314,14 +1315,14 @@ void SetDefaultGameConfig(void)
         if (file_crc == 0x70142655)             myConfig.spinSpeed = 0;         // Victory
     }
     
-    if (sg1000_mode == 2)                       myConfig.overlay = 10; // SC-3000 uses the full keyboard
-    if (msx_mode == 2)                          myConfig.msxBios = 1;  // If loading cassette, must have real MSX bios
+    if (sg1000_mode == 2)                       myConfig.overlay = 11; // SC-3000 uses the full keyboard (Memotech MTX close enough)
+    if (msx_mode == 2)                          myConfig.msxBios = myGlobalConfig.defaultMSX;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
-    if (memotech_mode)                          myConfig.overlay = 10; // Memotech MTX default to full keyboard
+    if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
     if (svi_mode)                               myConfig.overlay = 10; // SVI default to full keyboard    
     if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard    
-    if (einstein_mode)                          myConfig.overlay = 10; // Tatung Einstein defaults to full keyboard
+    if (einstein_mode)                          myConfig.overlay = 11; // Tatung Einstein defaults to full keyboard
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
@@ -1431,18 +1432,18 @@ void SetDefaultGameConfig(void)
     // ----------------------------------------------------------------------------------
     // Some CreatiVision games that want the new CV overlay keypad/keybaord
     // ----------------------------------------------------------------------------------
-    if (file_crc == 0x4aee923e)                 myConfig.overlay = 11; // BASIC 82A
-    if (file_crc == 0x1849efd0)                 myConfig.overlay = 11; // BASIC 82B
-    if (file_crc == 0x10409a1d)                 myConfig.overlay = 11; // BASIC 83A
-    if (file_crc == 0x044adbe8)                 myConfig.overlay = 11; // BASIC 83C
-    if (file_crc == 0x8258ee6c)                 myConfig.overlay = 11; // BASIC 83H
-    if (file_crc == 0x8375203e)                 myConfig.overlay = 11; // CSL BIOS A
-    if (file_crc == 0x77afd38b)                 myConfig.overlay = 11; // CSL BIOS B
-    if (file_crc == 0x9e584ce2)                 myConfig.overlay = 11; // DIAG A
-    if (file_crc == 0x4d92ff4e)                 myConfig.overlay = 11; // DIAG B
-    if (file_crc == 0xadb11067)                 myConfig.overlay = 11; // DIAG DEMO
-    if (file_crc == 0xc2ba6a99)                 myConfig.overlay = 11; // WERBENE
-    if (file_crc == 0xf8383d33)                 myConfig.overlay = 11; // MUSIC MAKER
+    if (file_crc == 0x4aee923e)                 myConfig.overlay = 12; // BASIC 82A
+    if (file_crc == 0x1849efd0)                 myConfig.overlay = 12; // BASIC 82B
+    if (file_crc == 0x10409a1d)                 myConfig.overlay = 12; // BASIC 83A
+    if (file_crc == 0x044adbe8)                 myConfig.overlay = 12; // BASIC 83C
+    if (file_crc == 0x8258ee6c)                 myConfig.overlay = 12; // BASIC 83H
+    if (file_crc == 0x8375203e)                 myConfig.overlay = 12; // CSL BIOS A
+    if (file_crc == 0x77afd38b)                 myConfig.overlay = 12; // CSL BIOS B
+    if (file_crc == 0x9e584ce2)                 myConfig.overlay = 12; // DIAG A
+    if (file_crc == 0x4d92ff4e)                 myConfig.overlay = 12; // DIAG B
+    if (file_crc == 0xadb11067)                 myConfig.overlay = 12; // DIAG DEMO
+    if (file_crc == 0xc2ba6a99)                 myConfig.overlay = 12; // WERBENE
+    if (file_crc == 0xf8383d33)                 myConfig.overlay = 12; // MUSIC MAKER
     
     
     // ----------------------------------------------------------------------------------
@@ -1635,7 +1636,7 @@ const struct options_t Option_Table[3][20] =
 {
     // Page 1
     {
-        {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "ADAM KEYBOARD", "MSX/SVI KBD", "CREATIVISION"},&myConfig.overlay,    12},
+        {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "ADAM KEYBOARD", "MSX/SVI KEYBD", "MTX KEYBOARD", "CREATIVISION"},&myConfig.overlay,    13},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
@@ -1646,8 +1647,8 @@ const struct options_t Option_Table[3][20] =
         {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
         {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
-        {"MSX BIOS",       {"C-BIOS", "MSX.ROM"},                                                                                                                                               &myConfig.msxBios,    2},    
-        {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","M4","M5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
+        {"MSX BIOS",       {"C-BIOS", "MSX.ROM", "CX5M.ROM (UK)", "HX-10.ROM (EU)", "HB-10.ROM (JP)", "FS-1300.ROM JP"},                                                                        &myConfig.msxBios,    6},
+        {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE", "ADAM CPM"},                                                                                                   &myConfig.memWipe,    5},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
@@ -1666,6 +1667,7 @@ const struct options_t Option_Table[3][20] =
     {
         {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,     3},
         {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,2},
+        {"DEFAULT MSX",    {"C-BIOS", "MSX.ROM", "CX5M.ROM (UK)", "HX-10.ROM (EU)", "HB-10.ROM (JP)", "FS-1300.ROM JP"},                                                                        &myGlobalConfig.defaultMSX,  6},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     }
 };              

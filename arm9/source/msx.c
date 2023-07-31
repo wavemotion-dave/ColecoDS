@@ -53,7 +53,7 @@ u16 msx_block_size      __attribute__((section(".dtcm"))) = 0x2000; // Either 8K
 u16 msx_init            = 0x4000;
 u16 msx_basic           = 0x0000;
 u32 LastROMSize         = 0;
-
+u8  msx_keyboard_matrix = 0;
 
 static u8 header_MSX[8] = { 0x1f,0xa6,0xde,0xba,0xcc,0x13,0x7d,0x74 };
 
@@ -110,11 +110,11 @@ unsigned char cpu_readport_msx(register unsigned short Port)
   else if (Port == 0xA9)
   {
       // ----------------------------------------------------------
-      // Keyboard Port:
+      // Keyboard Port (international and US)
       //  Row   Bit_7 Bit_6 Bit_5 Bit_4 Bit_3 Bit_2 Bit_1 Bit_0
       //   0     "7"   "6"   "5"   "4"   "3"   "2"   "1"   "0"
       //   1     ";"   "]"   "["   "\"   "="   "-"   "9"   "8"
-      //   2     "B"   "A"   ???   "/"   "."   ","   "'"   "`"
+      //   2     "B"   "A"  DEAD   "/"   "."   ","   "'"   "`"
       //   3     "J"   "I"   "H"   "G"   "F"   "E"   "D"   "C"
       //   4     "R"   "Q"   "P"   "O"   "N"   "M"   "L"   "K"
       //   5     "Z"   "Y"   "X"   "W"   "V"   "U"   "T"   "S"
@@ -126,23 +126,35 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
       if ((last_special_key_dampen > 0) && (last_special_key_dampen != 10))
       {
-        if (--last_special_key_dampen == 0)
-        {
-            last_special_key = 0;
-            AffChaine(4,0,6, "    ");
-        }
+          if (--last_special_key_dampen == 0)
+          {
+              last_special_key = 0;
+              AffChaine(4,0,6, "    ");
+          }
       }
+      
       if (last_special_key == KBD_KEY_SHIFT) 
       { 
         AffChaine(4,0,6, "SHFT");
         key_shift = 1;
       }
-      if (last_special_key == KBD_KEY_CTRL)  
+      else if (last_special_key == KBD_KEY_CTRL)  
       {
         AffChaine(4,0,6, "CTRL");
         key_ctrl = 1;
       }
-      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL))
+      else if (last_special_key == KBD_KEY_CODE)
+      {
+        AffChaine(4,0,6, "CODE");
+        key_code = 1;
+      }
+      else if (last_special_key == KBD_KEY_GRAPH)
+      {
+        AffChaine(4,0,6, "GRPH");
+        key_graph = 1;
+      }
+      
+      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
       {
         if (last_special_key_dampen == 10) last_special_key_dampen = 9;
       }
@@ -212,9 +224,10 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (kbd_key == '-')           key1 = 0x04;
               if (kbd_key == '=')           key1 = 0x08;
               if (kbd_key == '\\')          key1 = 0x10;
-              if (kbd_key == ']')           key1 = 0x20;
-              if (kbd_key == '[')           key1 = 0x40;
+              if (kbd_key == '[')           key1 = 0x20;
+              if (kbd_key == ']')           key1 = 0x40;
               if (kbd_key == ';')           key1 = 0x80;
+              if (kbd_key == ':')           key1 = 0x80;
           }
           if (nds_key)
           {
@@ -236,10 +249,11 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_QUOTE) key1 = 0x01;
-              if (kbd_key == '#')           key1 = 0x02;
+              if (kbd_key == '`')           key1 = 0x02;
               if (kbd_key == ',')           key1 = 0x04;
               if (kbd_key == '.')           key1 = 0x08;
               if (kbd_key == '/')           key1 = 0x10;
+              if (kbd_key == KBD_KEY_DEAD)  key1 = 0x20;
               if (kbd_key == 'A')           key1 = 0x40;
               if (kbd_key == 'B')           key1 = 0x80;
           }          
@@ -383,11 +397,15 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           if (key_shift)  key1 |= 0x01;  // SHIFT
           if (key_ctrl)   key1 |= 0x02;  // CTRL
+          if (key_graph)  key1 |= 0x04;  // GRAPH
+          if (key_code)   key1 |= 0x10;  // CODE
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
               if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
+              if (kbd_key == KBD_KEY_GRAPH) key1 = 0x04;
               if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;
+              if (kbd_key == KBD_KEY_CODE)  key1 = 0x10;
               if (kbd_key == KBD_KEY_F1)    key1 = 0x20;
               if (kbd_key == KBD_KEY_F2)    key1 = 0x40;
               if (kbd_key == KBD_KEY_F3)    key1 = 0x80;
@@ -422,9 +440,10 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (kbd_key == KBD_KEY_ESC)   key1 = 0x04;
               if (kbd_key == KBD_KEY_TAB)   key1 = 0x08;
               if (kbd_key == KBD_KEY_STOP)  key1 = 0x10;
-              if (kbd_key == KBD_KEY_DEL)   key1 = 0x20;
+              if (kbd_key == KBD_KEY_BS)    key1 = 0x20;
               if (kbd_key == KBD_KEY_SEL)   key1 = 0x40;
               if (kbd_key == KBD_KEY_RET)   key1 = 0x80;
+              
           }          
           if (nds_key)
           {
@@ -444,11 +463,13 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           if (kbd_key)
           {
               if (kbd_key == ' ')           key1 = 0x01;
+              if (kbd_key == KBD_KEY_HOME)  key1 = 0x02;
+              if (kbd_key == KBD_KEY_INS)   key1 = 0x04;
+              if (kbd_key == KBD_KEY_DEL)   key1 = 0x08;
+              if (kbd_key == KBD_KEY_LEFT)  key1 = 0x10;
               if (kbd_key == KBD_KEY_UP)    key1 = 0x20;
               if (kbd_key == KBD_KEY_DOWN)  key1 = 0x40;
-              if (kbd_key == KBD_KEY_LEFT)  key1 = 0x10;
               if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
-              if (kbd_key == KBD_KEY_SEL)   key1 = 0x02;  // This is HOME but we double up the seldom used SEL key
           }          
           if (nds_key)
           {
@@ -1197,12 +1218,23 @@ void msx_restore_bios(void)
 {
     memset(BIOS_Memory, 0xFF, 0x10000);
 
+    msx_keyboard_matrix = 0;
     // --------------------------------------------------------------
     // Based on config, load up the C-BIOS or the real MSX.ROM BIOS
     // --------------------------------------------------------------
     if (myConfig.msxBios)
     {
-        memcpy(BIOS_Memory, MSXBios, 0x8000);
+        extern u8 FS_1300_Bios[];
+        // Determine which of the 4 MSX bios flavors we should load...
+        switch (myConfig.msxBios)
+        {
+            case 1: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x00000), 0x8000); break;                           // Generic MSX.ROM
+            case 2: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x08000), 0x8000); break;                           // Yamaha CX5M
+            case 3: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); break;                           // Toshiba HX-10
+            case 4: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x18000), 0x8000); msx_keyboard_matrix = 1; break;  // Sony HB-10 (uses the Japanese matrix)
+            case 5: memcpy(BIOS_Memory, FS_1300_Bios, 0x8000); msx_keyboard_matrix = 1; break;                  // National FS-1300 (uses the Japanese matrix)
+            default: memcpy(BIOS_Memory, CBios, 0x8000); break;                                                 // C-BIOS as a fall-back
+        }
     }
     else
     {

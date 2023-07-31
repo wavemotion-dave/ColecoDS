@@ -72,7 +72,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o cvision_kbd.o msx_sm.o msx_full.o adam_full.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o  
+OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o cvision_kbd.o msx_sm.o msx_full.o mtx_full.o msx_japan.o adam_full.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o  
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -156,6 +156,9 @@ cvision.s cvision.h : cvision.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 msx_full.s msx_full.h : msx_full.png
+	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
+
+msx_japan.s msx_japan.h : msx_japan.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 mtx_full.s mtx_full.h : mtx_full.png
