@@ -111,6 +111,14 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 * 58d86a2a	writer.rom (ADAM)
 ```
 
+For the MSX, we support 4 optional BIOS ROMs. To be honest, after quite a bit of searching online, I'm not quite sure what machine the ubiquitous msx.rom represents - it's some generic European machine but that's about all I can gleen. As such, starting with version 8.2, ColecoDS will support 4 additional optional MSX BIOS roms as follows:
+```
+* cx5m.rom  - Yamaha's UK/EU Machine
+* hx-10.rom - Toshiba's UK/EU Machine
+* hb-10.rom - Sony HitBit JP Machine (uses the Japanese matrix)
+* fs-1300.rom - National JP Machine (uses the Japanese matrix)
+```
+
 ADAM Compatibility :
 -----------------------
 * The emulated ADAM is not completely bug-free but generally will run most tape images (.ddp) or disk images (.dsk).
