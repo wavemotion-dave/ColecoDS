@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, it's source code and associated 
 // readme files, with or without modification, are permitted in any medium without 
@@ -36,6 +36,36 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   // M5 ports are 8-bit but bit3 is not decoded
   Port &= 0x00F7; 
 
+  // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
+  if (last_special_key != 0)
+  {
+      if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
+      {
+          if (--last_special_key_dampen == 0)
+          {
+              last_special_key = 0;
+              AffChaine(4,0,6, "    ");
+          }
+      }
+
+      if (last_special_key == KBD_KEY_SHIFT) 
+      { 
+          AffChaine(4,0,6, "SHFT");
+          key_shift = 1;
+      }
+      else if (last_special_key == KBD_KEY_CTRL)  
+      {
+          AffChaine(4,0,6, "CTRL");
+          key_ctrl = 1;
+      }
+
+      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
+      {
+          if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
+      }
+  }
+    
+    
   if (Port < 0x10)      // Z80-CTC Area
   {
       Port &= 0x03;
@@ -136,7 +166,7 @@ unsigned char cpu_readport_m5(register unsigned short Port)
       if (kbd_key == '^')      joy1 |= 0x08;
       if (kbd_key == '.')      joy1 |= 0x10;
       if (kbd_key == '/')      joy1 |= 0x20;
-      if (kbd_key == '-')      joy1 |= 0x40;
+      if (kbd_key == '@')      joy1 |= 0x40;
       if (kbd_key == '\\')     joy1 |= 0x80;
       return joy1;
   }
