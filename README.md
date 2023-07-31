@@ -235,7 +235,8 @@ As of version 6.1 there is also a custom overlay for "MSX Full" keyboard.
 
 Keyboards :
 -----------------------
-[https://github.com/wavemotion-dave/ColecoDS/blob/main/adam.png]
+A number of full keyboard overlays have been designed to bring more accuracy and enjoyment to the emulation. You can choose these on a per-game basis in Configuration.
+![Adam Keyboard]([http://url/to/img.png](https://github.com/wavemotion-dave/ColecoDS/blob/main/adam.png))
 
 Blend Mode (DSi) :
 -----------------------
@@ -287,6 +288,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.2: 01-Aug-2023 by wavemotion-dave
+* Major rework of the keyboard handler for improved visuals and emulation of the ADAM, MSX, MTX and more.
+* New global configuration handling.
+* Other tweaks and improvements as time permitted.
+
 V8.1: 22-Jul-2023 by wavemotion-dave
 * Major rework of the CreatiVision driver for much improved compatibility and loading of BASIC listings.
 * New CreatiVision keypad/keyboard overlay with stylings from 1981!
