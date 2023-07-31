@@ -120,6 +120,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD X",
   "KEYBOARD Y",
   "KEYBOARD Z",
+    
   "KEYBOARD 0",
   "KEYBOARD 1",
   "KEYBOARD 2",
@@ -130,28 +131,50 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD 7",
   "KEYBOARD 8",
   "KEYBOARD 9",
+    
   "KEYBOARD SPACE",
   "KEYBOARD RETURN",
   "KEYBOARD ESC",
   "KEYBOARD SHIFT",
   "KEYBOARD CTRL",
+  "KEYBOARD CODE",
+  "KEYBOARD GRAPH",
+    
   "KEYBOARD HOME",
   "KEYBOARD UP",
   "KEYBOARD DOWN",
   "KEYBOARD LEFT",
   "KEYBOARD RIGHT",
-  "KEYBOARD .",
-  "KEYBAORD ,",
-  "KEYBOARD :",
-  "KEYBOARD /",
-  "KEYBOARD F1",
-  "KEYBOARD F2",
-  "KEYBOARD F3",
-  "KEYBOARD F4",
-  "KEYBOARD F5",
-  "KEYBOARD F6",
+    
+  "KEYBOARD PERIOD",
+  "KEYBOARD COMMA",
+  "KEYBOARD COLON",
+  "KEYBOARD SEMI",
+  "KEYBOARD QUOTE",
+  "KEYBOARD SLASH",
+  "KEYBOARD BSLASH",
+  "KEYBOARD PLUS",
+  "KEYBOARD MINUS",
+  "KEYBOARD LBRACKET",
+  "KEYBOARD RBRACKET",
+  "KEYBOARD CARET",
+  "KEYBOARD ASTERISK",
+  "KEYBOARD BS",
+  "KEYBOARD TAB",
+  "KEYBOARD INS",
+  "KEYBOARD DEL",
+  "KEYBOARD WILDCARD",
+  "KEYBOARD STORE",
+  "KEYBOARD PRINT",
+  "KEYBOARD STOP",
+  "KEYBOARD F1 (I)",
+  "KEYBOARD F2 (II)",
+  "KEYBOARD F3 (III)",
+  "KEYBOARD F4 (IV)",
+  "KEYBOARD F5 (V)",
+  "KEYBOARD F6 (VI)",
   "KEYBOARD F7",
-  "KEYBOARD F8",
+  "KEYBOARD F8",    
 };
 
 const u32 cv_no_mirror_games[] =
@@ -1428,6 +1451,10 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xc8ada76e)                 myConfig.overlay = 9;  // zork ii - the wizard of frobozz (1981) (infocom).dsk
     if (file_crc == 0x8dac567c)                 myConfig.overlay = 9;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
     if (file_crc == 0xae4d50e9)                 myConfig.overlay = 9;  // zork i - the great underground empire (1981) (infocom).dsk
+    
+    
+    // And one special PV-2000 BASIC cart
+    if (file_crc == 0x69a92b72)                 myConfig.overlay = 10; // PV-2000 BASIC uses keyboard
 
     // ----------------------------------------------------------------------------------
     // Some CreatiVision games that want the new CV overlay keypad/keybaord

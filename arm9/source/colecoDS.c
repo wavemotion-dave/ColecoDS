@@ -1,8 +1,8 @@
 // =====================================================================================
 // Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
-// Copying and distribution of this emulator, it's source code and associated 
-// readme files, with or without modification, are permitted in any medium without 
+// Copying and distribution of this emulator, it's source code and associated
+// readme files, with or without modification, are permitted in any medium without
 // royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
 // Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
 //
@@ -69,9 +69,9 @@ u32 debug3=0;
 u32 debug4=0;
 
 // -------------------------------------------------------------------------------------------
-// All emulated systems have ROM, RAM and possibly BIOS or SRAM. So we create generic buffers 
+// All emulated systems have ROM, RAM and possibly BIOS or SRAM. So we create generic buffers
 // for all this here... these are sized big enough to handle the largest memory necessary
-// to render games playable. There are a few MSX games that are larger than 512k but they 
+// to render games playable. There are a few MSX games that are larger than 512k but they
 // are mostly demos or foreign-language adventures... not enough interest to try to squeeze
 // in a larger ROM buffer to include them - we are still trying to keep compatible with the
 // smaller memory model of the original DS/DS-LITE.
@@ -135,7 +135,7 @@ u8 key_code  __attribute__((section(".dtcm"))) = false;
 u8 key_graph __attribute__((section(".dtcm"))) = false;
 
 // ------------------------------------------------------------------------------------------
-// Various sound chips in the system. We emulate the SN and AY sound chips but both of 
+// Various sound chips in the system. We emulate the SN and AY sound chips but both of
 // these really still use the underlying SN76496 sound chip driver for siplicity and speed.
 // ------------------------------------------------------------------------------------------
 extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
@@ -169,22 +169,23 @@ u8 soundEmuPause     __attribute__((section(".dtcm"))) = 1;       // Set to 1 to
 // -----------------------------------------------------------------------------------------------
 // This set of critical vars is what determines the machine type - Coleco vs MSX vs SVI, etc.
 // -----------------------------------------------------------------------------------------------
-u8 sg1000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
-u8 sordm5_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support 
-u8 pv2000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support 
-u8 memotech_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .mtx or .run game is loaded for Memotech MTX support 
-u8 msx_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support 
-u8 svi_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support 
+u8 sg1000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support
+u8 sordm5_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support
+u8 pv2000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support
+u8 memotech_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .mtx or .run game is loaded for Memotech MTX support
+u8 msx_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support
+u8 svi_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support
 u8 adam_mode         __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .ddp game is loaded for ADAM game support
 u8 pencil2_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pii Pencil 2 ROM is loaded (only one known to exist!)
 u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
 u8 creativision_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .cv ROM is loaded (Creativision)
 u8 coleco_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a Colecovision ROM is loaded
 
-u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0001;  // A faster way to know what type of machine we are 
+u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0001;  // A faster way to know what type of machine we are
 
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
+u8  last_mapped_key = 0;
 
 u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of rendering...
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
@@ -197,53 +198,53 @@ u16 NDS_keyMap[12] __attribute__((section(".dtcm"))) = {KEY_UP, KEY_DOWN, KEY_LE
 // The key map for the Colecovision... mapped into the NDS controller
 // --------------------------------------------------------------------
 u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
-    JST_UP, 
-    JST_DOWN, 
-    JST_LEFT, 
-    JST_RIGHT, 
-    JST_FIREL, 
-    JST_FIRER,  
-    JST_PURPLE, 
+    JST_UP,
+    JST_DOWN,
+    JST_LEFT,
+    JST_RIGHT,
+    JST_FIREL,
+    JST_FIRER,
+    JST_PURPLE,
     JST_BLUE,
-    JST_1, 
-    JST_2, 
-    JST_3, 
-    JST_4, 
-    JST_5, 
-    JST_6, 
-    JST_7, 
-    JST_8, 
-    JST_9, 
-    JST_POUND, 
-    JST_0, 
-    JST_STAR, 
-    
+    JST_1,
+    JST_2,
+    JST_3,
+    JST_4,
+    JST_5,
+    JST_6,
+    JST_7,
+    JST_8,
+    JST_9,
+    JST_POUND,
+    JST_0,
+    JST_STAR,
+
     JST_UP      << 16,      // P2 versions of the above...
-    JST_DOWN    << 16, 
-    JST_LEFT    << 16, 
-    JST_RIGHT   << 16, 
-    JST_FIREL   << 16, 
-    JST_FIRER   << 16,  
-    JST_PURPLE  << 16, 
+    JST_DOWN    << 16,
+    JST_LEFT    << 16,
+    JST_RIGHT   << 16,
+    JST_FIREL   << 16,
+    JST_FIRER   << 16,
+    JST_PURPLE  << 16,
     JST_BLUE    << 16,
-    JST_1       << 16, 
-    JST_2       << 16, 
-    JST_3       << 16, 
-    JST_4       << 16, 
-    JST_5       << 16, 
-    JST_6       << 16, 
-    JST_7       << 16, 
-    JST_8       << 16, 
-    JST_9       << 16, 
-    JST_POUND   << 16, 
-    JST_0       << 16, 
-    JST_STAR    << 16, 
-    
-    META_SPINX_LEFT, 
-    META_SPINX_RIGHT, 
+    JST_1       << 16,
+    JST_2       << 16,
+    JST_3       << 16,
+    JST_4       << 16,
+    JST_5       << 16,
+    JST_6       << 16,
+    JST_7       << 16,
+    JST_8       << 16,
+    JST_9       << 16,
+    JST_POUND   << 16,
+    JST_0       << 16,
+    JST_STAR    << 16,
+
+    META_SPINX_LEFT,
+    META_SPINX_RIGHT,
     META_SPINY_LEFT,
     META_SPINY_RIGHT,
-        
+
     META_KBD_A,
     META_KBD_B,
     META_KBD_C,
@@ -285,6 +286,8 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     META_KBD_ESC,
     META_KBD_SHIFT,
     META_KBD_CTRL,
+    META_KBD_CODE,
+    META_KBD_GRAPH,
     META_KBD_HOME,
     META_KBD_UP,
     META_KBD_DOWN,
@@ -293,7 +296,24 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     META_KBD_PERIOD,
     META_KBD_COMMA,
     META_KBD_COLON,
+    META_KBD_SEMI,
+    META_KBD_QUOTE,
     META_KBD_SLASH,
+    META_KBD_BACKSLASH,
+    META_KBD_PLUS,
+    META_KBD_MINUS,
+    META_KBD_LBRACKET,
+    META_KBD_RBRACKET,
+    META_KBD_CARET,
+    META_KBD_ASTERISK,
+    META_KBD_BS,
+    META_KBD_TAB,
+    META_KBD_INS,
+    META_KBD_DEL,
+    META_KBD_WILDCARD,
+    META_KBD_STORE,
+    META_KBD_PRINT,
+    META_KBD_STOP,
     META_KBD_F1,
     META_KBD_F2,
     META_KBD_F3,
@@ -301,7 +321,7 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     META_KBD_F5,
     META_KBD_F6,
     META_KBD_F7,
-    META_KBD_F8,
+    META_KBD_F8
 };
 
 extern u8 msx_scc_enable;
@@ -317,13 +337,13 @@ u8 spinY_right  __attribute__((section(".dtcm"))) = 0;
 // ------------------------------------------------------------
 // Utility function to show the background for the main menu
 // ------------------------------------------------------------
-void showMainMenu(void) 
+void showMainMenu(void)
 {
   dmaCopy((void*) bgGetMapPtr(bg0b),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
 
 // ------------------------------------------------------------
-// Utility function to pause the sound... 
+// Utility function to pause the sound...
 // ------------------------------------------------------------
 void SoundPause(void)
 {
@@ -331,7 +351,7 @@ void SoundPause(void)
 }
 
 // ------------------------------------------------------------
-// Utility function to un pause the sound... 
+// Utility function to un pause the sound...
 // ------------------------------------------------------------
 void SoundUnPause(void)
 {
@@ -421,7 +441,7 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
             last_sample = ((u16*)dest)[len*2 - 1];
         }
     }
-    
+
     return  len;
 }
 
@@ -430,9 +450,9 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 // Setup the maxmod audio stream - this will be a 16-bit Stereo PCM output at 55KHz which
 // sounds about right for the Colecovision.
 // -------------------------------------------------------------------------------------------
-void setupStream(void) 
+void setupStream(void)
 {
-    
+
   //----------------------------------------------------------------
   //  initialize maxmod with our small 3-effect soundbank
   //----------------------------------------------------------------
@@ -457,7 +477,7 @@ void setupStream(void)
   //  when using 'automatic' filling, your callback will be triggered
   //  every time half of the wave buffer is processed.
   //
-  //  so: 
+  //  so:
   //  25000 (rate)
   //  ----- = ~21 Hz for a full pass, and ~42hz for half pass
   //  1200  (length)
@@ -471,115 +491,115 @@ void setupStream(void)
 // -----------------------------------------------------------------------
 // We setup the sound chips - disabling all volumes to start.
 // -----------------------------------------------------------------------
-void dsInstallSoundEmuFIFO(void) 
+void dsInstallSoundEmuFIFO(void)
 {
   SoundPause();
-    
+
   // ---------------------------------------------------------------------
   // We setup a mute channel to cut sound for pause
   // ---------------------------------------------------------------------
   sn76496Reset(1, &snmute);         // Reset the SN sound chip
-    
+
   sn76496W(0x80 | 0x00,&snmute);    // Write new Frequency for Channel A
   sn76496W(0x00 | 0x00,&snmute);    // Write new Frequency for Channel A
   sn76496W(0x90 | 0x0F,&snmute);    // Write new Volume for Channel A
-    
+
   sn76496W(0xA0 | 0x00,&snmute);    // Write new Frequency for Channel B
   sn76496W(0x00 | 0x00,&snmute);    // Write new Frequency for Channel B
   sn76496W(0xB0 | 0x0F,&snmute);    // Write new Volume for Channel B
-    
+
   sn76496W(0xC0 | 0x00,&snmute);    // Write new Frequency for Channel C
   sn76496W(0x00 | 0x00,&snmute);    // Write new Frequency for Channel C
   sn76496W(0xD0 | 0x0F,&snmute);    // Write new Volume for Channel C
 
   sn76496W(0xFF,  &snmute);         // Disable Noise Channel
-    
+
   sn76496Mixer(8, mixbuf1, &snmute);  // Do  an initial mix conversion to clear the output
-      
+
   //  ------------------------------------------------------------------
   //  The SN sound chip is for normal colecovision sound handling
   //  ------------------------------------------------------------------
   sn76496Reset(1, &sncol);         // Reset the SN sound chip
-    
+
   sn76496W(0x80 | 0x00,&sncol);    // Write new Frequency for Channel A
   sn76496W(0x00 | 0x00,&sncol);    // Write new Frequency for Channel A
   sn76496W(0x90 | 0x0F,&sncol);    // Write new Volume for Channel A
-    
+
   sn76496W(0xA0 | 0x00,&sncol);    // Write new Frequency for Channel B
   sn76496W(0x00 | 0x00,&sncol);    // Write new Frequency for Channel B
   sn76496W(0xB0 | 0x0F,&sncol);    // Write new Volume for Channel B
-    
+
   sn76496W(0xC0 | 0x00,&sncol);    // Write new Frequency for Channel C
   sn76496W(0x00 | 0x00,&sncol);    // Write new Frequency for Channel C
   sn76496W(0xD0 | 0x0F,&sncol);    // Write new Volume for Channel C
 
   sn76496W(0xFF,  &sncol);         // Disable Noise Channel
-    
+
   sn76496Mixer(8, mixbuf1, &sncol);  // Do an initial mix conversion to clear the output
 
-    
+
   //  ------------------------------------------------------------------
   //  The "fake AY" sound chip is for Super Game Module sound handling
   //  ------------------------------------------------------------------
   ay76496Reset(2, &aycol);         // Reset the "AY" sound chip
-    
+
   ay76496W(0x80 | 0x00,&aycol);    // Write new Frequency for Channel A
   ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel A
   ay76496W(0x90 | 0x0F,&aycol);    // Write new Volume for Channel A
-    
+
   ay76496W(0xA0 | 0x00,&aycol);    // Write new Frequency for Channel B
   ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel B
   ay76496W(0xB0 | 0x0F,&aycol);    // Write new Volume for Channel B
-    
+
   ay76496W(0xC0 | 0x00,&aycol);    // Write new Frequency for Channel C
   ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel C
   ay76496W(0xD0 | 0x0F,&aycol);    // Write new Volume for Channel C
 
   ay76496W(0xFF,  &aycol);         // Disable Noise Channel
-    
+
   sn76496Mixer(8, mixbuf2, &aycol);  // Do an initial mix conversion to clear the output
-  
-    
+
+
   //  -----------------------------------------------------------------------
   //  The "Fake SCC" sound chip channels ABC for games using this sound chip
   //  -----------------------------------------------------------------------
   ay76496Reset(2, &sccABC);         // Reset the "AY" sound chip
-    
+
   ay76496W(0x80 | 0x00,&sccABC);    // Write new Frequency for Channel A
   ay76496W(0x00 | 0x00,&sccABC);    // Write new Frequency for Channel A
   ay76496W(0x90 | 0x0F,&sccABC);    // Write new Volume for Channel A
-    
+
   ay76496W(0xA0 | 0x00,&sccABC);    // Write new Frequency for Channel B
   ay76496W(0x00 | 0x00,&sccABC);    // Write new Frequency for Channel B
   ay76496W(0xB0 | 0x0F,&sccABC);    // Write new Volume for Channel B
-    
+
   ay76496W(0xC0 | 0x00,&sccABC);    // Write new Frequency for Channel C
   ay76496W(0x00 | 0x00,&sccABC);    // Write new Frequency for Channel C
   ay76496W(0xD0 | 0x0F,&sccABC);    // Write new Volume for Channel C
 
   ay76496W(0xFF,  &sccABC);         // Disable Noise Channel  (not used in SCC)
-    
+
   sn76496Mixer(8, mixbuf3, &sccABC);  // Do an initial mix conversion to clear the output
 
   //  -----------------------------------------------------------------------
   //  The "Fake SCC" sound chip channels ABC for games using this sound chip
   //  -----------------------------------------------------------------------
   ay76496Reset(2, &sccDE);         // Reset the "AY" sound chip
-    
+
   ay76496W(0x80 | 0x00,&sccDE);    // Write new Frequency for Channel D
   ay76496W(0x00 | 0x00,&sccDE);    // Write new Frequency for Channel D
   ay76496W(0x90 | 0x0F,&sccDE);    // Write new Volume for Channel D
-    
+
   ay76496W(0xA0 | 0x00,&sccDE);    // Write new Frequency for Channel E
   ay76496W(0x00 | 0x00,&sccDE);    // Write new Frequency for Channel E
   ay76496W(0xB0 | 0x0F,&sccDE);    // Write new Volume for Channel E
-    
+
   ay76496W(0xC0 | 0x00,&sccDE);    // Write new Frequency for Channel F (not used)
   ay76496W(0x00 | 0x00,&sccDE);    // Write new Frequency for Channel  F (not used)
   ay76496W(0xD0 | 0x0F,&sccDE);    // Write new Volume for Channel  F (not used)
 
   ay76496W(0xFF,  &sccDE);         // Disable Noise Channel (not used in SCC)
-    
+
   sn76496Mixer(8, mixbuf4, &sccDE);  // Do an initial mix conversion to clear the output
 
   setupStream();    // Setup maxmod stream...
@@ -607,7 +627,7 @@ static u8 last_scc_mode = 0;
 
 
 // --------------------------------------------------------------
-// When we reset the machine, there are many small utility flags 
+// When we reset the machine, there are many small utility flags
 // for various expansion peripherals that must be reset.
 // --------------------------------------------------------------
 void ResetStatusFlags(void)
@@ -635,13 +655,13 @@ void ResetColecovision(void)
 {
   JoyMode=JOYMODE_JOYSTICK;             // Joystick mode key
   JoyState = 0x00000000;                // Nothing pressed to start
-    
+
   Reset9918();                          // Reset video chip
 
   sgm_reset();                          // Reset Super Game Module
-    
+
   sn76496Reset(1, &sncol);              // Reset the SN sound chip
-  sn76496W(0x90 | 0x0F  ,&sncol);       //  Write new Volume for Channel A (off) 
+  sn76496W(0x90 | 0x0F  ,&sncol);       //  Write new Volume for Channel A (off)
   sn76496W(0xB0 | 0x0F  ,&sncol);       //  Write new Volume for Channel B (off)
   sn76496W(0xD0 | 0x0F  ,&sncol);       //  Write new Volume for Channel C (off)
 
@@ -649,10 +669,10 @@ void ResetColecovision(void)
   ay76496W(0x90 | 0x0F  ,&aycol);       //  Write new Volume for Channel A (off)
   ay76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
   ay76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
-    
+
   DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the Z80 CPU core
-  
+
   sordm5_reset();                       // Reset the Sord M5 specific vars
   memotech_reset();                     // Reset the memotech MTX specific vars
   svi_reset();                          // Reset the SVI specific vars
@@ -662,9 +682,9 @@ void ResetColecovision(void)
 
   adam_CapsLock = 0;
   adam_unsaved_data = 0;
-    
+
   write_EE_counter=0;
-    
+
   // -----------------------------------------------------------------------
   // By default, many of the machines use a simple flat 64K memory model
   // which is simple to emulate by having all the memory map point to the
@@ -679,8 +699,8 @@ void ResetColecovision(void)
   MemoryMap[5] = RAM_Memory + 0xA000;
   MemoryMap[6] = RAM_Memory + 0xC000;
   MemoryMap[7] = RAM_Memory + 0xE000;
-    
-    
+
+
   if (sg1000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
@@ -727,13 +747,13 @@ void ResetColecovision(void)
   {
       colecoWipeRAM();                          // Wipe main RAM area
       einstien_restore_bios();                  // Put the BIOS back in place and point to it
-  }    
+  }
   else if (creativision_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
       creativision_restore_bios();
       creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
-  }        
+  }
   else
   {
       memset(RAM_Memory+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
@@ -742,22 +762,22 @@ void ResetColecovision(void)
       // Setup the Coleco BIOS and point to it
       memset(BIOS_Memory+0x2000, 0xFF, 0xE000);
       memcpy(BIOS_Memory+0x0000, ColecoBios, 0x2000);
-      MemoryMap[0] = BIOS_Memory+0x0000;      
-      
+      MemoryMap[0] = BIOS_Memory+0x0000;
+
       if (bActivisionPCB)
       {
-          Reset24XX(&EEPROM, myConfig.cvEESize); 
+          Reset24XX(&EEPROM, myConfig.cvEESize);
           colecoLoadEEPROM();
       }
   }
-  
+
   // -----------------------------------------------------------
   // Timer 1 is used to time frame-to-frame of actual emulation
   // -----------------------------------------------------------
   TIMER1_CR = 0;
   TIMER1_DATA=0;
   TIMER1_CR=TIMER_ENABLE  | TIMER_DIV_1024;
-    
+
   // -----------------------------------------------------------
   // Timer 2 is used to time once per second events
   // -----------------------------------------------------------
@@ -766,11 +786,11 @@ void ResetColecovision(void)
   TIMER2_CR=TIMER_ENABLE  | TIMER_DIV_1024;
   timingFrames  = 0;
   emuFps=0;
-    
+
   XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
-    
+
   ResetStatusFlags();   // Some static status flags for the UI mostly
-    
+
   debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0;
 }
 
@@ -781,21 +801,21 @@ void ResetColecovision(void)
 //*********************************************************************************
 const char *VModeNames[] =
 {
-    "VDP_0  ",  
-    "VDP_3  ",  
-    "VDP_2  ",  
-    "VDP_2+3",  
-    "VDP_1  ",  
-    "VDP_?5 ",  
-    "VDP_1+2",  
-    "VDP_?7 ",  
+    "VDP_0  ",
+    "VDP_3  ",
+    "VDP_2  ",
+    "VDP_2+3",
+    "VDP_1  ",
+    "VDP_?5 ",
+    "VDP_1+2",
+    "VDP_?7 ",
 };
 
 void ShowDebugZ80(void)
 {
     char tmp[33];
     u8 idx=1;
-#ifdef FULL_DEBUG    
+#ifdef FULL_DEBUG
     extern u8 a_idx, b_idx, c_idx;
     extern u8 lastBank;
     extern u8 romBankMask;
@@ -822,7 +842,7 @@ void ShowDebugZ80(void)
     siprintf(tmp, "IREQ  %d", CPU.User);
     AffChaine(0,idx++,7, tmp);
     idx++;
-    
+
     if (AY_Enable)
     {
         siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
@@ -851,12 +871,11 @@ void ShowDebugZ80(void)
         AffChaine(0,idx++,7, tmp);
         idx++;
     }
-    
+
     siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    AffChaine(0,idx++,7, tmp);
     siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             AffChaine(0,idx++,7, tmp);  
-    siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            AffChaine(0,idx++,7, tmp);  
-#endif    
+    siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            AffChaine(0,idx++,7, tmp);
 
     idx = 1;
     siprintf(tmp, "D1 %-5lu %04X", debug1, (u16)debug1); AffChaine(19,idx++,7, tmp);
@@ -867,10 +886,17 @@ void ShowDebugZ80(void)
     siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); AffChaine(19,idx++,7, tmp);
     siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    AffChaine(19,idx++,7, tmp);
     siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); AffChaine(19,idx++,7, tmp);
+#else
+    idx = 1;
+    siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); AffChaine(5,idx++,7, tmp);
+    siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); AffChaine(5,idx++,7, tmp);
+    siprintf(tmp, "D3 %-12lu %08lX", debug3, debug3); AffChaine(5,idx++,7, tmp);
+    siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); AffChaine(5,idx++,7, tmp);
+#endif
     idx++;
 }
-    
-    
+
+
 
 // ------------------------------------------------------------
 // The status line shows the status of the Super Game Moudle,
@@ -970,9 +996,9 @@ void DisplayStatusLine(bool bForce)
                 // Save EE now!
                 msxSaveEEPROM();
             }
-            AffChaine(5,0,6, (write_EE_counter ? "EE":"  "));            
+            AffChaine(5,0,6, (write_EE_counter ? "EE":"  "));
         }
-        
+
     }
     else if (svi_mode)
     {
@@ -1002,10 +1028,10 @@ void DisplayStatusLine(bool bForce)
             last_adam_mode = adam_mode;
             AffChaine(25,0,6, "ADAM");
         }
-        
+
         AffChaine(20,0,6, (adam_CapsLock ? "CAP":"   "));
-        
-        if (io_show_status) 
+
+        if (io_show_status)
         {
             AffChaine(30,0,6, (io_show_status == 2 ? "WR":"RD"));
             io_show_status = 0;
@@ -1048,8 +1074,8 @@ void DisplayStatusLine(bool bForce)
             AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
-    else    // Various Colecovision Possibilities 
-    {   
+    else    // Various Colecovision Possibilities
+    {
         if ((last_sgm_mode != sgm_enable) || bForce)
         {
             last_sgm_mode = sgm_enable;
@@ -1067,7 +1093,7 @@ void DisplayStatusLine(bool bForce)
             last_mc_mode = romBankMask;
             AffChaine(22,0,6, (romBankMask ? "MC":"  "));
         }
-        
+
         if (write_EE_counter > 0)
         {
             --write_EE_counter;
@@ -1076,7 +1102,7 @@ void DisplayStatusLine(bool bForce)
                 // Save EE now!
                 colecoSaveEEPROM();
             }
-            AffChaine(30,0,6, (write_EE_counter ? "EE":"  "));            
+            AffChaine(30,0,6, (write_EE_counter ? "EE":"  "));
         }
     }
 }
@@ -1089,7 +1115,7 @@ void DisplayStatusLine(bool bForce)
 void SaveAdamTapeOrDisk(void)
 {
     if (io_show_status) return; // Don't save while io status
-    
+
     AffChaine(12,0,6, "SAVING");
     if (strstr(lastAdamDataPath, ".ddp") != 0)
         SaveFDI(&Tapes[0], lastAdamDataPath, FMT_DDP);
@@ -1104,7 +1130,7 @@ void SaveAdamTapeOrDisk(void)
 void DigitalDataInsert(char *filename)
 {
     FILE *fp;
-    
+
     // --------------------------------------------
     // Read the .DDP or .DSK into the ROM_Memory[]
     // --------------------------------------------
@@ -1115,19 +1141,19 @@ void DigitalDataInsert(char *filename)
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
     fread(ROM_Memory, tape_len, 1, fp);
     fclose(fp);
-     
+
     // --------------------------------------------
     // And set it as the active ddp or dsk...
     // --------------------------------------------
     strcpy(lastAdamDataPath, filename);
     if (strstr(lastAdamDataPath, ".ddp") != 0)
     {
-        ChangeTape(0, lastAdamDataPath);  
+        ChangeTape(0, lastAdamDataPath);
     }
     else
     {
         ChangeDisk(0, lastAdamDataPath);
-    }    
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -1136,14 +1162,14 @@ void DigitalDataInsert(char *filename)
 void CassetteInsert(char *filename)
 {
     FILE *fp;
-    
+
     fp = fopen(filename, "rb");
     fseek(fp, 0, SEEK_END);
     LastROMSize = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
     fread(ROM_Memory, tape_len, 1, fp);
-    tape_pos = 0;    
+    tape_pos = 0;
     tape_len = LastROMSize;
     fclose(fp);
 }
@@ -1158,15 +1184,15 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     cassete_menu_items = 0;
     if (bClearScreen)
     {
-      // ---------------------------------------------------    
+      // ---------------------------------------------------
       // Put up a generic background for this mini-menu...
-      // ---------------------------------------------------    
+      // ---------------------------------------------------
       dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); 
+      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32);
       dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
       swiWaitForVBlank();
     }
-    
+
     if (adam_mode)
     {
         AffChaine(8,8,6,                    "DIGITAL DATA MENU");
@@ -1205,7 +1231,7 @@ void CassetteMenu(void)
 
   SoundPause();
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
-    
+
   if (creativision_mode)
   {
       AffChaine(5,0,0, "BAS LOADING");
@@ -1222,26 +1248,26 @@ void CassetteMenu(void)
 
   CassetteMenuShow(true, menuSelection);
 
-  while (true) 
+  while (true)
   {
     nds_key = keysCurrent();
     if (nds_key)
     {
-        if (nds_key & KEY_UP)  
+        if (nds_key & KEY_UP)
         {
             menuSelection = (menuSelection > 0) ? (menuSelection-1):(cassete_menu_items-1);
             CassetteMenuShow(false, menuSelection);
         }
-        if (nds_key & KEY_DOWN)  
+        if (nds_key & KEY_DOWN)
         {
             menuSelection = (menuSelection+1) % cassete_menu_items;
             CassetteMenuShow(false, menuSelection);
         }
-        if (nds_key & KEY_A)  
+        if (nds_key & KEY_A)
         {
             if (menuSelection == 0) // SAVE CASSETTE
             {
-                if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE DATA?") == ID_SHM_YES) 
+                if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE DATA?") == ID_SHM_YES)
                 {
                     if (adam_mode)
                     {
@@ -1292,10 +1318,10 @@ void CassetteMenu(void)
                       AffChaine(12,0,6, "REWOUND");
                       WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                       AffChaine(12,0,6, "       ");
-                      DisplayStatusLine(true);                      
+                      DisplayStatusLine(true);
                       CassetteMenuShow(true, menuSelection);
                   }
-                  if (adam_mode) break;                
+                  if (adam_mode) break;
             }
             if (menuSelection == 3)
             {
@@ -1389,11 +1415,11 @@ void CassetteMenu(void)
                 break;
             }
         }
-        if (nds_key & KEY_B)  
+        if (nds_key & KEY_B)
         {
             break;
         }
-        
+
         while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
         WAITVBL;WAITVBL;
     }
@@ -1401,7 +1427,7 @@ void CassetteMenu(void)
 
   while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
   WAITVBL;WAITVBL;
-    
+
   InitBottomScreen();  // Could be generic or overlay...
 
   SoundUnPause();
@@ -1410,7 +1436,7 @@ void CassetteMenu(void)
 
 
 // ------------------------------------------------------------------------
-// Show the Mini Menu - highlight the selected row. 
+// Show the Mini Menu - highlight the selected row.
 // ------------------------------------------------------------------------
 u8 mini_menu_items = 0;
 void MiniMenuShow(bool bClearScreen, u8 sel)
@@ -1418,15 +1444,15 @@ void MiniMenuShow(bool bClearScreen, u8 sel)
     mini_menu_items = 0;
     if (bClearScreen)
     {
-      // ---------------------------------------------------    
+      // ---------------------------------------------------
       // Put up a generic background for this mini-menu...
-      // ---------------------------------------------------    
+      // ---------------------------------------------------
       dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); 
+      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32);
       dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
       swiWaitForVBlank();
     }
-    
+
     AffChaine(8,7,6,                                           " CV MINI MENU  ");
     AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " RESET  GAME   ");  mini_menu_items++;
     AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " QUIT   GAME   ");  mini_menu_items++;
@@ -1443,28 +1469,28 @@ u8 MiniMenu(void)
 {
   u8 retVal = MENU_CHOICE_NONE;
   u8 menuSelection = 0;
-    
+
   SoundPause();
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
 
   MiniMenuShow(true, menuSelection);
 
-  while (true) 
+  while (true)
   {
     nds_key = keysCurrent();
     if (nds_key)
     {
-        if (nds_key & KEY_UP)  
+        if (nds_key & KEY_UP)
         {
             menuSelection = (menuSelection > 0) ? (menuSelection-1):(mini_menu_items-1);
             MiniMenuShow(false, menuSelection);
         }
-        if (nds_key & KEY_DOWN)  
+        if (nds_key & KEY_DOWN)
         {
             menuSelection = (menuSelection+1) % mini_menu_items;
             MiniMenuShow(false, menuSelection);
         }
-        if (nds_key & KEY_A)  
+        if (nds_key & KEY_A)
         {
             if      (menuSelection == 0) retVal = MENU_CHOICE_RESET_GAME;
             else if (menuSelection == 1) retVal = MENU_CHOICE_END_GAME;
@@ -1475,12 +1501,12 @@ u8 MiniMenu(void)
             else retVal = MENU_CHOICE_NONE;
             break;
         }
-        if (nds_key & KEY_B)  
+        if (nds_key & KEY_B)
         {
             retVal = MENU_CHOICE_NONE;
             break;
         }
-        
+
         while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
         WAITVBL;WAITVBL;
     }
@@ -1488,11 +1514,11 @@ u8 MiniMenu(void)
 
   while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
   WAITVBL;WAITVBL;
-    
+
   InitBottomScreen();  // Could be generic or overlay...
 
   SoundUnPause();
-    
+
   return retVal;
 }
 
@@ -1521,7 +1547,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_HOME;
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
-    {            
+    {
         if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '\\';
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
@@ -1571,7 +1597,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
         else if ((iTx >= 161) && (iTx < 178))  kbd_key = ';';
         else if ((iTx >= 178) && (iTx < 192))  kbd_key = ADAM_KEY_QUOTE;
-        else if ((iTx >= 192) && (iTx < 214))  kbd_key = ADAM_KEY_ENTER;            
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = ADAM_KEY_ENTER;
         else if ((iTx >= 214) && (iTx < 235))  kbd_key = ADAM_KEY_UP;
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_DOWN;
     }
@@ -1588,7 +1614,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
         else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
         else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
-        else if ((iTx >= 184) && (iTx < 214))  kbd_key = ADAM_KEY_ENTER;            
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = ADAM_KEY_ENTER;
         else if ((iTx >= 214) && (iTx < 235))  kbd_key = ADAM_KEY_LEFT;
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_RIGHT;
     }
@@ -1615,12 +1641,12 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         {
             PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
         }
-        
+
         last_special_key = 0;
         AffChaine(4,0,6, "    ");
     }
     if (last_kbd_key != 255) last_kbd_key = kbd_key;
-    
+
     return MENU_CHOICE_NONE;
 }
 
@@ -1633,7 +1659,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if (iTy > 145)   kbd_key = KBD_KEY_DOWN;
         else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
         else                  kbd_key = KBD_KEY_RIGHT;
-    }   
+    }
     else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with I-VI Smartkeys)
     {
         if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;
@@ -1648,8 +1674,8 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
-    {            
-        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = (msx_keyboard_matrix ? ']' : '`');
+    {
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = (msx_keyboard_matrix ? '[' : '`');
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
         else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
@@ -1678,8 +1704,8 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
         else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
-        else if ((iTx >= 174) && (iTx < 189))  kbd_key = (msx_keyboard_matrix ? '`' : '[');
-        else if ((iTx >= 189) && (iTx < 203))  kbd_key = (msx_keyboard_matrix ? '[' : '[');
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = (msx_keyboard_matrix ? ']' : '[');
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = (msx_keyboard_matrix ? '`' : ']');
         else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
@@ -1696,7 +1722,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
         else if ((iTx >= 161) && (iTx < 178))  kbd_key = KBD_KEY_QUOTE;
         else if ((iTx >= 178) && (iTx < 192))  kbd_key = ';';
-        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
@@ -1711,7 +1737,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
         else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
         else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
-        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;
     }
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
@@ -1722,7 +1748,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
-    
+
     return MENU_CHOICE_NONE;
 }
 
@@ -1734,10 +1760,10 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
         else if (iTy > 145)   kbd_key = KBD_KEY_DOWN;
         else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
         else                  kbd_key = KBD_KEY_RIGHT;
-    }   
+    }
     else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with F1 thru F8)
     {
-        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;        
+        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;
         else if ((iTx >= 22)  && (iTx < 49))   kbd_key = KBD_KEY_F1;
         else if ((iTx >= 49)  && (iTx < 75))   kbd_key = KBD_KEY_F2;
         else if ((iTx >= 75)  && (iTx < 101))  kbd_key = KBD_KEY_F3;
@@ -1749,7 +1775,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
         else if ((iTx >= 232) && (iTx < 255))  kbd_key = KBD_KEY_HOME;
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
-    {            
+    {
         if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '\\';
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
@@ -1798,7 +1824,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
         else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
         else if ((iTx >= 161) && (iTx < 178))  kbd_key = ':';
         else if ((iTx >= 178) && (iTx < 192))  kbd_key = ';';
-        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
@@ -1813,7 +1839,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
         else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
         else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
         else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
-        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;            
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;
     }
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
@@ -1822,7 +1848,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
         else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
-    
+
     return MENU_CHOICE_NONE;
 }
 
@@ -1894,10 +1920,10 @@ u8 handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for th
         else if ((iTx >= 36)  && (iTx < 85))   return MENU_CHOICE_MENU;
         else if ((iTx >= 85)  && (iTx < 134))  return MENU_CHOICE_SAVE_GAME;
         else if ((iTx >= 134) && (iTx < 184))  return MENU_CHOICE_LOAD_GAME;
-        else if ((iTx >= 184) && (iTx < 220))  return MENU_CHOICE_END_GAME;    
+        else if ((iTx >= 184) && (iTx < 220))  return MENU_CHOICE_END_GAME;
         else if ((iTx >= 220) && (iTx < 255))  return MENU_CHOICE_CASSETTE;
     }
-    
+
     return MENU_CHOICE_NONE;
 }
 
@@ -1911,7 +1937,7 @@ u8 handle_normal_virtual_keypad(u16 iTx, u16 iTy)  // All other normal overlays 
             return MENU_CHOICE_CASSETTE;
         }
     }
-    
+
     if ((iTx >= 6) && (iTx <= 130))     // We're on the left-side of the screen...
     {
         if ((iTy>=40) && (iTy<67))      // RESET
@@ -1940,9 +1966,9 @@ u8 handle_normal_virtual_keypad(u16 iTx, u16 iTy)  // All other normal overlays 
 }
 
 // ------------------------------------------------------------------------
-// The main emulation loop is here... call into the Z80, VDP and PSG 
+// The main emulation loop is here... call into the Z80, VDP and PSG
 // ------------------------------------------------------------------------
-void colecoDS_main(void) 
+void colecoDS_main(void)
 {
   u16 iTx,  iTy;
   u16 SaveNow = 0, LoadNow = 0;
@@ -1953,13 +1979,13 @@ void colecoDS_main(void)
 
   // Returns when  user has asked for a game to run...
   showMainMenu();
-    
+
   // Get the Coleco Machine Emualtor ready
   colecoInit(gpFic[ucGameAct].szName);
 
   colecoSetPal();
   colecoRun();
-  
+
   // Frame-to-frame timing...
   TIMER1_CR = 0;
   TIMER1_DATA=0;
@@ -1971,37 +1997,37 @@ void colecoDS_main(void)
   TIMER2_CR=TIMER_ENABLE  | TIMER_DIV_1024;
   timingFrames  = 0;
   emuFps=0;
-    
+
   // Default SGM statics back to init state
   last_sgm_mode = false;
   last_ay_mode  = false;
   last_mc_mode  = 0;
-  
+
   // Force the sound engine to turn on when we start emulation
   bStartSoundEngine = true;
-    
+
   // -------------------------------------------------------------------
   // Stay in this loop running the Coleco game until the user exits...
   // -------------------------------------------------------------------
-  while(1)  
+  while(1)
   {
     // Take a tour of the Z80 counter and display the screen if necessary
-    if (!LoopZ80()) 
-    {   
+    if (!LoopZ80())
+    {
         // If we've been asked to start the sound engine, rock-and-roll!
         if (bStartSoundEngine)
         {
               bStartSoundEngine = false;
               SoundUnPause();
         }
-        
+
         // -------------------------------------------------------------
         // Stuff to do once/second such as FPS display and Debug Data
         // -------------------------------------------------------------
         if (TIMER1_DATA >= 32728)   //  1000MS (1 sec)
         {
             char szChai[4];
-            
+
             TIMER1_CR = 0;
             TIMER1_DATA = 0;
             TIMER1_CR=TIMER_ENABLE | TIMER_DIV_1024;
@@ -2009,7 +2035,7 @@ void colecoDS_main(void)
             if (myGlobalConfig.showFPS)
             {
                 if (emuFps == 61) emuFps=60;
-                else if (emuFps == 59) emuFps=60;            
+                else if (emuFps == 59) emuFps=60;
                 if (emuFps/100) szChai[0] = '0' + emuFps/100;
                 else szChai[0] = ' ';
                 szChai[1] = '0' + (emuFps%100) / 10;
@@ -2024,11 +2050,11 @@ void colecoDS_main(void)
             extern u8 sg1000_double_reset;
             if (sg1000_double_reset)
             {
-                sg1000_double_reset=false; 
+                sg1000_double_reset=false;
                 ResetColecovision();
             }
-            
-            if (myConfig.isPAL) myConfig.vertSync=0;    // Force Sync OFF always in PAL mode            
+
+            if (myConfig.isPAL) myConfig.vertSync=0;    // Force Sync OFF always in PAL mode
         }
         emuActFrames++;
 
@@ -2039,10 +2065,10 @@ void colecoDS_main(void)
         if (myConfig.vertSync)
         {
             // --------------------------------------------
-            // NTSC Frame to Frame timing is handled by 
+            // NTSC Frame to Frame timing is handled by
             // the swiWaitForVBlank() call in TMS9918a.c
             // This way we keep tearing to a minimum.
-            // --------------------------------------------            
+            // --------------------------------------------
         }
         else
         {
@@ -2068,24 +2094,24 @@ void colecoDS_main(void)
                 if (myGlobalConfig.showFPS == 2) break;   // If Full Speed, break out...
             }
         }
-        
+
       // If the Z80 Debugger is enabled, call it
 #ifdef DEBUG_Z80
-      ShowDebugZ80();      
+      ShowDebugZ80();
 #endif
-        
+
       // ------------------------------------------
       // Handle any screen touch events
       // ------------------------------------------
       ucUN  = 0;
       kbd_key = 0;
-      if  (keysCurrent() & KEY_TOUCH) 
+      if  (keysCurrent() & KEY_TOUCH)
       {
         touchPosition touch;
         touchRead(&touch);
         iTx = touch.px;
         iTy = touch.py;
-    
+
         // --------------------------------------------------------------------------
         // Test the touchscreen rendering of the ADAM/MSX/SVI/CreatiVision keybaords
         // --------------------------------------------------------------------------
@@ -2108,7 +2134,7 @@ void colecoDS_main(void)
         else    // Normal 12 button virtual keypad
         {
             meta_key = handle_normal_virtual_keypad(iTx, iTy);
-            
+
             ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
             ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
             ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
@@ -2125,57 +2151,57 @@ void colecoDS_main(void)
             ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
             ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
         }
-             
+
         // If the special menu key indicates we should show the choice menu, do so here...
         if (meta_key == MENU_CHOICE_MENU)
         {
             meta_key = MiniMenu();
         }
-         
+
         // -------------------------------------------------------------------
         // If one of the special meta keys was picked, we handle that here...
         // -------------------------------------------------------------------
         switch (meta_key)
         {
-            case MENU_CHOICE_RESET_GAME: 
+            case MENU_CHOICE_RESET_GAME:
                 SoundPause();
                 // Ask for verification
-                if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES) 
-                { 
+                if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES)
+                {
                     ResetColecovision();
                 }
                 showMainMenu();
                 SoundUnPause();
                 break;
-            
+
             case MENU_CHOICE_END_GAME:
                   SoundPause();
                   //  Ask for verification
-                  if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES) 
-                  { 
+                  if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES)
+                  {
                       memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
                       return;
                   }
                   showMainMenu();
-                  DisplayStatusLine(true);            
-                  SoundUnPause();                
+                  DisplayStatusLine(true);
+                  SoundUnPause();
                 break;
-            
+
             case MENU_CHOICE_HI_SCORE:
                 SoundPause();
                 highscore_display(file_crc);
                 DisplayStatusLine(true);
                 SoundUnPause();
                 break;
-            
+
             case MENU_CHOICE_SAVE_GAME:
-                if  (!SaveNow) 
+                if  (!SaveNow)
                 {
                     SoundPause();
                     if (IsFullKeyboard())
                     {
-                        if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES) 
-                        {                      
+                        if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES)
+                        {
                           SaveNow = 1;
                           colecoSaveState();
                         }
@@ -2188,15 +2214,15 @@ void colecoDS_main(void)
                     SoundUnPause();
                 }
                 break;
-            
+
             case MENU_CHOICE_LOAD_GAME:
-                if  (!LoadNow) 
+                if  (!LoadNow)
                 {
                     SoundPause();
                     if (IsFullKeyboard())
                     {
-                        if  (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES) 
-                        {                      
+                        if  (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES)
+                        {
                           LoadNow = 1;
                           colecoLoadState();
                         }
@@ -2209,11 +2235,11 @@ void colecoDS_main(void)
                    SoundUnPause();
                 }
                 break;
-            
+
             case MENU_CHOICE_CASSETTE:
                 CassetteMenu();
                 break;
-            
+
             default:
                 SaveNow = 0;
                 LoadNow = 0;
@@ -2223,7 +2249,7 @@ void colecoDS_main(void)
         // If we are mapping the touch-screen keypad to P2, we shift these up.
         // ---------------------------------------------------------------------
         if (myConfig.touchPad) ucUN = ucUN << 16;
-          
+
         if (++dampenClick > 1)  // Make sure the key is pressed for an appreciable amount of time...
         {
             if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
@@ -2233,7 +2259,7 @@ void colecoDS_main(void)
             lastUN = (ucUN ? ucUN:kbd_key);
         }
       } //  SCR_TOUCH
-      else  
+      else
       {
         SaveNow=LoadNow = 0;
         lastUN = 0;  dampenClick = 0;
@@ -2247,7 +2273,7 @@ void colecoDS_main(void)
       spinX_right = 0;
       spinY_left  = 0;
       spinY_right = 0;
-        
+
       // ------------------------------------------------------------------------
       //  Test DS keypresses (ABXY, L/R) and map to corresponding Coleco keys
       // ------------------------------------------------------------------------
@@ -2255,10 +2281,10 @@ void colecoDS_main(void)
       key_ctrl = false;
       key_code = false;
       key_graph = false;
-            
-      ucDEUX  = 0;  
+
+      ucDEUX  = 0;
       nds_key  = keysCurrent();
-      if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X)) 
+      if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X))
       {
             lcdSwap();
             WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
@@ -2270,7 +2296,7 @@ void colecoDS_main(void)
             WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
             AffChaine(5,0,0,"        ");
       }
-      else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y)) 
+      else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y))
       {
           if (IsFullKeyboard() && ((nds_key & KEY_L) || (nds_key & KEY_R)))
           {
@@ -2280,12 +2306,12 @@ void colecoDS_main(void)
           else if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
           {
               einstein_load_com_file();
-              WAITVBL;WAITVBL;WAITVBL;              
+              WAITVBL;WAITVBL;WAITVBL;
           }
           else if (memotech_mode && (nds_key & KEY_START))
           {
               extern u8 memotech_magrom_present;
-              
+
               if (memotech_magrom_present)
               {
                   BufferKey('R');
@@ -2308,7 +2334,7 @@ void colecoDS_main(void)
                       BufferKey(KBD_KEY_RET);
                       BufferKey(KBD_KEY_RET);
                   }
-                  
+
                   BufferKey('L');
                   BufferKey('O');
                   BufferKey('A');
@@ -2375,47 +2401,86 @@ void colecoDS_main(void)
           {
               if (nds_key & NDS_keyMap[i])
               {
-                  if (keyCoresp[myConfig.keymap[i]] < 0xFFFF0000)   // Normal key map
+                  if (keyCoresp[myConfig.keymap[i]] < 0xFFFE0000)   // Normal key map
                   {
-                    ucDEUX  |= keyCoresp[myConfig.keymap[i]];
+                      ucDEUX  |= keyCoresp[myConfig.keymap[i]];
                   }
-                  else // Special Spinner Handling
+                  else if (keyCoresp[myConfig.keymap[i]] < 0xFFFF0000)   // Special Spinner Handling
                   {
                       if      (keyCoresp[myConfig.keymap[i]] == META_SPINX_LEFT)  spinX_left  = 1;
                       else if (keyCoresp[myConfig.keymap[i]] == META_SPINX_RIGHT) spinX_right = 1;
                       else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_LEFT)  spinY_left  = 1;
                       else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_RIGHT) spinY_right = 1;
                   }
+                  else // This is a keyboard maping... handle that here... just set the appopriate kbd_key
+                  {
+                      if      ((keyCoresp[myConfig.keymap[i]] >= META_KBD_A) && (keyCoresp[myConfig.keymap[i]] <= META_KBD_Z))  kbd_key = ('A' + (keyCoresp[myConfig.keymap[i]] - META_KBD_A));
+                      else if ((keyCoresp[myConfig.keymap[i]] >= META_KBD_0) && (keyCoresp[myConfig.keymap[i]] <= META_KBD_9))  kbd_key = ('0' + (keyCoresp[myConfig.keymap[i]] - META_KBD_0));
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE)     kbd_key = ' ';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)    kbd_key = (adam_mode ? ADAM_KEY_ENTER : KBD_KEY_RET);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ESC)       kbd_key = (adam_mode ? ADAM_KEY_ESC : KBD_KEY_ESC);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SHIFT)     key_shift = 1;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CTRL)      key_ctrl  = 1;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CODE)      key_code  = 1;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_GRAPH)     key_graph = 1;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_HOME)      kbd_key = (adam_mode ? ADAM_KEY_HOME  : KBD_KEY_HOME);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_UP)        kbd_key = (adam_mode ? ADAM_KEY_UP    : KBD_KEY_UP);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_DOWN)      kbd_key = (adam_mode ? ADAM_KEY_DOWN  : KBD_KEY_DOWN);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT)      kbd_key = (adam_mode ? ADAM_KEY_LEFT  : KBD_KEY_LEFT);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT)     kbd_key = (adam_mode ? ADAM_KEY_RIGHT : KBD_KEY_RIGHT);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PERIOD)    kbd_key = '.';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_COMMA)     kbd_key = ',';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_COLON)     kbd_key = ':';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SEMI)      kbd_key = ';';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_QUOTE)     kbd_key = (adam_mode ? ADAM_KEY_QUOTE : KBD_KEY_QUOTE);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SLASH)     kbd_key = '/';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_BACKSLASH) kbd_key = '\\';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PLUS)      kbd_key = '+';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_MINUS)     kbd_key = '-';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_LBRACKET)  kbd_key = '[';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RBRACKET)  kbd_key = ']';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_BS)        kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CARET)     kbd_key = '^';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ASTERISK)  kbd_key = '*';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_TAB)       kbd_key = (adam_mode ? ADAM_KEY_TAB : KBD_KEY_TAB);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_INS)       kbd_key = (adam_mode ? ADAM_KEY_INS : KBD_KEY_INS);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_DEL)       kbd_key = (adam_mode ? ADAM_KEY_DEL : KBD_KEY_DEL);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_WILDCARD)  kbd_key = (adam_mode ? ADAM_KEY_WILDCARD : KBD_KEY_WILDCARD);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STORE)     kbd_key = (adam_mode ? ADAM_KEY_STORE : KBD_KEY_STORE);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PRINT)     kbd_key = (adam_mode ? ADAM_KEY_PRINT : KBD_KEY_PRINT);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STOP)      kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_STOP);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F1)        kbd_key = (adam_mode ? ADAM_KEY_F1 : KBD_KEY_F1);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F2)        kbd_key = (adam_mode ? ADAM_KEY_F2 : KBD_KEY_F2);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F3)        kbd_key = (adam_mode ? ADAM_KEY_F3 : KBD_KEY_F3);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F4)        kbd_key = (adam_mode ? ADAM_KEY_F4 : KBD_KEY_F4);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F5)        kbd_key = (adam_mode ? ADAM_KEY_F5 : KBD_KEY_F5);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F6)        kbd_key = (adam_mode ? ADAM_KEY_F6 : KBD_KEY_F6);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F7)        kbd_key = KBD_KEY_F7;
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F8)        kbd_key = KBD_KEY_F8;                      
+
+                      if (adam_mode)
+                      {
+                          if (kbd_key != last_mapped_key && (kbd_key != 0) && (last_mapped_key != 255))
+                          {
+                              PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
+                              mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+                              last_mapped_key = kbd_key;
+                          }                            
+                      }
+                  }
               }
           }
       }
-        
+      else
+      {
+          last_mapped_key = 0;
+      }
+
       // ---------------------------------------------------------
-      // Accumulate all bits above into the Joystick State var... 
+      // Accumulate all bits above into the Joystick State var...
       // ---------------------------------------------------------
       JoyState = ucUN | ucDEUX;
 
-      // -------------------------------------------------------------------
-      // If we are ADAM mode and we have configured joystick-keyboard map...
-      // -------------------------------------------------------------------
-      if (adam_mode)
-      {
-          static u16 LastNdsState = 999;
-          if (nds_key != LastNdsState)
-          {
-              for (u8 i=0; i<12; i++)
-              {
-                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_UP))     PutKBD(ADAM_KEY_UP);
-                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_DOWN))   PutKBD(ADAM_KEY_DOWN);
-                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT))   PutKBD(ADAM_KEY_LEFT);
-                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT))  PutKBD(ADAM_KEY_RIGHT);
-                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)) PutKBD(ADAM_KEY_ENTER);
-                  if ((nds_key & NDS_keyMap[i]) && (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE))  PutKBD(' ');
-              }
-          }
-          LastNdsState = nds_key;
-      }          
-        
       // --------------------------------------------------
       // Handle Auto-Fire if enabled in configuration...
       // --------------------------------------------------
@@ -2448,7 +2513,7 @@ void useVRAM(void)
 /*********************************************************************************
  * Init DS Emulator - setup VRAM banks and background screen rendering banks
  ********************************************************************************/
-void colecoDSInit(void) 
+void colecoDSInit(void)
 {
   //  Init graphic mode (bitmap mode)
   videoSetMode(MODE_0_2D  | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -2457,10 +2522,10 @@ void colecoDSInit(void)
   vramSetBankB(VRAM_B_MAIN_SPRITE);          // Once emulation of game starts, we steal this back for an additional 128K of VRAM at 0x6820000
   vramSetBankC(VRAM_C_SUB_BG);
   vramSetBankD(VRAM_D_SUB_SPRITE);
-    
+
   //  Stop blending effect of intro
   REG_BLDCNT=0; REG_BLDCNT_SUB=0; REG_BLDY=0; REG_BLDY_SUB=0;
-  
+
   //  Render the top screen
   bg0 = bgInit(0, BgType_Text8bpp,  BgSize_T_256x512, 31,0);
   bg1 = bgInit(1, BgType_Text8bpp,  BgSize_T_256x512, 29,0);
@@ -2480,7 +2545,7 @@ void colecoDSInit(void)
   dmaCopy((void*) ecranBasSelPal,(void*)  BG_PALETTE_SUB,256*2);
   dmaVal  = *(bgGetMapPtr(bg0b)+24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
-    
+
   //  Find the files
   colecoDSFindFiles();
 }
@@ -2604,7 +2669,7 @@ void InitBottomScreen(void)
           decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
-#else        
+#else
       if (msx_mode)
       {
           //  Init bottom screen
@@ -2645,20 +2710,20 @@ void InitBottomScreen(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
       }
-#endif 
+#endif
     }
-    
+
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
-    
+
     DisplayStatusLine(true);
 }
 
 /*********************************************************************************
  * Init CPU for the current game
  ********************************************************************************/
-void colecoDSInitCPU(void) 
-{ 
+void colecoDSInitCPU(void)
+{
   //  -----------------------------------------
   //  Init Main Memory and VDP Video Memory
   //  -----------------------------------------
@@ -2690,7 +2755,7 @@ void colecoDSInitCPU(void)
       msx_restore_bios();
   }
   else if (svi_mode)
-  { 
+  {
       svi_restore_bios();
   }
   else if (adam_mode)
@@ -2704,11 +2769,11 @@ void colecoDSInitCPU(void)
   else if (einstein_mode)
   {
       einstien_restore_bios();
-  }    
+  }
   else if (creativision_mode)
   {
       creativision_restore_bios();
-  }    
+  }
   else  // Finally we get to the Coleco BIOS
   {
       if (myConfig.cpuCore == 0)    // If DrZ80 core... put the BIOS into main RAM for now
@@ -2721,8 +2786,8 @@ void colecoDSInitCPU(void)
 // -------------------------------------------------------------
 // Only used for basic timing of moving the Mario sprite...
 // -------------------------------------------------------------
-void irqVBlank(void) 
-{ 
+void irqVBlank(void)
+{
  // Manage time
   vusCptVBL++;
 }
@@ -2735,9 +2800,9 @@ void LoadBIOSFiles(void)
     FILE *fp;
 
     memset(BIOS_Memory, 0xFF, 0x10000); // All of BIOS area is FF until loaded up
-    
+
     // --------------------------------------------------
-    // We will look for all 3 BIOS files here but only 
+    // We will look for all 3 BIOS files here but only
     // the Colecovision coleco.rom is critical.
     // --------------------------------------------------
     bColecoBiosFound = false;
@@ -2749,7 +2814,7 @@ void LoadBIOSFiles(void)
     bPencilBiosFound = false;
     bEinsteinBiosFound = false;
     bCreativisionBiosFound = false;
-    
+
     // -----------------------------------------------------------
     // First load Sord M5 bios - don't really care if this fails
     // -----------------------------------------------------------
@@ -2775,7 +2840,7 @@ void LoadBIOSFiles(void)
         fread(PV2000Bios, 0x4000, 1, fp);
         fclose(fp);
     }
-    
+
     // -----------------------------------------------------------
     // Next try to load the MSX.ROM - if this fails we still
     // have the C-BIOS as a good built-in backup.
@@ -2788,7 +2853,7 @@ void LoadBIOSFiles(void)
         bMSXBiosFound = true;
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
-        
+
         // Patch the BIOS for Cassette Access...
         BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
         BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
@@ -2797,12 +2862,12 @@ void LoadBIOSFiles(void)
         BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
         BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
         BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-        
-        
+
+
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         memcpy(MSX_Bios, BIOS_Memory, 0x8000);
     }
-    
+
     fp = fopen("cx5m.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/cx5m.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/cx5m.rom", "rb");
@@ -2811,7 +2876,7 @@ void LoadBIOSFiles(void)
         bMSXBiosFound = true;
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
-        
+
         // Patch the BIOS for Cassette Access...
         BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
         BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
@@ -2820,8 +2885,8 @@ void LoadBIOSFiles(void)
         BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
         BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
         BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-        
-        
+
+
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x0000);
         memcpy(ptr, BIOS_Memory, 0x8000);
@@ -2836,7 +2901,7 @@ void LoadBIOSFiles(void)
         bMSXBiosFound = true;
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
-        
+
         // Patch the BIOS for Cassette Access...
         BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
         BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
@@ -2845,13 +2910,13 @@ void LoadBIOSFiles(void)
         BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
         BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
         BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-        
-        
+
+
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x8000);
         memcpy(ptr, BIOS_Memory, 0x8000);
     }
-    
+
     // Sony Hit-Bit HB-10 (Japan)
     fp = fopen("hb-10.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/hb-10.rom", "rb");
@@ -2861,7 +2926,7 @@ void LoadBIOSFiles(void)
         bMSXBiosFound = true;
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
-        
+
         // Patch the BIOS for Cassette Access...
         BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
         BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
@@ -2870,8 +2935,8 @@ void LoadBIOSFiles(void)
         BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
         BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
         BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-        
-        
+
+
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x10000);
         memcpy(ptr, BIOS_Memory, 0x8000);
@@ -2886,7 +2951,7 @@ void LoadBIOSFiles(void)
         bMSXBiosFound = true;
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
-        
+
         // Patch the BIOS for Cassette Access...
         BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
         BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
@@ -2895,12 +2960,12 @@ void LoadBIOSFiles(void)
         BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
         BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
         BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-        
+
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x18000);
         memcpy(ptr, BIOS_Memory, 0x8000);
-    }    
-    
+    }
+
 
     // -----------------------------------------------------------
     // Next try to load the SVI.ROM
@@ -2914,7 +2979,7 @@ void LoadBIOSFiles(void)
         fread(SVIBios, 0x8000, 1, fp);
         fclose(fp);
     }
-    
+
     // -----------------------------------------------------------
     // Next try to load the PENCIL2.ROM
     // -----------------------------------------------------------
@@ -2927,7 +2992,7 @@ void LoadBIOSFiles(void)
         fread(Pencil2Bios, 0x2000, 1, fp);
         fclose(fp);
     }
-    
+
     // -----------------------------------------------------------
     // Next try to load the EINSTIEN.ROM
     // -----------------------------------------------------------
@@ -2953,7 +3018,7 @@ void LoadBIOSFiles(void)
         fread(CreativisionBios, 0x800, 1, fp);
         fclose(fp);
     }
-    
+
     // -----------------------------------------------------------
     // Try loading the EOS.ROM and WRITER.ROM Adam files...
     // -----------------------------------------------------------
@@ -2966,7 +3031,7 @@ void LoadBIOSFiles(void)
         fread(AdamEOS, 0x2000, 1, fp);
         fclose(fp);
     }
-    
+
     if (bAdamBiosFound)
     {
         fp = fopen("writer.rom", "rb");
@@ -2980,7 +3045,7 @@ void LoadBIOSFiles(void)
         }
         else bAdamBiosFound = false;    // Both EOS and WRITER need to be found...
     }
-    
+
     // -----------------------------------------------------------
     // Coleco ROM BIOS must exist or the show is off!
     // -----------------------------------------------------------
@@ -2999,47 +3064,47 @@ void LoadBIOSFiles(void)
  * Program entry point - check if an argument has been passed in probably from TWL++
  ********************************************************************************/
 char initial_file[256];
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
   //  Init sound
   consoleDemoInit();
-    
+
   if  (!fatInitDefault()) {
      iprintf("Unable to initialize libfat!\n");
      return -1;
   }
-    
+
   highscore_init();
 
   lcdMainOnTop();
-    
+
   //  Init timer for frame management
   TIMER2_DATA=0;
-  TIMER2_CR=TIMER_ENABLE|TIMER_DIV_1024;  
+  TIMER2_CR=TIMER_ENABLE|TIMER_DIV_1024;
   dsInstallSoundEmuFIFO();
 
   //  Show the fade-away intro logo...
   intro_logo();
-  
-  SetYtrigger(190); //trigger 2 lines before vsync    
-    
+
+  SetYtrigger(190); //trigger 2 lines before vsync
+
   irqSet(IRQ_VBLANK,  irqVBlank);
   irqEnable(IRQ_VBLANK);
-    
+
   // -----------------------------------------------------------------
   // Grab the BIOS before we try to switch any directories around...
   // -----------------------------------------------------------------
   useVRAM();
   LoadBIOSFiles();
-    
-  // -----------------------------------------------------------------  
+
+  // -----------------------------------------------------------------
   // And do an initial load of configuration... We'll match it up
   // with the game that was selected later...
-  // -----------------------------------------------------------------  
+  // -----------------------------------------------------------------
   LoadConfig();
-    
+
   //  Handle command line argument... mostly for TWL++
-  if  (argc > 1) 
+  if  (argc > 1)
   {
       //  We want to start in the directory where the file is being launched...
       if  (strchr(argv[1], '/') != NULL)
@@ -3048,7 +3113,7 @@ int main(int argc, char **argv)
           strcpy(path,  argv[1]);
           char  *ptr = &path[strlen(path)-1];
           while (*ptr !=  '/') ptr--;
-          ptr++;  
+          ptr++;
           strcpy(initial_file,  ptr);
           *ptr=0;
           chdir(path);
@@ -3064,18 +3129,18 @@ int main(int argc, char **argv)
       chdir("/roms");    // Try to start in roms area... doesn't matter if it fails
       chdir("coleco");   // And try to start in the subdir /coleco... doesn't matter if it fails.
   }
-    
+
   SoundPause();
-  
+
   //  ------------------------------------------------------------
   //  We run this loop forever until game exit is selected...
   //  ------------------------------------------------------------
-  while(1)  
+  while(1)
   {
     colecoDSInit();
 
     // ---------------------------------------------------------------
-    // Let the user know what BIOS files were found - the only BIOS 
+    // Let the user know what BIOS files were found - the only BIOS
     // that must exist is coleco.rom or else the show is off...
     // ---------------------------------------------------------------
     if (bColecoBiosFound)
@@ -3084,14 +3149,14 @@ int main(int argc, char **argv)
         {
             u8 idx = 6;
             AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
-                                         AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND"); 
+                                         AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND");
             if (bMSXBiosFound)          {AffChaine(2,idx++,0,"msx.rom        BIOS FOUND"); }
             if (bSVIBiosFound)          {AffChaine(2,idx++,0,"svi.rom        BIOS FOUND"); }
             if (bSordBiosFound)         {AffChaine(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
             if (bPV2000BiosFound)       {AffChaine(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
             if (bPencilBiosFound)       {AffChaine(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
             if (bEinsteinBiosFound)     {AffChaine(2,idx++,0,"einstein.rom   BIOS FOUND"); }
-            if (bCreativisionBiosFound) {AffChaine(2,idx++,0,"bioscv.rom     BIOS FOUND"); }    
+            if (bCreativisionBiosFound) {AffChaine(2,idx++,0,"bioscv.rom     BIOS FOUND"); }
             if (bAdamBiosFound)         {AffChaine(2,idx++,0,"eos.rom        BIOS FOUND"); }
             if (bAdamBiosFound)         {AffChaine(2,idx++,0,"writer.rom     BIOS FOUND"); }
             AffChaine(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
@@ -3110,8 +3175,8 @@ int main(int argc, char **argv)
         AffChaine(2,15,0,"as EMULATOR or /ROMS/BIOS");
         while(1) ;  // We're done... Need a coleco bios to run a CV emulator
     }
-  
-    while(1) 
+
+    while(1)
     {
       SoundPause();
       //  Choose option
@@ -3123,7 +3188,7 @@ int main(int argc, char **argv)
           initial_file[0] = 0;    // No more initial file...
           ReadFileCRCAndConfig(); // Get CRC32 of the file and read the config/keys
       }
-      else  
+      else
       {
           colecoDSChangeOptions();
       }
