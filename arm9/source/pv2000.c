@@ -210,6 +210,7 @@ unsigned char cpu_readport_pv2000(register unsigned short Port)
       {
           if (JoyState == JST_POUND)    joy1 |= 0x01;
           if (kbd_key == KBD_KEY_RET)   joy1 |= 0x01;
+          if (kbd_key == KBD_KEY_HOME)  joy1 |= 0x02;
           if (kbd_key == KBD_KEY_DEL)   joy1 |= 0x04;
       }
       

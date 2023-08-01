@@ -132,13 +132,14 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD 8",
   "KEYBOARD 9",
     
-  "KEYBOARD SPACE",
-  "KEYBOARD RETURN",
-  "KEYBOARD ESC",
   "KEYBOARD SHIFT",
   "KEYBOARD CTRL",
   "KEYBOARD CODE",
   "KEYBOARD GRAPH",
+    
+  "KEYBOARD SPACE",
+  "KEYBOARD RETURN",
+  "KEYBOARD ESC",
     
   "KEYBOARD HOME",
   "KEYBOARD UP",
@@ -159,10 +160,14 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD RBRACKET",
   "KEYBOARD CARET",
   "KEYBOARD ASTERISK",
+  "KEYBOARD ATSIGN",
   "KEYBOARD BS",
   "KEYBOARD TAB",
   "KEYBOARD INS",
   "KEYBOARD DEL",
+  "KEYBOARD CLEAR",
+  "KEYBOARD UNDO",
+  "KEYBOARD MOVE",
   "KEYBOARD WILDCARD",
   "KEYBOARD STORE",
   "KEYBOARD PRINT",
@@ -1193,9 +1198,8 @@ void SetDefaultGameConfig(void)
     myConfig.keymap[5]   = 5;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
     myConfig.keymap[6]   = 6;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
     myConfig.keymap[7]   = 7;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
-    
-    myConfig.keymap[8]   = 10;   // NDS L      mapped to Keypad #3
-    myConfig.keymap[9]   = 11;   // NDS R      mapped to Keypad #4
+    myConfig.keymap[8]   = 81;   // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;   // NDS L      mapped to SHIFT
     myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
     myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
     

@@ -300,10 +300,11 @@ would personally try them:
 Versions :
 -----------------------
 V8.2: 01-Aug-2023 by wavemotion-dave
-* Major rework of the keyboard handler for improved visuals and emulation of the ADAM, MSX, MTX and more.
-* New global configuration handling.
+* Major rework of the keyboard handler for improved visuals and emulation of the ADAM, MSX, MTX, PV-2000, Einstein, SC-3000 and more.
+* New global configuration handling - you can disable the showing of the BIOS screen at startup among other features.
+* Brighter main font for improved contrast.
 * New MSX BIOS roms can be optionally installed: cx5m.rom, hx-10.rom, hb-10.rom, fs-1300.rom
-* Other tweaks and improvements as time permitted.
+* Other tweaks, fixes and improvements as time permitted.
 
 V8.1: 22-Jul-2023 by wavemotion-dave
 * Major rework of the CreatiVision driver for much improved compatibility and loading of BASIC listings.

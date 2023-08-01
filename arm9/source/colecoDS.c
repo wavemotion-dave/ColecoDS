@@ -281,13 +281,13 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     META_KBD_7,
     META_KBD_8,
     META_KBD_9,
-    META_KBD_SPACE,
-    META_KBD_RETURN,
-    META_KBD_ESC,
     META_KBD_SHIFT,
     META_KBD_CTRL,
     META_KBD_CODE,
     META_KBD_GRAPH,
+    META_KBD_SPACE,
+    META_KBD_RETURN,
+    META_KBD_ESC,
     META_KBD_HOME,
     META_KBD_UP,
     META_KBD_DOWN,
@@ -306,10 +306,14 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     META_KBD_RBRACKET,
     META_KBD_CARET,
     META_KBD_ASTERISK,
+    META_KBD_ATSIGN,
     META_KBD_BS,
     META_KBD_TAB,
     META_KBD_INS,
     META_KBD_DEL,
+    META_KBD_CLR,
+    META_KBD_UNDO,
+    META_KBD_MOVE,    
     META_KBD_WILDCARD,
     META_KBD_STORE,
     META_KBD_PRINT,
@@ -2283,7 +2287,8 @@ void colecoDS_main(void)
       key_graph = false;
 
       ucDEUX  = 0;
-      nds_key  = keysCurrent();
+      nds_key  = keysCurrent();     // Get any current keys pressed on the NDS
+        
       if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X))
       {
             lcdSwap();
@@ -2300,10 +2305,11 @@ void colecoDS_main(void)
       {
           if (IsFullKeyboard() && ((nds_key & KEY_L) || (nds_key & KEY_R)))
           {
-              if (nds_key & KEY_L) key_shift = true;
-              if (nds_key & KEY_R) key_ctrl = true;
+              //if (nds_key & KEY_L) key_shift = true;
+              //if (nds_key & KEY_R) key_ctrl = true;
           }
-          else if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
+          
+          if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
           {
               einstein_load_com_file();
               WAITVBL;WAITVBL;WAITVBL;
@@ -2442,9 +2448,13 @@ void colecoDS_main(void)
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_BS)        kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CARET)     kbd_key = '^';
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ASTERISK)  kbd_key = '*';
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ATSIGN)    kbd_key = '@';
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_TAB)       kbd_key = (adam_mode ? ADAM_KEY_TAB : KBD_KEY_TAB);
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_INS)       kbd_key = (adam_mode ? ADAM_KEY_INS : KBD_KEY_INS);
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_DEL)       kbd_key = (adam_mode ? ADAM_KEY_DEL : KBD_KEY_DEL);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CLR)       kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_CLEAR);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_UNDO)      kbd_key = (adam_mode ? ADAM_KEY_UNDO : KBD_KEY_UNDO);
+                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_MOVE)      kbd_key = (adam_mode ? ADAM_KEY_MOVE : KBD_KEY_MOVE);                     
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_WILDCARD)  kbd_key = (adam_mode ? ADAM_KEY_WILDCARD : KBD_KEY_WILDCARD);
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STORE)     kbd_key = (adam_mode ? ADAM_KEY_STORE : KBD_KEY_STORE);
                       else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PRINT)     kbd_key = (adam_mode ? ADAM_KEY_PRINT : KBD_KEY_PRINT);
