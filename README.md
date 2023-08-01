@@ -73,8 +73,9 @@ Emulator MEMO which helped me get some
 preliminary and simple MTX-500 support 
 included.
 
-Thanks to Darryl Hirschler for the CreatiVision
-keypad/keyboard graphic.
+Thanks to Darryl Hirschler for the keyboard graphics 
+for the CreatiVision keypad, the ADAM keyboard,
+the MSX keyboard and the MTX keyboard.
 
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 
