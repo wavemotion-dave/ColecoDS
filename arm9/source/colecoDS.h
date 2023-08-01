@@ -116,13 +116,14 @@ extern u32 debug4;
 #define META_KBD_8          0xFFFF0023
 #define META_KBD_9          0xFFFF0024
 
-#define META_KBD_SPACE      0xFFFF0025
-#define META_KBD_RETURN     0xFFFF0026
-#define META_KBD_ESC        0xFFFF0027
-#define META_KBD_SHIFT      0xFFFF0028
-#define META_KBD_CTRL       0xFFFF0029
-#define META_KBD_CODE       0xFFFF002A
-#define META_KBD_GRAPH      0xFFFF002B
+#define META_KBD_SHIFT      0xFFFF0025
+#define META_KBD_CTRL       0xFFFF0026
+#define META_KBD_CODE       0xFFFF0027
+#define META_KBD_GRAPH      0xFFFF0028
+
+#define META_KBD_SPACE      0xFFFF0029
+#define META_KBD_RETURN     0xFFFF002A
+#define META_KBD_ESC        0xFFFF002B
 #define META_KBD_HOME       0xFFFF002C
 #define META_KBD_UP         0xFFFF002D
 #define META_KBD_DOWN       0xFFFF002E
@@ -141,24 +142,28 @@ extern u32 debug4;
 #define META_KBD_RBRACKET   0xFFFF003B
 #define META_KBD_CARET      0xFFFF003C
 #define META_KBD_ASTERISK   0xFFFF003D
-#define META_KBD_BS         0xFFFF003E
-#define META_KBD_TAB        0xFFFF003F
-#define META_KBD_INS        0xFFFF0040
-#define META_KBD_DEL        0xFFFF0041
-#define META_KBD_WILDCARD   0xFFFF0042
-#define META_KBD_STORE      0xFFFF0043
-#define META_KBD_PRINT      0xFFFF0044
-#define META_KBD_STOP       0xFFFF0045
-#define META_KBD_F1         0xFFFF0046
-#define META_KBD_F2         0xFFFF0047
-#define META_KBD_F3         0xFFFF0048
-#define META_KBD_F4         0xFFFF0049
-#define META_KBD_F5         0xFFFF004A
-#define META_KBD_F6         0xFFFF004B
-#define META_KBD_F7         0xFFFF004C
-#define META_KBD_F8         0xFFFF004D
+#define META_KBD_ATSIGN     0xFFFF003E
+#define META_KBD_BS         0xFFFF003F
+#define META_KBD_TAB        0xFFFF0040
+#define META_KBD_INS        0xFFFF0041
+#define META_KBD_DEL        0xFFFF0042
+#define META_KBD_CLR        0xFFFF0043
+#define META_KBD_UNDO       0xFFFF0044
+#define META_KBD_MOVE       0xFFFF0045
+#define META_KBD_WILDCARD   0xFFFF0046
+#define META_KBD_STORE      0xFFFF0047
+#define META_KBD_PRINT      0xFFFF0048
+#define META_KBD_STOP       0xFFFF0049
+#define META_KBD_F1         0xFFFF004A
+#define META_KBD_F2         0xFFFF004B
+#define META_KBD_F3         0xFFFF004C
+#define META_KBD_F4         0xFFFF004D
+#define META_KBD_F5         0xFFFF004E
+#define META_KBD_F6         0xFFFF004F
+#define META_KBD_F7         0xFFFF0050
+#define META_KBD_F8         0xFFFF0051
 
-#define MAX_KEY_OPTIONS     121
+#define MAX_KEY_OPTIONS     125
 
 
 #define JOYMODE_JOYSTICK    0
@@ -201,6 +206,9 @@ extern u32 debug4;
 #define KBD_KEY_WILDCARD    32
 #define KBD_KEY_STORE       33
 #define KBD_KEY_PRINT       34
+#define KBD_KEY_CLEAR       35
+#define KBD_KEY_MOVE        36
+#define KBD_KEY_UNDO        37
 #define KBD_KEY_CAS         255
 
 extern u16 emuFps;
