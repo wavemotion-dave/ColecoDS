@@ -172,7 +172,7 @@ This emulator will support .cas files for the Spectravideo SV-328 (64K machine).
 
 Sega SG-1000 Compatibility :
 -----------------------
-This emulator supports .sg files as ROM loads. Generally all SG-1000 games run with high compatibility (mostly thanks to the very simple architecture which is quite like the Colecovision).
+This emulator supports .sg files as ROM loads up to 48K. Generally all SG-1000 games run with high compatibility (mostly thanks to the very simple architecture which is quite like the Colecovision).  The 8K Dahjee RAM expansion and additional RAM above 1K supported.
 
 Sega SC-3000 Compatibility :
 -----------------------
