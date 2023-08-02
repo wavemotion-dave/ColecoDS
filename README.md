@@ -142,7 +142,7 @@ Considering this is a Colecovision emulator, the MSX1 support and compatibility 
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run.
 
-MSX is not a single machine but a standard - there are lots of machines and lots of BIOS files. The one I'm using to do all my testing is MSX.ROM with a CRC32 of 94ee12f3.  Seek that one out - it's used by default in a lot of other emulators.
+MSX is not a single machine but a standard - there are lots of machines and lots of BIOS files. The one I did most of my testing is MSX.ROM with a CRC32 of 94ee12f3 - this is the one used by many other MSX emulators. ColecoDS also supports four other specific machines - see the BIOS section above for details on those roms.
 
 MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
 
@@ -159,7 +159,7 @@ The MSX memory is based on which MSX rom BIOS you are using:
 //---------------------------------------------------------------
 
 //---------------------------------------------------------------
-// Yamaha CX5M with 32K of Memory in Slot 1
+// Yamaha CX5M with 32K of Memory in Slot 0
 //---------------------------------------------------------------
 // Memory          Slot 0       Slot 1      Slot 2      Slot 3
 // C000h~FFFFh    16K RAM     Cartridge      ---         ---
