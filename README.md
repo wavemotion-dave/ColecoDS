@@ -146,12 +146,48 @@ MSX is not a single machine but a standard - there are lots of machines and lots
 
 MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
 
-The MSX memory is laid out as follows:
+The MSX memory is based on which MSX rom BIOS you are using:
 ```
- SLOT0:  MSX BIOS (first 32K... 0xFF after that)
- SLOT1:  Cartridge Slot (this is where the game ROM lives)
- SLOT2:  Empty (0xFF always)
- SLOT3:  RAM (64K)
+//---------------------------------------------------------------
+// National FS-1300 and generic C-BIOS or MSX.ROM 64K Slot 3
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh      ---       Cartridge      ---       16K RAM
+// 8000h~BFFFh      ---       Cartridge      ---       16K RAM
+// 4000h~7FFFh    Main-ROM    Cartridge      ---       16K RAM
+// 0000h~3FFFh    Main-ROM    Cartridge      ---       16K RAM
+//---------------------------------------------------------------
+
+//---------------------------------------------------------------
+// Yamaha CX5M with 32K of Memory in Slot 1
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh    16K RAM     Cartridge      ---         ---
+// 8000h~BFFFh    16K RAM     Cartridge      ---         ---
+// 4000h~7FFFh    Main-ROM    Cartridge      ---         ---
+// 0000h~3FFFh    Main-ROM    Cartridge      ---         ---
+//---------------------------------------------------------------
+
+//---------------------------------------------------------------
+// Toshiba HX-10 with 64K of memory in Slot 2
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh      ---       Cartridge     16K RAM      ---
+// 8000h~BFFFh      ---       Cartridge     16K RAM      ---
+// 4000h~7FFFh    Main-ROM    Cartridge     16K RAM      ---
+// 0000h~3FFFh    Main-ROM    Cartridge     16K RAM      ---
+//---------------------------------------------------------------
+
+//---------------------------------------------------------------
+// Sony Hit-Bit HB-10 has 16K of RAM in slot 0
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh    16K RAM     Cartridge      ---         ---
+// 8000h~BFFFh       ---      Cartridge      ---         ---
+// 4000h~7FFFh    Main-ROM    Cartridge      ---         ---
+// 0000h~3FFFh    Main-ROM    Cartridge      ---         ---
+//---------------------------------------------------------------
+
 ```
 
 Memotech MTX Compatibility :
@@ -231,18 +267,12 @@ to one of five different settings (Normal, Fast, Fastest, Slow, Slowest).
 By default, the spinners are only enabled for the few games that use 
 them - but you can force them by changing the Spinner Speed.
 
-For the MSX emulation, the colecovision keypad is mapped as follows:
-```
-  1   2   3
-  
-  4   ?   STP
-  
-  F1  F2  F3
-  
-  SPC 0   RET
-```
-That should be enough to get most MSX1 cart games running...  In Game Options you can also override the '?' key to be any mappable MSX key. For the few games that still require the MSX arrows to play - you can emulate that via the D-PAD in Game Options.
-As of version 6.1 there is also a custom overlay for "MSX Full" keyboard.
+For the MSX emulation, the colecovision keypad is mapped to some of the
+common keyboard keys -  enough to get most MSX1 cart games running...  
+In Game Options you can also override the '?' key to be any mappable MSX key. 
+For the few games that still require the MSX arrows to play - you can emulate 
+that via the D-PAD in Game Options. As of version 6.1 there is also a 
+custom overlay for "MSX Full" keyboard in both International and Japanese styles.
 
 Keyboards :
 -----------------------
