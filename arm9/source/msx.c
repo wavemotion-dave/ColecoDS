@@ -388,6 +388,617 @@ unsigned char cpu_readport_msx(register unsigned short Port)
 }
 
 
+//---------------------------------------------------------------
+// National FS-1300 and generic C-BIOS or MSX.ROM 64K Slot 3
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh      ---       Cartridge      ---       16K RAM
+// 8000h~BFFFh      ---       Cartridge      ---       16K RAM
+// 4000h~7FFFh    Main-ROM    Cartridge      ---       16K RAM
+// 0000h~3FFFh    Main-ROM    Cartridge      ---       16K RAM
+//---------------------------------------------------------------
+void msx_slot_map_generic(unsigned char Value)
+{
+    // ---------------------------------------------------------------------
+    // Slot 0 holds the 32K of MSX BIOS (0xFF above 32K)
+    // Slot 1 is where the Game Cartridge Lives (up to 64K)
+    // Slot 2 is empty (0xFF always)
+    // Slot 3 is our main RAM. We emulate 64K of RAM
+    // ---------------------------------------------------------------------
+    if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
+    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = BIOS_Memory + 0x0000;
+            MemoryMap[1] = BIOS_Memory + 0x2000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[0] = 1;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
+                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                break;
+            }
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to our 64K of RAM
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 1;
+            MemoryMap[0] = RAM_Memory+0x0000;
+            MemoryMap[1] = RAM_Memory+0x2000;
+            break;
+    }
+
+    if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
+    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = BIOS_Memory + 0x4000;
+            MemoryMap[3] = BIOS_Memory + 0x6000;                    
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[1] = 1;
+                bRAMInSlot[1] = 0;
+                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to our 64K of RAM
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 1;
+            MemoryMap[2] = RAM_Memory+0x4000;
+            MemoryMap[3] = RAM_Memory+0x6000;
+            break;
+    }
+
+    if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
+    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[2] = 1;
+                bRAMInSlot[2] = 0;
+                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to our 64K of RAM
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 1;
+            MemoryMap[4] = RAM_Memory+0x8000;
+            MemoryMap[5] = RAM_Memory+0xA000;
+            break;
+    }
+
+    if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
+    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[3] = 1;
+                bRAMInSlot[3] = 0;
+                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
+                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3 is RAM so we allow RAM writes now
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 1;
+            MemoryMap[6] = RAM_Memory+0xC000;
+            MemoryMap[7] = RAM_Memory+0xE000;
+            break;
+    }
+}
+
+//---------------------------------------------------------------
+// Toshiba CX5M with 32K of Memory in Slot 1
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh    16K RAM     Cartridge      ---         ---
+// 8000h~BFFFh    16K RAM     Cartridge      ---         ---
+// 4000h~7FFFh    Main-ROM    Cartridge      ---         ---
+// 0000h~3FFFh    Main-ROM    Cartridge      ---         ---
+//---------------------------------------------------------------
+void msx_slot_map_cx5m(unsigned char Value)
+{
+    // ---------------------------------------------------------------------
+    // Slot 0 holds the 32K of MSX BIOS and 32K in upper banks.
+    // Slot 1 is where the Game Cartridge Lives (up to 64K)
+    // Slot 2 is empty (0xFF always)
+    // Slot 3 is empty (0xFF always)
+    // ---------------------------------------------------------------------
+    if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
+    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = BIOS_Memory + 0x0000;
+            MemoryMap[1] = BIOS_Memory + 0x2000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[0] = 1;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
+                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
+    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = BIOS_Memory + 0x4000;
+            MemoryMap[3] = BIOS_Memory + 0x6000;                    
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[1] = 1;
+                bRAMInSlot[1] = 0;
+                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
+    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to our 32K of Emulated RAM
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 1;
+            MemoryMap[4] = RAM_Memory+0x8000;
+            MemoryMap[5] = RAM_Memory+0xA000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[2] = 1;
+                bRAMInSlot[2] = 0;
+                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
+    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to our 32K of Emulated RAM
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 1;
+            MemoryMap[6] = RAM_Memory+0xC000;
+            MemoryMap[7] = RAM_Memory+0xE000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[3] = 1;
+                bRAMInSlot[3] = 0;
+                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
+                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3: Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+    }
+}
+
+//---------------------------------------------------------------
+// Toshiba HX-10 with 64K of memory in Slot 2
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh      ---       Cartridge     16K RAM      ---
+// 8000h~BFFFh      ---       Cartridge     16K RAM      ---
+// 4000h~7FFFh    Main-ROM    Cartridge     16K RAM      ---
+// 0000h~3FFFh    Main-ROM    Cartridge     16K RAM      ---
+//---------------------------------------------------------------
+void msx_slot_map_hx10(unsigned char Value)
+{
+    if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
+    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = BIOS_Memory + 0x0000;
+            MemoryMap[1] = BIOS_Memory + 0x2000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[0] = 1;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
+                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+            }
+            else    // Maps to nothing
+            {
+                bROMInSlot[0] = 0;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+                MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            }
+            break;
+        case 0x02:  // Slot 2:  Maps to our 64K of RAM
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 1;
+            MemoryMap[0] = RAM_Memory+0x0000;
+            MemoryMap[1] = RAM_Memory+0x2000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
+    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = BIOS_Memory + 0x4000;
+            MemoryMap[3] = BIOS_Memory + 0x6000;                    
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[1] = 1;
+                bRAMInSlot[1] = 0;
+                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+            }
+            else    // Maps to nothing
+            {
+                bROMInSlot[0] = 0;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+                MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            }
+            break;
+        case 0x02:  // Slot 2:  Maps to our 64K of RAM
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 1;
+            MemoryMap[2] = RAM_Memory+0x4000;
+            MemoryMap[3] = RAM_Memory+0x6000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
+    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[2] = 1;
+                bRAMInSlot[2] = 0;
+                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+            }
+            else    // Maps to nothing
+            {
+                bROMInSlot[0] = 0;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+                MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            }
+            break;
+        case 0x02:  // Slot 2:  Maps to our 64K of RAM
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 1;
+            MemoryMap[4] = RAM_Memory+0x8000;
+            MemoryMap[5] = RAM_Memory+0xA000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
+    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[3] = 1;
+                bRAMInSlot[3] = 0;
+                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
+                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+            }
+            else    // Maps to nothing
+            {
+                bROMInSlot[0] = 0;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+                MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            }
+            break;
+        case 0x02:  // Slot 2 is RAM so we allow RAM writes now
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 1;
+            MemoryMap[6] = RAM_Memory+0xC000;
+            MemoryMap[7] = RAM_Memory+0xE000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+    }
+}
+
+//---------------------------------------------------------------
+// Sony Hit-Bit HB-10 has 16K of RAM in slot 0
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh    16K RAM     Cartridge      ---         ---
+// 8000h~BFFFh       ---      Cartridge      ---         ---
+// 4000h~7FFFh    Main-ROM    Cartridge      ---         ---
+// 0000h~3FFFh    Main-ROM    Cartridge      ---         ---
+//---------------------------------------------------------------
+void msx_slot_map_hb10(unsigned char Value)
+{
+    if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
+    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = BIOS_Memory + 0x0000;
+            MemoryMap[1] = BIOS_Memory + 0x2000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[0] = 1;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
+                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
+    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = BIOS_Memory + 0x4000;
+            MemoryMap[3] = BIOS_Memory + 0x6000;                    
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[1] = 1;
+                bRAMInSlot[1] = 0;
+                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
+    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[2] = 1;
+                bRAMInSlot[2] = 0;
+                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
+    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to our 16K of Emulated RAM
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 1;
+            MemoryMap[6] = RAM_Memory+0xC000;
+            MemoryMap[7] = RAM_Memory+0xE000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[3] = 1;
+                bRAMInSlot[3] = 0;
+                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
+                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3: Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+    }
+}
+
 // ----------------------------------------------------------------------
 // MSX IO Port Write - VDP and AY Sound Chip plus Slot Mapper $A8
 // ----------------------------------------------------------------------
@@ -407,138 +1018,17 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             // ---------------------------------------------------------------------
             // bits 7-6     bits 5-4     bits 3-2      bits 1-0
             // C000h~FFFF   8000h~BFFF   4000h~7FFF    0000h~3FFF
-            // 
-            // Slot 0 holds the 32K of MSX BIOS (0xFF above 32K)
-            // Slot 1 is where the Game Cartridge Lives (up to 64K)
-            // Slot 2 is empty (0xFF always)
-            // Slot 3 is our main RAM. We emulate 64K of RAM
             // ---------------------------------------------------------------------
-            if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
-            switch ((Value>>0) & 0x03)  // Main Memory - Slot 0 [0x0000~0x3FFF]
-            {
-                case 0x00:  // Slot 0:  Maps to BIOS Rom
-                    bROMInSlot[0] = 0;
-                    bRAMInSlot[0] = 0;
-                    MemoryMap[0] = BIOS_Memory + 0x0000;
-                    MemoryMap[1] = BIOS_Memory + 0x2000;
-                    break;
-                case 0x01:  // Slot 1:  Maps to Game Cart
-                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
-                    {
-                        bROMInSlot[0] = 1;
-                        bRAMInSlot[0] = 0;
-                        MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
-                        MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
-                        break;
-                    }
-                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                    bROMInSlot[0] = 0;
-                    bRAMInSlot[0] = 0;
-                    MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
-                    MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
-                    break;
-                case 0x03:  // Slot 3:  Maps to our 64K of RAM
-                    bROMInSlot[0] = 0;
-                    bRAMInSlot[0] = 1;
-                    MemoryMap[0] = RAM_Memory+0x0000;
-                    MemoryMap[1] = RAM_Memory+0x2000;
-                    break;
-            }
             
-            if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
-            switch ((Value>>2) & 0x03)  // Main Memory - Slot 1  [0x4000~0x7FFF]
+            // Based on the machine we are emulating, we map memory slightly differently.
+            switch (myConfig.msxBios)
             {
-                case 0x00:  // Slot 0:  Maps to BIOS Rom
-                    bROMInSlot[1] = 0;
-                    bRAMInSlot[1] = 0;
-                    MemoryMap[2] = BIOS_Memory + 0x4000;
-                    MemoryMap[3] = BIOS_Memory + 0x6000;                    
-                    break;
-                case 0x01:  // Slot 1:  Maps to Game Cart
-                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
-                    {
-                        bROMInSlot[1] = 1;
-                        bRAMInSlot[1] = 0;
-                        MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-                        MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
-                        break;
-                    }
-                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                    bROMInSlot[1] = 0;
-                    bRAMInSlot[1] = 0;
-                    MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
-                    MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
-                    break;
-                case 0x03:  // Slot 3:  Maps to our 64K of RAM
-                    bROMInSlot[1] = 0;
-                    bRAMInSlot[1] = 1;
-                    MemoryMap[2] = RAM_Memory+0x4000;
-                    MemoryMap[3] = RAM_Memory+0x6000;
-                    break;
-            }
-            
-            if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
-            switch ((Value>>4) & 0x03)  // Main Memory - Slot 2  [0x8000~0xBFFF]
-            {
-                case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-                    bROMInSlot[2] = 0;
-                    bRAMInSlot[2] = 0;
-                    MemoryMap[4] = BIOS_Memory+0x8000;
-                    MemoryMap[5] = BIOS_Memory+0x8000;
-                    break;
-                case 0x01:  // Slot 1:  Maps to Game Cart
-                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
-                    {
-                        bROMInSlot[2] = 1;
-                        bRAMInSlot[2] = 0;
-                        MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                        MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
-                        break;
-                    }
-                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                    bROMInSlot[2] = 0;
-                    bRAMInSlot[2] = 0;
-                    MemoryMap[4] = BIOS_Memory+0x8000;
-                    MemoryMap[5] = BIOS_Memory+0x8000;
-                    break;
-                case 0x03:  // Slot 3:  Maps to our 64K of RAM
-                    bROMInSlot[2] = 0;
-                    bRAMInSlot[2] = 1;
-                    MemoryMap[4] = RAM_Memory+0x8000;
-                    MemoryMap[5] = RAM_Memory+0xA000;
-                    break;
-            }
-            
-            if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
-            switch ((Value>>6) & 0x03)  // Main Memory - Slot 3  [0xC000~0xFFFF]
-            {
-                case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-                    bROMInSlot[3] = 0;
-                    bRAMInSlot[3] = 0;
-                    MemoryMap[6] = BIOS_Memory+0x8000;
-                    MemoryMap[7] = BIOS_Memory+0x8000;
-                    break;
-                case 0x01:  // Slot 1:  Maps to Game Cart
-                    if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
-                    {
-                        bROMInSlot[3] = 1;
-                        bRAMInSlot[3] = 0;
-                        MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
-                        MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
-                        break;
-                    }
-                case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-                    bROMInSlot[3] = 0;
-                    bRAMInSlot[3] = 0;
-                    MemoryMap[6] = BIOS_Memory+0x8000;
-                    MemoryMap[7] = BIOS_Memory+0x8000;
-                    break;
-                case 0x03:  // Slot 3 is RAM so we allow RAM writes now
-                    bROMInSlot[3] = 0;
-                    bRAMInSlot[3] = 1;
-                    MemoryMap[6] = RAM_Memory+0xC000;
-                    MemoryMap[7] = RAM_Memory+0xE000;
-                    break;
+                case 1:  msx_slot_map_generic(Value); break;     // Generic MSX.ROM (64K mapped in slot 3)
+                case 2:  msx_slot_map_cx5m(Value);    break;     // Yamaha CX5M (32K mapped in slot 0)
+                case 3:  msx_slot_map_hx10(Value);    break;     // Toshiba HX-10 (64K mapped in slot 2)
+                case 4:  msx_slot_map_hb10(Value);    break;     // Sony HB-10 (16K mapped in slot 0)
+                case 5:  msx_slot_map_generic(Value); break;     // National FS-1300 (64K mapped in slot 3)
+                default: msx_slot_map_generic(Value); break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }
             
             Port_PPI_A = Value;             // Useful when read back
@@ -1121,7 +1611,7 @@ void msx_restore_bios(void)
     if (myConfig.msxBios)
     {
         extern u8 MSX_Bios[];
-        // Determine which of the 4 MSX bios flavors we should load...
+        // Determine which of the  MSX BIOS / machine flavors we should load...
         switch (myConfig.msxBios)
         {
             case 1: memcpy(BIOS_Memory, MSX_Bios, 0x8000); break;                                               // Generic MSX.ROM
