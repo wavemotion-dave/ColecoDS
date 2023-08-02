@@ -149,7 +149,7 @@ MSX1 cassettes are supported in .CAS format. You can use the START and SELECT bu
 The MSX memory is based on which MSX rom BIOS you are using:
 ```
 //---------------------------------------------------------------
-// National FS-1300 and generic C-BIOS or MSX.ROM 64K Slot 3
+// National FS-1300 or generic C-BIOS or MSX.ROM 64K Slot 3
 //---------------------------------------------------------------
 // Memory          Slot 0       Slot 1      Slot 2      Slot 3
 // C000h~FFFFh      ---       Cartridge      ---       16K RAM
