@@ -120,7 +120,7 @@ For the MSX, we support 4 optional BIOS ROMs. To be honest, after quite a bit of
 * ee229390  hb-10.rom - Sony HitBit JP Machine with 16K of RAM (uses the Japanese matrix)
 * 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese matrix)
 ```
-Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names) - place them into your usual BIOS directory.
+Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names) - place them into your usual BIOS directory. Once you select one of these optional BIOS roms (in Configuration), you will also enable that specific MSX machine to be emulated. This means RAM and memory slots will be exactly the same as the machine you're trying to emulate. See the MSX section for details on this.
 
 ADAM Compatibility :
 -----------------------
