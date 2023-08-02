@@ -147,7 +147,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           else if (last_special_key == KBD_KEY_CODE)
           {
-            AffChaine(4,0,6, "CODE");
+            AffChaine(4,0,6, (msx_keyboard_matrix ? "KANA":"CODE"));
             key_code = 1;
           }
           else if (last_special_key == KBD_KEY_GRAPH)
@@ -323,10 +323,6 @@ unsigned char cpu_readport_msx(register unsigned short Port)
             if (myConfig.msxKey5 == 1) key1 |= 0x01;  // SHIFT
             if (myConfig.msxKey5 == 2) key1 |= 0x02;  // CTRL
           }
-          if (key_shift)  key1 |= 0x01;  // SHIFT
-          if (key_ctrl)   key1 |= 0x02;  // CTRL
-          if (key_graph)  key1 |= 0x04;  // GRAPH
-          if (key_code)   key1 |= 0x10;  // CODE
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
@@ -338,7 +334,10 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (kbd_key == KBD_KEY_F2)    key1 = 0x40;
               if (kbd_key == KBD_KEY_F3)    key1 = 0x80;
           }          
-          if (key_shift)                    key1 |= 0x01;  // SHIFT
+          if (key_shift)  key1 |= 0x01;  // SHIFT
+          if (key_ctrl)   key1 |= 0x02;  // CTRL
+          if (key_graph)  key1 |= 0x04;  // GRAPH
+          if (key_code)   key1 |= 0x10;  // CODE/KANA
       }
       else if ((Port_PPI_C & 0x0F) == 7) // Row 7
       {
@@ -406,7 +405,7 @@ void msx_slot_map_generic(unsigned char Value)
     // Slot 3 is our main RAM. We emulate 64K of RAM
     // ---------------------------------------------------------------------
     if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
-    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[0] = 0;
@@ -438,7 +437,7 @@ void msx_slot_map_generic(unsigned char Value)
     }
 
     if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
-    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[1] = 0;
@@ -471,7 +470,7 @@ void msx_slot_map_generic(unsigned char Value)
     }
 
     if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
-    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
             bROMInSlot[2] = 0;
@@ -504,7 +503,7 @@ void msx_slot_map_generic(unsigned char Value)
     }
 
     if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
-    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
             bROMInSlot[3] = 0;
@@ -538,7 +537,7 @@ void msx_slot_map_generic(unsigned char Value)
 }
 
 //---------------------------------------------------------------
-// Toshiba CX5M with 32K of Memory in Slot 1
+// Yamaha CX5M with 32K of Memory in Slot 1
 //---------------------------------------------------------------
 // Memory          Slot 0       Slot 1      Slot 2      Slot 3
 // C000h~FFFFh    16K RAM     Cartridge      ---         ---
@@ -548,14 +547,8 @@ void msx_slot_map_generic(unsigned char Value)
 //---------------------------------------------------------------
 void msx_slot_map_cx5m(unsigned char Value)
 {
-    // ---------------------------------------------------------------------
-    // Slot 0 holds the 32K of MSX BIOS and 32K in upper banks.
-    // Slot 1 is where the Game Cartridge Lives (up to 64K)
-    // Slot 2 is empty (0xFF always)
-    // Slot 3 is empty (0xFF always)
-    // ---------------------------------------------------------------------
     if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
-    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[0] = 0;
@@ -588,7 +581,7 @@ void msx_slot_map_cx5m(unsigned char Value)
     }
 
     if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
-    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[1] = 0;
@@ -621,7 +614,7 @@ void msx_slot_map_cx5m(unsigned char Value)
     }
 
     if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
-    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to our 32K of Emulated RAM
             bROMInSlot[2] = 0;
@@ -654,7 +647,7 @@ void msx_slot_map_cx5m(unsigned char Value)
     }
 
     if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
-    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to our 32K of Emulated RAM
             bROMInSlot[3] = 0;
@@ -699,7 +692,7 @@ void msx_slot_map_cx5m(unsigned char Value)
 void msx_slot_map_hx10(unsigned char Value)
 {
     if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
-    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[0] = 0;
@@ -738,7 +731,7 @@ void msx_slot_map_hx10(unsigned char Value)
     }
 
     if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
-    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[1] = 0;
@@ -756,10 +749,10 @@ void msx_slot_map_hx10(unsigned char Value)
             }
             else    // Maps to nothing
             {
-                bROMInSlot[0] = 0;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
-                MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+                bROMInSlot[1] = 0;
+                bRAMInSlot[1] = 0;
+                MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+                MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             }
             break;
         case 0x02:  // Slot 2:  Maps to our 64K of RAM
@@ -777,7 +770,7 @@ void msx_slot_map_hx10(unsigned char Value)
     }
 
     if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
-    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
             bROMInSlot[2] = 0;
@@ -795,10 +788,10 @@ void msx_slot_map_hx10(unsigned char Value)
             }
             else    // Maps to nothing
             {
-                bROMInSlot[0] = 0;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
-                MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+                bROMInSlot[2] = 0;
+                bRAMInSlot[2] = 0;
+                MemoryMap[4] = (u8 *)BIOS_Memory+0x8000;
+                MemoryMap[5] = (u8 *)BIOS_Memory+0x8000;
             }
             break;
         case 0x02:  // Slot 2:  Maps to our 64K of RAM
@@ -816,7 +809,7 @@ void msx_slot_map_hx10(unsigned char Value)
     }
 
     if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
-    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
             bROMInSlot[3] = 0;
@@ -834,10 +827,10 @@ void msx_slot_map_hx10(unsigned char Value)
             }
             else    // Maps to nothing
             {
-                bROMInSlot[0] = 0;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
-                MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+                bROMInSlot[3] = 0;
+                bRAMInSlot[3] = 0;
+                MemoryMap[6] = (u8 *)BIOS_Memory+0x8000;
+                MemoryMap[7] = (u8 *)BIOS_Memory+0x8000;
             }
             break;
         case 0x02:  // Slot 2 is RAM so we allow RAM writes now
@@ -867,7 +860,7 @@ void msx_slot_map_hx10(unsigned char Value)
 void msx_slot_map_hb10(unsigned char Value)
 {
     if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
-    switch ((Value>>0) & 0x03)  // Slot 0 [0x0000~0x3FFF]
+    switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[0] = 0;
@@ -900,7 +893,7 @@ void msx_slot_map_hb10(unsigned char Value)
     }
 
     if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
-    switch ((Value>>2) & 0x03)  // Slot 1  [0x4000~0x7FFF]
+    switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
             bROMInSlot[1] = 0;
@@ -933,7 +926,7 @@ void msx_slot_map_hb10(unsigned char Value)
     }
 
     if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
-    switch ((Value>>4) & 0x03)  // Slot 2  [0x8000~0xBFFF]
+    switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
             bROMInSlot[2] = 0;
@@ -966,7 +959,7 @@ void msx_slot_map_hb10(unsigned char Value)
     }
 
     if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
-    switch ((Value>>6) & 0x03)  // Slot 3  [0xC000~0xFFFF]
+    switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to our 16K of Emulated RAM
             bROMInSlot[3] = 0;

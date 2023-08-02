@@ -1657,6 +1657,8 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
 
 u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
 {
+    static u8 bKanaShown = 0;
+    
     if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
     {
         if      (iTy < 120)   kbd_key = KBD_KEY_UP;
@@ -1724,8 +1726,8 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 117) && (iTx < 132))  kbd_key = 'J';
         else if ((iTx >= 132) && (iTx < 147))  kbd_key = 'K';
         else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
-        else if ((iTx >= 161) && (iTx < 178))  kbd_key = KBD_KEY_QUOTE;
-        else if ((iTx >= 178) && (iTx < 192))  kbd_key = ';';
+        else if ((iTx >= 161) && (iTx < 178))  kbd_key = (msx_keyboard_matrix ? ';' : KBD_KEY_QUOTE);
+        else if ((iTx >= 178) && (iTx < 192))  kbd_key = (msx_keyboard_matrix ? KBD_KEY_QUOTE : ';');
         else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
@@ -1748,9 +1750,15 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
         else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
         else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 190))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}
-        else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 163) && (iTx < 191))  {kbd_key = KBD_KEY_CODE; if (msx_keyboard_matrix) {AffChaine(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
+        else if ((iTx >= 191) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+    
+    if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
+    {
+        AffChaine(4,0,6,"    ");
+        bKanaShown = 0;
     }
 
     return MENU_CHOICE_NONE;
@@ -2878,9 +2886,15 @@ void LoadBIOSFiles(void)
         memcpy(MSX_Bios, BIOS_Memory, 0x8000);
     }
 
+    // Yamaha CX5M
     fp = fopen("cx5m.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/cx5m.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/cx5m.rom", "rb");
+
+    if (fp == NULL) fp = fopen("cx5m_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/cx5m_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/cx5m_basic-bios1.rom", "rb");
+    
     if (fp != NULL)
     {
         bMSXBiosFound = true;
@@ -2906,6 +2920,11 @@ void LoadBIOSFiles(void)
     fp = fopen("hx-10.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/hx-10.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/hx-10.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("hx-10_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/hx-10_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/hx-10_basic-bios1.rom", "rb");
+    
     if (fp != NULL)
     {
         bMSXBiosFound = true;
@@ -2931,6 +2950,11 @@ void LoadBIOSFiles(void)
     fp = fopen("hb-10.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/hb-10.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/hb-10.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("hb-10_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/hb-10_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/hb-10_basic-bios1.rom", "rb");
+    
     if (fp != NULL)
     {
         bMSXBiosFound = true;
@@ -2956,6 +2980,11 @@ void LoadBIOSFiles(void)
     fp = fopen("fs-1300.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/fs-1300.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/fs-1300.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("fs-1300_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/fs-1300_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/fs-1300_basic-bios1.rom", "rb");
+    
     if (fp != NULL)
     {
         bMSXBiosFound = true;

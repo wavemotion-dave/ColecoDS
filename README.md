@@ -115,10 +115,10 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 For the MSX, we support 4 optional BIOS ROMs. To be honest, after quite a bit of searching online, I'm not quite sure what machine the ubiquitous msx.rom represents - it's some generic European machine but that's about all I can gleen. As such, starting with version 8.2, ColecoDS will support 4 additional optional MSX BIOS roms as follows (and you can select them in Configuration and set a global default if you like):
 
 ```
-* cx5m.rom  - Yamaha's UK/EU Machine
-* hx-10.rom - Toshiba's UK/EU Machine
-* hb-10.rom - Sony HitBit JP Machine (uses the Japanese matrix)
-* fs-1300.rom - National JP Machine (uses the Japanese matrix)
+* e9ccd789  cx5m.rom  - Yamaha's UK/EU Machine with 32K of RAM
+* 5486b711  hx-10.rom - Toshiba's UK/EU Machine with 64K of RAM
+* ee229390  hb-10.rom - Sony HitBit JP Machine with 16K of RAM (uses the Japanese matrix)
+* 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese matrix)
 ```
 Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names) - place them into your usual BIOS directory.
 
