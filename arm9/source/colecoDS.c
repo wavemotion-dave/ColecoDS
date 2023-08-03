@@ -35,6 +35,7 @@
 #include "mtx_full.h"
 #include "msx_japan.h"
 #include "adam_full.h"
+#include "alpha_kbd.h"
 #include "pv2000_sm.h"
 #include "ecranDebug.h"
 #include "ecranBasSel.h"
@@ -1939,6 +1940,81 @@ u8 handle_cvision_keyboard_press(u16 iTx, u16 iTy)  // Special controller for th
     return MENU_CHOICE_NONE;
 }
 
+u8 handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Generic and Simplified Alpha-Numeric Keyboard
+{
+    if ((iTy >= 14) && (iTy < 48))   // Row 1 (number row)
+    {
+        if      ((iTx >= 0)   && (iTx < 28))   kbd_key = '1';
+        else if ((iTx >= 28)  && (iTx < 54))   kbd_key = '2';
+        else if ((iTx >= 54)  && (iTx < 80))   kbd_key = '3';
+        else if ((iTx >= 80)  && (iTx < 106))  kbd_key = '4';
+        else if ((iTx >= 106) && (iTx < 132))  kbd_key = '5';
+        else if ((iTx >= 132) && (iTx < 148))  kbd_key = '6';
+        else if ((iTx >= 148) && (iTx < 174))  kbd_key = '7';
+        else if ((iTx >= 174) && (iTx < 200))  kbd_key = '8';
+        else if ((iTx >= 200) && (iTx < 226))  kbd_key = '9';
+        else if ((iTx >= 226) && (iTx < 255))  kbd_key = '0';
+    }
+    else if ((iTy >= 48) && (iTy < 85))  // Row 2 (QWERTY row)
+    {
+        if      ((iTx >= 0)   && (iTx < 28))   kbd_key = 'Q';
+        else if ((iTx >= 28)  && (iTx < 54))   kbd_key = 'W';
+        else if ((iTx >= 54)  && (iTx < 80))   kbd_key = 'E';
+        else if ((iTx >= 80)  && (iTx < 106))  kbd_key = 'R';
+        else if ((iTx >= 106) && (iTx < 132))  kbd_key = 'T';
+        else if ((iTx >= 132) && (iTx < 148))  kbd_key = 'Y';
+        else if ((iTx >= 148) && (iTx < 174))  kbd_key = 'U';
+        else if ((iTx >= 174) && (iTx < 200))  kbd_key = 'I';
+        else if ((iTx >= 200) && (iTx < 226))  kbd_key = 'O';
+        else if ((iTx >= 226) && (iTx < 255))  kbd_key = 'P';
+    }
+    else if ((iTy >= 85) && (iTy < 122)) // Row 3 (ASDF row)
+    {
+        if      ((iTx >= 0)   && (iTx < 28))   kbd_key = 'A';
+        else if ((iTx >= 28)  && (iTx < 54))   kbd_key = 'S';
+        else if ((iTx >= 54)  && (iTx < 80))   kbd_key = 'D';
+        else if ((iTx >= 80)  && (iTx < 106))  kbd_key = 'F';
+        else if ((iTx >= 106) && (iTx < 132))  kbd_key = 'G';
+        else if ((iTx >= 132) && (iTx < 148))  kbd_key = 'H';
+        else if ((iTx >= 148) && (iTx < 174))  kbd_key = 'J';
+        else if ((iTx >= 174) && (iTx < 200))  kbd_key = 'K';
+        else if ((iTx >= 200) && (iTx < 226))  kbd_key = 'L';
+        else if ((iTx >= 226) && (iTx < 255))  kbd_key = kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);;
+    }
+    else if ((iTy >= 122) && (iTy < 159)) // Row 4 (ZXCV row)
+    {
+        if      ((iTx >= 0)   && (iTx < 28))   kbd_key = 'Z';
+        else if ((iTx >= 28)  && (iTx < 54))   kbd_key = 'X';
+        else if ((iTx >= 54)  && (iTx < 80))   kbd_key = 'C';
+        else if ((iTx >= 80)  && (iTx < 106))  kbd_key = 'V';
+        else if ((iTx >= 106) && (iTx < 132))  kbd_key = 'B';
+        else if ((iTx >= 132) && (iTx < 148))  kbd_key = 'N';
+        else if ((iTx >= 148) && (iTx < 174))  kbd_key = 'M';
+        else if ((iTx >= 174) && (iTx < 200))  kbd_key = ',';
+        else if ((iTx >= 200) && (iTx < 226))  kbd_key = '.';
+        else if ((iTx >= 226) && (iTx < 255))  kbd_key = (adam_mode ? ADAM_KEY_ENTER : KBD_KEY_RET);
+    }
+    else if ((iTy >= 159) && (iTy < 192)) // Row 5 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 52))   return MENU_CHOICE_MENU;
+        else if ((iTx >= 54)  && (iTx < 202))  kbd_key = ' ';
+        else if ((iTx >= 202) && (iTx < 255))  return MENU_CHOICE_CASSETTE; 
+    }
+    
+    if (adam_mode)
+    {
+        if (kbd_key != last_kbd_key && (kbd_key != 0) && (last_kbd_key != 255))
+        {
+            PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
+            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+            last_kbd_key = kbd_key;
+        }
+    }
+    
+    return MENU_CHOICE_NONE;
+}
+
+
 u8 handle_normal_virtual_keypad(u16 iTx, u16 iTy)  // All other normal overlays with keypad on the right and menu choices on the left
 {
     // For ADAM, the standard overlay has a CASSETTE icon to save data...
@@ -2143,6 +2219,10 @@ void colecoDS_main(void)
         {
             meta_key = handle_cvision_keyboard_press(iTx, iTy);
         }
+        else if (myConfig.overlay == 13) // Simplified Alpha Keyboard
+        {
+            meta_key = handle_alpha_keyboard_press(iTx, iTy);
+        }
         else    // Normal 12 button virtual keypad
         {
             meta_key = handle_normal_virtual_keypad(iTx, iTy);
@@ -2266,7 +2346,7 @@ void colecoDS_main(void)
         {
             if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
             {
-                mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+                if (!adam_mode) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback... ADAM handers do this for us
             }
             lastUN = (ucUN ? ucUN:kbd_key);
         }
@@ -2678,6 +2758,14 @@ void InitBottomScreen(void)
       decompress(cvision_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) cvision_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 13) // Alpha Simplified Keyboard
+    {
+      //  Init bottom screen
+      decompress(alpha_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(alpha_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) alpha_kbdPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay
     {

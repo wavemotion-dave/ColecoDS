@@ -72,7 +72,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o cvision_kbd.o msx_sm.o msx_full.o mtx_full.o msx_japan.o adam_full.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o  
+OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o cvision_kbd.o alpha_kbd.o msx_sm.o msx_full.o mtx_full.o msx_japan.o adam_full.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o  
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -147,6 +147,9 @@ adam_sm.s adam_sm.h : adam_sm.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 cvision_kbd.s cvision_kbd.h : cvision_kbd.png
+	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
+
+alpha_kbd.s alpha_kbd.h : alpha_kbd.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 msx_sm.s msx_sm.h : msx_sm.png
