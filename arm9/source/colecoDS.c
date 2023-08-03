@@ -911,6 +911,8 @@ void ShowDebugZ80(void)
 u8 last_pal_mode = 99;
 void DisplayStatusLine(bool bForce)
 {
+    if (myGlobalConfig.emuText == 0) return;
+    
     if (bForce) last_tape_pos = 999999;
     if (bForce) last_pal_mode = 99;
     if (sg1000_mode)
@@ -1979,7 +1981,7 @@ u8 handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Generic and Simplified Alph
         else if ((iTx >= 148) && (iTx < 174))  kbd_key = 'J';
         else if ((iTx >= 174) && (iTx < 200))  kbd_key = 'K';
         else if ((iTx >= 200) && (iTx < 226))  kbd_key = 'L';
-        else if ((iTx >= 226) && (iTx < 255))  kbd_key = kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);;
+        else if ((iTx >= 226) && (iTx < 255))  kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);
     }
     else if ((iTy >= 122) && (iTy < 159)) // Row 4 (ZXCV row)
     {
@@ -2954,21 +2956,29 @@ void LoadBIOSFiles(void)
     fp = fopen("msx.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/msx.rom", "rb");
+
+    // If msx.rom not found, try the Goldstar FC-200 ROM which is likely equivilent
+    if (fp == NULL) fp = fopen("fc-200.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/fc-200.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/fc-200.rom", "rb");    
+    
+    // If msx.rom not found, try the Goldstar FC-200 ROM which is likely equivilent
+    if (fp == NULL) fp = fopen("fc-200_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/fc-200_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/fc-200_basic-bios1.rom", "rb");    
+
+    // If any of the above not found, try the Casio MX-15 ROM which is likely equivilent
+    if (fp == NULL) fp = fopen("mx-15.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/mx-15.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/mx-15.rom", "rb");    
+    
     if (fp != NULL)
     {
         bMSXBiosFound = true;
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
 
-        // Patch the BIOS for Cassette Access...
-        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
-        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
-        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
-        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
-        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
-        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
-        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-
+        msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         memcpy(MSX_Bios, BIOS_Memory, 0x8000);
@@ -2989,15 +2999,7 @@ void LoadBIOSFiles(void)
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
 
-        // Patch the BIOS for Cassette Access...
-        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
-        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
-        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
-        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
-        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
-        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
-        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-
+        msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x0000);
@@ -3019,15 +3021,7 @@ void LoadBIOSFiles(void)
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
 
-        // Patch the BIOS for Cassette Access...
-        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
-        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
-        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
-        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
-        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
-        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
-        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-
+        msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x8000);
@@ -3049,15 +3043,7 @@ void LoadBIOSFiles(void)
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
 
-        // Patch the BIOS for Cassette Access...
-        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
-        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
-        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
-        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
-        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
-        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
-        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
-
+        msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x10000);
@@ -3079,14 +3065,7 @@ void LoadBIOSFiles(void)
         fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
 
-        // Patch the BIOS for Cassette Access...
-        BIOS_Memory[0x00e1] = 0xed; BIOS_Memory[0x00e2] = 0xfe; BIOS_Memory[0x00e3] = 0xc9;
-        BIOS_Memory[0x00e4] = 0xed; BIOS_Memory[0x00e5] = 0xfe; BIOS_Memory[0x00e6] = 0xc9;
-        BIOS_Memory[0x00e7] = 0xed; BIOS_Memory[0x00e8] = 0xfe; BIOS_Memory[0x00e9] = 0xc9;
-        BIOS_Memory[0x00ea] = 0xed; BIOS_Memory[0x00eb] = 0xfe; BIOS_Memory[0x00ec] = 0xc9;
-        BIOS_Memory[0x00ed] = 0xed; BIOS_Memory[0x00ee] = 0xfe; BIOS_Memory[0x00ef] = 0xc9;
-        BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
-        BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
+        msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
         u8 *ptr = (u8*) (0x06880000 + 0x18000);

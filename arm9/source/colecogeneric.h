@@ -5,7 +5,7 @@
 #define MAX_ROM_LENGTH  160
 
 #define MAX_CONFIGS     1358
-#define CONFIG_VER      0x000C
+#define CONFIG_VER      0x000D
 
 #define COLROM          0x01
 #define DIRECT          0x02
@@ -39,7 +39,7 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  showBiosInfo;
     u8  showFPS;
     u8  defaultMSX;
-    u8  global_04;
+    u8  emuText;
     u8  global_05;
     u8  global_06;
     u8  global_07;
