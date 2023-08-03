@@ -1,12 +1,12 @@
 // =====================================================================================
 // Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
-// Copying and distribution of this emulator, it's source code and associated
+// Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
 // royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
 // Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
 //
-// The ColecoDS emulator is offered as-is, without any warranty.
+// The ColecoDS emulator is offered as-is, without any warranty. Please see readme.md
 // =====================================================================================
 #include <nds.h>
 #include <nds/fifomessages.h>
@@ -1992,15 +1992,15 @@ u8 handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Generic and Simplified Alph
         else if ((iTx >= 106) && (iTx < 132))  kbd_key = 'B';
         else if ((iTx >= 132) && (iTx < 148))  kbd_key = 'N';
         else if ((iTx >= 148) && (iTx < 174))  kbd_key = 'M';
-        else if ((iTx >= 174) && (iTx < 200))  kbd_key = ',';
-        else if ((iTx >= 200) && (iTx < 226))  kbd_key = '.';
+        else if ((iTx >= 174) && (iTx < 200))  kbd_key = (key_shift ?  (adam_mode ? ADAM_KEY_QUOTE : KBD_KEY_QUOTE) : ',');
+        else if ((iTx >= 200) && (iTx < 226))  kbd_key = (key_shift ?  (adam_mode ? ADAM_KEY_F1 : KBD_KEY_F1) : '.');
         else if ((iTx >= 226) && (iTx < 255))  kbd_key = (adam_mode ? ADAM_KEY_ENTER : KBD_KEY_RET);
     }
     else if ((iTy >= 159) && (iTy < 192)) // Row 5 (SPACE BAR and icons row)
     {
-        if      ((iTx >= 1)   && (iTx < 52))   return MENU_CHOICE_MENU;
+        if      ((iTx >= 1)   && (iTx < 52))   return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 54)  && (iTx < 202))  kbd_key = ' ';
-        else if ((iTx >= 202) && (iTx < 255))  return MENU_CHOICE_CASSETTE; 
+        else if ((iTx >= 202) && (iTx < 255))  return MENU_CHOICE_MENU; 
     }
     
     if (adam_mode)
