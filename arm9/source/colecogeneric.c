@@ -1,12 +1,12 @@
 // =====================================================================================
 // Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
 //
-// Copying and distribution of this emulator, it's source code and associated 
-// readme files, with or without modification, are permitted in any medium without 
+// Copying and distribution of this emulator, its source code and associated
+// readme files, with or without modification, are permitted in any medium without
 // royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
 // Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
 //
-// The ColecoDS emulator is offered as-is, without any warranty.
+// The ColecoDS emulator is offered as-is, without any warranty. Please see readme.md
 // =====================================================================================
 #include <nds.h>
 
@@ -1156,8 +1156,8 @@ void MapPlayer2(void)
     myConfig.keymap[5]   = 25;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
     myConfig.keymap[6]   = 26;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
     myConfig.keymap[7]   = 27;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
-    myConfig.keymap[8]   = 30;    // NDS L      mapped to Keypad #3
-    myConfig.keymap[9]   = 31;    // NDS R      mapped to Keypad #4
+    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
     myConfig.keymap[10]  = 28;    // NDS Start  mapped to Keypad #1
     myConfig.keymap[11]  = 29;    // NDS Select mapped to Keypad #2
 }
@@ -1172,37 +1172,29 @@ void MapPlayer1(void)
     myConfig.keymap[5]   = 5;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
     myConfig.keymap[6]   = 6;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
     myConfig.keymap[7]   = 7;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
-    myConfig.keymap[8]   = 10;   // NDS L      mapped to Keypad #3
-    myConfig.keymap[9]   = 11;   // NDS R      mapped to Keypad #4
+    myConfig.keymap[8]   = 81;   // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;   // NDS L      mapped to SHIFT
     myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
     myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
+
 }
 
 void SetDefaultGlobalConfig(void)
 {
     // A few global defaults...
     memset(&myGlobalConfig, 0x00, sizeof(myGlobalConfig));
-    myGlobalConfig.showBiosInfo = 1;    // Show BIOS info at startup by default
-    myGlobalConfig.showFPS      = 0;    // Don't show FPS counter by default
-    myGlobalConfig.defaultMSX   = 1;    // Default to the MSX.ROM if available
-    myGlobalConfig.emuText      = 1;    // Default is to show Emulator Text
+    myGlobalConfig.showBiosInfo   = 1;    // Show BIOS info at startup by default
+    myGlobalConfig.showFPS        = 0;    // Don't show FPS counter by default
+    myGlobalConfig.defaultMSX     = 1;    // Default to the MSX.ROM if available
+    myGlobalConfig.emuText        = 1;    // Default is to show Emulator Text
+    myGlobalConfig.msxCartOverlay = 1;    // Default is to show Keyboard for CART games
 }
 
 void SetDefaultGameConfig(void)
 {
     myConfig.game_crc    = 0;    // No game in this slot yet
-    myConfig.keymap[0]   = 0;    // NDS D-Pad mapped to CV Joystick UP
-    myConfig.keymap[1]   = 1;    // NDS D-Pad mapped to CV Joystick DOWN
-    myConfig.keymap[2]   = 2;    // NDS D-Pad mapped to CV Joystick LEFT
-    myConfig.keymap[3]   = 3;    // NDS D-Pad mapped to CV Joystick RIGHT
-    myConfig.keymap[4]   = 4;    // NDS A Button mapped to CV Button 1 (Yellow / Left Button)
-    myConfig.keymap[5]   = 5;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
-    myConfig.keymap[6]   = 6;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
-    myConfig.keymap[7]   = 7;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
-    myConfig.keymap[8]   = 81;   // NDS R      mapped to CTRL
-    myConfig.keymap[9]   = 80;   // NDS L      mapped to SHIFT
-    myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
-    myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
+    
+    MapPlayer1();                // Default to Player 1 mapping
     
     myConfig.frameSkip   = (isDSiMode() ? 0:1);         // For DSi we don't need FrameSkip, but for older DS-LITE we turn on light frameskip
     myConfig.frameBlend  = 0;                           // No frame blending needed for most games
@@ -1344,12 +1336,13 @@ void SetDefaultGameConfig(void)
     }
     
     if (sg1000_mode == 2)                       myConfig.overlay = 11; // SC-3000 uses the full keyboard (Memotech MTX close enough)
+    if (msx_mode == 1)                          myConfig.overlay = (myGlobalConfig.msxCartOverlay ? 10:0);  // MSX cart-based games follows the global default
+    if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard    
     if (msx_mode == 2)                          myConfig.msxBios = myGlobalConfig.defaultMSX;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
     if (svi_mode)                               myConfig.overlay = 10; // SVI default to full keyboard    
-    if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard    
     if (einstein_mode)                          myConfig.overlay = 11; // Tatung Einstein defaults to full keyboard
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
@@ -1698,11 +1691,12 @@ const struct options_t Option_Table[3][20] =
     },
     // Global Options
     {
-        {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,     3},
-        {"EMU TEXT",       {"OFF",  "ON"},                                                                                                                                                      &myGlobalConfig.emuText,     2},
-        {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,2},
-        {"DEFAULT MSX",    {"C-BIOS", "MSX.ROM", "CX5M.ROM (UK)", "HX-10.ROM (EU)", "HB-10.ROM (JP)", "FS-1300.ROM JP"},                                                                        &myGlobalConfig.defaultMSX,  6},
-        {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
+        {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,        3},
+        {"EMU TEXT",       {"OFF",  "ON"},                                                                                                                                                      &myGlobalConfig.emuText,        2},
+        {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
+        {"DEFAULT MSX",    {"C-BIOS", "MSX.ROM", "CX5M.ROM (UK)", "HX-10.ROM (EU)", "HB-10.ROM (JP)", "FS-1300.ROM JP"},                                                                        &myGlobalConfig.defaultMSX,     6},
+        {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
+        {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }
 };              
 
