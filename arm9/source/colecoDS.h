@@ -286,4 +286,6 @@ extern void colecoSaveEEPROM(void);
 extern void colecoLoadEEPROM(void);    
 extern void ResetColecovision(void);
 extern u32  creativision_run(void);
+extern void msx_patch_bios(void);
+
 #endif
