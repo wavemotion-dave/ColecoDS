@@ -468,7 +468,11 @@ void cpu_writemem16 (u8 value,u16 address)
             }
             else RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
         }
-        else if (bRAMInSlot[3] && (address >= 0xC000))
+        else if ((bRAMInSlot[3] == 2) && (address >= 0xE000)) // A value of 2 here means this is an 8K machine
+        {
+            RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
+        }
+        else if ((bRAMInSlot[3] == 1) && (address >= 0xC000)) // A value of 1 here means we can write to the entire 16K page
         {
             RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
         }

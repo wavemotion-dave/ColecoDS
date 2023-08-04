@@ -992,6 +992,151 @@ void msx_slot_map_hb10(unsigned char Value)
     }
 }
 
+//---------------------------------------------------------------
+// Casio PV-7 has a paultry 8K of RAM at the top of slot 0 (E000-FFFF)
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh     8K RAM     Cartridge      ---         ---
+// 8000h~BFFFh       ---      Cartridge      ---         ---
+// 4000h~7FFFh    Main-ROM    Cartridge      ---         ---
+// 0000h~3FFFh    Main-ROM    Cartridge      ---         ---
+//---------------------------------------------------------------
+void msx_slot_map_pv7(unsigned char Value)
+{
+    if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
+    switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = BIOS_Memory + 0x0000;
+            MemoryMap[1] = BIOS_Memory + 0x2000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[0] = 1;
+                bRAMInSlot[0] = 0;
+                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
+                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[0] = 0;
+            bRAMInSlot[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
+    switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = BIOS_Memory + 0x4000;
+            MemoryMap[3] = BIOS_Memory + 0x6000;                    
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[1] = 1;
+                bRAMInSlot[1] = 0;
+                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[1] = 0;
+            bRAMInSlot[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
+    switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[2] = 1;
+                bRAMInSlot[2] = 0;
+                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSlot[2] = 0;
+            bRAMInSlot[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
+    switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to our 16K of Emulated RAM
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 2;  // Special value means only 8K mapped here...
+            MemoryMap[6] = BIOS_Memory+0xC000; // Just BIOS here... 0xFF
+            MemoryMap[7] = RAM_Memory+0xE000;
+            break;
+        case 0x01:  // Slot 1:  Maps to Game Cart
+            if (msx_mode != 2)  // msx_mode of 2 means a .CAS is loaded - not a CART
+            {
+                bROMInSlot[3] = 1;
+                bRAMInSlot[3] = 0;
+                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
+                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x02:  // Slot 2:  Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+        case 0x03:  // Slot 3: Maps to nothing... 0xFF
+            bROMInSlot[3] = 0;
+            bRAMInSlot[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+    }
+}
+
+
 // ----------------------------------------------------------------------
 // MSX IO Port Write - VDP and AY Sound Chip plus Slot Mapper $A8
 // ----------------------------------------------------------------------
@@ -1021,6 +1166,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 case 3:  msx_slot_map_hx10(Value);    break;     // Toshiba HX-10 (64K mapped in slot 2)
                 case 4:  msx_slot_map_hb10(Value);    break;     // Sony HB-10 (16K mapped in slot 0)
                 case 5:  msx_slot_map_generic(Value); break;     // National FS-1300 (64K mapped in slot 3)
+                case 6:  msx_slot_map_pv7(Value);     break;     // Casio PV-7 (8K mapped in slot 0)
                 default: msx_slot_map_generic(Value); break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }
             
@@ -1485,10 +1631,9 @@ void MSX_InitialMemoryLayout(u32 romSize)
             Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
         }
 
-        // --------------------------------------------------------------------------------
-        // We've copied as much of the ROM into fast VRAM as possible. We only have 256K 
-        // of VRAM available - anything beyond this will have to be fetched from slow RAM.
-        // --------------------------------------------------------------------------------
+        // ---------------------------------------------------------------------
+        // We now set our memory masks such that we page memory in properly...
+        // ---------------------------------------------------------------------
         if (romSize <= (128 * 1024))
         {
             if (mapperType == ASC16 || mapperType == ZEN16 || mapperType == XBLAM)
@@ -1604,6 +1749,7 @@ void msx_restore_bios(void)
     if (myConfig.msxBios)
     {
         extern u8 MSX_Bios[];
+        extern u8 PV7_Bios[];
         // Determine which of the  MSX BIOS / machine flavors we should load...
         switch (myConfig.msxBios)
         {
@@ -1612,6 +1758,7 @@ void msx_restore_bios(void)
             case 3: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x08000), 0x8000); break;                                   // Toshiba HX-10
             case 4: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); msx_japanese_matrix = 1; break;          // Sony HB-10 (uses the Japanese matrix)
             case 5: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x18000), 0x8000); msx_japanese_matrix = 1; break;          // National FS-1300 (uses the Japanese matrix)
+            case 6: memcpy(BIOS_Memory, PV7_Bios, 0x8000);                     msx_japanese_matrix = 1; break;          // Casio PV-7 with a paultry 8K (uses the Japanese matrix)
             default: memcpy(BIOS_Memory, CBios, 0x8000); break;                                                         // C-BIOS as a fall-back
         }
     }

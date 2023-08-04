@@ -112,6 +112,7 @@ u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
 u8 MSX_Bios[0x8000]       = {0};  // We store several kinds of MSX bios files in VRAM and copy out the one we want to use in msx_restore_bios() but this is for the ubiquitious MSX.ROM
+u8 PV7_Bios[0x8000]       = {0};  // Extra storage for the little Casio PV-7 MSX machine with 8K of RAM!
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -975,11 +976,12 @@ void DisplayStatusLine(bool bForce)
             last_msx_mode = msx_mode;
             switch (myConfig.msxBios)
             {
-                case 1: siprintf(tmp, "%-6s  %3dK", msx_rom_str_short, (int)(LastROMSize/1024));    break;     // MSX (64K machine... use variable name)
+                case 1: siprintf(tmp, "%-7s %3dK", msx_rom_str_short, (int)(LastROMSize/1024));    break;     // MSX (64K machine... use variable name)
                 case 2: siprintf(tmp, "CX5M    %3dK",                  (int)(LastROMSize/1024));    break;     // Yamaha CX5M (32K mapped in slot 0)
                 case 3: siprintf(tmp, "HX-10   %3dK",                  (int)(LastROMSize/1024));    break;     // Toshiba HX-10 (64K mapped in slot 2)
                 case 4: siprintf(tmp, "HB-10   %3dK",                  (int)(LastROMSize/1024));    break;     // Sony HB-10 (16K mapped in slot 0)
                 case 5: siprintf(tmp, "FS-1300 %3dK",                  (int)(LastROMSize/1024));    break;     // National FS-1300 (64K mapped in slot 3)
+                case 6: siprintf(tmp, "PV-7    %3dK",                  (int)(LastROMSize/1024));    break;     // Casio PV-7 (just 8K at the top of slot 0)
                 default:siprintf(tmp, "MSX     %3dK",                  (int)(LastROMSize/1024));    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }            
             AffChaine(20,0,6, tmp);
@@ -3035,7 +3037,7 @@ void LoadBIOSFiles(void)
 
         msx_patch_bios();   // Patch BIOS for cassette use
 
-        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        // Now store this BIOS up into memory so we can use it later in msx_restore_bios()
         memcpy(MSX_Bios, BIOS_Memory, 0x8000);
     }
 
@@ -3129,6 +3131,33 @@ void LoadBIOSFiles(void)
         memcpy(ptr, BIOS_Memory, 0x8000);
     }
 
+    
+    // Casio PV-7 (Japan)
+    fp = fopen("pv-7.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-7.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-7.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("pv-7_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-7_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-7_basic-bios1.rom", "rb");
+    
+    // As a fallback, the Casio PV-16 is fine
+    if (fp == NULL) fp = fopen("pv-16.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-16.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-16.rom", "rb");    
+    
+    if (fp != NULL)
+    {
+        bMSXBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
+
+        msx_patch_bios();   // Patch BIOS for cassette use
+
+        // Now store this BIOS up into memory so we can use it later in msx_restore_bios()
+        memcpy(PV7_Bios, BIOS_Memory, 0x8000);
+    }        
+        
 
     // -----------------------------------------------------------
     // Next try to load the SVI.ROM

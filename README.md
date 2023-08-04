@@ -349,7 +349,7 @@ would personally try them:
 
 Versions :
 -----------------------
-V8.2: 01-Aug-2023 by wavemotion-dave
+V8.2: 04-Aug-2023 by wavemotion-dave
 * Complete rewrite of the keyboard handler for improved visuals, better emulation and universal handling across all emulated machines.
 * New keyboard graphics for ADAM, MSX (International and Japanese layouts), MTX and a simplified Alpha-Numeric keyboard useful for text adventures.
 * New global configuration handling - you can disable the showing of the BIOS screen at startup, set your default MSX BIOS, hide emulator text, among other features.
