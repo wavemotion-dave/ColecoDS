@@ -121,13 +121,13 @@ As such, starting with version 8.2, ColecoDS will support 4 additional optional 
 * 5486b711  hx-10.rom   - Toshiba's UK/EU Machine with 64K of RAM
 * ee229390  hb-10.rom   - Sony HitBit JP Machine with 16K of RAM (uses the Japanese matrix)
 * 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese matrix)
-* ????????  pv-7.rom    - Casio PV-7 with just 8K of RAM! If you can't find this BIOS, use pv-16.rom (you don't have to rename it)
+* ee229390  pv-7.rom    - Casio PV-7 with just 8K of RAM! If you can't find this BIOS, use pv-16.rom or hb-10.rom
 
 And for the MSX.ROM you can substitute one of these standard machines (and they will be searched/found in this order):
 * 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in slot 3 (normally slot 1)
 * 8205795e  fc-200.rom  - Goldstar FC-200 European Machine with 64K of RAM in slot 3 (normally slot 2)
-
 ```
+
 Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names which will also generally work) - place them into your usual BIOS directory. Once you select one of these optional BIOS roms (in Configuration), you will also enable that specific MSX machine to be emulated. This means RAM and memory slots will be exactly the same as the machine you're trying to emulate. See the MSX section for details on this.
 
 ADAM Compatibility :
@@ -350,10 +350,11 @@ would personally try them:
 Versions :
 -----------------------
 V8.2: 01-Aug-2023 by wavemotion-dave
-* Major rework of the keyboard handler for improved visuals and emulation of the ADAM, MSX, MTX, PV-2000, Einstein, SC-3000 and more.
-* New global configuration handling - you can disable the showing of the BIOS screen at startup among other features.
+* Complete rewrite of the keyboard handler for improved visuals, better emulation and universal handling across all emulated machines.
+* New keyboard graphics for ADAM, MSX (International and Japanese layouts), MTX and a simplified Alpha-Numeric keyboard useful for text adventures.
+* New global configuration handling - you can disable the showing of the BIOS screen at startup, set your default MSX BIOS, hide emulator text, among other features.
 * Brighter main font for improved contrast.
-* New MSX BIOS roms can be optionally installed: cx5m.rom, hx-10.rom, hb-10.rom, fs-1300.rom
+* New MSX BIOS roms can be optionally installed: Panasonic cf-2700, Yamaha cx5m.rom, Toshiba hx-10.rom, Sony Hit-Bit hb-10.rom, National fs-1300.rom, Casio pv-7.rom
 * Other tweaks, fixes and improvements as time permitted.
 
 V8.1: 22-Jul-2023 by wavemotion-dave
