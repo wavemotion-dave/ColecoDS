@@ -971,15 +971,23 @@ void DisplayStatusLine(bool bForce)
     {
         if ((last_msx_mode != msx_mode) || bForce)
         {
-            char tmp[12];
+            char tmp[16];
             last_msx_mode = msx_mode;
-            siprintf(tmp, "MSX %dK ", (int)(LastROMSize/1024));
-            AffChaine(23,0,6, tmp);
+            switch (myConfig.msxBios)
+            {
+                case 2: siprintf(tmp, "CX5M    %3dK", (int)(LastROMSize/1024));    break;     // Yamaha CX5M (32K mapped in slot 0)
+                case 3: siprintf(tmp, "HX-10   %3dK", (int)(LastROMSize/1024));    break;     // Toshiba HX-10 (64K mapped in slot 2)
+                case 4: siprintf(tmp, "HB-10   %3dK", (int)(LastROMSize/1024));    break;     // Sony HB-10 (16K mapped in slot 0)
+                case 5: siprintf(tmp, "FS-1300 %3dK", (int)(LastROMSize/1024));    break;     // National FS-1300 (64K mapped in slot 3)
+                default:siprintf(tmp, "MSX     %3dK", (int)(LastROMSize/1024));    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
+            }            
+            AffChaine(20,0,6, tmp);
             last_pal_mode = 99;
         }
         if (last_msx_scc_enable != msx_scc_enable)
-        {
-            AffChaine(19,0,6, "SCC");
+        {   
+            // SCC and CAS are mutually exclusive so we can reuse the same area on screen...
+            AffChaine(9,0,6, "SCC");
             last_msx_scc_enable = msx_scc_enable;
         }
         if ((last_tape_pos != tape_pos) && (msx_mode == 2))
