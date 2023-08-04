@@ -268,7 +268,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
   {
       if (MTX_KBD_DRIVE == 0xFD)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_BS)    key1 = 0x01;    // Backspace key on Memotech
@@ -278,7 +278,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       }
       else if (MTX_KBD_DRIVE == 0xFE)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_STOP)  key1 = 0x01;    // BREAK key on Memotech
@@ -289,7 +289,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
 
       else if (MTX_KBD_DRIVE == 0xFB)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_TAB)   key1 = 0x01;    // TAB
@@ -299,7 +299,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       }
       else if (MTX_KBD_DRIVE == 0xF7)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_DEL)   key1 = 0x01;    // DEL
@@ -311,7 +311,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       
       else if (MTX_KBD_DRIVE == 0xEF)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_F7)   key1 = 0x02;    // F7
@@ -320,7 +320,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       }
       else if (MTX_KBD_DRIVE == 0xDF)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_F3)    key1 = 0x02;    // F3
@@ -331,7 +331,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
 
       else if (MTX_KBD_DRIVE == 0xBF)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (kbd_key)
           {
               if (kbd_key == KBD_KEY_F8)    key1 = 0x02;    // F8
@@ -340,7 +340,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       }
       else if (MTX_KBD_DRIVE == 0x7F)
       {
-          u8 key1 = 0x00;
+          u8 key1 = 0x0C;
           if (JoyState == JST_BLUE)          key1 = 0x01;    // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
           if (JoyState == JST_PURPLE)        key1 = 0x01;          
           if (kbd_key)
@@ -351,6 +351,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           
           return (~key1 & 0xFF);
       }
+      return 0xF3; // Crucial... bits 2+3 are the country code of the keyboard... this is 00=English
   }
 
   // No such port
