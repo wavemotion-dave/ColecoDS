@@ -1659,6 +1659,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         {
             PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
         }
+        mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
 
         last_special_key = 0;
         AffChaine(4,0,6, "    ");
