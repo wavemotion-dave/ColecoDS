@@ -121,14 +121,14 @@ As such, starting with version 8.2, ColecoDS will support 4 additional optional 
 * 5486b711  hx-10.rom   - Toshiba's UK/EU Machine with 64K of RAM
 * ee229390  hb-10.rom   - Sony HitBit JP Machine with 16K of RAM (uses the Japanese matrix)
 * 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese matrix)
+* ????????  pv-7.rom    - Casio PV-7 with just 8K of RAM! If you can't find this BIOS, use pv-16.rom (you don't have to rename it)
 
-And for the MSX.ROM you can substitute any of (and they will be searched/found in this order):
-* 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in slot 3
-* 8205795e  fc-200.rom  - Goldstar FC-200 European Machine with 64K of RAM in slot 3
-* 6481230f  mx-15.rom   - Casio MX-15 European Machine with 64K of RAM in slot 3
+And for the MSX.ROM you can substitute one of these standard machines (and they will be searched/found in this order):
+* 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in slot 3 (normally slot 1)
+* 8205795e  fc-200.rom  - Goldstar FC-200 European Machine with 64K of RAM in slot 3 (normally slot 2)
 
 ```
-Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names) - place them into your usual BIOS directory. Once you select one of these optional BIOS roms (in Configuration), you will also enable that specific MSX machine to be emulated. This means RAM and memory slots will be exactly the same as the machine you're trying to emulate. See the MSX section for details on this.
+Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names which will also generally work) - place them into your usual BIOS directory. Once you select one of these optional BIOS roms (in Configuration), you will also enable that specific MSX machine to be emulated. This means RAM and memory slots will be exactly the same as the machine you're trying to emulate. See the MSX section for details on this.
 
 ADAM Compatibility :
 -----------------------
