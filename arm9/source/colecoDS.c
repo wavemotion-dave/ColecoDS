@@ -975,11 +975,12 @@ void DisplayStatusLine(bool bForce)
             last_msx_mode = msx_mode;
             switch (myConfig.msxBios)
             {
-                case 2: siprintf(tmp, "CX5M    %3dK", (int)(LastROMSize/1024));    break;     // Yamaha CX5M (32K mapped in slot 0)
-                case 3: siprintf(tmp, "HX-10   %3dK", (int)(LastROMSize/1024));    break;     // Toshiba HX-10 (64K mapped in slot 2)
-                case 4: siprintf(tmp, "HB-10   %3dK", (int)(LastROMSize/1024));    break;     // Sony HB-10 (16K mapped in slot 0)
-                case 5: siprintf(tmp, "FS-1300 %3dK", (int)(LastROMSize/1024));    break;     // National FS-1300 (64K mapped in slot 3)
-                default:siprintf(tmp, "MSX     %3dK", (int)(LastROMSize/1024));    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
+                case 1: siprintf(tmp, "%-6s  %3dK", msx_rom_str, (int)(LastROMSize/1024));    break;     // MSX (64K machine... use variable name)
+                case 2: siprintf(tmp, "CX5M    %3dK",            (int)(LastROMSize/1024));    break;     // Yamaha CX5M (32K mapped in slot 0)
+                case 3: siprintf(tmp, "HX-10   %3dK",            (int)(LastROMSize/1024));    break;     // Toshiba HX-10 (64K mapped in slot 2)
+                case 4: siprintf(tmp, "HB-10   %3dK",            (int)(LastROMSize/1024));    break;     // Sony HB-10 (16K mapped in slot 0)
+                case 5: siprintf(tmp, "FS-1300 %3dK",            (int)(LastROMSize/1024));    break;     // National FS-1300 (64K mapped in slot 3)
+                default:siprintf(tmp, "MSX     %3dK",            (int)(LastROMSize/1024));    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }            
             AffChaine(20,0,6, tmp);
             last_pal_mode = 99;
@@ -1362,14 +1363,14 @@ void CassetteMenu(void)
                   BufferKey('A');
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
+                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
                   BufferKey('R');
                   BufferKey(KBD_KEY_RET);
@@ -1381,14 +1382,14 @@ void CassetteMenu(void)
                   BufferKey('U');
                   BufferKey('N');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
+                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(KBD_KEY_RET);
                   break;
             }
@@ -1692,7 +1693,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
     {
-        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = (msx_keyboard_matrix ? '[' : '`');
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = (msx_japanese_matrix ? '[' : '`');
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
         else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
@@ -1721,8 +1722,8 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
         else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
-        else if ((iTx >= 174) && (iTx < 189))  kbd_key = (msx_keyboard_matrix ? ']' : '[');
-        else if ((iTx >= 189) && (iTx < 203))  kbd_key = (msx_keyboard_matrix ? '`' : ']');
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = (msx_japanese_matrix ? ']' : '[');
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = (msx_japanese_matrix ? '`' : ']');
         else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
@@ -1737,8 +1738,8 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 117) && (iTx < 132))  kbd_key = 'J';
         else if ((iTx >= 132) && (iTx < 147))  kbd_key = 'K';
         else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
-        else if ((iTx >= 161) && (iTx < 178))  kbd_key = (msx_keyboard_matrix ? ';' : KBD_KEY_QUOTE);
-        else if ((iTx >= 178) && (iTx < 192))  kbd_key = (msx_keyboard_matrix ? KBD_KEY_QUOTE : ';');
+        else if ((iTx >= 161) && (iTx < 178))  kbd_key = (msx_japanese_matrix ? ';' : KBD_KEY_QUOTE);
+        else if ((iTx >= 178) && (iTx < 192))  kbd_key = (msx_japanese_matrix ? KBD_KEY_QUOTE : ';');
         else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
@@ -1761,7 +1762,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
         else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
         else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 191))  {kbd_key = KBD_KEY_CODE; if (msx_keyboard_matrix) {AffChaine(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
+        else if ((iTx >= 163) && (iTx < 191))  {kbd_key = KBD_KEY_CODE; if (msx_japanese_matrix) {AffChaine(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
         else if ((iTx >= 191) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
@@ -2467,14 +2468,14 @@ void colecoDS_main(void)
                   BufferKey('A');
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
+                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
                   BufferKey('R');
                   BufferKey(KBD_KEY_RET);
@@ -2485,14 +2486,14 @@ void colecoDS_main(void)
                   BufferKey('U');
                   BufferKey('N');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode && !msx_keyboard_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? KBD_KEY_QUOTE : ':');
+                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_keyboard_matrix ? '2': KBD_KEY_QUOTE);
+                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(KBD_KEY_RET);
               }
               WAITVBL;WAITVBL;WAITVBL;
@@ -2738,7 +2739,7 @@ void InitBottomScreen(void)
     else if (myConfig.overlay == 10)  //MSX/SVI Keyboard
     {
       //  Init bottom screen
-      if (msx_mode && msx_keyboard_matrix)
+      if (msx_mode && msx_japanese_matrix)
       {
           decompress(msx_japanTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
           decompress(msx_japanMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
@@ -2961,24 +2962,31 @@ void LoadBIOSFiles(void)
     // Next try to load the MSX.ROM - if this fails we still
     // have the C-BIOS as a good built-in backup.
     // -----------------------------------------------------------
-    fp = fopen("msx.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/msx.rom", "rb");
+    fp = NULL;
 
-    // If msx.rom not found, try the Goldstar FC-200 ROM which is likely equivilent
+    // First, try the Goldstar FC-200 ROM which is a fairly generic MSX machine
     if (fp == NULL) fp = fopen("fc-200.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/fc-200.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/fc-200.rom", "rb");    
+    if (fp != NULL) strcpy(msx_rom_str, "FC-200");
     
-    // If msx.rom not found, try the Goldstar FC-200 ROM which is likely equivilent
+    // If msx.rom not found, try the Goldstar FC-200 ROM which is a fairly generic MSX machine
     if (fp == NULL) fp = fopen("fc-200_basic-bios1.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/fc-200_basic-bios1.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/fc-200_basic-bios1.rom", "rb");    
+    if (fp != NULL) strcpy(msx_rom_str, "FC-200");
 
-    // If any of the above not found, try the Casio MX-15 ROM which is likely equivilent
+    // If any of the above not found, try the Casio MX-15 ROM which is a fairly generic MSX machine though we "expand it" to 64K
     if (fp == NULL) fp = fopen("mx-15.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/mx-15.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/mx-15.rom", "rb");    
+    if (fp != NULL) strcpy(msx_rom_str, "MX-15");
+    
+    // Last we try to find the ubiquitous msx.rom which is some generic machine of unknown origin
+    if (fp == NULL) fp = fopen("msx.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/msx.rom", "rb");
+    if (fp != NULL) strcpy(msx_rom_str, "MSX.ROM");
     
     if (fp != NULL)
     {

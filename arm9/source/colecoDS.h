@@ -263,7 +263,7 @@ extern u16 NDS_keyMap[];
 
 extern u8 soundEmuPause;
 extern u8 write_EE_counter;
-extern u8 msx_keyboard_matrix;
+extern u8 msx_japanese_matrix;
 
 extern int bg0, bg1, bg0b,bg1b;
 

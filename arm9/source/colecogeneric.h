@@ -95,6 +95,7 @@ extern struct GlobalConfig_t myGlobalConfig;
 
 extern u8 last_special_key;
 extern u8 last_special_key_dampen;
+extern char msx_rom_str[];
 
 extern void LoadConfig(void);
 
