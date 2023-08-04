@@ -1342,7 +1342,7 @@ void SetDefaultGameConfig(void)
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
-    if (svi_mode)                               myConfig.overlay = 10; // SVI default to full keyboard    
+    if (svi_mode)                               myConfig.overlay = 10; // SVI default to full keyboard (MSX keyboard close enough)  
     if (einstein_mode)                          myConfig.overlay = 11; // Tatung Einstein defaults to full keyboard
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
@@ -1451,8 +1451,12 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xae4d50e9)                 myConfig.overlay = 9;  // zork i - the great underground empire (1981) (infocom).dsk
     
     
-    // And one special PV-2000 BASIC cart
-    if (file_crc == 0x69a92b72)                 myConfig.overlay = 10; // PV-2000 BASIC uses keyboard
+    // And some special BASIC carts that want full keyboards
+    if (file_crc == 0x69a92b72)                 myConfig.overlay = 11; // PV-2000 BASIC uses keyboard
+    if (file_crc == 0x47be051f)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
+    if (file_crc == 0x107b5ddc)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
+    if (file_crc == 0x2b1087cf)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
+    
 
     // ----------------------------------------------------------------------------------
     // Some CreatiVision games that want the new CV overlay keypad/keybaord
@@ -1657,7 +1661,8 @@ struct options_t
     u8           option_max;
 };
 
-char msx_rom_str[10] = "MSX.ROM";
+char msx_rom_str[16] = "MSX.ROM 64K";
+char msx_rom_str_short[16] = "MSX";
 const struct options_t Option_Table[3][20] =
 {
     // Page 1
@@ -1674,7 +1679,7 @@ const struct options_t Option_Table[3][20] =
         {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
         {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
-        {"MSX BIOS",       {"C-BIOS", msx_rom_str, "CX5M.ROM", "HX-10.ROM", "HB-10.ROM", "FS-1300.ROM"},                                                                                        &myConfig.msxBios,    6},
+        {"MSX BIOS",       {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K"} ,                                                                    &myConfig.msxBios,    6},
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE", "ADAM CPM"},                                                                                                   &myConfig.memWipe,    5},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
@@ -1695,7 +1700,7 @@ const struct options_t Option_Table[3][20] =
         {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,        3},
         {"EMU TEXT",       {"OFF",  "ON"},                                                                                                                                                      &myGlobalConfig.emuText,        2},
         {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
-        {"DEFAULT MSX",    {"C-BIOS", msx_rom_str, "CX5M.ROM", "HX-10.ROM", "HB-10.ROM", "FS-1300.ROM"},                                                                                        &myGlobalConfig.defaultMSX,     6},
+        {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K"},                                                                     &myGlobalConfig.defaultMSX,     6},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }

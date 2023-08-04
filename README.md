@@ -122,7 +122,8 @@ As such, starting with version 8.2, ColecoDS will support 4 additional optional 
 * ee229390  hb-10.rom   - Sony HitBit JP Machine with 16K of RAM (uses the Japanese matrix)
 * 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese matrix)
 
-And for the MSX.ROM you can substitute either of:
+And for the MSX.ROM you can substitute any of (and they will be searched/found in this order):
+* 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in slot 3
 * 8205795e  fc-200.rom  - Goldstar FC-200 European Machine with 64K of RAM in slot 3
 * 6481230f  mx-15.rom   - Casio MX-15 European Machine with 64K of RAM in slot 3
 
