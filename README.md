@@ -196,6 +196,16 @@ The MSX memory is based on which MSX rom BIOS you are using:
 // 0000h~3FFFh    Main-ROM    Cartridge      ---         ---
 //---------------------------------------------------------------
 
+//---------------------------------------------------------------
+// Casio PV-7 has only 8K of RAM at the top of slot 0 (E000-FFFF)
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh     8K RAM     Cartridge      ---         ---
+// 8000h~BFFFh       ---      Cartridge      ---         ---
+// 4000h~7FFFh    Main-ROM    Cartridge      ---         ---
+// 0000h~3FFFh    Main-ROM    Cartridge      ---         ---
+//---------------------------------------------------------------
+
 ```
 
 Memotech MTX Compatibility :
