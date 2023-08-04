@@ -20,6 +20,7 @@
 
 #include "screenshot.h"
 #include "printf.h"
+#include "colecomngt.h"
 
 void write16(void *address, u16 value) {
 
@@ -52,14 +53,12 @@ bool screenshotbmp(const char* filename) {
     REG_DISPCAPCNT = DCAP_BANK(DCAP_BANK_VRAM_B) | DCAP_SIZE(DCAP_SIZE_256x192) | DCAP_ENABLE;
     while(REG_DISPCAPCNT & DCAP_ENABLE);
 
-    u8 *temp;
-    // On the DSi there is ample memory to just allocate the buffer and free it below...
-    temp = (u8*) malloc(256 * 192 * 2 + sizeof(INFOHEADER) + sizeof(HEADER));
-
-    if(!temp) {
-        fclose(file);
-        return false;
-    }
+    // ----------------------------------------------------------------------------------------------
+    // Use the back-end 128K of the large cart buffer. In theory this might be used by some massive
+    // game - and screenshot of such a game would break.
+    // This saves us from memory allocation and we're already pretty tight on space for ColecoDS.
+    // ----------------------------------------------------------------------------------------------
+    u8 *temp = (u8*)ROM_Memory+((MAX_CART_SIZE-128)*1024);
 
     HEADER *header= (HEADER*)temp;
     INFOHEADER *infoheader = (INFOHEADER*)(temp + sizeof(HEADER));
@@ -97,7 +96,6 @@ bool screenshotbmp(const char* filename) {
     DC_FlushAll();
     fwrite(temp, 1, 256 * 192 * 2 + sizeof(INFOHEADER) + sizeof(HEADER), file);
     fclose(file);
-    free(temp);
     return true;
 }
 

@@ -53,7 +53,7 @@ u16 msx_block_size      __attribute__((section(".dtcm"))) = 0x2000; // Either 8K
 u16 msx_init            = 0x4000;
 u16 msx_basic           = 0x0000;
 u32 LastROMSize         = 0;
-u8  msx_keyboard_matrix = 0;
+u8  msx_japanese_matrix = 0;        // Default to International keyboard layout. Set to '1' to enable Japanese layout.
 
 static u8 header_MSX[8] = { 0x1f,0xa6,0xde,0xba,0xcc,0x13,0x7d,0x74 };
 
@@ -147,7 +147,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           else if (last_special_key == KBD_KEY_CODE)
           {
-            AffChaine(4,0,6, (msx_keyboard_matrix ? "KANA":"CODE"));
+            AffChaine(4,0,6, (msx_japanese_matrix ? "KANA":"CODE"));
             key_code = 1;
           }
           else if (last_special_key == KBD_KEY_GRAPH)
@@ -1597,7 +1597,7 @@ void msx_restore_bios(void)
 {
     memset(BIOS_Memory, 0xFF, 0x10000);
 
-    msx_keyboard_matrix = 0;
+    msx_japanese_matrix = 0;
     // --------------------------------------------------------------
     // Based on config, load up the C-BIOS or the real MSX.ROM BIOS
     // --------------------------------------------------------------
@@ -1607,12 +1607,12 @@ void msx_restore_bios(void)
         // Determine which of the  MSX BIOS / machine flavors we should load...
         switch (myConfig.msxBios)
         {
-            case 1: memcpy(BIOS_Memory, MSX_Bios, 0x8000); break;                                               // Generic MSX.ROM
-            case 2: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x00000), 0x8000); break;                           // Yamaha CX5M
-            case 3: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x08000), 0x8000); break;                           // Toshiba HX-10
-            case 4: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); msx_keyboard_matrix = 1; break;  // Sony HB-10 (uses the Japanese matrix)
-            case 5: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x18000), 0x8000); msx_keyboard_matrix = 1; break;  // National FS-1300 (uses the Japanese matrix)
-            default: memcpy(BIOS_Memory, CBios, 0x8000); break;                                                 // C-BIOS as a fall-back
+            case 1: memcpy(BIOS_Memory, MSX_Bios, 0x8000); msx_japanese_matrix = ((MSX_Bios[0x2c]&0xf) ? 0:1); break;   // Generic MSX.ROM - use the BIOS to determine matrix layout
+            case 2: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x00000), 0x8000); break;                                   // Yamaha CX5M
+            case 3: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x08000), 0x8000); break;                                   // Toshiba HX-10
+            case 4: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); msx_japanese_matrix = 1; break;          // Sony HB-10 (uses the Japanese matrix)
+            case 5: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x18000), 0x8000); msx_japanese_matrix = 1; break;          // National FS-1300 (uses the Japanese matrix)
+            default: memcpy(BIOS_Memory, CBios, 0x8000); break;                                                         // C-BIOS as a fall-back
         }
     }
     else

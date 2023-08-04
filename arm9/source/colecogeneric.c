@@ -1657,12 +1657,13 @@ struct options_t
     u8           option_max;
 };
 
+char msx_rom_str[10] = "MSX.ROM";
 const struct options_t Option_Table[3][20] =
 {
     // Page 1
     {
         {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", 
-                            "ADAM KEYBOARD", "MSX/SVI KEYBD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD"},                                                                                &myConfig.overlay,    14},
+                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD"},                                                                                 &myConfig.overlay,    14},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
@@ -1673,7 +1674,7 @@ const struct options_t Option_Table[3][20] =
         {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
         {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
-        {"MSX BIOS",       {"C-BIOS", "MSX.ROM (EU)", "CX5M.ROM (UK)", "HX-10.ROM (EU)", "HB-10.ROM (JP)", "FS-1300.ROM JP"},                                                                   &myConfig.msxBios,    6},
+        {"MSX BIOS",       {"C-BIOS", msx_rom_str, "CX5M.ROM", "HX-10.ROM", "HB-10.ROM", "FS-1300.ROM"},                                                                                        &myConfig.msxBios,    6},
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE", "ADAM CPM"},                                                                                                   &myConfig.memWipe,    5},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
@@ -1694,7 +1695,7 @@ const struct options_t Option_Table[3][20] =
         {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,        3},
         {"EMU TEXT",       {"OFF",  "ON"},                                                                                                                                                      &myGlobalConfig.emuText,        2},
         {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
-        {"DEFAULT MSX",    {"C-BIOS", "MSX.ROM", "CX5M.ROM (UK)", "HX-10.ROM (EU)", "HB-10.ROM (JP)", "FS-1300.ROM JP"},                                                                        &myGlobalConfig.defaultMSX,     6},
+        {"DEFAULT MSX",    {"C-BIOS", msx_rom_str, "CX5M.ROM", "HX-10.ROM", "HB-10.ROM", "FS-1300.ROM"},                                                                                        &myGlobalConfig.defaultMSX,     6},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }
