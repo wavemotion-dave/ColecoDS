@@ -1403,7 +1403,9 @@ void CassetteMenu(void)
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
+                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
@@ -2441,14 +2443,16 @@ void colecoDS_main(void)
                       BufferKey(KBD_KEY_RET);
                       BufferKey(KBD_KEY_RET);
                   }
-
+                  
                   BufferKey('L');
                   BufferKey('O');
                   BufferKey('A');
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
+                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
