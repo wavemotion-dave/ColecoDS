@@ -25,6 +25,7 @@
 #include "../../colecoDS.h"
 #include "../../colecogeneric.h"
 #include "../z80/Z80_interface.h"
+#include "../z80/ctc.h"
 
 #include "tms9918a.h"
 
@@ -734,10 +735,7 @@ u16 tms_cpu_line   __attribute__((section(".dtcm"))) = TMS9918_LINE;
 byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
-  register byte bIRQ;
-
-  /* No IRQ yet */
-  bIRQ=0;
+  register byte bIRQ = 0;  // No IRQ yet
 
   /* Increment scanline */
   if (++CurLine >= tms_num_lines) CurLine=0;
@@ -774,6 +772,8 @@ byte Loop9918(void)
       
       /* Generate IRQ when enabled and when VBlank flag goes up */
       bIRQ=TMS9918_VBlankON && !(VDPStatus&TMS9918_STAT_VBLANK);
+      if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
+      //if (memotech_mode && (CTC[CTC_CHAN0].control & CTC_COUNTER_MODE)) bIRQ=1; // The Memotech MTX in counter mode will trigger VSYNC
 
       /* Set VBlank status flag */
       VDPStatus|=TMS9918_STAT_VBLANK;
@@ -783,7 +783,6 @@ byte Loop9918(void)
         if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP;
   }
     
-  if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
 
   /* Done */
   return(bIRQ);

@@ -70,6 +70,4 @@ extern void cpu_writemem_pv2000 (u8 value,u16 address);
 
 extern void Z80_Trap_Bad_Ops(byte I, word W);
 
-extern u8 cpu_check_halt(void);
-
 #endif
