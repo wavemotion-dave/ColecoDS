@@ -25,7 +25,6 @@ extern Z80 CPU;
 
 extern u32 debug1, debug2, debug3;
 
-extern u8 cpu_check_halt(void);
 
 /** INLINE ***************************************************/
 /** C99 standard has "inline", but older compilers used     **/
@@ -562,6 +561,7 @@ ITCM_CODE int ExecZ80(register int RunCycles)
 /*************************************************************/
 void IntZ80(Z80 *R,word Vector)
 {
+   debug1++;
   /* If HALTed, take CPU off HALT instruction */
   if(CPU.IFF&IFF_HALT) { CPU.PC.W++;CPU.IFF&=~IFF_HALT; }
 

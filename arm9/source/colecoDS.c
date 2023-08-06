@@ -905,9 +905,9 @@ void ShowDebugZ80(void)
     
     for (int chan=0; chan<=3; chan++)
     {
-        siprintf(tmp, "CTC%d control  = 0x%02X   ", chan, CTC[chan].control); AffChaine(5,idx++,7, tmp);
-        siprintf(tmp, "CTC%d constant = %-8lu ", chan, (u32)CTC[chan].constant); AffChaine(5,idx++,7, tmp);
-        siprintf(tmp, "CTC%d counter  = %-8lu ", chan, (u32)CTC[chan].counter); AffChaine(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); AffChaine(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d constant = %-8lu", chan, (u32)CTC[chan].constant); AffChaine(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d counter  = %-8lu", chan, (u32)CTC[chan].counter); AffChaine(5,idx++,7, tmp);
     }
     
 #endif

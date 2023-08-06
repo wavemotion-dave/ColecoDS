@@ -17,7 +17,7 @@
 
 #define VERSIONCLDS "8.2"
 
-//#define DEBUG_Z80   YES
+#define DEBUG_Z80   YES
 //#define FULL_DEBUG
 extern u32 debug1;
 extern u32 debug2;

@@ -843,10 +843,4 @@ void Z80_Trap_Bad_Ops(byte I, word W)
     AffChaine(0,0,6, tmp);
 }
 
-u8 cpu_check_halt(void)
-{
-    extern u8 memotech_unhalt;
-    if (memotech_mode && memotech_unhalt) {memotech_unhalt = 0; return 0;}
-    return 1;
-}
 // End of file

@@ -23,7 +23,6 @@
 #include "../../printf.h"
 
 
-u8 memotech_unhalt=0;   // Set to 1 to unhalt a frozen memotech CPU waiting for an interrupt
 u8 ctc_to_vdp = CTC_CHAN_MAX;
 
 CTC_t CTC[CTC_CHAN_MAX];
@@ -39,6 +38,7 @@ static u8 CTC_ProcessChannel(u8 chan)
         {
             CTC_ResetCounter(chan);
             if (CTC[chan].control & CTC_INT_ENABLE)  {debug5++; CPU.IRequest = CTC[chan].vector;}
+            if (chan==0) debug3++;
             return 1;
         }
     } else CTC_ResetCounter(chan);
@@ -61,16 +61,19 @@ void CTC_Timer(u32 cpu_cycles)
         {
             if (CTC[chan].running)
             {
-                u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
-                u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
-                CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
-                for (u32 i=0; i < process_count; i++)
+                if ((CTC[chan].control & CTC_COUNTER_MODE) == 0) // We only process timers here... 
                 {
-                    if (CTC_ProcessChannel(chan))
+                    u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
+                    u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
+                    CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
+                    for (u32 i=0; i < process_count; i++)
                     {
-                        if (chan == CTC_CHAN2) // Channel 2 clocks Channel 3 for RTC
+                        if (CTC_ProcessChannel(chan))
                         {
-                            CTC_ProcessChannel(CTC_CHAN3);
+                            if (chan == CTC_CHAN2) // Channel 2 clocks Channel 3 for RTC
+                            {
+                                CTC_ProcessChannel(CTC_CHAN3);
+                            }
                         }
                     }
                 }
@@ -79,37 +82,25 @@ void CTC_Timer(u32 cpu_cycles)
     }
     else if (memotech_mode)
     {
+        extern u8 memotech_start_chan;
         // ------------------------------------------------------------------
-        // Channel 0 is the VDP interrupt for the Memotech... and channel 3
-        // is for the cassette so we only need to deal with channels 1+2.
+        // Channel 0 is the VDP interrupt for the Memotech but it can be used
+        // as a timer. Channel 3 is for the cassette and is not handled.
         // ------------------------------------------------------------------
-        for (u8 chan = CTC_CHAN1; chan <= CTC_CHAN2; chan++)
+        for (u8 chan = memotech_start_chan; chan <= CTC_CHAN2; chan++)
         {
             if (CTC[chan].running)
             {
-                u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
-                u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
-                CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
-                for (u32 i=0; i < process_count; i++)
+                if ((CTC[chan].control & CTC_COUNTER_MODE) == 0) // We only process timers here... 
                 {
-                    CTC_ProcessChannel(chan);
+                    u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
+                    u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
+                    CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
+                    for (u32 i=0; i < process_count; i++)
+                    {
+                        CTC_ProcessChannel(chan);
+                    }
                 }
-            }
-        }
-        
-        // ---------------------------------------------------------------------------------------------------------
-        // Pothole Pete, Salty Sam and a couple other games halt the CPU waiting for an interrupt that I don't yet
-        // understand. Sometimes for music. Sometimes to proceed. I don't know why the CRC timer stuff above isn't
-        // handling that but for now, we simply unhalt the CPU periodically so those games will play.
-        // ---------------------------------------------------------------------------------------------------------
-        static u16 memotech_unhalt_timer=0;
-        if (memotech_unhalt_timer++ >= (tms_num_lines/2)) // Twice per frame
-        {
-            memotech_unhalt_timer = 0;
-            if (CPU.IFF&IFF_HALT)
-            {
-                memotech_unhalt = 1;
-                debug4++;
             }
         }
     }
@@ -125,12 +116,15 @@ void CTC_Timer(u32 cpu_cycles)
         {
             if (CTC[chan].running)
             {
-                u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
-                u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
-                CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
-                for (u32 i=0; i < process_count; i++)
+                if ((CTC[chan].control & CTC_COUNTER_MODE) == 0) // We only process timers here... 
                 {
-                    CTC_ProcessChannel(chan);
+                    u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
+                    u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
+                    CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
+                    for (u32 i=0; i < process_count; i++)
+                    {
+                        CTC_ProcessChannel(chan);
+                    }
                 }
             }
         }
