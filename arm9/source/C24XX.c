@@ -74,14 +74,12 @@ byte Write24XX(C24XX *D,byte V)
     if(V&C24XX_SDA)
     {
       /* SDA=1: STOP condition */
-      if(D->Flags&C24XX_DEBUG) printf("EEPROM STOP\n");
       D->State = RECV_CMD;
       D->Bits  = 0x0001;
     }
     else
     {
       /* SDA=0: START condition */
-      if(D->Flags&C24XX_DEBUG) printf("EEPROM START\n");
       D->State = RECV_CMD;
       D->Bits  = 0x0001;
     }
@@ -110,22 +108,18 @@ byte Write24XX(C24XX *D,byte V)
         case RECV_CMD:
           D->Cmd   = D->Bits&0x00FF;
           D->State = (D->Cmd&0xF0)!=0xA0? RECV_CMD:D->Cmd&0x01? SEND_DATA:RECV_ADDR;
-          if(D->Flags&C24XX_DEBUG) printf("EEPROM CMD=%02Xh(, ADDR=%Xh)\n",D->Cmd,D->Addr);
           break;
         case RECV_ADDR:
           D->Addr  = ((unsigned int)(D->Cmd&0x0E)<<7)+(D->Bits&0x00FF);
           D->Addr &= (0x80<<(D->Flags&C24XX_CHIP))-1;
           D->State = (D->Flags&C24XX_CHIP)>=C24XX_24C32? RECV_ADR2:RECV_DATA;
-          if(D->Flags&C24XX_DEBUG) printf("EEPROM CMD=%02Xh, ADDR=%Xh\n",D->Cmd,D->Addr);
           break;
         case RECV_ADR2:
           D->Addr  = (D->Addr<<8)+(D->Bits&0x00FF);
           D->Addr &= (0x80<<(D->Flags&C24XX_CHIP))-1;
           D->State = RECV_DATA;
-          if(D->Flags&C24XX_DEBUG) printf("EEPROM CMD=%02Xh, ADDR=%Xh\n",D->Cmd,D->Addr);
           break;
         case RECV_DATA:
-          if(D->Flags&C24XX_DEBUG) printf("EEPROM WRITE[%Xh] <= %02Xh\n",D->Addr,D->Bits&0xFF);
           /* Write byte into EEPROM */
           D->Data[D->Addr] = D->Bits&0x00FF;
           /* Go to the next address inside N-byte page */
@@ -148,7 +142,6 @@ byte Write24XX(C24XX *D,byte V)
       {
         /* Read byte from EEPROM */
         D->Bits = ((word)D->Data[D->Addr]<<8)|0x0080;
-        if(D->Flags&C24XX_DEBUG) printf("EEPROM READ[%Xh] => %02Xh\n",D->Addr,D->Bits>>8);
         /* Go to the next address inside N-byte page */
         J = PageSize[D->Flags&C24XX_CHIP]-1;
         D->Addr = ((D->Addr+1)&J)|(D->Addr&~J);

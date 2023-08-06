@@ -218,10 +218,13 @@ case OUTA: I=OpZ80(CPU.PC.W++);OutZ80(I|(CPU.AF.W&0xFF00),CPU.AF.B.h);break;
 case INA:  I=OpZ80(CPU.PC.W++);CPU.AF.B.h=InZ80(I|(CPU.AF.W&0xFF00));break;
 
 case HALT:
-  CPU.PC.W--;
-  CPU.IFF|=IFF_HALT;
-  CPU.IBackup=0;
-  CPU.ICount=0;
+  if (cpu_check_halt())
+  {
+      CPU.PC.W--;
+      CPU.IFF|=IFF_HALT;
+      CPU.IBackup=0;
+      CPU.ICount=0;
+  }
   break;
 
 case DI:
@@ -376,14 +379,5 @@ case DAA:
   break;
 
 default:
-  if(CPU.TrapBadOps)
-  {
-#if 0      
-    printf
-    (
-      "[Z80 %lX] Unrecognized instruction: %02X at PC=%04X\n",
-      (long)CPU.User,OpZ80(CPU.PC.W-1),CPU.PC.W-1
-    );
-#endif      
-  }
+  if(CPU.TrapBadOps) Z80_Trap_Bad_Ops(I, CPU.PC.W-1);
   break;

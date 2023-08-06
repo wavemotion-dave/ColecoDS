@@ -21,6 +21,7 @@
 #include "FDIDisk.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
+#include "cpu/z80/ctc.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
@@ -68,8 +69,7 @@ unsigned char cpu_readport_m5(register unsigned short Port)
     
   if (Port < 0x10)      // Z80-CTC Area
   {
-      Port &= 0x03;
-      return ctc_timer[Port];
+      return CTC_Read(Port & 0x03);
   }
   else if (Port < 0x20)  // VDP Area
   {
@@ -229,32 +229,7 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
     // ----------------------------------------------------------------------
     if (Port < 0x10)
     {
-        Port &= 0x03;
-        if (ctc_latch[Port])    // If latched, we now have the countdown timer value
-        {
-            ctc_time[Port] = Value;     // Latch the time constant and compute the countdown timer directly below.
-            ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / CTC_SOUND_DIV) + 1;
-            ctc_latch[Port] = 0x00;     // Reset the latch - we're back to looking for control words
-        }
-        else
-        {
-            if (Value & 1) // Control Word
-            {
-                ctc_control[Port] = Value;      // Keep track of the control port 
-                ctc_latch[Port] = Value & 0x04; // If the caller wants to set a countdown timer, the next value read will latch the timer
-            }
-            else
-            {
-                if (Port == 0x00) // Channel 0, bit0 clear is special - this is where the 4 CTC vector addresses are setup
-                {
-                    ctc_vector[0] = (Value & 0xf8) | 0;     // Usually used for SIO which is not emulated here
-                    ctc_vector[1] = (Value & 0xf8) | 2;     // Usually used for PSG sound generation which we must deal with
-                    ctc_vector[2] = (Value & 0xf8) | 4;     // Usually used for SIO which is not emulated here
-                    ctc_vector[3] = (Value & 0xf8) | 6;     // Used for the VDP interrupt - this one is crucial!
-                    vdp_int_source = ctc_vector[3];         // When the VDP interrupts the CPU, it's channel 3 on the CTC
-                }
-            }
-        }
+        CTC_Write(Port & 0x03, Value);  // Write the CTC data
     }
     else if (Port < 0x20)  // VDP Area
     {
@@ -273,12 +248,8 @@ void sordm5_reset(void)
     if (sordm5_mode)
     {
         // Reset the Z80-CTC stuff...
-        memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
-        memset(ctc_time, 0x00, 4);          // No time value set
-        memset(ctc_vector, 0x00, 4);        // No vectors set
-        memset(ctc_latch, 0x00, 4);         // No latch set
-        memset(ctc_timer, 0x00, 8);         // No timer value set
-        vdp_int_source = INT_NONE;          // No IRQ set to start (part of CRC writes)
+        CTC_Init(CTC_CHAN3);                // CTC channel 3 is the VDP interrupt
+        vdp_int_source = INT_NONE;          // No IRQ set to start (part of CTC writes)
     }
 }
 

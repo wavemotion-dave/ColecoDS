@@ -1749,7 +1749,6 @@ void msx_restore_bios(void)
     if (myConfig.msxBios)
     {
         extern u8 MSX_Bios[];
-        extern u8 PV7_Bios[];
         // Determine which of the  MSX BIOS / machine flavors we should load...
         switch (myConfig.msxBios)
         {
@@ -1758,7 +1757,7 @@ void msx_restore_bios(void)
             case 3: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x08000), 0x8000); break;                                   // Toshiba HX-10
             case 4: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); msx_japanese_matrix = 1; break;          // Sony HB-10 (uses the Japanese matrix)
             case 5: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x18000), 0x8000); msx_japanese_matrix = 1; break;          // National FS-1300 (uses the Japanese matrix)
-            case 6: memcpy(BIOS_Memory, PV7_Bios, 0x8000);                     msx_japanese_matrix = 1; break;          // Casio PV-7 with a paultry 8K (uses the Japanese matrix)
+            case 6: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); msx_japanese_matrix = 1; break;          // Casio PV-7 with a paultry 8K (uses the Japanese matrix) - same BIOS as HB-10
             default: memcpy(BIOS_Memory, CBios, 0x8000); break;                                                         // C-BIOS as a fall-back
         }
     }

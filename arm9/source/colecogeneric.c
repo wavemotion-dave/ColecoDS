@@ -43,7 +43,6 @@ struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm
 struct GlobalConfig_t myGlobalConfig;
 extern u32 file_crc;
 
-u8 dev_z80_cycles = 0;
 u8 option_table=0;
 
 const char szKeyName[MAX_KEY_OPTIONS][18] = {
@@ -2108,7 +2107,6 @@ void ReadFileCRCAndConfig(void)
              (file_crc == 0xac7195d4)  ||  // DT.COM
              (file_crc == 0xcd43d48d)  ||  // H-CHUMY.COM
              (file_crc == 0x62dfae2d)  ||  // L9ADV.COM
-             (file_crc == 0x9888465b)  ||  // merlin8.COM
              (file_crc == 0xb52a7312)  ||  // NEMO.COM
              (file_crc == 0x7ad2b90e)  ||  // OBLOIDS.COM
              (file_crc == 0x36549adc)  ||  // OLDMAC.COM

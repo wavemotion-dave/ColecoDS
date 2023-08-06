@@ -30,9 +30,6 @@ extern u8 mapperMask;
 
 #define MAX_MAPPERS 7   // The most we can guess when examining ROM data
 
-#define CTC_SOUND_DIV     280
-#define MTX_CTC_SOUND_DIV 260
-
 #define MAX_CART_SIZE     1024  // 1MB of ROM Cart... that's pretty big!
 
 extern u8 ROM_Memory[MAX_CART_SIZE * 1024];
@@ -121,11 +118,6 @@ extern u8 Port_PPI_B;
 extern u8 Port_PPI_C;
 extern u8 Port_PPI_CTRL;
 
-extern u8 ctc_control[4];
-extern u8 ctc_time[4];
-extern u32 ctc_timer[4]; 
-extern u8 ctc_vector[4]; 
-extern u8 ctc_latch[4];  
 extern u16 vdp_int_source;    
 
 extern u8 BufferedKeys[32];

@@ -825,7 +825,7 @@ void DrZ80_Reset(void) {
 // produce exactly an evenly-divisible number of
 // cycles for a given scanline...
 // --------------------------------------------------
- int DrZ80_execute(int cycles) 
+int DrZ80_execute(int cycles) 
 {
   drz80.cycles = cycles + cycle_deficit;
     
@@ -835,4 +835,18 @@ void DrZ80_Reset(void) {
   return (cycle_deficit);
 }
 
+
+void Z80_Trap_Bad_Ops(byte I, word W)
+{
+    char tmp[32];
+    sprintf(tmp, "ILLEGAL OP: %02X %04X", I, W);
+    AffChaine(0,0,6, tmp);
+}
+
+u8 cpu_check_halt(void)
+{
+    extern u8 memotech_unhalt;
+    if (memotech_mode && memotech_unhalt) {memotech_unhalt = 0; return 0;}
+    return 1;
+}
 // End of file
