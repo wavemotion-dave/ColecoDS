@@ -1701,6 +1701,8 @@ const struct options_t Option_Table[3][20] =
         {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
         {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"},                                                         &myGlobalConfig.defaultMSX,     7},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
+        {"SHOW BAD OPS",   {"NO", "YES"},                                                                                                                                                       &myGlobalConfig.showBadOps,     2},
+        
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }
 };              

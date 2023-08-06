@@ -836,11 +836,14 @@ int DrZ80_execute(int cycles)
 }
 
 
-void Z80_Trap_Bad_Ops(byte I, word W)
+void Z80_Trap_Bad_Ops(char *prefix, byte I, word W)
 {
-    char tmp[32];
-    sprintf(tmp, "ILLEGAL OP: %02X %04X", I, W);
-    AffChaine(0,0,6, tmp);
+    if (myGlobalConfig.showBadOps)
+    {
+        char tmp[32];
+        sprintf(tmp, "ILLOP: %s %02X %04X", prefix, I, W);
+        AffChaine(0,0,6, tmp);
+    }
 }
 
 // End of file

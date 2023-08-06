@@ -319,7 +319,11 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       if (scan_matrix & 0x80) // 0x7F
       {
           if (JoyState == JST_BLUE)      key1 |= 0x01;   // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
-          if (JoyState == JST_PURPLE)    key1 |= 0x01;          
+          if (JoyState == JST_PURPLE)    key1 |= 0x01;
+          
+          if (JoyState & JST_FIRER<<16)  key1 |= 0x01;    // P2 fire button is SPACE
+          if (JoyState & JST_FIREL<<16)  key1 |= 0x01;    // P2 fire button is SPACE
+
           if (kbd_key)
           {
               if (kbd_key == ' ')        key1 |= 0x01;   // Space

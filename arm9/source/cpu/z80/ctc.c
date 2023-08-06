@@ -37,8 +37,7 @@ static u8 CTC_ProcessChannel(u8 chan)
         if (--CTC[chan].counter == 0) // Has this timer reached 0?
         {
             CTC_ResetCounter(chan);
-            if (CTC[chan].control & CTC_INT_ENABLE)  {debug5++; CPU.IRequest = CTC[chan].vector;}
-            if (chan==0) debug3++;
+            if (CTC[chan].control & CTC_INT_ENABLE)  {CPU.IRequest = CTC[chan].vector;}
             return 1;
         }
     } else CTC_ResetCounter(chan);
@@ -146,7 +145,7 @@ void CTC_ResetCounter(u8 chan)
     }
     else if (einstein_mode)
     {
-        CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 255:16;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
+        CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 225:14;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
     }
     else // Sord M5
     {
@@ -160,7 +159,6 @@ void CTC_ResetCounter(u8 chan)
 // --------------------------------------------------------
 u8 CTC_Read(u8 chan)
 {
-    debug3++;
     return CTC[chan].counter;
 }
 
@@ -177,7 +175,6 @@ void CTC_Write(u8 chan, u8 data)
         CTC[chan].control &= (~CTC_LATCH);      // Reset the latched bit (back to control word mode)
         CTC_ResetCounter(chan);                 // Reset the counter
         CTC[chan].running = 1;                  // Start the counter running
-        debug2++;
     }
     else    // This is a non-latched data write.
     {
@@ -185,7 +182,6 @@ void CTC_Write(u8 chan, u8 data)
         {
             CTC[chan].control = data;       // Keep track of the most recent control word for this channel
             CTC[chan].running = ((data & CTC_RESET) ? 0:1);
-            debug6++;
         }
         else            // Vector Word
         {
@@ -213,6 +209,7 @@ void CTC_Init(u8 vdp_chan)
         CTC[chan].counter           = 0;
         CTC[chan].running           = 0;
         CTC[chan].intStatus         = 0;
+        CTC[chan].intPending        = 0;
         CTC[chan].vector            = 0x00;
         CTC[chan].cpuClocksPerCTC   = 227;
         CTC[chan].cpuClockRemainder = 0;
