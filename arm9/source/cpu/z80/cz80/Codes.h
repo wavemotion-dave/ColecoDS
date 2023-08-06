@@ -376,5 +376,5 @@ case DAA:
   break;
 
 default:
-  if(CPU.TrapBadOps) Z80_Trap_Bad_Ops(I, CPU.PC.W-1);
+  if(CPU.TrapBadOps) Z80_Trap_Bad_Ops("NORM", I, CPU.PC.W-1);
   break;

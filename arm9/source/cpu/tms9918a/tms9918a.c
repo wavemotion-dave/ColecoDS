@@ -771,18 +771,18 @@ byte Loop9918(void)
       frameSkipIdx++;
       
       /* Generate IRQ when enabled and when VBlank flag goes up */
-      bIRQ=TMS9918_VBlankON && !(VDPStatus&TMS9918_STAT_VBLANK);
+      bIRQ = TMS9918_VBlankON && !(VDPStatus&TMS9918_STAT_VBLANK);
       if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
-      //if (memotech_mode && (CTC[CTC_CHAN0].control & CTC_COUNTER_MODE)) bIRQ=1; // The Memotech MTX in counter mode will trigger VSYNC
 
       /* Set VBlank status flag */
       VDPStatus|=TMS9918_STAT_VBLANK;
 
       /* Set Sprite Collision status flag */
       if(!(VDPStatus&TMS9918_STAT_OVRLAP))
-        if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP;
+      {
+          if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP;
+      }
   }
-    
 
   /* Done */
   return(bIRQ);

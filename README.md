@@ -211,7 +211,7 @@ The MSX memory is based on which MSX rom BIOS you are using:
 
 Memotech MTX Compatibility :
 -----------------------
-The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound is not perfect due to some CTC chip timing differences from real hardware. Also, only about 80% of the games load and run properly - some games use more complex loaders and are not well supported by ColecoDS. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  Of the two types (.mtx and .run), the .RUN files are generally better supported - seek those out (the excellent MEMU MTX emulator has a good selection).
+The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound has minor inaccuracies due to some CTC chip timing differences from real hardware. About 90% of the games load and run properly. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  The excellent MEMU MTX emulator has a good selection of games.
 
 There is support for the awesome MTX MAGROM project... there are several multi-carts in this project. You can use either 1.05 or 1.05a of the MAGROM binary file or the V2 MAGROM Binary... just rename as .MTX and load it normally and once the Ready prompt shows, press the START button to issue the "ROM 7" command to launch the multi-cart menu. It's worth it!
 

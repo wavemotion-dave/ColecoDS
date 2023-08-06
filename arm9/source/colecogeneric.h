@@ -50,7 +50,7 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  global_12;
     u8  global_13;
     u8  global_14;
-    u8  global_15;
+    u8  showBadOps;
     u32 config_checksum;
 };
 
