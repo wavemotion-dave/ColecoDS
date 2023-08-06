@@ -20,6 +20,7 @@
 #include "colecoDS.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
+#include "cpu/z80/ctc.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "printf.h"
@@ -301,7 +302,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
   }
   else if (Port >= 0x28 && Port <= 0x2F)      // Z80-CTC Area
   {
-      return ctc_timer[Port & 0x03];
+      return CTC_Read(Port & 0x03);
   }
   else if ((Port == 0x08) || (Port == 0x09) || (Port == 0x0E) || (Port == 0x0F))  // VDP Area
   {
@@ -367,7 +368,6 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     }
     else if (Port == 0x20)  // KEYBOARD INT MASK
     {
-        debug3++;
         key_int_mask = Value;   
     }
     else if (Port == 0x21)  // ADC INT MASK
@@ -402,36 +402,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     // ----------------------------------------------------------------------
     else if (Port >= 0x28 && Port <= 0x2F)
     {
-        Port &= 0x03;
-        if (ctc_latch[Port])    // If latched, we now have the countdown timer value
-        {
-            ctc_time[Port] = Value;     // Latch the time constant and compute the countdown timer directly below.
-            ctc_latch[Port] = 0x00;     // Reset the latch - we're back to looking for control words
-            
-            if (Port < 3)
-                ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / 170) + 1;
-            else
-                ctc_timer[3] = ((((ctc_control[3] & 0x20) ? 256 : 16) * (ctc_time[3] ? ctc_time[3]:256)) / 60) + 1;
-            
-        }
-        else
-        {
-            if (Value & 1) // Control Word
-            {
-                ctc_control[Port] = Value;      // Keep track of the control port 
-                ctc_latch[Port] = Value & 0x04; // If the caller wants to set a countdown timer, the next value read will latch the timer
-            }
-            else
-            {
-                if (Port == 0x00) // Channel 0, bit0 clear is special - this is where the 4 CTC vector addresses are setup
-                {
-                    ctc_vector[0] = (Value & 0xf8) | 0;     // 
-                    ctc_vector[1] = (Value & 0xf8) | 2;     // 
-                    ctc_vector[2] = (Value & 0xf8) | 4;     // 
-                    ctc_vector[3] = (Value & 0xf8) | 6;     // 
-                }
-            }
-        }
+        CTC_Write(Port & 0x03, Value);
     }
     else if ((Port == 0x08) || (Port == 0x09) || (Port == 0x0E) || (Port == 0x0F))  // VDP Area
     {
@@ -462,32 +433,6 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     }
 }
 
-
-// ---------------------------------------------------------
-// The Memotech MTX has CTC plus some memory handling stuff
-// ---------------------------------------------------------
-void einstein_reset(void)
-{
-    if (einstein_mode)
-    {
-        // Reset the Z80-CTC stuff...
-        memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
-        memset(ctc_time, 0x00, 4);          // No time value set
-        memset(ctc_timer, 0x00, 8);         // No timer value set
-        memset(ctc_vector, 0x00, 4);        // No vectors set
-        memset(ctc_latch, 0x00, 4);         // No latch set
-        
-        einstein_ram_start = 0x8000;
-        keyboard_w = 0x00;
-        myKeyData = 0xFF;
-        keyboard_interrupt=0;
-        key_int_mask = 0xFF;
-        
-        memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-        
-        einstien_restore_bios();
-    }
-}
 
 void einstein_handle_interrupts(void)
 {
@@ -525,6 +470,29 @@ void einstein_load_com_file(void)
     CPU.PC.W = 0x100;
     JumpZ80(CPU.PC.W);
 }
+
+// ---------------------------------------------------------
+// The Einstein has CTC plus some memory handling stuff
+// ---------------------------------------------------------
+void einstein_reset(void)
+{
+    if (einstein_mode)
+    {
+        // Reset the Z80-CTC stuff...
+        CTC_Init(CTC_CHAN_MAX);      // Einstein does not use CTC for VDP
+        
+        einstein_ram_start = 0x8000;
+        keyboard_w = 0x00;
+        myKeyData = 0xFF;
+        keyboard_interrupt=0;
+        key_int_mask = 0xFF;
+        
+        memset(ay_reg, 0x00, 16);    // Clear the AY registers...
+        
+        einstien_restore_bios();
+    }
+}
+
 
 // End of file
 

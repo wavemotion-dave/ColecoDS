@@ -203,12 +203,6 @@ int LoadFDI(FDIDisk *D,const char *FileName,int Format)
       return(0);
   }
 
-  if(D->Verbose)
-    printf(
-      "LoadFDI(): Loaded '%s', %d sides x %d tracks x %d sectors x %d bytes\n",
-      FileName,D->Sides,D->Tracks,D->Sectors,D->SecSize
-    );
-
   /* Done */
   fclose(F);
   D->Data   = P;

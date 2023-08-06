@@ -22,6 +22,7 @@
 #include "FDIDisk.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
+#include "cpu/z80/ctc.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
@@ -215,13 +216,10 @@ void colecoSaveState()
     if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
     if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
     if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
-      
-    if (uNbO) fwrite(ctc_control, sizeof(ctc_control),1, handle);
-    if (uNbO) fwrite(ctc_time, sizeof(ctc_time),1, handle);
-    if (uNbO) fwrite(ctc_timer, sizeof(ctc_timer),1, handle);
-    if (uNbO) fwrite(ctc_vector, sizeof(ctc_vector),1, handle);
-    if (uNbO) fwrite(ctc_latch, sizeof(ctc_latch),1, handle);
+    
+    if (uNbO) fwrite(CTC, sizeof(CTC),1, handle);
     if (uNbO) fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
+      
     if (einstein_mode)
     {
         if (uNbO) fwrite(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
@@ -478,11 +476,7 @@ void colecoLoadState()
             if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
             if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
             
-            if (uNbO) fread(ctc_control, sizeof(ctc_control),1, handle);
-            if (uNbO) fread(ctc_time, sizeof(ctc_time),1, handle);
-            if (uNbO) fread(ctc_timer, sizeof(ctc_timer),1, handle);
-            if (uNbO) fread(ctc_vector, sizeof(ctc_vector),1, handle);
-            if (uNbO) fread(ctc_latch, sizeof(ctc_latch),1, handle);
+            if (uNbO) fread(CTC, sizeof(CTC),1, handle);
             if (uNbO) fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
 		    if (einstein_mode)
 		    {

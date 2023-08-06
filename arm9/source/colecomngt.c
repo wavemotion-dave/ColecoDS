@@ -23,6 +23,7 @@
 #include "FDIDisk.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
+#include "cpu/z80/ctc.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
@@ -71,18 +72,6 @@ char lastAdamDataPath[256];
 // Some sprite data arrays for the Mario character that walks around the upper screen..
 extern const unsigned short sprPause_Palette[16];
 extern const unsigned char sprPause_Bitmap[2560];
-
-// ----------------------------------------------------------------------------
-// Some vars for the Z80-CTC timer/counter chip which is only partially 
-// emulated - enough that we can do rough timing and generate VDP 
-// interrupts. This chip is only used on the Sord M5 (not the Colecovision
-// nor the SG-1000 which just ties interrupts directly between VDP and CPU).
-// ----------------------------------------------------------------------------
-u8 ctc_control[4]   __attribute__((section(".dtcm"))) = {0x02, 0x02, 0x02, 0x02};
-u8 ctc_time[4]      __attribute__((section(".dtcm"))) = {0};
-u32 ctc_timer[4]    __attribute__((section(".dtcm"))) = {0};
-u8 ctc_vector[4]    __attribute__((section(".dtcm"))) = {0};
-u8 ctc_latch[4]     __attribute__((section(".dtcm"))) = {0}; 
 
 u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
@@ -971,65 +960,6 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 }
 
 
-// ----------------------------------------------------------------
-// Fires every scanline if we are in CTC mode - this provides
-// some rough timing for the Z80-CTC chip. It's not perfectly
-// accurate but it's good enough for our purposes.  Many of the
-// M5 games use the CTC timers to generate sound/music.
-// ----------------------------------------------------------------
-void Z80CTC_Timer(void)
-{
-    if (einstein_mode) // Called every scanline... 313 * 50Hz = 15,650 times per second or 15.65KHz
-    {
-        for (u8 i=0; i<3; i++)  
-        {
-            if (--ctc_timer[i] <= 0 && !keyboard_interrupt)
-            {
-                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / 170) + 1;
-                if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
-                if (i==2) // Channel 2 clocks Channel 3 for RTC
-                {
-                    if (--ctc_timer[3] <= 0)
-                    {
-                        ctc_timer[3] = ((((ctc_control[3] & 0x20) ? 256 : 16) * (ctc_time[3] ? ctc_time[3]:256)) / 51) + 1;
-                        if (ctc_control[3] & 0x80)  CPU.IRequest = ctc_vector[3];
-                    }
-                }
-            }
-        }
-    }
-    else if (memotech_mode)
-    {
-        // ------------------------------------------------------------------
-        // Channel 0 is the VDP interrupt in this emulation... so we only 
-        // need to deal with the other channels for timing here...
-        // ------------------------------------------------------------------
-        for (u8 i=1; i<4; i++)
-        {
-            if (--ctc_timer[i] <= 0)
-            {
-                ctc_timer[i] = ((((ctc_control[i] & 0x20) ? 256 : 16) * (ctc_time[i] ? ctc_time[i]:256)) / MTX_CTC_SOUND_DIV) + 1;
-                if (ctc_control[i] & 0x80)  CPU.IRequest = ctc_vector[i];
-            }
-        }
-    }
-    else    // Sord M5 mode
-    {
-        // ---------------------------------------------------------------------------------------------
-        // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
-        // Originally we were handling channels 0, 1 and 2 but there was never any program usage of
-        // channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which are not
-        // supported. Channel 3 is the VDP interrupt. So we save time/effort and only deal with Port1.
-        // --------------------------------------------------------------------------------------------
-        if (--ctc_timer[1] <= 0)
-        {
-            ctc_timer[1] = ((((ctc_control[1] & 0x20) ? 256 : 16) * (ctc_time[1] ? ctc_time[1]:256)) / CTC_SOUND_DIV) + 1;
-            if (ctc_control[1] & 0x80)  CPU.IRequest = ctc_vector[1];
-        }
-    }
-}
-
-
 // -------------------------------------------------------------------------
 // For arious machines, we have patched the BIOS so that we trap calls 
 // to various I/O routines: namely cassette access. We handle that here.
@@ -1142,6 +1072,7 @@ ITCM_CODE u32 LoopZ80()
       else  // CZ80 core from fMSX()... slower but higher accuracy
       {
           // Execute 1 scanline worth of CPU instructions
+          u32 cycles_to_process = tms_cpu_line + cycle_deficit;
           cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
 
           // Refresh VDP 
@@ -1158,7 +1089,7 @@ ITCM_CODE u32 LoopZ80()
               // -------------------------------------------------------------------------
               if (CPU.IRequest == INT_NONE)
               {
-                  Z80CTC_Timer();    
+                  CTC_Timer(cycles_to_process);    
               }
               if (einstein_mode && (CPU.IRequest == INT_NONE))  // If the keyboard is generating an interrupt...
               {

@@ -26,6 +26,7 @@
 #include "colecogeneric.h"
 #include "colecomngt.h"
 #include "cpu/tms9918a/tms9918a.h"
+#include "cpu/z80/ctc.h"
 #include "intro.h"
 #include "ecranBas.h"
 #include "adam_sm.h"
@@ -68,6 +69,8 @@ u32 debug1=0;
 u32 debug2=0;
 u32 debug3=0;
 u32 debug4=0;
+u32 debug5=0;
+u32 debug6=0;
 
 // -------------------------------------------------------------------------------------------
 // All emulated systems have ROM, RAM and possibly BIOS or SRAM. So we create generic buffers
@@ -85,7 +88,7 @@ u32 debug4=0;
 
 u8 ROM_Memory[MAX_CART_SIZE * 1024]   ALIGN(32) = {0};        // ROM Carts up to 1MB (that's pretty huge in the Z80 world!)
 u8 RAM_Memory[0x20000]                ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
-u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory
+u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K)
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
 
 
@@ -112,7 +115,6 @@ u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
 u8 MSX_Bios[0x8000]       = {0};  // We store several kinds of MSX bios files in VRAM and copy out the one we want to use in msx_restore_bios() but this is for the ubiquitious MSX.ROM
-u8 PV7_Bios[0x8000]       = {0};  // Extra storage for the little Casio PV-7 MSX machine with 8K of RAM!
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -797,7 +799,7 @@ void ResetColecovision(void)
 
   ResetStatusFlags();   // Some static status flags for the UI mostly
 
-  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0;
+  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0; debug5 = 0; debug6 = 0;
 }
 
 //*********************************************************************************
@@ -898,6 +900,16 @@ void ShowDebugZ80(void)
     siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); AffChaine(5,idx++,7, tmp);
     siprintf(tmp, "D3 %-12lu %08lX", debug3, debug3); AffChaine(5,idx++,7, tmp);
     siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); AffChaine(5,idx++,7, tmp);
+    siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); AffChaine(5,idx++,7, tmp);
+    siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); AffChaine(5,idx++,7, tmp);
+    
+    for (int chan=0; chan<=3; chan++)
+    {
+        siprintf(tmp, "CTC%d control  = 0x%02X   ", chan, CTC[chan].control); AffChaine(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d constant = %-8lu ", chan, (u32)CTC[chan].constant); AffChaine(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d counter  = %-8lu ", chan, (u32)CTC[chan].counter); AffChaine(5,idx++,7, tmp);
+    }
+    
 #endif
     idx++;
 }
@@ -3098,6 +3110,20 @@ void LoadBIOSFiles(void)
     if (fp == NULL) fp = fopen("/roms/bios/hb-10_basic-bios1.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/hb-10_basic-bios1.rom", "rb");
     
+    
+    // Casio PV-7 and PV-16 are the exact same BIOS as the HB-10
+    if (fp == NULL) fp = fopen("pv-7.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-7.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-7.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("pv-7_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-7_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-7_basic-bios1.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("pv-16.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-16.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-16.rom", "rb");        
+    
     if (fp != NULL)
     {
         bMSXBiosFound = true;
@@ -3136,33 +3162,6 @@ void LoadBIOSFiles(void)
     }
 
     
-    // Casio PV-7 (Japan)
-    fp = fopen("pv-7.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-7.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-7.rom", "rb");
-    
-    if (fp == NULL) fp = fopen("pv-7_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-7_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-7_basic-bios1.rom", "rb");
-    
-    // As a fallback, the Casio PV-16 is fine
-    if (fp == NULL) fp = fopen("pv-16.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-16.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-16.rom", "rb");    
-    
-    if (fp != NULL)
-    {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-
-        msx_patch_bios();   // Patch BIOS for cassette use
-
-        // Now store this BIOS up into memory so we can use it later in msx_restore_bios()
-        memcpy(PV7_Bios, BIOS_Memory, 0x8000);
-    }        
-        
-
     // -----------------------------------------------------------
     // Next try to load the SVI.ROM
     // -----------------------------------------------------------

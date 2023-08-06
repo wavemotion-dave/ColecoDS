@@ -18,7 +18,14 @@
 #include <stdio.h>
 #include "../../../printf.h"
 
+extern u32 JoyState;;
+extern u8 kbd_key;
+
 extern Z80 CPU;
+
+extern u32 debug1, debug2, debug3;
+
+extern u8 cpu_check_halt(void);
 
 /** INLINE ***************************************************/
 /** C99 standard has "inline", but older compilers used     **/
@@ -48,7 +55,7 @@ extern byte cpu_readmem16 (u16 address);
 extern void cpu_writeport16(unsigned short Port, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
-extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode;
+extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode;
 extern u16 vdp_int_source, keyboard_interrupt;
 INLINE byte OpZ80(word A)   { return*(MemoryMap[(A)>>13] + ((A)&0x1FFF));}
 #define WrZ80(A,V)          cpu_writemem16(V,A)
@@ -322,6 +329,8 @@ enum CodesED
   DB_F8,DB_F9,DB_FA,DB_FB,DB_FC,DB_FD,DB_FE,DB_FF
 };
 
+extern void Z80_Trap_Bad_Ops(byte, word);
+
 static void CodesCB(register Z80 *R)
 {
   register byte I;
@@ -337,12 +346,7 @@ static void CodesCB(register Z80 *R)
   {
 #include "CodesCB.h"
     default:
-      if(CPU.TrapBadOps)
-        printf
-        (   
-          "[Z80 %lX] Unrecognized instruction: CB %02X at PC=%04X\n",
-          (long)(CPU.User),OpZ80(CPU.PC.W-1),CPU.PC.W-2
-        );
+      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(I, CPU.PC.W-2);
   }
 }
 
@@ -361,12 +365,7 @@ static void CodesDDCB(register Z80 *R)
   {
 #include "CodesXCB.h"
     default:
-      if(CPU.TrapBadOps)
-        printf
-        (
-          "[Z80 %lX] Unrecognized instruction: DD CB %02X %02X at PC=%04X\n",
-          (long)(CPU.User),OpZ80(CPU.PC.W-2),OpZ80(CPU.PC.W-1),CPU.PC.W-4
-        );
+      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(I, CPU.PC.W-4);
   }
 #undef XX
 }
@@ -386,12 +385,7 @@ static void CodesFDCB(register Z80 *R)
   {
 #include "CodesXCB.h"
     default:
-      if(CPU.TrapBadOps)
-        printf
-        (
-          "[Z80 %lX] Unrecognized instruction: FD CB %02X %02X at PC=%04X\n",
-          (long)CPU.User,OpZ80(CPU.PC.W-2),OpZ80(CPU.PC.W-1),CPU.PC.W-4
-        );
+      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(I, CPU.PC.W-4);
   }
 #undef XX
 }
@@ -414,12 +408,7 @@ static void CodesED(register Z80 *R)
     case PFX_ED:
       CPU.PC.W--;break;
     default:
-      if(CPU.TrapBadOps)
-        printf
-        (
-          "[Z80 %lX] Unrecognized instruction: ED %02X at PC=%04X\n",
-          (long)CPU.User,OpZ80(CPU.PC.W-1),CPU.PC.W-2
-        );
+      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(I, CPU.PC.W-4);
   }
 }
 
@@ -445,12 +434,7 @@ static void CodesDD(register Z80 *R)
     case PFX_CB:
       CodesDDCB(R);break;
     default:
-      if(CPU.TrapBadOps)
-        printf
-        (
-          "[Z80 %lX] Unrecognized instruction: DD %02X at PC=%04X\n",
-          (long)CPU.User,OpZ80(CPU.PC.W-1),CPU.PC.W-2
-        );
+      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(I, CPU.PC.W-2);
   }
 #undef XX
 }
@@ -477,11 +461,7 @@ static void CodesFD(register Z80 *R)
     case PFX_CB:
       CodesFDCB(R);break;
     default:
-        printf
-        (
-          "Unrecognized instruction: FD %02X at PC=%04X\n",
-          OpZ80(CPU.PC.W-1),CPU.PC.W-2
-        );
+        if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(I, CPU.PC.W-2);
   }
 #undef XX
 }
@@ -514,7 +494,7 @@ void ResetZ80(Z80 *R)
   CPU.User     = 0;
   CPU.Trace    = 0;
   CPU.Trap     = 0;
-  CPU.TrapBadOps = 0;
+  CPU.TrapBadOps = 1;
   CPU.IAutoReset = 1;
 
   JumpZ80(CPU.PC.W);
@@ -591,6 +571,8 @@ void IntZ80(Z80 *R,word Vector)
     M_PUSH(PC);
 
     /* Automatically reset IRequest if needed */
+    if (memotech_mode) CPU.IRequest=INT_NONE;
+    else
     if (CPU.IAutoReset && (Vector==CPU.IRequest))
     {
         if ((my_config_clear_int == 0) && (Vector == vdp_int_source))   

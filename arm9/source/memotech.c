@@ -21,6 +21,7 @@
 #include "FDIDisk.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
+#include "cpu/z80/ctc.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
@@ -32,9 +33,11 @@ u8 memotech_magrom_present = 0;
 u8 memotech_mtx_500_only = 0;
 u8 memotech_lastMagROMPage = 0x00;
 
-// ---------------------------------------------------------------------
+// -------------------------------------------------------------------------
 // Memotech MTX IO Port Read - VDP, Joystick/Keyboard and Z80-CTC
-// ---------------------------------------------------------------------
+// Most of this information was gleaned from the wonderful site:
+// http://www.primrosebank.net/computers/mtx/components/memory/mem_map.htm 
+// -------------------------------------------------------------------------
 unsigned char cpu_readport_memotech(register unsigned short Port) 
 {
   // MTX ports are 8-bit
@@ -43,7 +46,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
   if (Port == 0x00) return IOBYTE;
   else if (Port >= 0x08 && Port <= 0x0B)      // Z80-CTC Area
   {
-      return ctc_timer[Port-0x08];
+      return CTC_Read(Port & 0x03);
   }
   else if ((Port == 0x01))  // VDP Area
   {
@@ -53,11 +56,15 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
   {
       return(RdCtrl9918());
   }
-  else if ((Port == 0x03))  // Per MEMO - drive 0x03
+  else if ((Port == 0x03))  // Sound Strobe: Per MEMO emulator - drive 0x03
   {
-      return(0x03);
+      return(0x03); // In theory we would drive back the value last on the bus but in this case it should just be 0x03 as we are reading port 3.
   }
-  else if ((Port == 0x05))
+  else if ((Port == 0x04))  // Printer Port
+  {
+      return(0x01); // D0=BUSY (active high), D1=ERROR (active low), D2=PAPEREMPTY (active high), D3=SELECT(active high)
+  }
+  else if ((Port == 0x05)) // This is the lower 8 bits of the Keyboard Matrix (D0 to D7)
   {
       u8 joy1 = 0x00;
       if (myConfig.dpad == DPAD_DIAGONALS)
@@ -131,7 +138,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }
       }      
 
-      if (scan_matrix & 0x01)
+      if (scan_matrix & 0x01) // 0xFE
       {
           if (kbd_key)
           {
@@ -145,7 +152,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }          
       }
 
-      if (scan_matrix & 0x02)
+      if (scan_matrix & 0x02) // 0xFD
       {
           if (kbd_key)
           {
@@ -159,7 +166,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }
       }
       
-      if (scan_matrix & 0x04)
+      if (scan_matrix & 0x04) // 0xFB
       {
           if (joy1 & 0x01)                  key1 |= 0x80;
           if (kbd_key)
@@ -177,7 +184,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (key_ctrl)                     key1 |= 0x01;
       }
       
-      if (scan_matrix & 0x08)
+      if (scan_matrix & 0x08) // 0xF7
       {
           if (joy1 & 0x04)                  key1 |= 0x80;
           if (kbd_key)
@@ -193,7 +200,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       }
       
       
-      if (scan_matrix & 0x10)
+      if (scan_matrix & 0x10) // 0xEF
       {
           if (joy1 & 0x08)                  key1 |= 0x80;
           if (kbd_key)
@@ -209,7 +216,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }          
       }
       
-      if (scan_matrix & 0x20)
+      if (scan_matrix & 0x20)  // 0xDF
       {
           if (JoyState & JST_FIRER)         key1 |= 0x80;    // HOME
           if (JoyState & JST_FIREL)         key1 |= 0x80;    // HOME
@@ -226,7 +233,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }          
       }
 
-      if (scan_matrix & 0x40)
+      if (scan_matrix & 0x40)  // 0xBF
       {
           if (joy1 & 0x02)                  key1 |= 0x80;
           
@@ -244,7 +251,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (key_shift)                    key1 |= 0x01;    // SHIFT key
       }
       
-      if (scan_matrix & 0x80)
+      if (scan_matrix & 0x80)   // 0x7F
       {
           //"B", "M", "Z", "C" and <space>  are the 2P "left" joystick
           if (joy1 & 0x10)                  key1 |= 0x04;
@@ -262,96 +269,63 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }
       }
       
-      return (~key1 & 0xFF);      
+      return (~key1 & 0xFF);
   }    
-  else if ((Port == 0x06))
+  else if ((Port == 0x06))  // This is the upper two bits of the Keyboard Matrix (D0 and D1)
   {
-      if (MTX_KBD_DRIVE == 0xFD)
+      u8 scan_matrix = ~MTX_KBD_DRIVE & 0xFF;
+      u8 key1 = 0xFC; // Crucial... bits 2+3 are the country code of the keyboard... this is 00=English. D4-D7 also will be zero (when inverted)
+      
+      if (scan_matrix & 0x01) // 0xFE
       {
-          u8 key1 = 0x0C;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_BS)    key1 = 0x01;    // Backspace key on Memotech
-              if (kbd_key == KBD_KEY_F5)    key1 = 0x02;    // F5
-          }          
-          return (~key1 & 0xFF);
-      }
-      else if (MTX_KBD_DRIVE == 0xFE)
-      {
-          u8 key1 = 0x0C;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_STOP)  key1 = 0x01;    // BREAK key on Memotech
-              if (kbd_key == KBD_KEY_F1)    key1 = 0x02;    // F1
-          }          
-          return (~key1 & 0xFF);
+          if (kbd_key == KBD_KEY_STOP)  key1 |= 0x01;    // BREAK key on Memotech
+          if (kbd_key == KBD_KEY_F1)    key1 |= 0x02;    // F1
       }
 
-      else if (MTX_KBD_DRIVE == 0xFB)
+      if (scan_matrix & 0x02) // 0xFD
       {
-          u8 key1 = 0x0C;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_TAB)   key1 = 0x01;    // TAB
-              if (kbd_key == KBD_KEY_F2)    key1 = 0x02;    // F2
-          }          
-          return (~key1 & 0xFF);
-      }
-      else if (MTX_KBD_DRIVE == 0xF7)
-      {
-          u8 key1 = 0x0C;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_DEL)   key1 = 0x01;    // DEL
-              if (kbd_key == KBD_KEY_F6)    key1 = 0x02;    // F6
-          }          
-          return (~key1 & 0xFF);
+          if (kbd_key == KBD_KEY_BS)    key1 |= 0x01;    // Backspace key on Memotech
+          if (kbd_key == KBD_KEY_F5)    key1 |= 0x02;    // F5
       }
       
-      
-      else if (MTX_KBD_DRIVE == 0xEF)
+      if (scan_matrix & 0x04) // 0xFB
       {
-          u8 key1 = 0x0C;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_F7)   key1 = 0x02;    // F7
-          }          
-          return (~key1 & 0xFF);
-      }
-      else if (MTX_KBD_DRIVE == 0xDF)
-      {
-          u8 key1 = 0x0C;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_F3)    key1 = 0x02;    // F3
-          }          
-          return (~key1 & 0xFF);
+          if (kbd_key == KBD_KEY_TAB)   key1 |= 0x01;    // TAB
+          if (kbd_key == KBD_KEY_F2)    key1 |= 0x02;    // F2
       }
       
+      if (scan_matrix & 0x08) // 0xF7
+      {
+          if (kbd_key == KBD_KEY_DEL)   key1 |= 0x01;    // DEL
+          if (kbd_key == KBD_KEY_F6)    key1 |= 0x02;    // F6
+      }      
+      
+      if (scan_matrix & 0x10) // 0xEF
+      {
+          if (kbd_key == KBD_KEY_F7)    key1 |= 0x02;    // F7
+      }
+      
+      if (scan_matrix & 0x20) // 0xDF
+      {
+          if (kbd_key == KBD_KEY_F3)    key1 |= 0x02;    // F3
+      }      
 
-      else if (MTX_KBD_DRIVE == 0xBF)
+      if (scan_matrix & 0x40) // 0xBF
       {
-          u8 key1 = 0x0C;
+          if (kbd_key == KBD_KEY_F8)    key1 |= 0x02;    // F8
+      }
+      
+      if (scan_matrix & 0x80) // 0x7F
+      {
+          if (JoyState == JST_BLUE)      key1 |= 0x01;   // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
+          if (JoyState == JST_PURPLE)    key1 |= 0x01;          
           if (kbd_key)
           {
-              if (kbd_key == KBD_KEY_F8)    key1 = 0x02;    // F8
+              if (kbd_key == ' ')        key1 |= 0x01;   // Space
+              if (kbd_key == KBD_KEY_F4) key1 |= 0x02;   // F4
           }          
-          return (~key1 & 0xFF);
       }
-      else if (MTX_KBD_DRIVE == 0x7F)
-      {
-          u8 key1 = 0x0C;
-          if (JoyState == JST_BLUE)          key1 = 0x01;    // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
-          if (JoyState == JST_PURPLE)        key1 = 0x01;          
-          if (kbd_key)
-          {
-              if (kbd_key == ' ')           key1 = 0x01;    // Space
-              if (kbd_key == KBD_KEY_F4)    key1 = 0x02;    // F4
-          }          
-          
-          return (~key1 & 0xFF);
-      }
-      return 0xF3; // Crucial... bits 2+3 are the country code of the keyboard... this is 00=English
+      return (~key1 & 0xFF);
   }
 
   // No such port
@@ -374,7 +348,12 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
         {
             // -----------------------------------------------------------------------
             // We are using simplified logic for the MTX... this should provide
-            // a simple 64K machine roughly the same as a Memotech MTX-512 
+            // a simple 64K machine roughly the same as a Memotech MTX-512
+            // 0x0000 - 0x1fff  OSROM (OS-A always present)
+            // 0x2000 - 0x3fff  Paged ROM (usualy BASIC or Assembly ROM)
+            // 0x4000 - 0x7fff  Paged RAM
+            // 0x8000 - 0xbfff  Paged RAM
+            // 0xc000 - 0xffff  RAM
             // -----------------------------------------------------------------------
             if ((IOBYTE & 0x80) == 0)  // ROM Mode...
             {
@@ -410,12 +389,12 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                         MemoryMap[2] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
                         MemoryMap[3] = (u8 *)(BIOS_Memory+0xC000);  // Just 0xFF out here...
                         memotech_RAM_start = 0x8000;                // Allow access to RAM above base memory
-                }
+                    }
                     else
                     {
                         MemoryMap[2] = (u8 *)RAM_Memory+0x4000; // The third   RAM block is mapped to 0x4000
                         MemoryMap[3] = (u8 *)RAM_Memory+0x6000; // The fourth  RAM block is mapped to 0x6000
-                        memotech_RAM_start = 0x4000;                // Allow access to RAM above base memory
+                        memotech_RAM_start = 0x4000;            // Allow access to RAM above base memory
                     }
                     MemoryMap[4] = (u8 *)RAM_Memory+0x8000;     // The fifth   RAM block is mapped to 0x8000
                     MemoryMap[5] = (u8 *)RAM_Memory+0xA000;     // The sixth   RAM block is mapped to 0xA000
@@ -443,14 +422,14 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                     }
                     else
                     {
-                        MemoryMap[4] = (u8 *)RAM_Memory+0x0000;     // We map the first block here
-                        MemoryMap[5] = (u8 *)RAM_Memory+0x2000;     // We map the second block here
+                        MemoryMap[4] = (u8 *)RAM_Memory+0x0000;     // We map the first block here - this is by design
+                        MemoryMap[5] = (u8 *)RAM_Memory+0x2000;     // We map the second block here - this is by design
                         memotech_RAM_start = 0x8000;                // Allow access to RAM above base memory
                     }
                     MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
                     MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
                 }
-                else    // Page 2-15
+                else    // Page 2-15 not used
                 {
                     MemoryMap[0] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
                     MemoryMap[1] = (u8 *)(BIOS_Memory+0xC000);   // Just 0xFF out here...
@@ -471,9 +450,9 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                     memotech_RAM_start = 0xC000;                 // Just the common RAM enabled
                 }
             }
-            else  // RAM Mode
+            else  // RAM Mode... all available RAM is seen in this mode
             {
-                if ((IOBYTE & 0x0F) == 0x00)   // All 64K enabled
+                if ((IOBYTE & 0x0F) == 0x00)   // All RAM enabled
                 {
                     if (memotech_mtx_500_only)
                     {
@@ -481,7 +460,7 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
                         MemoryMap[1] = (u8 *)BIOS_Memory+0xC000;    // Just 0xFF out here...
                         MemoryMap[2] = (u8 *)BIOS_Memory+0xC000;    // Just 0xFF out here...
                         MemoryMap[3] = (u8 *)BIOS_Memory+0xC000;    // Just 0xFF out here...
-                        memotech_RAM_start = 0x0000;                // We're emulating a 64K machine
+                        memotech_RAM_start = 0x8000;                // For the MTX500 we only have 32K
                     }
                     else
                     {
@@ -514,40 +493,12 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
         }
     }
     // ----------------------------------------------------------------------
-    // Z80-CTC Area
     // This is only a partial implementation of the CTC logic - just enough
-    // to handle the VDP and Sound Generation and very little else. This is
-    // NOT accurate emulation - but it's good enough to render the Memotech
-    // games as playable in this emulator.
+    // to handle the VDP and basic timing for Sound Generation. Not perfect.
     // ----------------------------------------------------------------------
     else if (Port >= 0x08 && Port <= 0x0B)
     {
-        Port &= 0x03;
-        if (ctc_latch[Port])    // If latched, we now have the countdown timer value
-        {
-            ctc_time[Port] = Value;     // Latch the time constant and compute the countdown timer directly below.
-            ctc_timer[Port] = ((((ctc_control[Port] & 0x20) ? 256 : 16) * (ctc_time[Port] ? ctc_time[Port]:256)) / MTX_CTC_SOUND_DIV) + 1;
-            ctc_latch[Port] = 0x00;     // Reset the latch - we're back to looking for control words
-        }
-        else
-        {
-            if (Value & 1) // Control Word
-            {
-                ctc_control[Port] = Value;      // Keep track of the control port 
-                ctc_latch[Port] = Value & 0x04; // If the caller wants to set a countdown timer, the next value read will latch the timer
-            }
-            else
-            {
-                if (Port == 0x00) // Channel 0, bit0 clear is special - this is where the 4 CTC vector addresses are setup
-                {
-                    ctc_vector[0] = (Value & 0xf8) | 0;     // VDP Interrupt
-                    ctc_vector[1] = (Value & 0xf8) | 2;     // 
-                    ctc_vector[2] = (Value & 0xf8) | 4;     // 
-                    ctc_vector[3] = (Value & 0xf8) | 6;     // 
-                    vdp_int_source = ctc_vector[0];         // When the VDP interrupts the CPU, it's channel 0 on the CTC
-                }
-            }
-        }
+        CTC_Write(Port & 0x03, Value);          // CTC Area
     }
     else if ((Port == 0x01) || (Port == 0x02))  // VDP Area
     {
@@ -605,12 +556,8 @@ void memotech_reset(void)
     if (memotech_mode)
     {
         // Reset the Z80-CTC stuff...
-        memset(ctc_control, 0x00, 4);       // Set Software Reset Bit (freeze)
-        memset(ctc_time, 0x00, 4);          // No time value set
-        memset(ctc_timer, 0x00, 8);         // No timer value set
-        memset(ctc_vector, 0x00, 4);        // No vectors set
-        memset(ctc_latch, 0x00, 4);         // No latch set
-        vdp_int_source = INT_NONE;          // No IRQ set to start (CRC writes this)
+        CTC_Init(CTC_CHAN0);                // CTC channel 0 is the VDP Interrupt
+        vdp_int_source = INT_NONE;          // No IRQ set to start (CTC writes this)
 
         IOBYTE = 0x00;                      // Used for ROM-RAM bankswitch
         MTX_KBD_DRIVE = 0x00;               // Used to determine which Keybaord scanrow to use
