@@ -237,6 +237,10 @@ Casio PV-2000 Compatibility :
 -----------------------
 This emulator supports .pv files as ROM only (not cassettes).  Rename any .bin files you find as .pv so the emulator will load them correctly.
 
+Sord M5 Compatibility :
+-----------------------
+This emulator supports .m5 files as ROM loads up to 32K. Generally all Sord M5 games run with high compatibility with just slight variations in sound emulation due to CTC chip emulation not being perfect.
+
 Hanimex Pencil II Compatibility :
 -----------------------
 There is only one known game dumped at this time:  Treasure Hunt. Fortunately it's a fun game!  Unfortunately, came on 2 ROM chips. So you have to "glue" the two ROMs together. If you can find a late MAME "Software List" from 2020 or later, you will find treasure.zip which contains two ROM files:
