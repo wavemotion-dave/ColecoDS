@@ -773,6 +773,10 @@ byte Loop9918(void)
       /* Generate IRQ when enabled and when VBlank flag goes up */
       bIRQ = TMS9918_VBlankON && !(VDPStatus&TMS9918_STAT_VBLANK);
       if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
+      if (memotech_mode)
+      {
+          if ((CTC[CTC_CHAN0].control & CTC_INT_ENABLE) == 0x00) bIRQ = 0;  // For Memotech MTX: if IE is disabled for CTC channel 0, do not generate interrupt.
+      }
 
       /* Set VBlank status flag */
       VDPStatus|=TMS9918_STAT_VBLANK;

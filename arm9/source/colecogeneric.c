@@ -1355,7 +1355,6 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 2;  // MTX Astro PAC needs full memory wipe
     if (file_crc == 0xf9934809)                 myConfig.memWipe = 2;  // MTX Reveal needs full memory wipe
     if (file_crc == 0x8c96be92)                 myConfig.memWipe = 2;  // MTX Turbo needs full memory wipe
-    if (file_crc == 0xaf23483f)                 myConfig.memWipe = 2;  // MTX Aggrovator needs full memory wipe
     if (file_crc == 0x9168207e)                 myConfig.memWipe = 3;  // MTX Blobbo wants a special Random memory wipe
     if (file_crc == 0xbf543b19)                 myConfig.memWipe = 3;  // MTX Kilopede wants a special Random memory wipe
     if (file_crc == 0x635064bc)                 myConfig.memWipe = 3;  // MTX Toado wants a special Random memory wipe
