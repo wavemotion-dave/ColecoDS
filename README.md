@@ -215,9 +215,9 @@ The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5
 
 There is support for the awesome MTX MAGROM project... there are several multi-carts in this project. You can use either 1.05 or 1.05a of the MAGROM binary file or the V2 MAGROM Binary... just rename as .MTX and load it normally and once the Ready prompt shows, press the START button to issue the "ROM 7" command to launch the multi-cart menu. It's worth it!
 
-The MTX emulated is a base MTX-512 system with 64K of RAM... This should allow most games to run.
+The MTX emulated is a base MTX-512 system with 64K of RAM... This should allow most games to run. A few games don't play nice with the MTX-512 and need the older MTX-500 base compatibility - those games should be auto-detected and run without any user intervention needed.
 
-A small set of .COM files are supported - mostly so that games like Angle, SMG2 and Quazar will load and run (these games won't run from .MTX properly). You can find these distributed in the MEMU emulator package.
+A small set of .COM files are supported. You can find these distributed in the MEMU emulator package.
 
 Once the game is loaded into memory you will be sitting at the BASIC prompt. At this prompt you need to LOAD "" (if .MTX) or RUN the game (if .RUN). I've made this simple - just hit the DS **START** key to enter the proper command automatically. Alternatively, you will find the RUN commands in the Cassette Icon Menu.
 
