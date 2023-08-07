@@ -32,7 +32,6 @@
 u8 memotech_magrom_present = 0;
 u8 memotech_mtx_500_only = 0;
 u8 memotech_lastMagROMPage = 0x00;
-u8 memotech_start_chan = CTC_CHAN0;
 
 // -------------------------------------------------------------------------
 // Memotech MTX IO Port Read - VDP, Joystick/Keyboard and Z80-CTC
@@ -563,7 +562,6 @@ void memotech_reset(void)
         // Reset the Z80-CTC stuff...
         CTC_Init(CTC_CHAN0);                // CTC channel 0 is the VDP Interrupt
         vdp_int_source = INT_NONE;          // No IRQ set to start (CTC writes this)
-        memotech_start_chan = CTC_CHAN0;    // By default, we include the VDP channel which might be in timer mode
 
         IOBYTE = 0x00;                      // Used for ROM-RAM bankswitch
         MTX_KBD_DRIVE = 0x00;               // Used to determine which Keybaord scanrow to use
@@ -579,10 +577,6 @@ void memotech_reset(void)
                                   (file_crc == 0xd1cd3e62) ||               // Soldier Sam
                                   (file_crc == 0x93556570) ||               // TNT Tim                                  
                                   (file_crc == 0xa1d594fb)) ? 1:0);         // Dragon's Ring won't run on MTX512
-
-        if (file_crc == 0x02fb1412) memotech_start_chan = CTC_CHAN1;       // SMG won't run when processing Channel 0 (.RUN)
-        if (file_crc == 0x018f0e13) memotech_start_chan = CTC_CHAN1;       // SMG won't run when processing Channel 0 (.RUN)
-        if (file_crc == 0x7812bb8c) memotech_start_chan = CTC_CHAN1;       // SMGII won't run when processing Channel 0 (.COM)
         
         // Get the Memotech BIOS files ready...
         memotech_restore_bios();

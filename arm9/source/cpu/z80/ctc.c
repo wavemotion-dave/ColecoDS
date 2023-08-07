@@ -81,12 +81,11 @@ void CTC_Timer(u32 cpu_cycles)
     }
     else if (memotech_mode)
     {
-        extern u8 memotech_start_chan;
         // ------------------------------------------------------------------
         // Channel 0 is the VDP interrupt for the Memotech but it can be used
         // as a timer. Channel 3 is for the cassette and is not handled.
         // ------------------------------------------------------------------
-        for (u8 chan = memotech_start_chan; chan <= CTC_CHAN2; chan++)
+        for (u8 chan = CTC_CHAN0; chan <= CTC_CHAN2; chan++)
         {
             if (CTC[chan].running)
             {
@@ -192,6 +191,7 @@ void CTC_Write(u8 chan, u8 data)
                 CTC[CTC_CHAN2].vector = (data & 0xf8) | 4;                                  // General use timer... Memotech and Einstein use this sometimes.
                 CTC[CTC_CHAN3].vector = (data & 0xf8) | 6;                                  // VDP Interrupt for Sord M5. Einstein can use as general purpose.
                 if (ctc_to_vdp != CTC_CHAN_MAX) vdp_int_source = CTC[ctc_to_vdp].vector;    // When the VDP interrupts the CPU, it's this channel on the CTC
+                CPU.IRequest = INT_NONE;
             }
         }
     }

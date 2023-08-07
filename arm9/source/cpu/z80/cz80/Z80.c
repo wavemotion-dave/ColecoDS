@@ -561,7 +561,6 @@ ITCM_CODE int ExecZ80(register int RunCycles)
 /*************************************************************/
 void IntZ80(Z80 *R,word Vector)
 {
-   debug1++;
   /* If HALTed, take CPU off HALT instruction */
   if(CPU.IFF&IFF_HALT) { CPU.PC.W++;CPU.IFF&=~IFF_HALT; }
 
