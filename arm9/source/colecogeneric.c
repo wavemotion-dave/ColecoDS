@@ -1950,7 +1950,7 @@ void colecoDSChangeKeymap(void)
         }
         else {
           ucL++;
-          if (ucL > 10) ucL = 0;
+          if (ucL > 7) ucL = 0;
         }
     }
     else 
@@ -1970,7 +1970,7 @@ void colecoDSChangeKeymap(void)
         else 
         {
           ucR++;
-          if (ucR > 10) ucR = 0;
+          if (ucR > 7) ucR = 0;
         }
     }
     else

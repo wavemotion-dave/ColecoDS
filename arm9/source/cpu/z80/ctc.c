@@ -23,9 +23,19 @@
 #include "../../printf.h"
 
 
-u8 ctc_to_vdp = CTC_CHAN_MAX;
+// -----------------------------------------------------------
+// The Memotech MTX hooks the VDP into CTC channel 0.
+// The Sord M5 hooks the VDP into CTC channel 3.
+// The Tatung Einstein does not hook the VDP into anything.
+// -----------------------------------------------------------
+u8 ctc_to_vdp = CTC_CHAN_MAX;   
 
+
+// ----------------------------------------------------
+// This is our master CTC array for all four channels.
+// ----------------------------------------------------
 CTC_t CTC[CTC_CHAN_MAX];
+
 
 // ----------------------------------------------------
 // Tick down the channel... see if we have timed out.
@@ -168,7 +178,7 @@ void CTC_Write(u8 chan, u8 data)
 {
     if (CTC[chan].control & CTC_LATCH)          // If previously latched, we now have the countdown timer data
     {
-        if (data == 0) data = 255;              // Good enough... and it saves us a headache
+        if (data == 0) data = 255;              // Good enough... and it saves us a headache (our timing isn't accurate enough to matter between 255 and 256)
         CTC[chan].counter = data;               // Counter data... 1-256 with 0 representing 256 - this is the live countdown value reported back by CTC_Read()
         CTC[chan].constant = data;              // This is our reload value
         CTC[chan].control &= (~CTC_LATCH);      // Reset the latched bit (back to control word mode)
@@ -177,10 +187,11 @@ void CTC_Write(u8 chan, u8 data)
     }
     else    // This is a non-latched data write.
     {
-        if (data & 1)   // Control Word
+        if (data & CTC_CONTROL)   // Control Word
         {
             CTC[chan].control = data;       // Keep track of the most recent control word for this channel
             CTC[chan].running = ((data & CTC_RESET) ? 0:1);
+            if (data & CTC_RESET) CPU.IRequest = INT_NONE;
         }
         else            // Vector Word
         {
@@ -191,7 +202,7 @@ void CTC_Write(u8 chan, u8 data)
                 CTC[CTC_CHAN2].vector = (data & 0xf8) | 4;                                  // General use timer... Memotech and Einstein use this sometimes.
                 CTC[CTC_CHAN3].vector = (data & 0xf8) | 6;                                  // VDP Interrupt for Sord M5. Einstein can use as general purpose.
                 if (ctc_to_vdp != CTC_CHAN_MAX) vdp_int_source = CTC[ctc_to_vdp].vector;    // When the VDP interrupts the CPU, it's this channel on the CTC
-                CPU.IRequest = INT_NONE;
+                CPU.IRequest = INT_NONE;                                                    // Games like Formula F1 rely on the interrupt being clear on vector set
             }
         }
     }
