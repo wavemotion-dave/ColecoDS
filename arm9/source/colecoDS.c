@@ -37,6 +37,7 @@
 #include "msx_japan.h"
 #include "adam_full.h"
 #include "alpha_kbd.h"
+#include "einstein_kbd.h"
 #include "pv2000_sm.h"
 #include "ecranDebug.h"
 #include "ecranBasSel.h"
@@ -190,6 +191,10 @@ u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0001;  // A faster wa
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
 u8  last_mapped_key = 0;
+
+u8 kbd_keys_pressed = 0;
+u8 kbd_keys[12];
+
 
 u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of rendering...
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
@@ -1558,7 +1563,7 @@ u8 MiniMenu(void)
 // ------------------------------------------------------------------------
 // Return 1 if we are showing full keyboard... otherwise 0
 // ------------------------------------------------------------------------
-inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 9 || myConfig.overlay == 10 || myConfig.overlay == 11 || myConfig.overlay == 12) ? 1:0);}
+inline u8 IsFullKeyboard(void) {return ((myConfig.overlay >= 9) ? 1:0);}
 
 u8 last_special_key = 0;
 u8 last_special_key_dampen = 0;
@@ -1760,7 +1765,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
-        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
         else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
         else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
         else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
@@ -1868,7 +1873,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
-        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
         else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
         else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
         else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
@@ -1887,6 +1892,100 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
         else if ((iTx >= 30)  && (iTx < 190))  kbd_key = ' ';
         else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+
+    return MENU_CHOICE_NONE;
+}
+
+u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
+{
+    if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with F1 thru F8)
+    {
+        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;
+        else if ((iTx >= 22)  && (iTx < 44))   kbd_key = KBD_KEY_F8; // For the Einstein, this is F0
+        else if ((iTx >= 44)  && (iTx < 68))   kbd_key = KBD_KEY_F1;
+        else if ((iTx >= 68)  && (iTx < 90))   kbd_key = KBD_KEY_F2;
+        else if ((iTx >= 90)  && (iTx < 112))  kbd_key = KBD_KEY_F3;
+        else if ((iTx >= 112) && (iTx < 144))  kbd_key = KBD_KEY_F4;
+        else if ((iTx >= 144) && (iTx < 168))  kbd_key = KBD_KEY_F5;
+        else if ((iTx >= 168) && (iTx < 190))  kbd_key = KBD_KEY_F6;
+        else if ((iTx >= 190) && (iTx < 212))  kbd_key = KBD_KEY_F7;
+        else if ((iTx >= 212) && (iTx < 255))  kbd_key = 0;
+    }
+    else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
+    {
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = 0;
+        else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
+        else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
+        else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
+        else if ((iTx >= 61)  && (iTx < 75))   kbd_key = '4';
+        else if ((iTx >= 75)  && (iTx < 91))   kbd_key = '5';
+        else if ((iTx >= 91)  && (iTx < 106))  kbd_key = '6';
+        else if ((iTx >= 106) && (iTx < 121))  kbd_key = '7';
+        else if ((iTx >= 121) && (iTx < 135))  kbd_key = '8';
+        else if ((iTx >= 135) && (iTx < 151))  kbd_key = '9';
+        else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
+        else if ((iTx >= 165) && (iTx < 181))  kbd_key = '=';
+        else if ((iTx >= 181) && (iTx < 195))  kbd_key = KBD_KEY_UP;
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '|';
+        else if ((iTx >= 210) && (iTx < 235))  kbd_key = KBD_KEY_BS;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_LF;
+    }
+    else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
+    {
+        if      ((iTx >= 0)   && (iTx < 25))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
+        else if ((iTx >= 25)  && (iTx < 40))   kbd_key = 'Q';
+        else if ((iTx >= 40)  && (iTx < 55))   kbd_key = 'W';
+        else if ((iTx >= 55)  && (iTx < 70))   kbd_key = 'E';
+        else if ((iTx >= 70)  && (iTx < 85))   kbd_key = 'R';
+        else if ((iTx >= 85)  && (iTx < 100))  kbd_key = 'T';
+        else if ((iTx >= 100) && (iTx < 115))  kbd_key = 'Y';
+        else if ((iTx >= 115) && (iTx < 130))  kbd_key = 'U';
+        else if ((iTx >= 130) && (iTx < 145))  kbd_key = 'I';
+        else if ((iTx >= 145) && (iTx < 160))  kbd_key = 'O';
+        else if ((iTx >= 160) && (iTx < 175))  kbd_key = 'P';
+        else if ((iTx >= 175) && (iTx < 190))  kbd_key = '_';
+        else if ((iTx >= 190) && (iTx < 205))  kbd_key = KBD_KEY_LEFT;
+        else if ((iTx >= 213) && (iTx < 255))  kbd_key = KBD_KEY_INS;
+    }
+    else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
+    {
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        else if ((iTx >= 29)  && (iTx < 45))   kbd_key = 'A';
+        else if ((iTx >= 45)  && (iTx < 60))   kbd_key = 'S';
+        else if ((iTx >= 60)  && (iTx < 75))   kbd_key = 'D';
+        else if ((iTx >= 75)  && (iTx < 90))   kbd_key = 'F';
+        else if ((iTx >= 90)  && (iTx < 105))  kbd_key = 'G';
+        else if ((iTx >= 105) && (iTx < 120))  kbd_key = 'H';
+        else if ((iTx >= 120) && (iTx < 135))  kbd_key = 'J';
+        else if ((iTx >= 135) && (iTx < 150))  kbd_key = 'K';
+        else if ((iTx >= 150) && (iTx < 165))  kbd_key = 'L';
+        else if ((iTx >= 165) && (iTx < 180))  kbd_key = ';';
+        else if ((iTx >= 180) && (iTx < 195))  kbd_key = ':';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = KBD_KEY_RIGHT;        
+        else if ((iTx >= 214) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+    }
+    else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
+    {
+        if      ((iTx >= 0)   && (iTx < 34))   kbd_key = KBD_KEY_CAPS;
+        else if ((iTx >= 34)  && (iTx < 49))   kbd_key = 'Z';
+        else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
+        else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
+        else if ((iTx >= 78)  && (iTx < 94))   kbd_key = 'V';
+        else if ((iTx >= 94)  && (iTx < 109))  kbd_key = 'B';
+        else if ((iTx >= 109) && (iTx < 123))  kbd_key = 'N';
+        else if ((iTx >= 123) && (iTx < 139))  kbd_key = 'M';
+        else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
+        else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
+        else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
+        else if ((iTx >= 188) && (iTx < 255))  kbd_key = KBD_KEY_RET;
+    }
+    else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 34))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
+        else if ((iTx >= 34)  && (iTx < 182))  kbd_key = ' ';
+        else if ((iTx >= 182) && (iTx < 213))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 213) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
 
     return MENU_CHOICE_NONE;
@@ -2215,11 +2314,18 @@ void colecoDS_main(void)
       ShowDebugZ80();
 #endif
 
+
+      // -----------------------------------------------------------
+      // This is where we accumualte the keys pressed... up to 12!
+      // -----------------------------------------------------------
+      kbd_keys_pressed = 0;
+      memset(kbd_keys, 0x00, sizeof(kbd_keys));
+      kbd_key = 0;
+        
       // ------------------------------------------
       // Handle any screen touch events
       // ------------------------------------------
       ucUN  = 0;
-      kbd_key = 0;
       if  (keysCurrent() & KEY_TOUCH)
       {
         touchPosition touch;
@@ -2250,6 +2356,10 @@ void colecoDS_main(void)
         {
             meta_key = handle_alpha_keyboard_press(iTx, iTy);
         }
+        else if (myConfig.overlay == 14) // Tatung Einstein Keyboard
+        {
+            meta_key = handle_einstein_keyboard_press(iTx, iTy);
+        }
         else    // Normal 12 button virtual keypad
         {
             meta_key = handle_normal_virtual_keypad(iTx, iTy);
@@ -2269,6 +2379,11 @@ void colecoDS_main(void)
             ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
             ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
             ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
+        }
+          
+        if (kbd_key != 0)
+        {
+            kbd_keys[kbd_keys_pressed++] = kbd_key;
         }
 
         // If the special menu key indicates we should show the choice menu, do so here...
@@ -2418,12 +2533,6 @@ void colecoDS_main(void)
       }
       else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y))
       {
-          if (IsFullKeyboard() && ((nds_key & KEY_L) || (nds_key & KEY_R)))
-          {
-              //if (nds_key & KEY_L) key_shift = true;
-              //if (nds_key & KEY_R) key_ctrl = true;
-          }
-          
           if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
           {
               einstein_load_com_file();
@@ -2593,6 +2702,10 @@ void colecoDS_main(void)
                               mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
                               last_mapped_key = kbd_key;
                           }                            
+                      }
+                      else if (kbd_key != 0)
+                      {
+                          kbd_keys[kbd_keys_pressed++] = kbd_key;
                       }
                   }
               }
@@ -2796,6 +2909,15 @@ void InitBottomScreen(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) alpha_kbdPal,(void*) BG_PALETTE_SUB,256*2);
     }
+    else if (myConfig.overlay == 14) // Einstein Keyboard
+    {
+      //  Init bottom screen
+      decompress(einstein_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(einstein_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) einstein_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    
     else // Generic Overlay
     {
 #ifdef DEBUG_Z80

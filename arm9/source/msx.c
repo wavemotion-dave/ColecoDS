@@ -163,220 +163,229 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       }
       
       u8 key1 = 0x00;
-      if ((Port_PPI_C & 0x0F) == 0)      // Row 0
+      
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
       {
-          // ---------------------------------------------------
-          // At the top of the scan loop, handle the key buffer
-          // ---------------------------------------------------
-          if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
-          if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+          kbd_key = kbd_keys[i];
+
+          if ((Port_PPI_C & 0x0F) == 0)      // Row 0
           {
-              kbd_key = BufferedKeys[BufferedKeysReadIdx];
-              BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
-              if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+              // ---------------------------------------------------
+              // At the top of the scan loop, handle the key buffer
+              // ---------------------------------------------------
+              if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
+              if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+              {
+                  kbd_key = BufferedKeys[BufferedKeysReadIdx];
+                  BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
+                  if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+              }
+
+              if (JoyState == JST_0)   key1 |= 0x01;  // '0'
+              if (JoyState == JST_1)   key1 |= 0x02;  // '1'
+              if (JoyState == JST_2)   key1 |= 0x04;  // '2'
+              if (JoyState == JST_3)   key1 |= 0x08;  // '3'
+              if (JoyState == JST_4)   key1 |= 0x10;  // '4'
+              if (JoyState == JST_5)   // This one can be user-defined
+              {
+                  if (myConfig.msxKey5 == 0) key1 |= 0x20;  // '5'
+                  if (myConfig.msxKey5 == 6) key1 |= 0x40;  // '6'
+                  if (myConfig.msxKey5 == 7) key1 |= 0x80;  // '7'
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == '0')           key1 = 0x01;
+                  if (kbd_key == '1')           key1 = 0x02;
+                  if (kbd_key == '2')           key1 = 0x04;
+                  if (kbd_key == '3')           key1 = 0x08;
+                  if (kbd_key == '4')           key1 = 0x10;
+                  if (kbd_key == '5')           key1 = 0x20;
+                  if (kbd_key == '6')           key1 = 0x40;
+                  if (kbd_key == '7')           key1 = 0x80;
+              }
           }
-          
-          if (JoyState == JST_0)   key1 |= 0x01;  // '0'
-          if (JoyState == JST_1)   key1 |= 0x02;  // '1'
-          if (JoyState == JST_2)   key1 |= 0x04;  // '2'
-          if (JoyState == JST_3)   key1 |= 0x08;  // '3'
-          if (JoyState == JST_4)   key1 |= 0x10;  // '4'
-          if (JoyState == JST_5)   // This one can be user-defined
+          else if ((Port_PPI_C & 0x0F) == 1)  // Row 1
           {
-              if (myConfig.msxKey5 == 0) key1 |= 0x20;  // '5'
-              if (myConfig.msxKey5 == 6) key1 |= 0x40;  // '6'
-              if (myConfig.msxKey5 == 7) key1 |= 0x80;  // '7'
+              if (JoyState == JST_5)
+              {
+                  if (myConfig.msxKey5 == 8) key1 |= 0x01;  // '8'
+                  if (myConfig.msxKey5 == 9) key1 |= 0x02;  // '9'
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == '8')           key1 = 0x01;
+                  if (kbd_key == '9')           key1 = 0x02;
+                  if (kbd_key == '-')           key1 = 0x04;
+                  if (kbd_key == '=')           key1 = 0x08;
+                  if (kbd_key == '\\')          key1 = 0x10;
+                  if (kbd_key == '[')           key1 = 0x20;
+                  if (kbd_key == ']')           key1 = 0x40;
+                  if (kbd_key == ';')           key1 = 0x80;
+                  if (kbd_key == ':')           key1 = 0x80;
+              }
           }
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
           {
-              if (kbd_key == '0')           key1 = 0x01;
-              if (kbd_key == '1')           key1 = 0x02;
-              if (kbd_key == '2')           key1 = 0x04;
-              if (kbd_key == '3')           key1 = 0x08;
-              if (kbd_key == '4')           key1 = 0x10;
-              if (kbd_key == '5')           key1 = 0x20;
-              if (kbd_key == '6')           key1 = 0x40;
-              if (kbd_key == '7')           key1 = 0x80;
+              if (JoyState == JST_5)
+              {
+                  if (myConfig.msxKey5 == 10) key1 |= 0x40;  // 'A'
+                  if (myConfig.msxKey5 == 11) key1 |= 0x80;  // 'B'
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_QUOTE) key1 = 0x01;
+                  if (kbd_key == '`')           key1 = 0x02;
+                  if (kbd_key == ',')           key1 = 0x04;
+                  if (kbd_key == '.')           key1 = 0x08;
+                  if (kbd_key == '/')           key1 = 0x10;
+                  if (kbd_key == KBD_KEY_DEAD)  key1 = 0x20;
+                  if (kbd_key == 'A')           key1 = 0x40;
+                  if (kbd_key == 'B')           key1 = 0x80;
+              }          
           }
-      }
-      else if ((Port_PPI_C & 0x0F) == 1)  // Row 1
-      {
-          if (JoyState == JST_5)
+          else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
           {
-              if (myConfig.msxKey5 == 8) key1 |= 0x01;  // '8'
-              if (myConfig.msxKey5 == 9) key1 |= 0x02;  // '9'
+              if (JoyState == JST_5)
+              {
+                  if (myConfig.msxKey5 == 12) key1 |= 0x01;  // 'C'
+                  if (myConfig.msxKey5 == 13) key1 |= 0x02;  // 'D'
+                  if (myConfig.msxKey5 == 14) key1 |= 0x04;  // 'E'
+                  if (myConfig.msxKey5 == 15) key1 |= 0x08;  // 'F'
+                  if (myConfig.msxKey5 == 16) key1 |= 0x10;  // 'G'
+                  if (myConfig.msxKey5 == 17) key1 |= 0x20;  // 'H'
+                  if (myConfig.msxKey5 == 18) key1 |= 0x40;  // 'I'
+                  if (myConfig.msxKey5 == 19) key1 |= 0x80;  // 'J'
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == 'C')           key1 = 0x01;
+                  if (kbd_key == 'D')           key1 = 0x02;
+                  if (kbd_key == 'E')           key1 = 0x04;
+                  if (kbd_key == 'F')           key1 = 0x08;
+                  if (kbd_key == 'G')           key1 = 0x10;
+                  if (kbd_key == 'H')           key1 = 0x20;
+                  if (kbd_key == 'I')           key1 = 0x40;
+                  if (kbd_key == 'J')           key1 = 0x80;
+              }          
           }
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
           {
-              if (kbd_key == '8')           key1 = 0x01;
-              if (kbd_key == '9')           key1 = 0x02;
-              if (kbd_key == '-')           key1 = 0x04;
-              if (kbd_key == '=')           key1 = 0x08;
-              if (kbd_key == '\\')          key1 = 0x10;
-              if (kbd_key == '[')           key1 = 0x20;
-              if (kbd_key == ']')           key1 = 0x40;
-              if (kbd_key == ';')           key1 = 0x80;
-              if (kbd_key == ':')           key1 = 0x80;
+              if (JoyState == JST_5)
+              {
+                  if (myConfig.msxKey5 == 20) key1 |= 0x01;  // 'K'
+                  if (myConfig.msxKey5 == 21) key1 |= 0x02;  // 'L'
+                  if (myConfig.msxKey5 == 22) key1 |= 0x04;  // 'M'
+                  if (myConfig.msxKey5 == 23) key1 |= 0x08;  // 'N'
+                  if (myConfig.msxKey5 == 24) key1 |= 0x10;  // 'O'
+                  if (myConfig.msxKey5 == 25) key1 |= 0x20;  // 'P'
+                  if (myConfig.msxKey5 == 26) key1 |= 0x40;  // 'Q'
+                  if (myConfig.msxKey5 == 27) key1 |= 0x80;  // 'R'
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == 'K')           key1 = 0x01;
+                  if (kbd_key == 'L')           key1 = 0x02;
+                  if (kbd_key == 'M')           key1 = 0x04;
+                  if (kbd_key == 'N')           key1 = 0x08;
+                  if (kbd_key == 'O')           key1 = 0x10;
+                  if (kbd_key == 'P')           key1 = 0x20;
+                  if (kbd_key == 'Q')           key1 = 0x40;
+                  if (kbd_key == 'R')           key1 = 0x80;
+              }          
           }
-      }
-      else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
-      {
-          if (JoyState == JST_5)
+          else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
           {
-              if (myConfig.msxKey5 == 10) key1 |= 0x40;  // 'A'
-              if (myConfig.msxKey5 == 11) key1 |= 0x80;  // 'B'
+              if (JoyState == JST_5)
+              {
+                  if (myConfig.msxKey5 == 28) key1 |= 0x01;  // 'S'
+                  if (myConfig.msxKey5 == 29) key1 |= 0x02;  // 'T'
+                  if (myConfig.msxKey5 == 30) key1 |= 0x04;  // 'U'
+                  if (myConfig.msxKey5 == 31) key1 |= 0x08;  // 'V'
+                  if (myConfig.msxKey5 == 32) key1 |= 0x10;  // 'W'
+                  if (myConfig.msxKey5 == 33) key1 |= 0x20;  // 'X'
+                  if (myConfig.msxKey5 == 34) key1 |= 0x40;  // 'Y'
+                  if (myConfig.msxKey5 == 35) key1 |= 0x80;  // 'Z'
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == 'S')           key1 = 0x01;
+                  if (kbd_key == 'T')           key1 = 0x02;
+                  if (kbd_key == 'U')           key1 = 0x04;
+                  if (kbd_key == 'V')           key1 = 0x08;
+                  if (kbd_key == 'W')           key1 = 0x10;
+                  if (kbd_key == 'X')           key1 = 0x20;
+                  if (kbd_key == 'Y')           key1 = 0x40;
+                  if (kbd_key == 'Z')           key1 = 0x80;
+              }          
+          }      
+          else if ((Port_PPI_C & 0x0F) == 6) // Row 6
+          {
+              if (JoyState == JST_7) key1 |= 0x20;    // F1
+              if (JoyState == JST_8) key1 |= 0x40;    // F2
+              if (JoyState == JST_9) key1 |= 0x80;    // F3
+              if (JoyState == JST_5)
+              {
+                if (myConfig.msxKey5 == 1) key1 |= 0x01;  // SHIFT
+                if (myConfig.msxKey5 == 2) key1 |= 0x02;  // CTRL
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
+                  if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
+                  if (kbd_key == KBD_KEY_GRAPH) key1 = 0x04;
+                  if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;
+                  if (kbd_key == KBD_KEY_CODE)  key1 = 0x10;
+                  if (kbd_key == KBD_KEY_F1)    key1 = 0x20;
+                  if (kbd_key == KBD_KEY_F2)    key1 = 0x40;
+                  if (kbd_key == KBD_KEY_F3)    key1 = 0x80;
+              }          
+              if (key_shift)  key1 |= 0x01;  // SHIFT
+              if (key_ctrl)   key1 |= 0x02;  // CTRL
+              if (key_graph)  key1 |= 0x04;  // GRAPH
+              if (key_code)   key1 |= 0x10;  // CODE/KANA
           }
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 7) // Row 7
           {
-              if (kbd_key == KBD_KEY_QUOTE) key1 = 0x01;
-              if (kbd_key == '`')           key1 = 0x02;
-              if (kbd_key == ',')           key1 = 0x04;
-              if (kbd_key == '.')           key1 = 0x08;
-              if (kbd_key == '/')           key1 = 0x10;
-              if (kbd_key == KBD_KEY_DEAD)  key1 = 0x20;
-              if (kbd_key == 'A')           key1 = 0x40;
-              if (kbd_key == 'B')           key1 = 0x80;
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
-      {
-          if (JoyState == JST_5)
-          {
-              if (myConfig.msxKey5 == 12) key1 |= 0x01;  // 'C'
-              if (myConfig.msxKey5 == 13) key1 |= 0x02;  // 'D'
-              if (myConfig.msxKey5 == 14) key1 |= 0x04;  // 'E'
-              if (myConfig.msxKey5 == 15) key1 |= 0x08;  // 'F'
-              if (myConfig.msxKey5 == 16) key1 |= 0x10;  // 'G'
-              if (myConfig.msxKey5 == 17) key1 |= 0x20;  // 'H'
-              if (myConfig.msxKey5 == 18) key1 |= 0x40;  // 'I'
-              if (myConfig.msxKey5 == 19) key1 |= 0x80;  // 'J'
+              if (JoyState == JST_6)     key1 |= 0x10;  // STOP
+              if (JoyState == JST_POUND) key1 |= 0x80;  // RETURN
+              if (JoyState == JST_5)
+              {
+                if (myConfig.msxKey5 == 4) key1 |= 0x01;  // F4
+                if (myConfig.msxKey5 == 5) key1 |= 0x02;  // F5
+                if (myConfig.msxKey5 == 3) key1 |= 0x04;  // ESC
+              }
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_F4)    key1 = 0x01;
+                  if (kbd_key == KBD_KEY_F5)    key1 = 0x02;
+                  if (kbd_key == KBD_KEY_ESC)   key1 = 0x04;
+                  if (kbd_key == KBD_KEY_TAB)   key1 = 0x08;
+                  if (kbd_key == KBD_KEY_STOP)  key1 = 0x10;
+                  if (kbd_key == KBD_KEY_BS)    key1 = 0x20;
+                  if (kbd_key == KBD_KEY_SEL)   key1 = 0x40;
+                  if (kbd_key == KBD_KEY_RET)   key1 = 0x80;
+
+              }          
           }
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
           {
-              if (kbd_key == 'C')           key1 = 0x01;
-              if (kbd_key == 'D')           key1 = 0x02;
-              if (kbd_key == 'E')           key1 = 0x04;
-              if (kbd_key == 'F')           key1 = 0x08;
-              if (kbd_key == 'G')           key1 = 0x10;
-              if (kbd_key == 'H')           key1 = 0x20;
-              if (kbd_key == 'I')           key1 = 0x40;
-              if (kbd_key == 'J')           key1 = 0x80;
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
-      {
-          if (JoyState == JST_5)
-          {
-              if (myConfig.msxKey5 == 20) key1 |= 0x01;  // 'K'
-              if (myConfig.msxKey5 == 21) key1 |= 0x02;  // 'L'
-              if (myConfig.msxKey5 == 22) key1 |= 0x04;  // 'M'
-              if (myConfig.msxKey5 == 23) key1 |= 0x08;  // 'N'
-              if (myConfig.msxKey5 == 24) key1 |= 0x10;  // 'O'
-              if (myConfig.msxKey5 == 25) key1 |= 0x20;  // 'P'
-              if (myConfig.msxKey5 == 26) key1 |= 0x40;  // 'Q'
-              if (myConfig.msxKey5 == 27) key1 |= 0x80;  // 'R'
+              if (JoyState == JST_STAR) key1 |= 0x01;  // SPACE
+
+              if (kbd_key)
+              {
+                  if (kbd_key == ' ')           key1 = 0x01;
+                  if (kbd_key == KBD_KEY_HOME)  key1 = 0x02;
+                  if (kbd_key == KBD_KEY_INS)   key1 = 0x04;
+                  if (kbd_key == KBD_KEY_DEL)   key1 = 0x08;
+                  if (kbd_key == KBD_KEY_LEFT)  key1 = 0x10;
+                  if (kbd_key == KBD_KEY_UP)    key1 = 0x20;
+                  if (kbd_key == KBD_KEY_DOWN)  key1 = 0x40;
+                  if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
+              }          
           }
-          if (kbd_key)
-          {
-              if (kbd_key == 'K')           key1 = 0x01;
-              if (kbd_key == 'L')           key1 = 0x02;
-              if (kbd_key == 'M')           key1 = 0x04;
-              if (kbd_key == 'N')           key1 = 0x08;
-              if (kbd_key == 'O')           key1 = 0x10;
-              if (kbd_key == 'P')           key1 = 0x20;
-              if (kbd_key == 'Q')           key1 = 0x40;
-              if (kbd_key == 'R')           key1 = 0x80;
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
-      {
-          if (JoyState == JST_5)
-          {
-              if (myConfig.msxKey5 == 28) key1 |= 0x01;  // 'S'
-              if (myConfig.msxKey5 == 29) key1 |= 0x02;  // 'T'
-              if (myConfig.msxKey5 == 30) key1 |= 0x04;  // 'U'
-              if (myConfig.msxKey5 == 31) key1 |= 0x08;  // 'V'
-              if (myConfig.msxKey5 == 32) key1 |= 0x10;  // 'W'
-              if (myConfig.msxKey5 == 33) key1 |= 0x20;  // 'X'
-              if (myConfig.msxKey5 == 34) key1 |= 0x40;  // 'Y'
-              if (myConfig.msxKey5 == 35) key1 |= 0x80;  // 'Z'
-          }
-          if (kbd_key)
-          {
-              if (kbd_key == 'S')           key1 = 0x01;
-              if (kbd_key == 'T')           key1 = 0x02;
-              if (kbd_key == 'U')           key1 = 0x04;
-              if (kbd_key == 'V')           key1 = 0x08;
-              if (kbd_key == 'W')           key1 = 0x10;
-              if (kbd_key == 'X')           key1 = 0x20;
-              if (kbd_key == 'Y')           key1 = 0x40;
-              if (kbd_key == 'Z')           key1 = 0x80;
-          }          
-      }      
-      else if ((Port_PPI_C & 0x0F) == 6) // Row 6
-      {
-          if (JoyState == JST_7) key1 |= 0x20;    // F1
-          if (JoyState == JST_8) key1 |= 0x40;    // F2
-          if (JoyState == JST_9) key1 |= 0x80;    // F3
-          if (JoyState == JST_5)
-          {
-            if (myConfig.msxKey5 == 1) key1 |= 0x01;  // SHIFT
-            if (myConfig.msxKey5 == 2) key1 |= 0x02;  // CTRL
-          }
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
-              if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
-              if (kbd_key == KBD_KEY_GRAPH) key1 = 0x04;
-              if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;
-              if (kbd_key == KBD_KEY_CODE)  key1 = 0x10;
-              if (kbd_key == KBD_KEY_F1)    key1 = 0x20;
-              if (kbd_key == KBD_KEY_F2)    key1 = 0x40;
-              if (kbd_key == KBD_KEY_F3)    key1 = 0x80;
-          }          
-          if (key_shift)  key1 |= 0x01;  // SHIFT
-          if (key_ctrl)   key1 |= 0x02;  // CTRL
-          if (key_graph)  key1 |= 0x04;  // GRAPH
-          if (key_code)   key1 |= 0x10;  // CODE/KANA
-      }
-      else if ((Port_PPI_C & 0x0F) == 7) // Row 7
-      {
-          if (JoyState == JST_6)     key1 |= 0x10;  // STOP
-          if (JoyState == JST_POUND) key1 |= 0x80;  // RETURN
-          if (JoyState == JST_5)
-          {
-            if (myConfig.msxKey5 == 4) key1 |= 0x01;  // F4
-            if (myConfig.msxKey5 == 5) key1 |= 0x02;  // F5
-            if (myConfig.msxKey5 == 3) key1 |= 0x04;  // ESC
-          }
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_F4)    key1 = 0x01;
-              if (kbd_key == KBD_KEY_F5)    key1 = 0x02;
-              if (kbd_key == KBD_KEY_ESC)   key1 = 0x04;
-              if (kbd_key == KBD_KEY_TAB)   key1 = 0x08;
-              if (kbd_key == KBD_KEY_STOP)  key1 = 0x10;
-              if (kbd_key == KBD_KEY_BS)    key1 = 0x20;
-              if (kbd_key == KBD_KEY_SEL)   key1 = 0x40;
-              if (kbd_key == KBD_KEY_RET)   key1 = 0x80;
-              
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 8) // Row 8  RIGHT DOWN   UP   LEFT   DEL   INS  HOME  SPACE          
-      {
-          if (JoyState == JST_STAR) key1 |= 0x01;  // SPACE
-          
-          if (kbd_key)
-          {
-              if (kbd_key == ' ')           key1 = 0x01;
-              if (kbd_key == KBD_KEY_HOME)  key1 = 0x02;
-              if (kbd_key == KBD_KEY_INS)   key1 = 0x04;
-              if (kbd_key == KBD_KEY_DEL)   key1 = 0x08;
-              if (kbd_key == KBD_KEY_LEFT)  key1 = 0x10;
-              if (kbd_key == KBD_KEY_UP)    key1 = 0x20;
-              if (kbd_key == KBD_KEY_DOWN)  key1 = 0x40;
-              if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
-          }          
       }
       return ~key1;
   }

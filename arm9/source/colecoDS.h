@@ -211,6 +211,7 @@ extern u32 debug6;
 #define KBD_KEY_CLEAR       35
 #define KBD_KEY_MOVE        36
 #define KBD_KEY_UNDO        37
+#define KBD_KEY_LF          38
 #define KBD_KEY_CAS         255
 
 extern u16 emuFps;
@@ -240,6 +241,10 @@ extern u8 adam_unsaved_data;
 extern u8 creativision_mode;
 
 extern u16 machine_mode;
+
+extern u8 kbd_keys_pressed;
+extern u8 kbd_keys[12];
+
 
 extern char lastAdamDataPath[];
 extern u32 tape_pos, tape_len;

@@ -93,7 +93,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "SAC SPIN Y+",
   "SAC SPIN Y-",
   
-  "KEYBOARD A",
+  "KEYBOARD A", //45
   "KEYBOARD B",
   "KEYBOARD C",
   "KEYBOARD D",
@@ -109,7 +109,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD N",
   "KEYBOARD O",
   "KEYBOARD P",
-  "KEYBOARD Q",
+  "KEYBOARD Q", // 60
   "KEYBOARD R",
   "KEYBOARD S",
   "KEYBOARD T",
@@ -1175,8 +1175,56 @@ void MapPlayer1(void)
     myConfig.keymap[9]   = 80;   // NDS L      mapped to SHIFT
     myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
     myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
-
 }
+
+void MapQAOP(void)
+{
+    myConfig.keymap[0]   = 60;    // Q
+    myConfig.keymap[1]   = 44;    // A
+    myConfig.keymap[2]   = 58;    // O
+    myConfig.keymap[3]   = 59;    // P
+    myConfig.keymap[4]   = 84;    // Space
+    myConfig.keymap[5]   = 84;    // Space
+    myConfig.keymap[6]   = 92;    // Period 
+    myConfig.keymap[7]   = 92;    // Period
+    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
+    myConfig.keymap[10]  = 71;    // 1
+    myConfig.keymap[11]  = 72;    // 2
+}
+
+void MapWASD(void)
+{
+    myConfig.keymap[0]   = 66;    // W
+    myConfig.keymap[1]   = 44;    // A
+    myConfig.keymap[2]   = 62;    // S
+    myConfig.keymap[3]   = 47;    // D
+    myConfig.keymap[4]   = 84;    // Space
+    myConfig.keymap[5]   = 84;    // Space
+    myConfig.keymap[6]   = 84;    // Space
+    myConfig.keymap[7]   = 84;    // Space
+    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
+    myConfig.keymap[10]  = 71;    // 1
+    myConfig.keymap[11]  = 72;    // 2
+}
+
+void MapZCPeriod(void)
+{
+    myConfig.keymap[0]   = 60;    // Q
+    myConfig.keymap[1]   = 44;    // A
+    myConfig.keymap[2]   = 69;    // Z
+    myConfig.keymap[3]   = 46;    // C
+    myConfig.keymap[4]   = 92;    // Period
+    myConfig.keymap[5]   = 92;    // Period
+    myConfig.keymap[6]   = 84;    // Space
+    myConfig.keymap[7]   = 84;    // Space
+    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
+    myConfig.keymap[10]  = 71;    // 1
+    myConfig.keymap[11]  = 72;    // 2
+}
+
 
 void SetDefaultGlobalConfig(void)
 {
@@ -1342,7 +1390,7 @@ void SetDefaultGameConfig(void)
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
     if (svi_mode)                               myConfig.overlay = 10; // SVI default to full keyboard (MSX keyboard close enough)  
-    if (einstein_mode)                          myConfig.overlay = 11; // Tatung Einstein defaults to full keyboard
+    if (einstein_mode)                          myConfig.overlay = 14; // Tatung Einstein defaults to full keyboard
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
@@ -1666,7 +1714,7 @@ const struct options_t Option_Table[3][20] =
     // Page 1
     {
         {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", 
-                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD"},                                                                                 &myConfig.overlay,    14},
+                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD", "EINSTEIN KBD"},                                                                 &myConfig.overlay,    15},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
@@ -1864,6 +1912,21 @@ void DisplayKeymapName(u32 uY)
   AffChaine(1,17,(uY== 17 ? 2 : 0),szCha);
 }
 
+u8 keyMapType = 0;
+void SwapKeymap(void)
+{
+    keyMapType = (keyMapType+1) % 5;
+    switch (keyMapType)
+    {
+        case 0: MapPlayer1();  break;
+        case 1: MapPlayer2();  break;
+        case 2: MapQAOP();     break;
+        case 3: MapWASD();     break;
+        case 4: MapZCPeriod(); break;
+    }
+}
+
+
 // ------------------------------------------------------------------------------
 // Allow the user to change the key map for the current game and give them
 // the option of writing that keymap out to a configuration file for the game.
@@ -1883,7 +1946,7 @@ void colecoDSChangeKeymap(void)
   // --------------------------------------------------
   AffChaine(1 ,19,0,("   D-PAD : CHANGE KEY MAP    "));
   AffChaine(1 ,20,0,("       B : RETURN MAIN MENU  "));
-  AffChaine(1 ,21,0,("       X : SWAP P1/P2 MAP    "));
+  AffChaine(1 ,21,0,("       X : SWAP KEYMAP TYPE  "));
   AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
   DisplayKeymapName(ucY);
   
@@ -1981,10 +2044,7 @@ void colecoDSChangeKeymap(void)
     // Swap Player 1 and Player 2 keymap
     if (keysCurrent() & KEY_X)
     {
-        if (myConfig.keymap[0] != 20)
-            MapPlayer2();
-        else 
-            MapPlayer1();
+        SwapKeymap();
         bIndTch = myConfig.keymap[ucY-6];
         DisplayKeymapName(ucY);
         while (keysCurrent() & KEY_X) 
@@ -2063,6 +2123,8 @@ void ReadFileCRCAndConfig(void)
     adam_mode = 0;
     creativision_mode = 0;
     coleco_mode = 0;
+    
+    keyMapType = 0;
     
     CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
 
@@ -2168,8 +2230,6 @@ void ReadFileCRCAndConfig(void)
     // --------------------------------------------
     if (file_crc == 0x8375203e) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
     if (file_crc == 0x77afd38b) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
-    
-
 }
 
 // --------------------------------------------------------------------
