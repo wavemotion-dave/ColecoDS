@@ -108,7 +108,8 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       if ((JoyState == 0) && (kbd_key == 0) && (key_shift == 0) && (key_ctrl == 0)) return 0xFF;
       
       u8 scan_matrix = ~MTX_KBD_DRIVE & 0xFF;
-      u8 key1 = 0x00;
+      
+      u8 key1 = 0x00;   // Accumulate keys here...
       
       // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
       if (last_special_key != 0)
