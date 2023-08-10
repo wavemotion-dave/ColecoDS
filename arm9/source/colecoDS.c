@@ -34,6 +34,7 @@
 #include "msx_sm.h"
 #include "msx_full.h"
 #include "mtx_full.h"
+#include "svi_full.h"
 #include "msx_japan.h"
 #include "adam_full.h"
 #include "alpha_kbd.h"
@@ -1363,9 +1364,8 @@ void CassetteMenu(void)
                   BufferKey('O');
                   BufferKey('A');
                   BufferKey('D');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_RET);
+                  BufferKey(255);
                   BufferKey('R');
                   BufferKey('U');
                   BufferKey('N');
@@ -1384,15 +1384,8 @@ void CassetteMenu(void)
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (svi_mode)
-                  {
-                      BufferKey(';');
-                  }
-                  else
-                  {
-                      if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                      BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
-                  }
+                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
@@ -1689,7 +1682,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
 }
 
 
-u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
+u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX Keyboard
 {
     static u8 bKanaShown = 0;
     
@@ -1700,7 +1693,7 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
         else                  kbd_key = KBD_KEY_RIGHT;
     }
-    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with I-VI Smartkeys)
+    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with Function Keys)
     {
         if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;
         else if ((iTx >= 22)  && (iTx < 44))   kbd_key = KBD_KEY_HOME;
@@ -1787,6 +1780,115 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX/SVI/MTX/Etc Keyboard
         else if ((iTx >= 163) && (iTx < 191))  {kbd_key = KBD_KEY_CODE; if (msx_japanese_matrix) {AffChaine(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
         else if ((iTx >= 191) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+    
+    if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
+    {
+        AffChaine(4,0,6,"    ");
+        bKanaShown = 0;
+    }
+
+    return MENU_CHOICE_NONE;
+}
+
+u8 handle_svi_keyboard_press(u16 iTx, u16 iTy)  // SVI Keyboard
+{
+    static u8 bKanaShown = 0;
+    
+    if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
+    {
+        if      (iTy < 120)   kbd_key = KBD_KEY_UP;
+        else if (iTy > 145)   kbd_key = KBD_KEY_DOWN;
+        else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
+        else                  kbd_key = KBD_KEY_RIGHT;
+    }
+    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with Function Keys)
+    {
+        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = KBD_KEY_ESC;
+        else if ((iTx >= 22)  && (iTx < 44))   kbd_key = KBD_KEY_HOME;
+        else if ((iTx >= 44)  && (iTx < 73))   kbd_key = KBD_KEY_F1;
+        else if ((iTx >= 73)  && (iTx < 102))  kbd_key = KBD_KEY_F2;
+        else if ((iTx >= 102) && (iTx < 131))  kbd_key = KBD_KEY_F3;
+        else if ((iTx >= 131) && (iTx < 160))  kbd_key = KBD_KEY_F4;
+        else if ((iTx >= 160) && (iTx < 190))  kbd_key = KBD_KEY_F5;
+        else if ((iTx >= 190) && (iTx < 212))  kbd_key = KBD_KEY_BS;
+        else if ((iTx >= 212) && (iTx < 235))  kbd_key = KBD_KEY_INS;
+        else if ((iTx >= 235) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
+    }
+    else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
+    {
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = 0;
+        else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
+        else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
+        else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
+        else if ((iTx >= 61)  && (iTx < 75))   kbd_key = '4';
+        else if ((iTx >= 75)  && (iTx < 91))   kbd_key = '5';
+        else if ((iTx >= 91)  && (iTx < 106))  kbd_key = '6';
+        else if ((iTx >= 106) && (iTx < 121))  kbd_key = '7';
+        else if ((iTx >= 121) && (iTx < 135))  kbd_key = '8';
+        else if ((iTx >= 135) && (iTx < 151))  kbd_key = '9';
+        else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
+        else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
+        else if ((iTx >= 181) && (iTx < 195))  kbd_key = '=';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '`';
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_SEL;
+    }
+    else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
+    {
+        if      ((iTx >= 0)   && (iTx < 23))   kbd_key = KBD_KEY_TAB;
+        else if ((iTx >= 23)  && (iTx < 39))   kbd_key = 'Q';
+        else if ((iTx >= 39)  && (iTx < 54))   kbd_key = 'W';
+        else if ((iTx >= 54)  && (iTx < 69))   kbd_key = 'E';
+        else if ((iTx >= 69)  && (iTx < 83))   kbd_key = 'R';
+        else if ((iTx >= 83)  && (iTx < 99))   kbd_key = 'T';
+        else if ((iTx >= 99)  && (iTx < 113))  kbd_key = 'Y';
+        else if ((iTx >= 113) && (iTx < 129))  kbd_key = 'U';
+        else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
+        else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
+        else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+    }
+    else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
+    {
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
+        else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
+        else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
+        else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
+        else if ((iTx >= 72)  && (iTx < 87))   kbd_key = 'F';
+        else if ((iTx >= 87)  && (iTx < 102))  kbd_key = 'G';
+        else if ((iTx >= 102) && (iTx < 117))  kbd_key = 'H';
+        else if ((iTx >= 117) && (iTx < 132))  kbd_key = 'J';
+        else if ((iTx >= 132) && (iTx < 147))  kbd_key = 'K';
+        else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
+        else if ((iTx >= 161) && (iTx < 178))  kbd_key = ':';
+        else if ((iTx >= 178) && (iTx < 192))  kbd_key = KBD_KEY_QUOTE;
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;
+    }
+    else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
+    {
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
+        else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
+        else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
+        else if ((iTx >= 78)  && (iTx < 94))   kbd_key = 'V';
+        else if ((iTx >= 94)  && (iTx < 109))  kbd_key = 'B';
+        else if ((iTx >= 109) && (iTx < 123))  kbd_key = 'N';
+        else if ((iTx >= 123) && (iTx < 139))  kbd_key = 'M';
+        else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
+        else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
+        else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;
+    }
+    else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
+        else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
+        else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
+        else if ((iTx >= 163) && (iTx < 181))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}
+        else if ((iTx >= 181) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     
     if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
@@ -2341,11 +2443,11 @@ void colecoDS_main(void)
         {
             meta_key = handle_adam_keyboard_press(iTx, iTy);
         }
-        else if (myConfig.overlay == 10) // MSX/SVI/MTX/Einstein Keyboard
+        else if (myConfig.overlay == 10) // MSX Keyboard
         {
             meta_key = handle_msx_keyboard_press(iTx, iTy);
         }
-        else if (myConfig.overlay == 11) // Memotech MTX Keyboard (good enough for Einstein too)
+        else if (myConfig.overlay == 11) // Memotech MTX Keyboard
         {
             meta_key = handle_mtx_keyboard_press(iTx, iTy);
         }
@@ -2360,6 +2462,10 @@ void colecoDS_main(void)
         else if (myConfig.overlay == 14) // Tatung Einstein Keyboard
         {
             meta_key = handle_einstein_keyboard_press(iTx, iTy);
+        }
+        else if (myConfig.overlay == 15) // SVI Keyboard
+        {
+            meta_key = handle_svi_keyboard_press(iTx, iTy);
         }
         else    // Normal 12 button virtual keypad
         {
@@ -2596,15 +2702,8 @@ void colecoDS_main(void)
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (svi_mode)
-                  {
-                     BufferKey(';');
-                  }
-                  else
-                  {
-                      if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                      BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
-                  }
+                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
@@ -2925,6 +3024,14 @@ void InitBottomScreen(void)
       decompress(einstein_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) einstein_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 15) // Spectravideo SVI
+    {
+      //  Init bottom screen
+      decompress(svi_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(svi_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) svi_fullPal,(void*) BG_PALETTE_SUB,256*2);
     }
     
     else // Generic Overlay
