@@ -138,134 +138,142 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           }
       }      
 
-      if (scan_matrix & 0x01) // 0xFE
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
       {
-          if (kbd_key)
-          {
-              if (kbd_key == '1')           key1 |= 0x01;
-              if (kbd_key == '3')           key1 |= 0x02;
-              if (kbd_key == '5')           key1 |= 0x04;
-              if (kbd_key == '7')           key1 |= 0x08;
-              if (kbd_key == '9')           key1 |= 0x10;
-              if (kbd_key == '-')           key1 |= 0x20;
-              if (kbd_key == '\\')          key1 |= 0x40;
-          }          
-      }
+          kbd_key = kbd_keys[i];
 
-      if (scan_matrix & 0x02) // 0xFD
-      {
-          if (kbd_key)
+          if (scan_matrix & 0x01) // 0xFE
           {
-              if (kbd_key == KBD_KEY_ESC)   key1 |= 0x01;
-              if (kbd_key == '2')           key1 |= 0x02;
-              if (kbd_key == '4')           key1 |= 0x04;
-              if (kbd_key == '6')           key1 |= 0x08;
-              if (kbd_key == '8')           key1 |= 0x10;
-              if (kbd_key == '0')           key1 |= 0x20;
-              if (kbd_key == '^')           key1 |= 0x40;
+              if (kbd_key)
+              {
+                  if (kbd_key == '1')           key1 |= 0x01;
+                  if (kbd_key == '3')           key1 |= 0x02;
+                  if (kbd_key == '5')           key1 |= 0x04;
+                  if (kbd_key == '7')           key1 |= 0x08;
+                  if (kbd_key == '9')           key1 |= 0x10;
+                  if (kbd_key == '-')           key1 |= 0x20;
+                  if (kbd_key == '\\')          key1 |= 0x40;
+              }          
           }
-      }
-      
-      if (scan_matrix & 0x04) // 0xFB
-      {
-          if (joy1 & 0x01)                  key1 |= 0x80;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_CTRL)  key1 |= 0x01;
-              if (kbd_key == 'W')           key1 |= 0x02;
-              if (kbd_key == 'R')           key1 |= 0x04;
-              if (kbd_key == 'Y')           key1 |= 0x08;
-              if (kbd_key == 'I')           key1 |= 0x10;
-              if (kbd_key == 'P')           key1 |= 0x20;
-              if (kbd_key == '[')           key1 |= 0x40;
-              if (kbd_key == KBD_KEY_UP)    key1 |= 0x80;
-          }          
-          
-          if (key_ctrl)                     key1 |= 0x01;
-      }
-      
-      if (scan_matrix & 0x08) // 0xF7
-      {
-          if (joy1 & 0x04)                  key1 |= 0x80;
-          if (kbd_key)
-          {
-              if (kbd_key == 'Q')           key1 |= 0x01;
-              if (kbd_key == 'E')           key1 |= 0x02;
-              if (kbd_key == 'T')           key1 |= 0x04;
-              if (kbd_key == 'U')           key1 |= 0x08;
-              if (kbd_key == 'O')           key1 |= 0x10;
-              if (kbd_key == '@')           key1 |= 0x20;
-              if (kbd_key == KBD_KEY_LEFT)  key1 |= 0x80;              
-          }          
-      }
-      
-      
-      if (scan_matrix & 0x10) // 0xEF
-      {
-          if (joy1 & 0x08)                  key1 |= 0x80;
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_CAPS)  key1 |= 0x01;
-              if (kbd_key == 'S')           key1 |= 0x02;
-              if (kbd_key == 'F')           key1 |= 0x04;
-              if (kbd_key == 'H')           key1 |= 0x08;
-              if (kbd_key == 'K')           key1 |= 0x10;
-              if (kbd_key == ';')           key1 |= 0x20;
-              if (kbd_key == ']')           key1 |= 0x40;
-              if (kbd_key == KBD_KEY_RIGHT) key1 |= 0x80;              
-          }          
-      }
-      
-      if (scan_matrix & 0x20)  // 0xDF
-      {
-          if (JoyState & JST_FIRER)         key1 |= 0x80;    // HOME
-          if (JoyState & JST_FIREL)         key1 |= 0x80;    // HOME
-          if (kbd_key)
-          {
-              if (kbd_key == 'A')           key1 |= 0x01;
-              if (kbd_key == 'D')           key1 |= 0x02;
-              if (kbd_key == 'G')           key1 |= 0x04;
-              if (kbd_key == 'J')           key1 |= 0x08;
-              if (kbd_key == 'L')           key1 |= 0x10;
-              if (kbd_key == ':')           key1 |= 0x20;
-              if (kbd_key == KBD_KEY_RET)   key1 |= 0x40;
-              if (kbd_key == KBD_KEY_HOME)  key1 |= 0x80;
-          }          
-      }
 
-      if (scan_matrix & 0x40)  // 0xBF
-      {
-          if (joy1 & 0x02)                  key1 |= 0x80;
-          
-          if (kbd_key)
+          if (scan_matrix & 0x02) // 0xFD
           {
-              if (kbd_key == 'X')           key1 |= 0x02;
-              if (kbd_key == 'V')           key1 |= 0x04;
-              if (kbd_key == 'N')           key1 |= 0x08;
-              if (kbd_key == ',')           key1 |= 0x10;
-              if (kbd_key == '/')           key1 |= 0x20;
-              if (kbd_key == '-')           key1 |= 0x40;
-              if (kbd_key == KBD_KEY_DOWN)  key1 |= 0x80;              
-          }          
-          
-          if (key_shift)                    key1 |= 0x01;    // SHIFT key
-      }
-      
-      if (scan_matrix & 0x80)   // 0x7F
-      {
-          //"B", "M", "Z", "C" and <space>  are the 2P "left" joystick
-          if (joy1 & 0x10)                  key1 |= 0x04;
-          if (joy1 & 0x20)                  key1 |= 0x08;
-          if (joy1 & 0x40)                  key1 |= 0x01;
-          if (joy1 & 0x80)                  key1 |= 0x02;
-          
-          if (kbd_key)
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_ESC)   key1 |= 0x01;
+                  if (kbd_key == '2')           key1 |= 0x02;
+                  if (kbd_key == '4')           key1 |= 0x04;
+                  if (kbd_key == '6')           key1 |= 0x08;
+                  if (kbd_key == '8')           key1 |= 0x10;
+                  if (kbd_key == '0')           key1 |= 0x20;
+                  if (kbd_key == '^')           key1 |= 0x40;
+              }
+          }
+
+          if (scan_matrix & 0x04) // 0xFB
           {
-              if (kbd_key == 'Z')           key1 |= 0x01;
-              if (kbd_key == 'C')           key1 |= 0x02;
-              if (kbd_key == 'B')           key1 |= 0x04;
-              if (kbd_key == 'M')           key1 |= 0x08;
-              if (kbd_key == '.')           key1 |= 0x10;
+              if (joy1 & 0x01)                  key1 |= 0x80;
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_CTRL)  key1 |= 0x01;
+                  if (kbd_key == 'W')           key1 |= 0x02;
+                  if (kbd_key == 'R')           key1 |= 0x04;
+                  if (kbd_key == 'Y')           key1 |= 0x08;
+                  if (kbd_key == 'I')           key1 |= 0x10;
+                  if (kbd_key == 'P')           key1 |= 0x20;
+                  if (kbd_key == '[')           key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_UP)    key1 |= 0x80;
+              }          
+
+              if (key_ctrl)                     key1 |= 0x01;
+          }
+
+          if (scan_matrix & 0x08) // 0xF7
+          {
+              if (joy1 & 0x04)                  key1 |= 0x80;
+              if (kbd_key)
+              {
+                  if (kbd_key == 'Q')           key1 |= 0x01;
+                  if (kbd_key == 'E')           key1 |= 0x02;
+                  if (kbd_key == 'T')           key1 |= 0x04;
+                  if (kbd_key == 'U')           key1 |= 0x08;
+                  if (kbd_key == 'O')           key1 |= 0x10;
+                  if (kbd_key == '@')           key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_LEFT)  key1 |= 0x80;              
+              }          
+          }
+
+
+          if (scan_matrix & 0x10) // 0xEF
+          {
+              if (joy1 & 0x08)                  key1 |= 0x80;
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_CAPS)  key1 |= 0x01;
+                  if (kbd_key == 'S')           key1 |= 0x02;
+                  if (kbd_key == 'F')           key1 |= 0x04;
+                  if (kbd_key == 'H')           key1 |= 0x08;
+                  if (kbd_key == 'K')           key1 |= 0x10;
+                  if (kbd_key == ';')           key1 |= 0x20;
+                  if (kbd_key == ']')           key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_RIGHT) key1 |= 0x80;              
+              }          
+          }
+
+          if (scan_matrix & 0x20)  // 0xDF
+          {
+              if (JoyState & JST_FIRER)         key1 |= 0x80;    // HOME
+              if (JoyState & JST_FIREL)         key1 |= 0x80;    // HOME
+              if (kbd_key)
+              {
+                  if (kbd_key == 'A')           key1 |= 0x01;
+                  if (kbd_key == 'D')           key1 |= 0x02;
+                  if (kbd_key == 'G')           key1 |= 0x04;
+                  if (kbd_key == 'J')           key1 |= 0x08;
+                  if (kbd_key == 'L')           key1 |= 0x10;
+                  if (kbd_key == ':')           key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_RET)   key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_HOME)  key1 |= 0x80;
+              }          
+          }
+
+          if (scan_matrix & 0x40)  // 0xBF
+          {
+              if (joy1 & 0x02)                  key1 |= 0x80;
+
+              if (kbd_key)
+              {
+                  if (kbd_key == 'X')           key1 |= 0x02;
+                  if (kbd_key == 'V')           key1 |= 0x04;
+                  if (kbd_key == 'N')           key1 |= 0x08;
+                  if (kbd_key == ',')           key1 |= 0x10;
+                  if (kbd_key == '/')           key1 |= 0x20;
+                  if (kbd_key == '-')           key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_DOWN)  key1 |= 0x80;              
+              }          
+
+              if (key_shift)                    key1 |= 0x01;    // SHIFT key
+          }
+
+          if (scan_matrix & 0x80)   // 0x7F
+          {
+              //"B", "M", "Z", "C" and <space>  are the 2P "left" joystick
+              if (joy1 & 0x10)                  key1 |= 0x04;
+              if (joy1 & 0x20)                  key1 |= 0x08;
+              if (joy1 & 0x40)                  key1 |= 0x01;
+              if (joy1 & 0x80)                  key1 |= 0x02;
+
+              if (kbd_key)
+              {
+                  if (kbd_key == 'Z')           key1 |= 0x01;
+                  if (kbd_key == 'C')           key1 |= 0x02;
+                  if (kbd_key == 'B')           key1 |= 0x04;
+                  if (kbd_key == 'M')           key1 |= 0x08;
+                  if (kbd_key == '.')           key1 |= 0x10;
+              }
           }
       }
       
@@ -276,58 +284,65 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       u8 scan_matrix = ~MTX_KBD_DRIVE & 0xFF;
       u8 key1 = 0xFC; // Crucial... bits 2+3 are the country code of the keyboard... this is 00=English. D4-D7 also will be zero (when inverted)
       
-      if (scan_matrix & 0x01) // 0xFE
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
       {
-          if (kbd_key == KBD_KEY_STOP)  key1 |= 0x01;    // BREAK key on Memotech
-          if (kbd_key == KBD_KEY_F1)    key1 |= 0x02;    // F1
-      }
-
-      if (scan_matrix & 0x02) // 0xFD
-      {
-          if (kbd_key == KBD_KEY_BS)    key1 |= 0x01;    // Backspace key on Memotech
-          if (kbd_key == KBD_KEY_F5)    key1 |= 0x02;    // F5
-      }
-      
-      if (scan_matrix & 0x04) // 0xFB
-      {
-          if (kbd_key == KBD_KEY_TAB)   key1 |= 0x01;    // TAB
-          if (kbd_key == KBD_KEY_F2)    key1 |= 0x02;    // F2
-      }
-      
-      if (scan_matrix & 0x08) // 0xF7
-      {
-          if (kbd_key == KBD_KEY_DEL)   key1 |= 0x01;    // DEL
-          if (kbd_key == KBD_KEY_F6)    key1 |= 0x02;    // F6
-      }      
-      
-      if (scan_matrix & 0x10) // 0xEF
-      {
-          if (kbd_key == KBD_KEY_F7)    key1 |= 0x02;    // F7
-      }
-      
-      if (scan_matrix & 0x20) // 0xDF
-      {
-          if (kbd_key == KBD_KEY_F3)    key1 |= 0x02;    // F3
-      }      
-
-      if (scan_matrix & 0x40) // 0xBF
-      {
-          if (kbd_key == KBD_KEY_F8)    key1 |= 0x02;    // F8
-      }
-      
-      if (scan_matrix & 0x80) // 0x7F
-      {
-          if (JoyState == JST_BLUE)      key1 |= 0x01;   // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
-          if (JoyState == JST_PURPLE)    key1 |= 0x01;
-          
-          if (JoyState & JST_FIRER<<16)  key1 |= 0x01;    // P2 fire button is SPACE
-          if (JoyState & JST_FIREL<<16)  key1 |= 0x01;    // P2 fire button is SPACE
-
-          if (kbd_key)
+          kbd_key = kbd_keys[i];
+          if (scan_matrix & 0x01) // 0xFE
           {
-              if (kbd_key == ' ')        key1 |= 0x01;   // Space
-              if (kbd_key == KBD_KEY_F4) key1 |= 0x02;   // F4
-          }          
+              if (kbd_key == KBD_KEY_STOP)  key1 |= 0x01;    // BREAK key on Memotech
+              if (kbd_key == KBD_KEY_F1)    key1 |= 0x02;    // F1
+          }
+
+          if (scan_matrix & 0x02) // 0xFD
+          {
+              if (kbd_key == KBD_KEY_BS)    key1 |= 0x01;    // Backspace key on Memotech
+              if (kbd_key == KBD_KEY_F5)    key1 |= 0x02;    // F5
+          }
+
+          if (scan_matrix & 0x04) // 0xFB
+          {
+              if (kbd_key == KBD_KEY_TAB)   key1 |= 0x01;    // TAB
+              if (kbd_key == KBD_KEY_F2)    key1 |= 0x02;    // F2
+          }
+
+          if (scan_matrix & 0x08) // 0xF7
+          {
+              if (kbd_key == KBD_KEY_DEL)   key1 |= 0x01;    // DEL
+              if (kbd_key == KBD_KEY_F6)    key1 |= 0x02;    // F6
+          }      
+
+          if (scan_matrix & 0x10) // 0xEF
+          {
+              if (kbd_key == KBD_KEY_F7)    key1 |= 0x02;    // F7
+          }
+
+          if (scan_matrix & 0x20) // 0xDF
+          {
+              if (kbd_key == KBD_KEY_F3)    key1 |= 0x02;    // F3
+          }      
+
+          if (scan_matrix & 0x40) // 0xBF
+          {
+              if (kbd_key == KBD_KEY_F8)    key1 |= 0x02;    // F8
+          }
+
+          if (scan_matrix & 0x80) // 0x7F
+          {
+              if (JoyState == JST_BLUE)      key1 |= 0x01;   // Map the alternate 2 buttons to 'space' as some games make use of this as a 2nd button
+              if (JoyState == JST_PURPLE)    key1 |= 0x01;
+
+              if (JoyState & JST_FIRER<<16)  key1 |= 0x01;    // P2 fire button is SPACE
+              if (JoyState & JST_FIREL<<16)  key1 |= 0x01;    // P2 fire button is SPACE
+
+              if (kbd_key)
+              {
+                  if (kbd_key == ' ')        key1 |= 0x01;   // Space
+                  if (kbd_key == KBD_KEY_F4) key1 |= 0x02;   // F4
+              }          
+          }
       }
       return (~key1 & 0xFF);
   }
@@ -647,12 +662,12 @@ void memotech_launch_run_file(void)
 
       if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
       {
-        memset(RAM_Memory, 0x00, 0x10000);
-        cpu_writeport_memotech(0x00, 0x80);                    
+        //memset(RAM_Memory, 0x00, 0x10000);
+        //cpu_writeport_memotech(0x00, 0x80);
       }
-      else if (myConfig.memWipe == 3)    // Random MSX Memory Wipe
+      else if (myConfig.memWipe == 3)    // Random MTX Memory Wipe
       {
-          for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (rand() & 0xFF);   // This pattern tends to make most things start up properly...
+          //for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (rand() & 0xFF);   // Random pattern
       }
   
       if (memotech_mode == 3)   // .COM file
@@ -666,6 +681,7 @@ void memotech_launch_run_file(void)
             MemoryMap[6] = (u8 *)RAM_Memory+0xC000;     // The seventh RAM block is mapped to 0xC000 - Common Area
             MemoryMap[7] = (u8 *)RAM_Memory+0xE000;     // The eighth  RAM block is mapped to 0xE000 - Common Area
             memotech_RAM_start = 0x0000;                // We're emulating a 64K machine
+            cpu_writeport_memotech(0x00, 0x80);
             memcpy(RAM_Memory+0x100, ROM_Memory, 0xFF00);          
             CPU.PC.W = 0x100;
       }

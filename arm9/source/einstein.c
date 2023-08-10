@@ -45,7 +45,7 @@ void scan_keyboard(void)
     }
     else
     {
-      // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
+      // For the full keyboard overlay... this is a bit of a hack for SHIFT, CTRL and GRAPH
       if (last_special_key != 0)
       {
           if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
@@ -67,108 +67,124 @@ void scan_keyboard(void)
             AffChaine(4,0,6, "CTRL");
             key_ctrl = 1;
           }
+          else if (last_special_key == KBD_KEY_GRAPH)  
+          {
+            AffChaine(4,0,6, "GRPH");
+            key_graph = 1;
+          }
 
           if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
           {
               if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
           }
       }
-        
+
       myKeyData = 0x00;
-      if (!(keyboard_w & 0x01))
-      {
-          if (kbd_key == KBD_KEY_BRK)   myKeyData |= 0x01;
-          if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x02;  // F0
-          if (kbd_key == KBD_KEY_F7)    myKeyData |= 0x04;
-          if (kbd_key == KBD_KEY_HOME)  myKeyData |= 0x08;
-          if (kbd_key == KBD_KEY_CAPS)  myKeyData |= 0x10;
-          if (kbd_key == KBD_KEY_RET)   myKeyData |= 0x20;
-          if (kbd_key == ' ')           myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_ESC)   myKeyData |= 0x80;
-      }
-      if (!(keyboard_w & 0x02))
-      {
-          if ((JoyState & JST_FIRER))   myKeyData |= 0x20;  // Same as DOWN
-
-          if (kbd_key == 'I')           myKeyData |= 0x01;
-          if (kbd_key == 'O')           myKeyData |= 0x02;
-          if (kbd_key == 'P')           myKeyData |= 0x04;
-          if (kbd_key == KBD_KEY_LEFT)  myKeyData |= 0x08;
-          if (kbd_key == '@')           myKeyData |= 0x10;
-          if (kbd_key == KBD_KEY_DOWN)  myKeyData |= 0x20;
-          if (kbd_key == '\\')          myKeyData |= 0x40;
-          if (kbd_key == '0')           myKeyData |= 0x80;
-      }
         
-      if (!(keyboard_w & 0x04))
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
       {
-          if (kbd_key == 'K')           myKeyData |= 0x01;
-          if (kbd_key == 'L')           myKeyData |= 0x02;
-          if (kbd_key == ';')           myKeyData |= 0x04;
-          if (kbd_key == ':')           myKeyData |= 0x08;
-          if (kbd_key == KBD_KEY_RIGHT) myKeyData |= 0x10;
-          if (kbd_key == KBD_KEY_BS)    myKeyData |= 0x20;
-          if (kbd_key == '9')           myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_F5)    myKeyData |= 0x80;
-      }
-        
-      if (!(keyboard_w & 0x08))
-      {
-          if ((JoyState&0x0F) == JST_PURPLE) myKeyData |= 0x40;  // Same as UP
+          kbd_key = kbd_keys[i];
+          
+          if (!(keyboard_w & 0x01))
+          {
+              if (key_graph) myKeyData |= 0x02;  // Maybe?
 
-          if (kbd_key == ',')           myKeyData |= 0x01;
-          if (kbd_key == '.')           myKeyData |= 0x02;
-          if (kbd_key == '/')           myKeyData |= 0x04;
-          if (kbd_key == '8')           myKeyData |= 0x08;
-          if (kbd_key == KBD_KEY_DEL)   myKeyData |= 0x10;
-          if (kbd_key == '-')           myKeyData |= 0x20;
-          if (kbd_key == KBD_KEY_UP)    myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_F4)    myKeyData |= 0x80;
-      }
+              if (kbd_key == KBD_KEY_STOP)  myKeyData |= 0x01;  // Break
+              if (kbd_key == KBD_KEY_GRAPH) myKeyData |= 0;     // Unused
+              if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x04;  // F0
+              if (kbd_key == KBD_KEY_F7)    myKeyData |= 0x08;
+              if (kbd_key == KBD_KEY_CAPS)  myKeyData |= 0x10;
+              if (kbd_key == KBD_KEY_RET)   myKeyData |= 0x20;
+              if (kbd_key == ' ')           myKeyData |= 0x40;
+              if (kbd_key == KBD_KEY_ESC)   myKeyData |= 0x80;
+          }
+          if (!(keyboard_w & 0x02))
+          {
+              if ((JoyState & JST_FIRER))   myKeyData |= 0x20;  // Same as DOWN
 
-      if (!(keyboard_w & 0x10))
-      {
-          if (kbd_key == '7')           myKeyData |= 0x01;
-          if (kbd_key == '6')           myKeyData |= 0x02;
-          if (kbd_key == '5')           myKeyData |= 0x04;
-          if (kbd_key == '4')           myKeyData |= 0x08;
-          if (kbd_key == '3')           myKeyData |= 0x10;
-          if (kbd_key == '2')           myKeyData |= 0x20;
-          if (kbd_key == '1')           myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_F3)    myKeyData |= 0x80;
-      }
-      if (!(keyboard_w & 0x20))
-      {
-          if (kbd_key == 'U')           myKeyData |= 0x01;
-          if (kbd_key == 'Y')           myKeyData |= 0x02;
-          if (kbd_key == 'T')           myKeyData |= 0x04;
-          if (kbd_key == 'R')           myKeyData |= 0x08;
-          if (kbd_key == 'E')           myKeyData |= 0x10;
-          if (kbd_key == 'W')           myKeyData |= 0x20;
-          if (kbd_key == 'Q')           myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_F2)    myKeyData |= 0x80;
-      }
-      if (!(keyboard_w & 0x40))
-      {
-          if (kbd_key == 'J')           myKeyData |= 0x01;
-          if (kbd_key == 'H')           myKeyData |= 0x02;
-          if (kbd_key == 'G')           myKeyData |= 0x04;
-          if (kbd_key == 'F')           myKeyData |= 0x08;
-          if (kbd_key == 'D')           myKeyData |= 0x10;
-          if (kbd_key == 'S')           myKeyData |= 0x20;
-          if (kbd_key == 'A')           myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_F1)    myKeyData |= 0x80;
-      }
-      if (!(keyboard_w & 0x80))
-      {
-          if (kbd_key == 'M')           myKeyData |= 0x01;
-          if (kbd_key == 'N')           myKeyData |= 0x02;
-          if (kbd_key == 'B')           myKeyData |= 0x04;
-          if (kbd_key == 'V')           myKeyData |= 0x08;
-          if (kbd_key == 'C')           myKeyData |= 0x10;
-          if (kbd_key == 'X')           myKeyData |= 0x20;
-          if (kbd_key == 'Z')           myKeyData |= 0x40;
-          if (kbd_key == KBD_KEY_F6)    myKeyData |= 0x80;
+              if (kbd_key == 'I')           myKeyData |= 0x01;
+              if (kbd_key == 'O')           myKeyData |= 0x02;
+              if (kbd_key == 'P')           myKeyData |= 0x04;
+              if (kbd_key == KBD_KEY_LEFT)  myKeyData |= 0x08;
+              if (kbd_key == '_')           myKeyData |= 0x10;
+              if (kbd_key == KBD_KEY_LF)    myKeyData |= 0x20;
+              if (kbd_key == '|')           myKeyData |= 0x40;
+              if (kbd_key == '0')           myKeyData |= 0x80;
+          }
+
+          if (!(keyboard_w & 0x04))
+          {
+              if (kbd_key == 'K')           myKeyData |= 0x01;
+              if (kbd_key == 'L')           myKeyData |= 0x02;
+              if (kbd_key == ';')           myKeyData |= 0x04;
+              if (kbd_key == ':')           myKeyData |= 0x08;
+              if (kbd_key == KBD_KEY_RIGHT) myKeyData |= 0x10;
+              if (kbd_key == KBD_KEY_BS)    myKeyData |= 0x20;
+              if (kbd_key == '9')           myKeyData |= 0x40;
+              if (kbd_key == KBD_KEY_F5)    myKeyData |= 0x80;
+          }
+
+          if (!(keyboard_w & 0x08))
+          {
+              if ((JoyState&0x0F) == JST_PURPLE) myKeyData |= 0x40;  // Same as UP
+
+              if (kbd_key == ',')           myKeyData |= 0x01;
+              if (kbd_key == '.')           myKeyData |= 0x02;
+              if (kbd_key == '/')           myKeyData |= 0x04;
+              if (kbd_key == '8')           myKeyData |= 0x08;
+              if (kbd_key == KBD_KEY_INS)   myKeyData |= 0x10;
+              if (kbd_key == '=')           myKeyData |= 0x20;
+              if (kbd_key == KBD_KEY_UP)    myKeyData |= 0x40;
+              if (kbd_key == KBD_KEY_F4)    myKeyData |= 0x80;
+          }
+
+          if (!(keyboard_w & 0x10))
+          {
+              if (kbd_key == '7')           myKeyData |= 0x01;
+              if (kbd_key == '6')           myKeyData |= 0x02;
+              if (kbd_key == '5')           myKeyData |= 0x04;
+              if (kbd_key == '4')           myKeyData |= 0x08;
+              if (kbd_key == '3')           myKeyData |= 0x10;
+              if (kbd_key == '2')           myKeyData |= 0x20;
+              if (kbd_key == '1')           myKeyData |= 0x40;
+              if (kbd_key == KBD_KEY_F3)    myKeyData |= 0x80;
+          }
+          if (!(keyboard_w & 0x20))
+          {
+              if (kbd_key == 'U')           myKeyData |= 0x01;
+              if (kbd_key == 'Y')           myKeyData |= 0x02;
+              if (kbd_key == 'T')           myKeyData |= 0x04;
+              if (kbd_key == 'R')           myKeyData |= 0x08;
+              if (kbd_key == 'E')           myKeyData |= 0x10;
+              if (kbd_key == 'W')           myKeyData |= 0x20;
+              if (kbd_key == 'Q')           myKeyData |= 0x40;
+              if (kbd_key == KBD_KEY_F2)    myKeyData |= 0x80;
+          }
+          if (!(keyboard_w & 0x40))
+          {
+              if (kbd_key == 'J')           myKeyData |= 0x01;
+              if (kbd_key == 'H')           myKeyData |= 0x02;
+              if (kbd_key == 'G')           myKeyData |= 0x04;
+              if (kbd_key == 'F')           myKeyData |= 0x08;
+              if (kbd_key == 'D')           myKeyData |= 0x10;
+              if (kbd_key == 'S')           myKeyData |= 0x20;
+              if (kbd_key == 'A')           myKeyData |= 0x40;
+              if (kbd_key == KBD_KEY_F1)    myKeyData |= 0x80;
+          }
+          if (!(keyboard_w & 0x80))
+          {
+              if (kbd_key == 'M')           myKeyData |= 0x01;
+              if (kbd_key == 'N')           myKeyData |= 0x02;
+              if (kbd_key == 'B')           myKeyData |= 0x04;
+              if (kbd_key == 'V')           myKeyData |= 0x08;
+              if (kbd_key == 'C')           myKeyData |= 0x10;
+              if (kbd_key == 'X')           myKeyData |= 0x20;
+              if (kbd_key == 'Z')           myKeyData |= 0x40;
+              if (kbd_key == KBD_KEY_F6)    myKeyData |= 0x80;
+          }
       }
     }
     myKeyData = ~myKeyData;
@@ -340,6 +356,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
       
       if (JoyState & JST_FIREL) key_port &= ~0x01;
       
+      if (key_graph) key_port &= ~0x20;  // CTRL KEY
       if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
       if (key_shift) key_port &= ~0x80;  // SHIFT KEY
       

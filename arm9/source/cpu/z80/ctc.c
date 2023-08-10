@@ -154,6 +154,11 @@ void CTC_ResetCounter(u8 chan)
     }
     else if (einstein_mode)
     {
+        // ----------------------------------------------------------------------------------------------
+        // I find the Einstein seems to run a little slow with the values that Memotech was using above.
+        // In theory, it should be the same - but I've "sped" things up a bit here and it seems to run
+        // much closer to more capable emulators. A bit of a fudg-factor but such is life!
+        // ----------------------------------------------------------------------------------------------
         CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 225:14;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
     }
     else // Sord M5
