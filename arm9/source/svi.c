@@ -181,7 +181,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               {
                   if (kbd_key == '8')           key1 |= 0x01;
                   if (kbd_key == '9')           key1 |= 0x02;
-                  if (kbd_key == ';')           key1 |= 0x04;
+                  if (kbd_key == ':')           key1 |= 0x04;
                   if (kbd_key == KBD_KEY_QUOTE) key1 |= 0x08;
                   if (kbd_key == ',')           key1 |= 0x10;
                   if (kbd_key == '=')           key1 |= 0x20;
@@ -239,7 +239,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == 'Y')           key1 |= 0x02;
                   if (kbd_key == 'Z')           key1 |= 0x04;
                   if (kbd_key == '[')           key1 |= 0x08;
-                  if (kbd_key == '\\')          key1 |= 0x10;
+                  if (kbd_key == '`')           key1 |= 0x10;
                   if (kbd_key == ']')           key1 |= 0x20;
                   if (kbd_key == KBD_KEY_DEL)   key1 |= 0x40;              
                   if (kbd_key == KBD_KEY_UP)    key1 |= 0x80;

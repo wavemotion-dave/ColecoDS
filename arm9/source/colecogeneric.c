@@ -1389,7 +1389,7 @@ void SetDefaultGameConfig(void)
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
-    if (svi_mode)                               myConfig.overlay = 10; // SVI default to full keyboard (MSX keyboard close enough)  
+    if (svi_mode)                               myConfig.overlay = 15; // SVI default to full keyboard
     if (einstein_mode)                          myConfig.overlay = 14; // Tatung Einstein defaults to full keyboard
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
@@ -1702,7 +1702,7 @@ const struct options_t Option_Table[3][20] =
     // Page 1
     {
         {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", 
-                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD", "EINSTEIN KBD"},                                                                 &myConfig.overlay,    15},
+                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD", "EINSTEIN KBD", "SVI KEYBOARD"},                                                 &myConfig.overlay,    16},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
