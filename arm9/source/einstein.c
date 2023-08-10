@@ -84,7 +84,7 @@ void scan_keyboard(void)
       // -------------------------------------------------
       // Check every key that might have been pressed...
       // -------------------------------------------------
-      for (u8 i=0; i<kbd_keys_pressed; i++)
+      for (u8 i=0; i< (kbd_keys_pressed ? kbd_keys_pressed:1); i++) // Always one pass at least for joysticks...
       {
           kbd_key = kbd_keys[i];
           

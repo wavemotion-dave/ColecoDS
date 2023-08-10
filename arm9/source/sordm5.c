@@ -88,6 +88,7 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   }
   else if (Port == 0x31)    // Y1
   {
+      
       u8 joy1 = 0x00;
       if (JoyState & JST_FIREL) joy1 |= 0x01;  // '1' (joystick button 1)
       if (JoyState & JST_FIRER) joy1 |= 0x02;  // '2' (joystick button 2)
@@ -100,14 +101,22 @@ unsigned char cpu_readport_m5(register unsigned short Port)
       if (JoyState == JST_7)   joy1 |= 0x40;  // '7'
       if (JoyState == JST_8)   joy1 |= 0x80;  // '8'
       
-      if (kbd_key == '1')      joy1 |= 0x01;
-      if (kbd_key == '2')      joy1 |= 0x02;
-      if (kbd_key == '3')      joy1 |= 0x04;
-      if (kbd_key == '4')      joy1 |= 0x08;
-      if (kbd_key == '5')      joy1 |= 0x10;
-      if (kbd_key == '6')      joy1 |= 0x20;
-      if (kbd_key == '7')      joy1 |= 0x40;
-      if (kbd_key == '8')      joy1 |= 0x80;
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
+      {
+          kbd_key = kbd_keys[i];
+
+          if (kbd_key == '1')      joy1 |= 0x01;
+          if (kbd_key == '2')      joy1 |= 0x02;
+          if (kbd_key == '3')      joy1 |= 0x04;
+          if (kbd_key == '4')      joy1 |= 0x08;
+          if (kbd_key == '5')      joy1 |= 0x10;
+          if (kbd_key == '6')      joy1 |= 0x20;
+          if (kbd_key == '7')      joy1 |= 0x40;
+          if (kbd_key == '8')      joy1 |= 0x80;
+      }
       
       return (joy1);
   }
@@ -115,14 +124,22 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   {
       u8 joy1 = 0x00;
       
-      if (kbd_key == 'Q')      joy1 |= 0x01;
-      if (kbd_key == 'W')      joy1 |= 0x02;
-      if (kbd_key == 'E')      joy1 |= 0x04;
-      if (kbd_key == 'R')      joy1 |= 0x08;
-      if (kbd_key == 'T')      joy1 |= 0x10;
-      if (kbd_key == 'Y')      joy1 |= 0x20;
-      if (kbd_key == 'U')      joy1 |= 0x40;
-      if (kbd_key == 'I')      joy1 |= 0x80;
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
+      {
+          kbd_key = kbd_keys[i];
+          
+          if (kbd_key == 'Q')      joy1 |= 0x01;
+          if (kbd_key == 'W')      joy1 |= 0x02;
+          if (kbd_key == 'E')      joy1 |= 0x04;
+          if (kbd_key == 'R')      joy1 |= 0x08;
+          if (kbd_key == 'T')      joy1 |= 0x10;
+          if (kbd_key == 'Y')      joy1 |= 0x20;
+          if (kbd_key == 'U')      joy1 |= 0x40;
+          if (kbd_key == 'I')      joy1 |= 0x80;
+      }
       
       return joy1;
   }
@@ -130,14 +147,22 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   {
       u8 joy1 = 0x00;
       
-      if (kbd_key == 'A')      joy1 |= 0x01;
-      if (kbd_key == 'S')      joy1 |= 0x02;
-      if (kbd_key == 'D')      joy1 |= 0x04;
-      if (kbd_key == 'F')      joy1 |= 0x08;
-      if (kbd_key == 'G')      joy1 |= 0x10;
-      if (kbd_key == 'H')      joy1 |= 0x20;
-      if (kbd_key == 'J')      joy1 |= 0x40;
-      if (kbd_key == 'K')      joy1 |= 0x80;
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
+      {
+          kbd_key = kbd_keys[i];
+          
+          if (kbd_key == 'A')      joy1 |= 0x01;
+          if (kbd_key == 'S')      joy1 |= 0x02;
+          if (kbd_key == 'D')      joy1 |= 0x04;
+          if (kbd_key == 'F')      joy1 |= 0x08;
+          if (kbd_key == 'G')      joy1 |= 0x10;
+          if (kbd_key == 'H')      joy1 |= 0x20;
+          if (kbd_key == 'J')      joy1 |= 0x40;
+          if (kbd_key == 'K')      joy1 |= 0x80;
+      }
       
       return joy1;
   }
@@ -145,14 +170,22 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   {
       u8 joy1 = 0x00;
       
-      if (kbd_key == 'Z')      joy1 |= 0x01;
-      if (kbd_key == 'X')      joy1 |= 0x02;
-      if (kbd_key == 'C')      joy1 |= 0x04;
-      if (kbd_key == 'V')      joy1 |= 0x08;
-      if (kbd_key == 'B')      joy1 |= 0x10;
-      if (kbd_key == 'N')      joy1 |= 0x20;
-      if (kbd_key == 'M')      joy1 |= 0x40;
-      if (kbd_key == ',')      joy1 |= 0x80;
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
+      {
+          kbd_key = kbd_keys[i];
+          
+          if (kbd_key == 'Z')      joy1 |= 0x01;
+          if (kbd_key == 'X')      joy1 |= 0x02;
+          if (kbd_key == 'C')      joy1 |= 0x04;
+          if (kbd_key == 'V')      joy1 |= 0x08;
+          if (kbd_key == 'B')      joy1 |= 0x10;
+          if (kbd_key == 'N')      joy1 |= 0x20;
+          if (kbd_key == 'M')      joy1 |= 0x40;
+          if (kbd_key == ',')      joy1 |= 0x80;
+      }
       
       return joy1;
   }
@@ -160,28 +193,44 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   {
       u8 joy1 = 0x00;
       
-      if (kbd_key == '9')      joy1 |= 0x01;
-      if (kbd_key == '0')      joy1 |= 0x02;
-      if (kbd_key == '-')      joy1 |= 0x04;
-      if (kbd_key == '^')      joy1 |= 0x08;
-      if (kbd_key == '.')      joy1 |= 0x10;
-      if (kbd_key == '/')      joy1 |= 0x20;
-      if (kbd_key == '@')      joy1 |= 0x40;
-      if (kbd_key == '\\')     joy1 |= 0x80;
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
+      {
+          kbd_key = kbd_keys[i];
+          
+          if (kbd_key == '9')      joy1 |= 0x01;
+          if (kbd_key == '0')      joy1 |= 0x02;
+          if (kbd_key == '-')      joy1 |= 0x04;
+          if (kbd_key == '^')      joy1 |= 0x08;
+          if (kbd_key == '.')      joy1 |= 0x10;
+          if (kbd_key == '/')      joy1 |= 0x20;
+          if (kbd_key == '@')      joy1 |= 0x40;
+          if (kbd_key == '\\')     joy1 |= 0x80;
+      }
       return joy1;
   }
   else if (Port == 0x36)    // Y6
   {
       u8 joy1 = 0x00;
       
-      if (kbd_key == 'O')      joy1 |= 0x01;
-      if (kbd_key == 'P')      joy1 |= 0x02;
-      if (kbd_key == '@')      joy1 |= 0x04;
-      if (kbd_key == '[')      joy1 |= 0x08;
-      if (kbd_key == 'L')      joy1 |= 0x10;
-      if (kbd_key == ';')      joy1 |= 0x20;
-      if (kbd_key == ':')      joy1 |= 0x40;
-      if (kbd_key == ']')      joy1 |= 0x80;
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i<kbd_keys_pressed; i++)
+      {
+          kbd_key = kbd_keys[i];
+          
+          if (kbd_key == 'O')      joy1 |= 0x01;
+          if (kbd_key == 'P')      joy1 |= 0x02;
+          if (kbd_key == '@')      joy1 |= 0x04;
+          if (kbd_key == '[')      joy1 |= 0x08;
+          if (kbd_key == 'L')      joy1 |= 0x10;
+          if (kbd_key == ';')      joy1 |= 0x20;
+          if (kbd_key == ':')      joy1 |= 0x40;
+          if (kbd_key == ']')      joy1 |= 0x80;
+      }
       
       return joy1;
   }

@@ -101,6 +101,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
               kbd_key = BufferedKeys[BufferedKeysReadIdx];
               BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
               if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+              kbd_keys[kbd_keys_pressed++] = kbd_key;
           }
       }
       
@@ -141,7 +142,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       // -------------------------------------------------
       // Check every key that might have been pressed...
       // -------------------------------------------------
-      for (u8 i=0; i<kbd_keys_pressed; i++)
+      for (u8 i=0; i< (kbd_keys_pressed ? kbd_keys_pressed:1); i++) // Always one pass at least for joysticks...
       {
           kbd_key = kbd_keys[i];
 
@@ -290,6 +291,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
       for (u8 i=0; i<kbd_keys_pressed; i++)
       {
           kbd_key = kbd_keys[i];
+          
           if (scan_matrix & 0x01) // 0xFE
           {
               if (kbd_key == KBD_KEY_STOP)  key1 |= 0x01;    // BREAK key on Memotech

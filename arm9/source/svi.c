@@ -113,7 +113,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       // row 10 NUM,    NUM.    NUM/    NUM*    NUM-    NUM+    NUM9    NUM8
       // ------------------------------------------------------------------------
       
-      u8 key1 = 0x00;
+      u8 key1 = 0x00;   // Accumulate keys here...
       
       // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
       if (last_special_key != 0)
@@ -166,142 +166,154 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               kbd_key = BufferedKeys[BufferedKeysReadIdx];
               BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
               if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
+              kbd_keys[kbd_keys_pressed++] = kbd_key;
+          }          
+      }    
+      
+      // -------------------------------------------------
+      // Check every key that might have been pressed...
+      // -------------------------------------------------
+      for (u8 i=0; i< (kbd_keys_pressed ? kbd_keys_pressed:1); i++) // Always one pass at least for joysticks...
+      {
+          kbd_key = kbd_keys[i];
+      
+          if ((Port_PPI_C & 0x0F) == 0)      // Row 0
+          {
+              if (kbd_key)
+              {
+                  if (kbd_key == '0')           key1 |= 0x01;
+                  if (kbd_key == '1')           key1 |= 0x02;
+                  if (kbd_key == '2')           key1 |= 0x04;
+                  if (kbd_key == '3')           key1 |= 0x08;
+                  if (kbd_key == '4')           key1 |= 0x10;
+                  if (kbd_key == '5')           key1 |= 0x20;
+                  if (kbd_key == '6')           key1 |= 0x40;
+                  if (kbd_key == '7')           key1 |= 0x80;
+              }
+          }      
+          else if ((Port_PPI_C & 0x0F) == 1) // Row 1
+          {
+              if (kbd_key)
+              {
+                  if (kbd_key == '8')           key1 |= 0x01;
+                  if (kbd_key == '9')           key1 |= 0x02;
+                  if (kbd_key == ';')           key1 |= 0x04;
+                  if (kbd_key == KBD_KEY_QUOTE) key1 |= 0x08;
+                  if (kbd_key == ',')           key1 |= 0x10;
+                  if (kbd_key == '=')           key1 |= 0x20;
+                  if (kbd_key == '.')           key1 |= 0x40;
+                  if (kbd_key == '/')           key1 |= 0x80;
+              }
           }
-          
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
           {
-              if (kbd_key == '0')           key1 = 0x01;
-              if (kbd_key == '1')           key1 = 0x02;
-              if (kbd_key == '2')           key1 = 0x04;
-              if (kbd_key == '3')           key1 = 0x08;
-              if (kbd_key == '4')           key1 = 0x10;
-              if (kbd_key == '5')           key1 = 0x20;
-              if (kbd_key == '6')           key1 = 0x40;
-              if (kbd_key == '7')           key1 = 0x80;
+              if (kbd_key)
+              {
+                  if (kbd_key == '-')           key1 |= 0x01;
+                  if (kbd_key == 'A')           key1 |= 0x02;
+                  if (kbd_key == 'B')           key1 |= 0x04;
+                  if (kbd_key == 'C')           key1 |= 0x08;
+                  if (kbd_key == 'D')           key1 |= 0x10;
+                  if (kbd_key == 'E')           key1 |= 0x20;
+                  if (kbd_key == 'F')           key1 |= 0x40;
+                  if (kbd_key == 'G')           key1 |= 0x80;
+              }          
           }
-      }      
-      else if ((Port_PPI_C & 0x0F) == 1) // Row 1
-      {
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
           {
-              if (kbd_key == '8')           key1 = 0x01;
-              if (kbd_key == '9')           key1 = 0x02;
-              if (kbd_key == ';')           key1 = 0x04;
-              if (kbd_key == KBD_KEY_QUOTE) key1 = 0x08;
-              if (kbd_key == ',')           key1 = 0x10;
-              if (kbd_key == '=')           key1 = 0x20;
-              if (kbd_key == '.')           key1 = 0x40;
-              if (kbd_key == '/')           key1 = 0x80;
+              if (kbd_key)
+              {
+                  if (kbd_key == 'H')           key1 |= 0x01;
+                  if (kbd_key == 'I')           key1 |= 0x02;
+                  if (kbd_key == 'J')           key1 |= 0x04;
+                  if (kbd_key == 'K')           key1 |= 0x08;
+                  if (kbd_key == 'L')           key1 |= 0x10;
+                  if (kbd_key == 'M')           key1 |= 0x20;
+                  if (kbd_key == 'N')           key1 |= 0x40;
+                  if (kbd_key == 'O')           key1 |= 0x80;
+              }          
           }
-      }
-      else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
-      {
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
           {
-              if (kbd_key == '-')           key1 = 0x01;
-              if (kbd_key == 'A')           key1 = 0x02;
-              if (kbd_key == 'B')           key1 = 0x04;
-              if (kbd_key == 'C')           key1 = 0x08;
-              if (kbd_key == 'D')           key1 = 0x10;
-              if (kbd_key == 'E')           key1 = 0x20;
-              if (kbd_key == 'F')           key1 = 0x40;
-              if (kbd_key == 'G')           key1 = 0x80;
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
-      {
-          if (kbd_key)
-          {
-              if (kbd_key == 'H')           key1 = 0x01;
-              if (kbd_key == 'I')           key1 = 0x02;
-              if (kbd_key == 'J')           key1 = 0x04;
-              if (kbd_key == 'K')           key1 = 0x08;
-              if (kbd_key == 'L')           key1 = 0x10;
-              if (kbd_key == 'M')           key1 = 0x20;
-              if (kbd_key == 'N')           key1 = 0x40;
-              if (kbd_key == 'O')           key1 = 0x80;
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
-      {
-          if (kbd_key)
-          {
-              if (kbd_key == 'P')           key1 = 0x01;
-              if (kbd_key == 'Q')           key1 = 0x02;
-              if (kbd_key == 'R')           key1 = 0x04;
-              if (kbd_key == 'S')           key1 = 0x08;
-              if (kbd_key == 'T')           key1 = 0x10;
-              if (kbd_key == 'U')           key1 = 0x20;
-              if (kbd_key == 'V')           key1 = 0x40;
-              if (kbd_key == 'W')           key1 = 0x80;
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
-      {
-          if (kbd_key)
-          {
-              if (kbd_key == 'X')           key1 = 0x01;
-              if (kbd_key == 'Y')           key1 = 0x02;
-              if (kbd_key == 'Z')           key1 = 0x04;
-              if (kbd_key == '[')           key1 = 0x08;
-              if (kbd_key == '\\')          key1 = 0x10;
-              if (kbd_key == ']')           key1 = 0x20;
-              if (kbd_key == KBD_KEY_DEL)   key1 = 0x40;              
-              if (kbd_key == KBD_KEY_UP)    key1 = 0x80;
-          }          
-      }      
-      else if ((Port_PPI_C & 0x0F) == 6) // Row 6
-      {
-          if (kbd_key)
-          {
-              if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
-              if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
-              if (kbd_key == KBD_KEY_GRAPH) key1 = 0x04;
-              if (kbd_key == KBD_KEY_CODE)  key1 = 0x08;
-              if (kbd_key == KBD_KEY_ESC)   key1 = 0x10;
-              if (kbd_key == KBD_KEY_STOP)  key1 = 0x20;
-              if (kbd_key == KBD_KEY_RET)   key1 = 0x40;
-              if (kbd_key == KBD_KEY_LEFT)  key1 = 0x80;
+              if (kbd_key)
+              {
+                  if (kbd_key == 'P')           key1 |= 0x01;
+                  if (kbd_key == 'Q')           key1 |= 0x02;
+                  if (kbd_key == 'R')           key1 |= 0x04;
+                  if (kbd_key == 'S')           key1 |= 0x08;
+                  if (kbd_key == 'T')           key1 |= 0x10;
+                  if (kbd_key == 'U')           key1 |= 0x20;
+                  if (kbd_key == 'V')           key1 |= 0x40;
+                  if (kbd_key == 'W')           key1 |= 0x80;
+              }          
           }
-          
-          // Handle the Shift Key and Control Key
-          if (key_shift)  key1 |= 0x01;
-          if (key_ctrl)   key1 |= 0x02;
-          if (key_graph)  key1 |= 0x04;
-          if (key_code)   key1 |= 0x08;
-      }
-      else if ((Port_PPI_C & 0x0F) == 7) // Row 7
-      {
-          if (kbd_key)
+          else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
           {
-              if (kbd_key == KBD_KEY_F1)    key1 = 0x01;
-              if (kbd_key == KBD_KEY_F2)    key1 = 0x02;
-              if (kbd_key == KBD_KEY_F3)    key1 = 0x04;
-              if (kbd_key == KBD_KEY_F4)    key1 = 0x08;
-              if (kbd_key == KBD_KEY_F5)    key1 = 0x10;
-              if (kbd_key == KBD_KEY_HOME)  key1 = 0x20;
-              if (kbd_key == KBD_KEY_INS)   key1 = 0x40;
-              if (kbd_key == KBD_KEY_DOWN)  key1 = 0x80;              
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 8) // Row 8
-      {
-          if ((JoyState & 0x0F) == JST_STAR)  key1 |= 0x01;  // SPACE
-          if (JoyState == JST_PURPLE)         key1 |= 0x01;  // SPACE
-          
-          if (kbd_key)
+              if (kbd_key)
+              {
+                  if (kbd_key == 'X')           key1 |= 0x01;
+                  if (kbd_key == 'Y')           key1 |= 0x02;
+                  if (kbd_key == 'Z')           key1 |= 0x04;
+                  if (kbd_key == '[')           key1 |= 0x08;
+                  if (kbd_key == '\\')          key1 |= 0x10;
+                  if (kbd_key == ']')           key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_DEL)   key1 |= 0x40;              
+                  if (kbd_key == KBD_KEY_UP)    key1 |= 0x80;
+              }          
+          }      
+          else if ((Port_PPI_C & 0x0F) == 6) // Row 6
           {
-              if (kbd_key == ' ')           key1 = 0x01;
-              if (kbd_key == KBD_KEY_TAB)   key1 = 0x02;
-              if (kbd_key == KBD_KEY_DEL)   key1 = 0x04;
-              if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;
-              if (kbd_key == KBD_KEY_SEL)   key1 = 0x10;
-              if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
-          }          
-      }
-      else if ((Port_PPI_C & 0x0F) == 9) // Row 9
-      {
-          if (JoyState == JST_BLUE)   key1 |= 0x08;  // NUM3
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_SHIFT) key1 |= 0x01;
+                  if (kbd_key == KBD_KEY_CTRL)  key1 |= 0x02;
+                  if (kbd_key == KBD_KEY_GRAPH) key1 |= 0x04;
+                  if (kbd_key == KBD_KEY_CODE)  key1 |= 0x08;
+                  if (kbd_key == KBD_KEY_ESC)   key1 |= 0x10;
+                  if (kbd_key == KBD_KEY_STOP)  key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_RET)   key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_LEFT)  key1 |= 0x80;
+              }
+
+              // Handle the Shift Key and Control Key
+              if (key_shift)  key1 |= 0x01;
+              if (key_ctrl)   key1 |= 0x02;
+              if (key_graph)  key1 |= 0x04;
+              if (key_code)   key1 |= 0x08;
+          }
+          else if ((Port_PPI_C & 0x0F) == 7) // Row 7
+          {
+              if (kbd_key)
+              {
+                  if (kbd_key == KBD_KEY_F1)    key1 |= 0x01;
+                  if (kbd_key == KBD_KEY_F2)    key1 |= 0x02;
+                  if (kbd_key == KBD_KEY_F3)    key1 |= 0x04;
+                  if (kbd_key == KBD_KEY_F4)    key1 |= 0x08;
+                  if (kbd_key == KBD_KEY_F5)    key1 |= 0x10;
+                  if (kbd_key == KBD_KEY_HOME)  key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_INS)   key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_DOWN)  key1 |= 0x80;              
+              }          
+          }
+          else if ((Port_PPI_C & 0x0F) == 8) // Row 8
+          {
+              if ((JoyState & 0x0F) == JST_STAR)  key1 |= 0x01;  // SPACE
+              if (JoyState == JST_PURPLE)         key1 |= 0x01;  // SPACE
+
+              if (kbd_key)
+              {
+                  if (kbd_key == ' ')           key1 |= 0x01;
+                  if (kbd_key == KBD_KEY_TAB)   key1 |= 0x02;
+                  if (kbd_key == KBD_KEY_DEL)   key1 |= 0x04;
+                  if (kbd_key == KBD_KEY_CAPS)  key1 |= 0x08;
+                  if (kbd_key == KBD_KEY_SEL)   key1 |= 0x10;
+                  if (kbd_key == KBD_KEY_RIGHT) key1 |= 0x80;
+              }          
+          }
+          else if ((Port_PPI_C & 0x0F) == 9) // Row 9
+          {
+              if (JoyState == JST_BLUE)   key1 |= 0x08;  // NUM3
+          }
       }
       
       return ~key1;
