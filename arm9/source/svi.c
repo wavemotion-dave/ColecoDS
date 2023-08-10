@@ -154,22 +154,6 @@ unsigned char cpu_readport_svi(register unsigned short Port)
           }
       }
       
-      if ((Port_PPI_C & 0x0F) == 0)      // Row 0
-      {
-          // -----------------------------------------------------------
-          // We are at the top of the scan loop... if we have buffered 
-          // keys, we insert them into the stream now...
-          // -----------------------------------------------------------
-          if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
-          if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
-          {
-              kbd_key = BufferedKeys[BufferedKeysReadIdx];
-              BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
-              if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
-              kbd_keys[kbd_keys_pressed++] = kbd_key;
-          }          
-      }    
-      
       // -------------------------------------------------
       // Check every key that might have been pressed...
       // -------------------------------------------------

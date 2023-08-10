@@ -190,11 +190,9 @@ u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0001;  // A faster wa
 
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
-u8  last_mapped_key = 0;
-
-u8 kbd_keys_pressed = 0;
-u8 kbd_keys[12];
-
+u8 last_mapped_key   __attribute__((section(".dtcm"))) = 0;       // The last mapped key which has been pressed - used for key click feedback
+u8 kbd_keys_pressed  __attribute__((section(".dtcm"))) = 0;       // Each frame we check for keys pressed - since we can map keyboard keys to the NDS, there may be several pressed at once
+u8 kbd_keys[12]      __attribute__((section(".dtcm")));           // Up to 12 possible keys pressed at the same time (we have 12 NDS physical buttons though it's unlikely that more than 2 or maybe 3 would be pressed)
 
 u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of rendering...
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
@@ -1386,8 +1384,15 @@ void CassetteMenu(void)
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
+                  if (svi_mode)
+                  {
+                      BufferKey(';');
+                  }
+                  else
+                  {
+                      if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                      BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
+                  }
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
@@ -1419,11 +1424,7 @@ void CassetteMenu(void)
                   BufferKey('A');
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
                   BufferKey(KBD_KEY_RET);
@@ -2562,7 +2563,7 @@ void colecoDS_main(void)
                       BufferKey('E');
                       BufferKey('W');
                       BufferKey(KBD_KEY_RET);
-                      BufferKey(KBD_KEY_RET);
+                      BufferKey(255);
                   }
                   
                   BufferKey('L');
@@ -2570,11 +2571,7 @@ void colecoDS_main(void)
                   BufferKey('A');
                   BufferKey('D');
                   BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(KBD_KEY_SHIFT);
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey('2');
                   BufferKey(KBD_KEY_RET);
@@ -2599,8 +2596,15 @@ void colecoDS_main(void)
                   BufferKey('C');
                   BufferKey('A');
                   BufferKey('S');
-                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
+                  if (svi_mode)
+                  {
+                     BufferKey(';');
+                  }
+                  else
+                  {
+                      if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                      BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
+                  }
                   BufferKey(KBD_KEY_SHIFT);
                   BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
@@ -2715,6 +2719,11 @@ void colecoDS_main(void)
       {
           last_mapped_key = 0;
       }
+      
+      // ------------------------------------------------------------------------------------------
+      // Finally, check if there are any buffered keys that need to go into the keyboard handling.
+      // ------------------------------------------------------------------------------------------
+      ProcessBufferedKeys();
 
       // ---------------------------------------------------------
       // Accumulate all bits above into the Joystick State var...

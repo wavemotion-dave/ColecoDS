@@ -184,7 +184,7 @@ void colecoWipeRAM(void)
     // ADAM has special handling...
       u8 pattern = 0x00;                               // Default to all-clear
       if (myConfig.memWipe == 1) pattern = 0x30;       // The 0x30 pattern tends to make most things start up properly... don't ask.
-      if (myConfig.memWipe == 4) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
+      if (myConfig.memWipe == 2) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
       for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? pattern : (rand() & 0xFF));
   }
   else if (einstein_mode)
@@ -220,6 +220,35 @@ void BufferKey(u8 key)
     BufferedKeys[BufferedKeysWriteIdx] = key;
     BufferedKeysWriteIdx = (BufferedKeysWriteIdx+1) % 32;
 }
+
+// ---------------------------------------------------------------------------------------
+// Called every frame... so 1/50th or 1/60th of a second. We will virtually 'press' and 
+// hold the key for roughly a tenth of a second and be smart about shift keys...
+// ---------------------------------------------------------------------------------------
+void ProcessBufferedKeys(void)
+{
+    static u8 next_dampen_time = 5;
+    static u8 dampen = 0;
+    static u8 buf_held = 0;
+    static u8 buf_shift = 0;
+    if (creativision_mode) return;  // Special handling in creativision.c
+    
+    if (++dampen >= next_dampen_time) // Roughly 50ms... experimentally good enough for all systems.
+    {
+        if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+        {
+            buf_held = BufferedKeys[BufferedKeysReadIdx];
+            BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
+            if (buf_held == KBD_KEY_SHIFT) buf_shift = 2; else {if (buf_shift) buf_shift--;}
+            if (buf_held == 255) {buf_held = 0; next_dampen_time=60;} else next_dampen_time = (memotech_mode ? 1:5);
+        } else buf_held = 0;
+        dampen = 0;
+    }
+
+    // See if the shift key should be virtually pressed along with this buffered key...
+    if (buf_held) {kbd_keys[kbd_keys_pressed++] = buf_held; if (buf_shift) key_shift=1;}
+}
+
 
 /*********************************************************************************
  * Init coleco Engine for that game

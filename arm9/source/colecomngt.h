@@ -120,6 +120,7 @@ extern u8 Port_PPI_CTRL;
 
 extern u16 vdp_int_source;    
 
+extern void ProcessBufferedKeys(void);
 extern u8 BufferedKeys[32];
 extern u8 BufferedKeysWriteIdx;
 extern u8 BufferedKeysReadIdx;
