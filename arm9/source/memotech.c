@@ -88,22 +88,6 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           if (JoyState & (JST_LEFT<<16))  joy1 |= 0x40;
           if (JoyState & (JST_RIGHT<<16)) joy1 |= 0x80;
       }          
-
-      // -----------------------------------------------------------
-      // We are at the top of the scan loop... if we have buffered 
-      // keys, we insert them into the stream now...
-      // -----------------------------------------------------------
-      if (MTX_KBD_DRIVE == 0xFD)
-      {
-          if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
-          if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
-          {
-              kbd_key = BufferedKeys[BufferedKeysReadIdx];
-              BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
-              if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
-              kbd_keys[kbd_keys_pressed++] = kbd_key;
-          }
-      }
       
       if ((JoyState == 0) && (kbd_key == 0) && (key_shift == 0) && (key_ctrl == 0)) return 0xFF;
       
@@ -662,16 +646,6 @@ void MTX_HandleCassette(register Z80 *r)
 void memotech_launch_run_file(void)
 {
       vdp_int_source = INT_NONE;        // Needed when we wipe and run in this mode
-
-      if (myConfig.memWipe == 2)    // Full MTX Memory Wipe and RAM mode enable
-      {
-        //memset(RAM_Memory, 0x00, 0x10000);
-        //cpu_writeport_memotech(0x00, 0x80);
-      }
-      else if (myConfig.memWipe == 3)    // Random MTX Memory Wipe
-      {
-          //for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (rand() & 0xFF);   // Random pattern
-      }
   
       if (memotech_mode == 3)   // .COM file
       {

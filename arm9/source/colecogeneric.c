@@ -1396,18 +1396,6 @@ void SetDefaultGameConfig(void)
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
-    if (file_crc == 0x08bf2b3b)                 myConfig.memWipe = 2;  // MTX Rolla Ball needs full memory wipe
-    if (file_crc == 0xa2b208a5)                 myConfig.memWipe = 2;  // MTX Surface Scanner needs full memory wipe
-    if (file_crc == 0xe8bceb5c)                 myConfig.memWipe = 2;  // MTX Surface Scanner needs full memory wipe
-    if (file_crc == 0x018f0e13)                 myConfig.memWipe = 2;  // MTX SMG needs full memory wipe
-    if (file_crc == 0x6a8afdb0)                 myConfig.memWipe = 2;  // MTX Astro PAC needs full memory wipe
-    if (file_crc == 0xf9934809)                 myConfig.memWipe = 2;  // MTX Reveal needs full memory wipe
-    if (file_crc == 0x8c96be92)                 myConfig.memWipe = 2;  // MTX Turbo needs full memory wipe
-    if (file_crc == 0x9168207e)                 myConfig.memWipe = 3;  // MTX Blobbo wants a special Random memory wipe
-    if (file_crc == 0xbf543b19)                 myConfig.memWipe = 3;  // MTX Kilopede wants a special Random memory wipe
-    if (file_crc == 0x635064bc)                 myConfig.memWipe = 3;  // MTX Toado wants a special Random memory wipe
-    if (file_crc == 0x3c8500af)                 myConfig.memWipe = 3;  // MTX Target Zone wants a special Random memory wipe
-    
     if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;   // Colecovision Boulder Dash only works with the DrZ80 core
     if (file_crc == 0xb32c9e08)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
     if (file_crc == 0xa2edc01d)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
@@ -1524,21 +1512,21 @@ void SetDefaultGameConfig(void)
     // ----------------------------------------------------------------------------------
     // A bunch of CP/M games for the Adam need a special memory wipe to load properly...
     // ----------------------------------------------------------------------------------
-    if (file_crc == 0x07c07a56)                 myConfig.memWipe = 4;  // sorcerer (198x) (infocom).dsk
-    if (file_crc == 0xf27044d8)                 myConfig.memWipe = 4;  // spellbreaker (1985) (infocom).dsk
-    if (file_crc == 0xec88e6bb)                 myConfig.memWipe = 4;  // starcross (1982) (infocom) [a1].dsk
-    if (file_crc == 0xb4b1e0f3)                 myConfig.memWipe = 4;  // starcross (1982) (infocom).dsk
-    if (file_crc == 0xd092bbcb)                 myConfig.memWipe = 4;  // stationfall (1987) (infocom).dsk
-    if (file_crc == 0xdda503aa)                 myConfig.memWipe = 4;  // suspect (1984) (infocom).dsk
-    if (file_crc == 0x04e9d59e)                 myConfig.memWipe = 4;  // suspended (1983) (infocom).dsk
-    if (file_crc == 0x89f1cf13)                 myConfig.memWipe = 4;  // wishbringer (1985) (infocom).dsk
-    if (file_crc == 0x48a313ad)                 myConfig.memWipe = 4;  // witness (1983) (infocom).dsk
-    if (file_crc == 0xd890aad7)                 myConfig.memWipe = 4;  // zork iii - the dungeon master (1982) (infocom) [a1].dsk
-    if (file_crc == 0x5ce833b2)                 myConfig.memWipe = 4;  // zork iii - the dungeon master (1982) (infocom).dsk
-    if (file_crc == 0x3daf5073)                 myConfig.memWipe = 4;  // zork ii - the wizard of frobozz (1981) (infocom) [a1].dsk
-    if (file_crc == 0xc8ada76e)                 myConfig.memWipe = 4;  // zork ii - the wizard of frobozz (1981) (infocom).dsk
-    if (file_crc == 0x8dac567c)                 myConfig.memWipe = 4;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
-    if (file_crc == 0xae4d50e9)                 myConfig.memWipe = 4;  // zork i - the great underground empire (1981) (infocom).dsk
+    if (file_crc == 0x07c07a56)                 myConfig.memWipe = 2;  // sorcerer (198x) (infocom).dsk
+    if (file_crc == 0xf27044d8)                 myConfig.memWipe = 2;  // spellbreaker (1985) (infocom).dsk
+    if (file_crc == 0xec88e6bb)                 myConfig.memWipe = 2;  // starcross (1982) (infocom) [a1].dsk
+    if (file_crc == 0xb4b1e0f3)                 myConfig.memWipe = 2;  // starcross (1982) (infocom).dsk
+    if (file_crc == 0xd092bbcb)                 myConfig.memWipe = 2;  // stationfall (1987) (infocom).dsk
+    if (file_crc == 0xdda503aa)                 myConfig.memWipe = 2;  // suspect (1984) (infocom).dsk
+    if (file_crc == 0x04e9d59e)                 myConfig.memWipe = 2;  // suspended (1983) (infocom).dsk
+    if (file_crc == 0x89f1cf13)                 myConfig.memWipe = 2;  // wishbringer (1985) (infocom).dsk
+    if (file_crc == 0x48a313ad)                 myConfig.memWipe = 2;  // witness (1983) (infocom).dsk
+    if (file_crc == 0xd890aad7)                 myConfig.memWipe = 2;  // zork iii - the dungeon master (1982) (infocom) [a1].dsk
+    if (file_crc == 0x5ce833b2)                 myConfig.memWipe = 2;  // zork iii - the dungeon master (1982) (infocom).dsk
+    if (file_crc == 0x3daf5073)                 myConfig.memWipe = 2;  // zork ii - the wizard of frobozz (1981) (infocom) [a1].dsk
+    if (file_crc == 0xc8ada76e)                 myConfig.memWipe = 2;  // zork ii - the wizard of frobozz (1981) (infocom).dsk
+    if (file_crc == 0x8dac567c)                 myConfig.memWipe = 2;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
+    if (file_crc == 0xae4d50e9)                 myConfig.memWipe = 2;  // zork i - the great underground empire (1981) (infocom).dsk
     
     // For ADAM .dsk games, we want to see if this is a CP/M game and adjust the memwipe
     if (adam_mode)
@@ -1547,7 +1535,7 @@ void SetDefaultGameConfig(void)
         {
             if ((ROM_Memory[i] == 'C') && (ROM_Memory[i+1] == 'P') && (ROM_Memory[i+2] == '/') && (ROM_Memory[i+3] == 'M')) // Look for CP/M
             {
-                myConfig.memWipe = 4;  // Set to CPM clear pattern by default
+                myConfig.memWipe = 2;  // Set to CPM clear pattern by default
                 myConfig.overlay = 9;  // And most CPM games are going to want a full keyboard
                 break;
             }
@@ -1727,7 +1715,7 @@ const struct options_t Option_Table[3][20] =
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
         {"MSX BIOS",       {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"} ,                                                        &myConfig.msxBios,    7},
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
-        {"RAM WIPE",       {"RANDOM", "CLEAR", "MTX FULL WIPE", "MTX RAND WIPE", "ADAM CPM"},                                                                                                   &myConfig.memWipe,    5},
+        {"RAM WIPE",       {"RANDOM", "CLEAR", "ADAM CPM"},                                                                                                                                     &myConfig.memWipe,    3},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },

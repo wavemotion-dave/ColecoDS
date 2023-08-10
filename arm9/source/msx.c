@@ -162,24 +162,8 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
       }
       
-      
-      // ---------------------------------------------------
-      // At the top of the scan loop, handle the key buffer
-      // ---------------------------------------------------
-      if ((Port_PPI_C & 0x0F) == 0)      // Row 0
-      {
-          if (key_shift_hold > 0) {key_shift = 1; key_shift_hold--;}
-          if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
-          {
-              kbd_key = BufferedKeys[BufferedKeysReadIdx];
-              BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
-              if (kbd_key == KBD_KEY_SHIFT) key_shift_hold = 1;
-              kbd_keys[kbd_keys_pressed++] = kbd_key;
-          }
-      }
-      
       u8 key1 = 0x00;   // Accumulate keys here...
-      
+
       // -------------------------------------------------
       // Check every key that might have been pressed...
       // -------------------------------------------------
