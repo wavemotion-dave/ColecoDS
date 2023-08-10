@@ -353,6 +353,14 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.3: 10-Aug-2023 by wavemotion-dave
+* Fix for keyboard handler so that more than one key can be pressed at a time (otherwise you get stutter when moving/shooting in keyboard-mapped games).
+* Major overhaul of the Memotech MTX emulation to improve emulation, sound and general stability.
+* New Z80 CTC handler (mainly for Memotech) which provides more accurate sound in Sord M5 and some Einstein games.
+* New Tatung Einstein keyboard graphic and improved keyboard handling.
+* New keymap presets for common keyboard games (QAOP, WASD, ZC-Period, etc.) - use the X button to rotate through these when defining keys.
+* Other tweaks, fixes and improvements as time permitted.
+
 V8.2: 04-Aug-2023 by wavemotion-dave
 * Complete rewrite of the keyboard handler for improved visuals, better emulation and universal handling across all emulated machines.
 * New keyboard graphics for ADAM, MSX (International and Japanese layouts), MTX and a simplified Alpha-Numeric keyboard useful for text adventures.
