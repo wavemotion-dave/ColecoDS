@@ -115,7 +115,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       
       u8 key1 = 0x00;   // Accumulate keys here...
       
-      // For the full keyboard overlay... this is a bit of a hack for SHIFT and CTRL
+      // For the full keyboard overlay... this is a bit of a hack for SHIFT, CTRL, CODE and GRAPH
       if (last_special_key != 0)
       {
           if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
