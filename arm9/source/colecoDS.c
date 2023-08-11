@@ -1042,7 +1042,7 @@ void DisplayStatusLine(bool bForce)
             AffChaine(20,0,6, "SPECTRAVIDEO");
             last_pal_mode = 99;
         }
-        if ((last_tape_pos != tape_pos))
+        if ((last_tape_pos != tape_pos) && (svi_mode == 1))
         {
             last_tape_pos = tape_pos;
             char tmp[15];
