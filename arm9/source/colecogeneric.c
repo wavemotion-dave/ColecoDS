@@ -120,7 +120,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD Y",
   "KEYBOARD Z",
     
-  "KEYBOARD 0",
+  "KEYBOARD 0", // 70
   "KEYBOARD 1",
   "KEYBOARD 2",
   "KEYBOARD 3",
@@ -1226,6 +1226,23 @@ void MapZCPeriod(void)
 }
 
 
+void MapArrows(void)
+{
+    myConfig.keymap[0]   = 88;    // UP Arrow
+    myConfig.keymap[1]   = 89;    // Down Arrow
+    myConfig.keymap[2]   = 90;    // Left Arrow
+    myConfig.keymap[3]   = 91;    // Right Arrow
+    myConfig.keymap[4]   = 84;    // Space
+    myConfig.keymap[5]   = 84;    // Space
+    myConfig.keymap[6]   = 84;    // Space
+    myConfig.keymap[7]   = 84;    // Space
+    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
+    myConfig.keymap[10]  = 71;    // 1
+    myConfig.keymap[11]  = 72;    // 2
+}
+
+
 void SetDefaultGlobalConfig(void)
 {
     // A few global defaults...
@@ -1903,7 +1920,7 @@ void DisplayKeymapName(u32 uY)
 u8 keyMapType = 0;
 void SwapKeymap(void)
 {
-    keyMapType = (keyMapType+1) % 5;
+    keyMapType = (keyMapType+1) % 6;
     switch (keyMapType)
     {
         case 0: MapPlayer1();  break;
@@ -1911,6 +1928,7 @@ void SwapKeymap(void)
         case 2: MapQAOP();     break;
         case 3: MapWASD();     break;
         case 4: MapZCPeriod(); break;
+        case 5: MapArrows();   break;
     }
 }
 

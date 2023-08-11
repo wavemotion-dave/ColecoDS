@@ -340,11 +340,11 @@ void svi_restore_bios(void)
 //94    A8  W   PPI 8255 Port A
 //95    A9  W   PPI 8255 Port B
 //96    AA  W   PPI 8255 Port C
-// #0000-#7FFF	Description	#8000-#FFFF	Description
-// BANK 01	BASIC ROM	                        BANK 02	MAIN RAM
-// BANK 11	Game cartridge ROM	                BANK 12	ROM0 + ROM1 (optional game cartridge ROMs)
-// BANK 21	Standard SVI-328 extended RAM	    BANK 22	SV-807 RAM expansion
-// BANK 31	SV-807 RAM expansion	            BANK 32	SV-807 RAM expansion
+// #0000-#7FFF  Description #8000-#FFFF Description
+// BANK 01  BASIC ROM                           BANK 02 MAIN RAM
+// BANK 11  Game cartridge ROM                  BANK 12 ROM0 + ROM1 (optional game cartridge ROMs)
+// BANK 21  Standard SVI-328 extended RAM       BANK 22 SV-807 RAM expansion
+// BANK 31  SV-807 RAM expansion                BANK 32 SV-807 RAM expansion
 // 
 // The BANK selection is handled trough PSG Register 15 bits: 
 // 0 CART ROM Bank 11 (#0000-#7FFF) Game cartridge
@@ -372,79 +372,63 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
         FakeAY_WriteData(Value);
         if (ay_reg_idx == 15)
         {
-            IOBYTE = ay_reg[ay_reg_idx] & 0x1F;
+            IOBYTE = ay_reg[ay_reg_idx] & 0xFF;
 
             if (lastIOBYTE != IOBYTE)
             {
-                u8 slotsEnabled = (~IOBYTE) & 0x1F;          // Positive logic 
+                u8 lowerBankEnable = (~IOBYTE) & 0x0B;          // Positive logic 
                 
-                if (slotsEnabled == 0x00)  // Normal BIOS ROM + 32K Upper RAM (fairly common configuration)
+                if (lowerBankEnable == 0x00)  // Normal BIOS ROM in lower bank (fairly common configuration)
                 {
-                      MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
-                      MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
-                      MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
-                      MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS 
-                      MemoryMap[4] = (u8 *)(RAM_Memory + 0x8000);       // Normal RAM in upper slot
-                      MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);       // Normal RAM in upper slot
-                      MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);       // Normal RAM in upper slot
-                      MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);       // Normal RAM in upper slot
-                      svi_RAM[0]  = 0;
-                      svi_RAM[1]  = 1;
+                    MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
+                    MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
+                    MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
+                    MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS 
+                    svi_RAM[0]  = 0;
                 }
-                else // A bit more complicated - sort out the lower and upper banks...
+                else if (lowerBankEnable & 0x01)   // No Game Cart in lower slot
                 {
-                    if (slotsEnabled & 0x02)   // SVI-328 RAM in lower slot is OK
-                    {
-                        MemoryMap[0] = (u8 *)(RAM_Memory + 0x0000);       // Normal RAM in lower slot
-                        MemoryMap[1] = (u8 *)(RAM_Memory + 0x2000);       // Normal RAM in lower slot
-                        MemoryMap[2] = (u8 *)(RAM_Memory + 0x4000);       // Normal RAM in lower slot
-                        MemoryMap[3] = (u8 *)(RAM_Memory + 0x6000);       // Normal RAM in lower slot
-                        svi_RAM[0]  = 1;
-                    }
-                    else if (slotsEnabled & 0x08)   // No Expansion RAM in lower slot
-                    {
-                        MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        svi_RAM[0]  = 0;
-                    }
-                    else if (slotsEnabled & 0x01)   // No Game Cart in lower slot
-                    {
-                        MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        svi_RAM[0]  = 0;
-                    }
-                    else
-                    {
-                        MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
-                        MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
-                        MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
-                        MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS 
-                        svi_RAM[0]  = 0;
-                    }
-                    
-                    if (slotsEnabled & 0x14)   // No Expansion RAM in upper slot
-                    {
-                        MemoryMap[4] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[5] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        MemoryMap[7] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                        svi_RAM[1]  = 0;
-                    }
-                    else
-                    {
-                        if (svi_RAM[1] == 0)
-                        {
-                            MemoryMap[4] = (u8 *)(RAM_Memory + 0x8000);       // Normal RAM in upper slot
-                            MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);       // Normal RAM in upper slot
-                            MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);       // Normal RAM in upper slot
-                            MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);       // Normal RAM in upper slot
-                        }
-                        svi_RAM[1]  = 1;
-                    }
+                    MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    svi_RAM[0]  = 0;
+                }
+                else if (lowerBankEnable & 0x02)   // SVI-328 has the other 32K of RAM in lower slot
+                {
+                    MemoryMap[0] = (u8 *)(RAM_Memory + 0x0000);       // Normal RAM in lower slot
+                    MemoryMap[1] = (u8 *)(RAM_Memory + 0x2000);       // Normal RAM in lower slot
+                    MemoryMap[2] = (u8 *)(RAM_Memory + 0x4000);       // Normal RAM in lower slot
+                    MemoryMap[3] = (u8 *)(RAM_Memory + 0x6000);       // Normal RAM in lower slot
+                    svi_RAM[0]  = 1;
+                }
+                else if (lowerBankEnable & 0x08)   // No Expansion RAM in lower slot
+                {
+                    MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    svi_RAM[0]  = 0;
+                }
+                
+                
+                u8 upperBankEnable = (~IOBYTE) & 0xD4;          // Positive logic 
+                
+                if (upperBankEnable == 0x00)  // Normal 32K RAM in upper bank (fairly common)
+                {
+                      MemoryMap[4] = (u8 *)(RAM_Memory + 0x8000);      // Restore RAM
+                      MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);      // Restore RAM
+                      MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);      // Restore RAM
+                      MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);      // Restore RAM
+                      svi_RAM[1] = 1;
+                }
+                else // Nothing else here... just FF
+                {                    
+                      MemoryMap[4] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                      MemoryMap[5] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                      MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                      MemoryMap[7] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                      svi_RAM[1]  = 0;
                 }
                 
                 lastIOBYTE = IOBYTE;
