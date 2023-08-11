@@ -152,7 +152,7 @@ Considering this is a Colecovision emulator, the MSX1 support and compatibility 
 
 MSX is not a single machine but a standard - there are lots of machines and lots of BIOS files. The one I did most of my testing is MSX.ROM with a CRC32 of 94ee12f3 - this is the one used by many other MSX emulators. ColecoDS also supports four other specific machines - see the BIOS section above for details on those roms.
 
-MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload and run commands.
+MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload or run commands (or use the Cassette menu for more choices).
 
 The MSX memory is based on which MSX rom BIOS you are using:
 ```
@@ -223,7 +223,7 @@ Once the game is loaded into memory you will be sitting at the BASIC prompt. At 
 
 Spectravideo SVI Compatibility :
 -----------------------
-This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common bload and run commands. There are only about a half-dozen .rom carts for this system which are also supported (up to 64K cartridge support).
+This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common cload or bload commands (or use the Cassette menu for more choices). Cartridges are supported (.rom) up to 64K. There are only about a half-dozen carts available for this sytsem (with most of the software being distributed on tapes).
 
 Sega SG-1000 Compatibility :
 -----------------------
