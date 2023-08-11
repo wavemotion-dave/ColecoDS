@@ -34,7 +34,7 @@ static u8 header_SVI[17] = { 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x5
 //80    98  W   VDP TMS9918A Writes a byte to VRAM, increases VRAM pointer
 //81    99  W   VDP TMS9918A Address / Register output
 //84    98  R   VDP TMS9918A Reads a byte from VRAM, increases VRAM pointer
-//85    99  R   VDP TMS9918A Status register    
+//85    99  R   VDP TMS9918A Status register
 //88    A0  W   PSG AY-3-8910 Adress latch
 //8C    A1  W   PSG AY-3-8910 Data write
 //90    A2  R   PSG AY-3-8910 Data read
@@ -43,14 +43,14 @@ static u8 header_SVI[17] = { 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x5
 //9A    AA  R   PPI 8255 Port C
 //9B    AB  R   PPI 8255 Mode select and I/O setup of A,B,C
 // ------------------------------------------------------------------
-unsigned char cpu_readport_svi(register unsigned short Port) 
+unsigned char cpu_readport_svi(register unsigned short Port)
 {
   // SVI ports are 8-bit
-  Port &= 0x00FF; 
+  Port &= 0x00FF;
 
-  // Access to the VDP I/O ports.    
+  // Access to the VDP I/O ports.
   if      (Port == 0x84) return RdData9918();
-  else if (Port == 0x85) return RdCtrl9918(); 
+  else if (Port == 0x85) return RdCtrl9918();
   else if (Port == 0x90)  // PSG Read... might be joypad data
   {
       // -------------------------------------------
@@ -81,10 +81,10 @@ unsigned char cpu_readport_svi(register unsigned short Port)
           }
 
           ay_reg[14] = ~joy1;
-      }      
+      }
       return FakeAY_ReadData();
-  }    
-  else if (Port == 0x98) 
+  }
+  else if (Port == 0x98)
   {
       Port_PPI_A |= 0x3F;
       if (JoyState & JST_FIREL)   Port_PPI_A &= ~0x10;
@@ -92,7 +92,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 
       if (JoyState & (JST_FIREL<<16))   Port_PPI_A &= ~0x20;
       if (JoyState & (JST_FIRER<<16))   Port_PPI_A &= ~0x20;
-      
+
       return Port_PPI_A;
   }
   else if (Port == 0x99)
@@ -112,9 +112,9 @@ unsigned char cpu_readport_svi(register unsigned short Port)
       // row 9  NUM7    NUM6    NUM5    NUM4    NUM3    NUM2    NUM1    NUM0
       // row 10 NUM,    NUM.    NUM/    NUM*    NUM-    NUM+    NUM9    NUM8
       // ------------------------------------------------------------------------
-      
+
       u8 key1 = 0x00;   // Accumulate keys here...
-      
+
       // For the full keyboard overlay... this is a bit of a hack for SHIFT, CTRL, CODE and GRAPH
       if (last_special_key != 0)
       {
@@ -127,12 +127,12 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               }
           }
 
-          if (last_special_key == KBD_KEY_SHIFT) 
-          { 
+          if (last_special_key == KBD_KEY_SHIFT)
+          {
             AffChaine(4,0,6, "SHFT");
             key_shift = 1;
           }
-          else if (last_special_key == KBD_KEY_CTRL)  
+          else if (last_special_key == KBD_KEY_CTRL)
           {
             AffChaine(4,0,6, "CTRL");
             key_ctrl = 1;
@@ -153,14 +153,14 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
           }
       }
-      
+
       // -------------------------------------------------
       // Check every key that might have been pressed...
       // -------------------------------------------------
       for (u8 i=0; i< (kbd_keys_pressed ? kbd_keys_pressed:1); i++) // Always one pass at least for joysticks...
       {
           kbd_key = kbd_keys[i];
-      
+
           if ((Port_PPI_C & 0x0F) == 0)      // Row 0
           {
               if (kbd_key)
@@ -174,7 +174,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == '6')           key1 |= 0x40;
                   if (kbd_key == '7')           key1 |= 0x80;
               }
-          }      
+          }
           else if ((Port_PPI_C & 0x0F) == 1) // Row 1
           {
               if (kbd_key)
@@ -201,7 +201,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == 'E')           key1 |= 0x20;
                   if (kbd_key == 'F')           key1 |= 0x40;
                   if (kbd_key == 'G')           key1 |= 0x80;
-              }          
+              }
           }
           else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
           {
@@ -215,7 +215,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == 'M')           key1 |= 0x20;
                   if (kbd_key == 'N')           key1 |= 0x40;
                   if (kbd_key == 'O')           key1 |= 0x80;
-              }          
+              }
           }
           else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
           {
@@ -229,7 +229,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == 'U')           key1 |= 0x20;
                   if (kbd_key == 'V')           key1 |= 0x40;
                   if (kbd_key == 'W')           key1 |= 0x80;
-              }          
+              }
           }
           else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
           {
@@ -241,10 +241,10 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == '[')           key1 |= 0x08;
                   if (kbd_key == '`')           key1 |= 0x10;
                   if (kbd_key == ']')           key1 |= 0x20;
-                  if (kbd_key == KBD_KEY_DEL)   key1 |= 0x40;              
+                  if (kbd_key == KBD_KEY_DEL)   key1 |= 0x40;
                   if (kbd_key == KBD_KEY_UP)    key1 |= 0x80;
-              }          
-          }      
+              }
+          }
           else if ((Port_PPI_C & 0x0F) == 6) // Row 6
           {
               if (kbd_key)
@@ -276,8 +276,8 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == KBD_KEY_F5)    key1 |= 0x10;
                   if (kbd_key == KBD_KEY_HOME)  key1 |= 0x20;
                   if (kbd_key == KBD_KEY_INS)   key1 |= 0x40;
-                  if (kbd_key == KBD_KEY_DOWN)  key1 |= 0x80;              
-              }          
+                  if (kbd_key == KBD_KEY_DOWN)  key1 |= 0x80;
+              }
           }
           else if ((Port_PPI_C & 0x0F) == 8) // Row 8
           {
@@ -292,18 +292,18 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == KBD_KEY_CAPS)  key1 |= 0x08;
                   if (kbd_key == KBD_KEY_SEL)   key1 |= 0x10;
                   if (kbd_key == KBD_KEY_RIGHT) key1 |= 0x80;
-              }          
+              }
           }
           else if ((Port_PPI_C & 0x0F) == 9) // Row 9
           {
               if (JoyState == JST_BLUE)   key1 |= 0x08;  // NUM3
           }
       }
-      
+
       return ~key1;
   }
   else if (Port == 0x9A) return Port_PPI_C;
-    
+
   // No such port
   return(NORAM);
 }
@@ -312,24 +312,24 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 void svi_restore_bios(void)
 {
      memcpy(BIOS_Memory,SVIBios,0x8000);       // Restore SVI BIOS
-    
+
     // And patch it for cassette use...
-    BIOS_Memory[0x210A] = 0xed; BIOS_Memory[0x210B] = 0xfe; BIOS_Memory[0x210C] = 0xc9; 
-    BIOS_Memory[0x21A9] = 0xed; BIOS_Memory[0x21AA] = 0xfe; BIOS_Memory[0x21AB] = 0xc9; 
-    BIOS_Memory[0x0069] = 0xed; BIOS_Memory[0x006A] = 0xfe; BIOS_Memory[0x006B] = 0xc9; 
-    BIOS_Memory[0x006C] = 0xed; BIOS_Memory[0x006D] = 0xfe; BIOS_Memory[0x006E] = 0xc9; 
-    BIOS_Memory[0x006F] = 0xed; BIOS_Memory[0x0070] = 0xfe; BIOS_Memory[0x0071] = 0xc9; 
-    BIOS_Memory[0x0072] = 0xed; BIOS_Memory[0x0073] = 0xfe; BIOS_Memory[0x0074] = 0xc9; 
-    BIOS_Memory[0x0075] = 0xed; BIOS_Memory[0x0076] = 0xfe; BIOS_Memory[0x0077] = 0xc9; 
-    BIOS_Memory[0x0078] = 0xed; BIOS_Memory[0x0079] = 0xfe; BIOS_Memory[0x007A] = 0xc9; 
+    BIOS_Memory[0x210A] = 0xed; BIOS_Memory[0x210B] = 0xfe; BIOS_Memory[0x210C] = 0xc9;
+    BIOS_Memory[0x21A9] = 0xed; BIOS_Memory[0x21AA] = 0xfe; BIOS_Memory[0x21AB] = 0xc9;
+    BIOS_Memory[0x0069] = 0xed; BIOS_Memory[0x006A] = 0xfe; BIOS_Memory[0x006B] = 0xc9;
+    BIOS_Memory[0x006C] = 0xed; BIOS_Memory[0x006D] = 0xfe; BIOS_Memory[0x006E] = 0xc9;
+    BIOS_Memory[0x006F] = 0xed; BIOS_Memory[0x0070] = 0xfe; BIOS_Memory[0x0071] = 0xc9;
+    BIOS_Memory[0x0072] = 0xed; BIOS_Memory[0x0073] = 0xfe; BIOS_Memory[0x0074] = 0xc9;
+    BIOS_Memory[0x0075] = 0xed; BIOS_Memory[0x0076] = 0xfe; BIOS_Memory[0x0077] = 0xc9;
+    BIOS_Memory[0x0078] = 0xed; BIOS_Memory[0x0079] = 0xfe; BIOS_Memory[0x007A] = 0xc9;
     BIOS_Memory[0x2073] = 0x01;  // Remove Delay
     BIOS_Memory[0x20D0] = 0x10; BIOS_Memory[0x20D1] = 0x00;   // Only write 0x10 header bytes (instead of 190!)
     BIOS_Memory[0x20E3]=0x00; BIOS_Memory[0x20E4]=0x00; BIOS_Memory[0x20E5]=0x00; BIOS_Memory[0x20E6]=0xed; BIOS_Memory[0x20E7]=0xfe;
-    
-    MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
-    MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
-    MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
-    MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS     
+
+    MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS
+    MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS
+    MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS
+    MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS
     MemoryMap[4] = (u8 *)(BIOS_Memory + 0x8000);      // 0xFF here...
     MemoryMap[5] = (u8 *)(BIOS_Memory + 0xA000);      // 0xFF here...
     MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);      // 0xFF here...
@@ -340,13 +340,14 @@ void svi_restore_bios(void)
 //94    A8  W   PPI 8255 Port A
 //95    A9  W   PPI 8255 Port B
 //96    AA  W   PPI 8255 Port C
+//
 // #0000-#7FFF  Description #8000-#FFFF Description
 // BANK 01  BASIC ROM                           BANK 02 MAIN RAM
 // BANK 11  Game cartridge ROM                  BANK 12 ROM0 + ROM1 (optional game cartridge ROMs)
 // BANK 21  Standard SVI-328 extended RAM       BANK 22 SV-807 RAM expansion
 // BANK 31  SV-807 RAM expansion                BANK 32 SV-807 RAM expansion
-// 
-// The BANK selection is handled trough PSG Register 15 bits: 
+//
+// The BANK selection is handled trough PSG Register 15 bits:
 // 0 CART ROM Bank 11 (#0000-#7FFF) Game cartridge
 // 1 BK21 RAM Bank 21 (#0000-#7FFF) RAM on SVI-328
 // 2 BK22 RAM Bank 22 (#8000-#FFFF) Expansion RAM
@@ -356,7 +357,7 @@ void svi_restore_bios(void)
 // 6 ROMEN0 ROM "Bank 12/L" (#8000-#BFFF) Game cartridge
 // 7 ROMEN1 ROM "Bank 12/H" (#C000-#FFFF) Game cartridge
 // 0 = Enabled, 1 = Disabled
-void cpu_writeport_svi(register unsigned short Port,register unsigned char Value) 
+void cpu_writeport_svi(register unsigned short Port,register unsigned char Value)
 {
     // SVI ports are 8-bit
     Port &= 0x00FF;
@@ -367,7 +368,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     {
         FakeAY_WriteIndex(Value & 0x0F);
     }
-    else if (Port == 0x8C) 
+    else if (Port == 0x8C)
     {
         FakeAY_WriteData(Value);
         if (ay_reg_idx == 15)
@@ -376,22 +377,32 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
 
             if (lastIOBYTE != IOBYTE)
             {
-                u8 lowerBankEnable = (~IOBYTE) & 0x0B;          // Positive logic 
-                
+                u8 lowerBankEnable = (~IOBYTE) & 0x0B;          // Positive logic
+
                 if (lowerBankEnable == 0x00)  // Normal BIOS ROM in lower bank (fairly common configuration)
                 {
-                    MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS 
-                    MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS 
-                    MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS 
-                    MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS 
+                    MemoryMap[0] = (u8 *)(BIOS_Memory + 0x0000);      // Restore SVI BIOS
+                    MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS
+                    MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS
+                    MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS
                     svi_RAM[0]  = 0;
                 }
                 else if (lowerBankEnable & 0x01)   // No Game Cart in lower slot
                 {
-                    MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                    MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                    MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                    MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    if (svi_mode == 2)
+                    {
+                        MemoryMap[0] = (u8 *)(ROM_Memory + 0x0000);       // Cartridge here
+                        MemoryMap[1] = (u8 *)(ROM_Memory + 0x2000);       // Cartridge here
+                        MemoryMap[2] = (u8 *)(ROM_Memory + 0x4000);       // Cartridge here
+                        MemoryMap[3] = (u8 *)(ROM_Memory + 0x6000);       // Cartridge here
+                    }
+                    else
+                    {
+                        MemoryMap[0] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                        MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    }
                     svi_RAM[0]  = 0;
                 }
                 else if (lowerBankEnable & 0x02)   // SVI-328 has the other 32K of RAM in lower slot
@@ -410,10 +421,10 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                     svi_RAM[0]  = 0;
                 }
-                
-                
-                u8 upperBankEnable = (~IOBYTE) & 0xD4;          // Positive logic 
-                
+
+
+                u8 upperBankEnable = (~IOBYTE) & 0xD4;          // Positive logic
+
                 if (upperBankEnable == 0x00)  // Normal 32K RAM in upper bank (fairly common)
                 {
                       MemoryMap[4] = (u8 *)(RAM_Memory + 0x8000);      // Restore RAM
@@ -422,18 +433,38 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                       MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);      // Restore RAM
                       svi_RAM[1] = 1;
                 }
-                else // Nothing else here... just FF
-                {                    
-                      MemoryMap[4] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                      MemoryMap[5] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                      MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                      MemoryMap[7] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                      svi_RAM[1]  = 0;
+                else if (((upperBankEnable & 0xC0)==0x40) && (svi_mode == 2))   // Cart in upper slot
+                {
+                    MemoryMap[4] = (u8 *)(ROM_Memory + 0x8000);       // Cartridge here
+                    MemoryMap[5] = (u8 *)(ROM_Memory + 0xA000);       // Cartridge here
+                    svi_RAM[1]  = 1;
                 }
-                
+                else if (((upperBankEnable & 0xC0)==0x80) && (svi_mode == 2))   // Cart in upper slot
+                {
+                    MemoryMap[6] = (u8 *)(ROM_Memory + 0xC000);       // Cartridge here
+                    MemoryMap[7] = (u8 *)(ROM_Memory + 0xE000);       // Cartridge here
+                    svi_RAM[1]  = 1;
+                }
+                else if (((upperBankEnable & 0xC0)==0xC0) && (svi_mode == 2))   // Cart in upper slot
+                {
+                    MemoryMap[4] = (u8 *)(ROM_Memory + 0x8000);       // Cartridge here
+                    MemoryMap[5] = (u8 *)(ROM_Memory + 0xA000);       // Cartridge here
+                    MemoryMap[6] = (u8 *)(ROM_Memory + 0xC000);       // Cartridge here
+                    MemoryMap[7] = (u8 *)(ROM_Memory + 0xE000);       // Cartridge here
+                    svi_RAM[1]  = 0;
+                }
+                else // Nothing lives here...
+                {
+                    MemoryMap[4] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[5] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    MemoryMap[7] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
+                    svi_RAM[1]  = 0;
+                }
+
                 lastIOBYTE = IOBYTE;
             }
-        }        
+        }
     }
     else if (Port == 0x95)  // PPI - Register B
     {
@@ -459,13 +490,13 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
         }
         else
         {
-        }        
+        }
     }
   else if (Port > 0x80)
   {
-      
+
   }
-    
+
 }
 
 // ---------------------------------------------------------
@@ -481,14 +512,14 @@ void svi_reset(void)
 
         svi_RAM[0] = 0;
         svi_RAM[1] = 1;
-        
+
         Port_PPI_A = 0x00;
-        Port_PPI_B = 0x00;       
-        Port_PPI_C = 0x00;       
+        Port_PPI_B = 0x00;
+        Port_PPI_C = 0x00;
     }
 }
 
-// Spectravideo SVI Cassette patch:    
+// Spectravideo SVI Cassette patch:
 // BIOS Area:
 //case 0x0069: tapion(ref, cpu); break; // CSRDON
 //case 0x006C: tapin(ref, cpu);  break; // CASIN
@@ -561,7 +592,7 @@ void SVI_HandleCassette(register Z80 *r)
         if (tape_pos > tape_len)  tape_len=tape_pos;
         r->AF.B.l &= ~C_FLAG;
         r->PC.W = 0x20ED;
-    }    
+    }
     else if (r->PC.W-2 == 0x0078)   // CTWOFF
     {
         r->AF.B.l |= C_FLAG;

@@ -1729,6 +1729,12 @@ void CheckMSXHeaders(char *szGame)
           msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
           if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
       }
+      
+      // Check for Spectravideo SVI Cart Header...
+      if ((ROM_Memory[0] == 0xF3) && (ROM_Memory[1] == 0x31))
+      {
+          svi_mode = 2;       // Detected SVI Cartridge header...
+      }
   }
 }
 
