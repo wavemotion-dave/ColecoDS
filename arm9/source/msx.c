@@ -1682,62 +1682,6 @@ void MSX_HandleBeeper(void)
 
 
 
-/*********************************************************************************
- * Look for MSX 'AB' header in the ROM file
- ********************************************************************************/
-void CheckMSXHeaders(char *szGame)
-{
-  FILE* handle = fopen(szGame, "rb");  
-  if (handle)
-  {
-      // ------------------------------------------------------------------------------------------
-      // MSX Header Bytes:
-      //  0 DEFB "AB" ; expansion ROM header
-      //  2 DEFW initcode ; start of the init code, 0 if no initcode
-      //  4 DEFW callstat; pointer to CALL statement handler, 0 if no such handler
-      //  6 DEFW device; pointer to expansion device handler, 0 if no such handler
-      //  8 DEFW basic ; pointer to the start of a tokenized basicprogram, 0 if no basicprogram
-      // ------------------------------------------------------------------------------------------
-      memset(ROM_Memory, 0xFF, 0x400A);
-      fread((void*) ROM_Memory, 0x400A, 1, handle); 
-      fclose(handle);
-      
-      // ---------------------------------------------------------------------
-      // Do some auto-detection for game ROM. MSX games have 'AB' in their
-      // header and we also want to track the INIT address for those ROMs
-      // so we can take a better guess at mapping them into our Slot1 memory
-      // ---------------------------------------------------------------------
-      msx_init = 0x4000;
-      msx_basic = 0x0000;
-      if ((ROM_Memory[0] == 'A') && (ROM_Memory[1] == 'B'))
-      {
-          msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
-          msx_init = ROM_Memory[2] | (ROM_Memory[3]<<8);
-          if (msx_init == 0x0000) msx_basic = ROM_Memory[8] | (ROM_Memory[8]<<8);
-          if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
-          {
-              if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
-              {
-                  msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
-                  if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
-              }
-          }
-      }
-      else if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
-      {
-          msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
-          msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
-          if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
-      }
-      
-      // Check for Spectravideo SVI Cart Header...
-      if ((ROM_Memory[0] == 0xF3) && (ROM_Memory[1] == 0x31))
-      {
-          svi_mode = 2;       // Detected SVI Cartridge header...
-      }
-  }
-}
-
 
 // ---------------------------------------------------------
 // Restore the BIOS and point to it...

@@ -1097,6 +1097,8 @@ void SaveConfig(bool bShow)
     // If there is a game loaded, save that into a slot... re-use the same slot if it exists
     myConfig.game_crc = file_crc;
     
+    if (myConfig.gameSpeed)  myConfig.vertSync = 0;      // If game speed isn't 100%, we can't sync to the DS 60Hz
+    
     // Find the slot we should save into...
     for (slot=0; slot<MAX_CONFIGS; slot++)
     {
@@ -1115,7 +1117,7 @@ void SaveConfig(bool bShow)
     // --------------------------------------------------------------------------
     if (myConfig.game_crc != 0x00000000)
     {
-    memcpy(&AllConfigs[slot], &myConfig, sizeof(struct Config_t));
+        memcpy(&AllConfigs[slot], &myConfig, sizeof(struct Config_t));
     }
 
     // --------------------------------------------------
@@ -1281,7 +1283,7 @@ void SetDefaultGameConfig(void)
     myConfig.mirrorRAM   = COLECO_RAM_NORMAL_MIRROR;    // By default use the normal Colecovision (and CreatiVision) memory mirrors
     myConfig.msxBeeper   = 0;                           // Assume no MSX beeper required - only a few games need this
     myConfig.cvisionLoad = 0;                           // Default to normal Legacy A/B load for CreatiVision games
-    myConfig.reserved0   = 0;   
+    myConfig.gameSpeed   = 0;                           // Default is 100% game speed
     myConfig.reserved1   = 0;
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;    
@@ -1635,7 +1637,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
     if (file_crc == 0x011899cf)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max (32K version)
 
-    if (myConfig.isPAL)                         myConfig.vertSync= 0;   // If we are PAL, we can't sync to the DS 60Hz
+    if (myConfig.isPAL)                         myConfig.vertSync = 0;      // If we are PAL, we can't sync to the DS 60Hz
+    if (myConfig.gameSpeed)                     myConfig.vertSync = 0;      // If game speed isn't 100%, we can't sync to the DS 60Hz
 }
 
 // ----------------------------------------------------------
@@ -1743,6 +1746,7 @@ const struct options_t Option_Table[3][20] =
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
+        {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
@@ -2112,9 +2116,66 @@ void NoGameSelected(u32 ucY)
     affInfoOptions(ucY);
 }
 
+/*********************************************************************************
+ * Look for MSX 'AB' header in the ROM file or possibly 0xF331 for SVI ROMs
+ ********************************************************************************/
+void CheckRomHeaders(char *szGame)
+{
+  FILE* handle = fopen(szGame, "rb");  
+  if (handle)
+  {
+      // ------------------------------------------------------------------------------------------
+      // MSX Header Bytes:
+      //  0 DEFB "AB" ; expansion ROM header
+      //  2 DEFW initcode ; start of the init code, 0 if no initcode
+      //  4 DEFW callstat; pointer to CALL statement handler, 0 if no such handler
+      //  6 DEFW device; pointer to expansion device handler, 0 if no such handler
+      //  8 DEFW basic ; pointer to the start of a tokenized basicprogram, 0 if no basicprogram
+      // ------------------------------------------------------------------------------------------
+      memset(ROM_Memory, 0xFF, 0x400A);
+      fread((void*) ROM_Memory, 0x400A, 1, handle); 
+      fclose(handle);
+      
+      // ---------------------------------------------------------------------
+      // Do some auto-detection for game ROM. MSX games have 'AB' in their
+      // header and we also want to track the INIT address for those ROMs
+      // so we can take a better guess at mapping them into our Slot1 memory
+      // ---------------------------------------------------------------------
+      msx_init = 0x4000;
+      msx_basic = 0x0000;
+      if ((ROM_Memory[0] == 'A') && (ROM_Memory[1] == 'B'))
+      {
+          msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
+          msx_init = ROM_Memory[2] | (ROM_Memory[3]<<8);
+          if (msx_init == 0x0000) msx_basic = ROM_Memory[8] | (ROM_Memory[8]<<8);
+          if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
+          {
+              if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
+              {
+                  msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
+                  if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
+              }
+          }
+      }
+      else if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
+      {
+          msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
+          msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
+          if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
+      }
+      // Check for Spectravideo SVI Cart Header...
+      else if ((ROM_Memory[0] == 0xF3) && (ROM_Memory[1] == 0x31))
+      {
+          svi_mode = 2;       // Detected SVI Cartridge header...
+      }
+  }
+}
+
+
 void ReadFileCRCAndConfig(void)
 {    
     u8 checkCOM = 0;
+    u8 checkROM = 0;
     getfile_crc(gpFic[ucGameChoice].szName);
     
     u8 cas_load = 0;
@@ -2132,8 +2193,6 @@ void ReadFileCRCAndConfig(void)
     
     keyMapType = 0;
     
-    CheckMSXHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX cart - this may set msx_mode=1
-
     if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 2;    // SC-3000 mode
@@ -2160,8 +2219,10 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".PEN") != 0) pencil2_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".com") != 0) checkCOM = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".COM") != 0) checkCOM = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".rom") != 0) checkROM = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".ROM") != 0) checkROM = 1;
     
-    if (sg1000_mode) msx_mode=0;        // Some Taiwan SG games look like MSX games...
+    if (checkROM) CheckRomHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX or SVI cart - this may set msx_mode=1 or svi_mode=2
     
     if (checkCOM)   // COM is usually Einstein... but we also support it for MTX for some games
     {
