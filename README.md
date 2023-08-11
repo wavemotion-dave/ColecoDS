@@ -107,7 +107,7 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 * 338d7b59	pencil2.rom (Hanimex Pencil II)
 * 8f31f297	pv2000.rom (Casio PV-2000)
 * 92cf9353	sordm5.rom (Sord M5)
-* 709904e9	svi.rom (Spectravision)
+* bc433df6	svi.rom (Spectravision)
 * 05a37a34	eos.rom (ADAM)
 * 58d86a2a	writer.rom (ADAM)
 ```

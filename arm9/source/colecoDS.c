@@ -2692,6 +2692,20 @@ void colecoDS_main(void)
           {
               if (nds_key & KEY_START)
               {
+                  BufferKey('C');
+                  BufferKey('L');
+                  BufferKey('O');
+                  BufferKey('A');
+                  BufferKey('D');
+                  BufferKey(KBD_KEY_RET);
+                  BufferKey(255);
+                  BufferKey('R');
+                  BufferKey('U');
+                  BufferKey('N');
+                  BufferKey(KBD_KEY_RET);
+              }
+              else
+              {
                   BufferKey('B');
                   BufferKey('L');
                   BufferKey('O');
@@ -2708,22 +2722,6 @@ void colecoDS_main(void)
                   BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(',');
                   BufferKey('R');
-                  BufferKey(KBD_KEY_RET);
-              }
-              else
-              {
-                  BufferKey('R');
-                  BufferKey('U');
-                  BufferKey('N');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                  BufferKey('C');
-                  BufferKey('A');
-                  BufferKey('S');
-                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
                   BufferKey(KBD_KEY_RET);
               }
               WAITVBL;WAITVBL;WAITVBL;
