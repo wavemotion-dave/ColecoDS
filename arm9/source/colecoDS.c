@@ -338,6 +338,12 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
 
 extern u8 msx_scc_enable;
 
+// ----------------------------------------------
+// Game speeds constants... first entry is 100%
+// ----------------------------------------------
+u16 GAME_SPEED_NTSC[] = {546, 497, 455, 420, 607 };
+u16 GAME_SPEED_PAL[]  = {656, 596, 547, 505, 729 };
+
 // --------------------------------------------------------------------------------
 // Spinners! X and Y taken together will actually replicate the roller controller.
 // --------------------------------------------------------------------------------
@@ -2406,7 +2412,7 @@ void colecoDS_main(void)
             // This is how we time frame-to frame
             // to keep the game running at 60FPS
             // --------------------------------------------
-            while(TIMER2_DATA < ((myConfig.isPAL ? 656:546)*(timingFrames+1)))
+            while(TIMER2_DATA < ((myConfig.isPAL ? GAME_SPEED_PAL[myConfig.gameSpeed]:GAME_SPEED_NTSC[myConfig.gameSpeed])*(timingFrames+1)))
             {
                 if (myGlobalConfig.showFPS == 2) break;   // If Full Speed, break out...
             }

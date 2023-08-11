@@ -322,7 +322,7 @@ void svi_restore_bios(void)
     BIOS_Memory[0x0072] = 0xed; BIOS_Memory[0x0073] = 0xfe; BIOS_Memory[0x0074] = 0xc9;
     BIOS_Memory[0x0075] = 0xed; BIOS_Memory[0x0076] = 0xfe; BIOS_Memory[0x0077] = 0xc9;
     BIOS_Memory[0x0078] = 0xed; BIOS_Memory[0x0079] = 0xfe; BIOS_Memory[0x007A] = 0xc9;
-    BIOS_Memory[0x2073] = 0x01;  // Remove Delay
+    //BIOS_Memory[0x2073] = 0x01;  // Remove Delay
     BIOS_Memory[0x20D0] = 0x10; BIOS_Memory[0x20D1] = 0x00;   // Only write 0x10 header bytes (instead of 190!)
     BIOS_Memory[0x20E3]=0x00; BIOS_Memory[0x20E4]=0x00; BIOS_Memory[0x20E5]=0x00; BIOS_Memory[0x20E6]=0xed; BIOS_Memory[0x20E7]=0xfe;
 
@@ -330,10 +330,12 @@ void svi_restore_bios(void)
     MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS
     MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS
     MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS
-    MemoryMap[4] = (u8 *)(BIOS_Memory + 0x8000);      // 0xFF here...
-    MemoryMap[5] = (u8 *)(BIOS_Memory + 0xA000);      // 0xFF here...
-    MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);      // 0xFF here...
-    MemoryMap[7] = (u8 *)(BIOS_Memory + 0xE000);      // 0xFF here...
+    MemoryMap[4] = (u8 *)(RAM_Memory  + 0x8000);      // RAM here by default
+    MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);      // RAM here by default
+    MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);      // RAM here by default
+    MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);      // RAM here by default
+    svi_RAM[0]  = 0;
+    svi_RAM[1]  = 1;
 }
 
 

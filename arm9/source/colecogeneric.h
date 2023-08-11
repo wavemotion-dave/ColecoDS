@@ -79,7 +79,7 @@ struct __attribute__((__packed__)) Config_t
     u8  mirrorRAM;
     u8  msxBeeper;
     u8  cvisionLoad;
-    u8  reserved0;
+    u8  gameSpeed;
     u8  reserved1;
     u8  reserved2;
     u8  reserved3;
@@ -104,6 +104,9 @@ extern FICcoleco gpFic[MAX_ROMS];
 extern int uNbRoms;
 extern int ucGameAct;
 extern int ucGameChoice;
+
+extern u16 msx_init;
+extern u16 msx_basic;
 
 extern u8 showMessage(char *szCh1, char *szCh2);
 extern void colecoDSModeNormal(void);
