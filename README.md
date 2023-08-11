@@ -23,7 +23,7 @@ Features :
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
 * MSX1 game support (.msx or .rom or.cas) up to 1024K 
-* Spectravideo SVI support (.cas) - requires svi.rom BIOS
+* Spectravideo SVI support (.cas or .rom) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
 * Tatung Einstein support (.com run-time files only) - requires einstein.rom BIOS
@@ -223,7 +223,7 @@ Once the game is loaded into memory you will be sitting at the BASIC prompt. At 
 
 Spectravideo SVI Compatibility :
 -----------------------
-This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common bload and run commands.
+This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common bload and run commands. There are only about a half-dozen .rom carts for this system which are also supported (up to 64K cartridge support).
 
 Sega SG-1000 Compatibility :
 -----------------------
