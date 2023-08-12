@@ -31,7 +31,6 @@ u8 lastBlock[4]       __attribute__((section(".dtcm"))) = {99,99,99,99};
 u32 msx_offset        __attribute__((section(".dtcm"))) = 0;
 u8 msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8 msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
-u8 einstein_ram_dirty __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
 extern u8 PCBTable[];

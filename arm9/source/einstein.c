@@ -90,10 +90,7 @@ void scan_keyboard(void)
           
           if (!(keyboard_w & 0x01))
           {
-              if (key_graph) myKeyData |= 0x02;  // Maybe?
-
               if (kbd_key == KBD_KEY_STOP)  myKeyData |= 0x01;  // Break
-              if (kbd_key == KBD_KEY_GRAPH) myKeyData |= 0;     // Unused
               if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x04;  // F0
               if (kbd_key == KBD_KEY_F7)    myKeyData |= 0x08;
               if (kbd_key == KBD_KEY_CAPS)  myKeyData |= 0x10;
@@ -204,10 +201,15 @@ void einstien_restore_bios(void)
     {
         memcpy(BIOS_Memory+0x4000, ROM_Memory, tape_len);   // only for Diagnostics ROM
     }
-    MemoryMap[0] = BIOS_Memory+0x0000;
-    MemoryMap[1] = BIOS_Memory+0x2000;
-    MemoryMap[2] = BIOS_Memory+0x4000;
-    MemoryMap[3] = BIOS_Memory+0x6000;
+    MemoryMap[0] = BIOS_Memory + 0x0000;
+    MemoryMap[1] = BIOS_Memory + 0x2000;
+    MemoryMap[2] = BIOS_Memory + 0x4000;
+    MemoryMap[3] = BIOS_Memory + 0x6000;
+    
+    MemoryMap[4] = RAM_Memory + 0x8000;
+    MemoryMap[5] = RAM_Memory + 0xA000;
+    MemoryMap[6] = RAM_Memory + 0xC000;
+    MemoryMap[7] = RAM_Memory + 0xE000;
 }
 
 // --------------------------------------------------------------------------
@@ -217,6 +219,7 @@ void einstien_restore_bios(void)
 // --------------------------------------------------------------------------
 void einstein_swap_memory(void)
 {
+    // Reads or Writes to port 24h will toggle ROM vs RAM access
     if (einstein_ram_start == 0x8000)  
     {
         MemoryMap[0] = RAM_Memory+0x0000;
@@ -472,6 +475,9 @@ void einstein_handle_interrupts(void)
 
 void einstein_load_com_file(void)
 {
+    // --------------------------------------
+    // Ensure we are running in all-RAM mode
+    // --------------------------------------
     einstein_ram_start = 0x0000;
     
     MemoryMap[0] = RAM_Memory + 0x0000;
@@ -483,7 +489,11 @@ void einstein_load_com_file(void)
     MemoryMap[6] = RAM_Memory + 0xC000;
     MemoryMap[7] = RAM_Memory + 0xE000;
     
+    // The Quickload will write the .COM file into memory at offset 0x100 and jump to it
     memcpy(RAM_Memory+0x100, ROM_Memory, tape_len);
+    keyboard_interrupt=0;
+    CPU.IRequest=INT_NONE;
+    CPU.IFF&=~(IFF_1|IFF_EI);
     CPU.PC.W = 0x100;
     JumpZ80(CPU.PC.W);
 }
