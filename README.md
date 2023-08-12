@@ -103,7 +103,7 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 * a30b0c34	coleco.rom (faster boot)
 * 94ee12f3	msx.rom (MSX) - see below for more options
 * c3c590c6	bioscv.rom (Creativision)
-* ec134953	einstein.rom (Tatung Einstein)
+* a746eeb6	einstein.rom (Tatung Einstein)
 * 338d7b59	pencil2.rom (Hanimex Pencil II)
 * 8f31f297	pv2000.rom (Casio PV-2000)
 * 92cf9353	sordm5.rom (Sord M5)
@@ -211,7 +211,7 @@ The MSX memory is based on which MSX rom BIOS you are using:
 
 Memotech MTX Compatibility :
 -----------------------
-The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound has minor inaccuracies due to some CTC chip timing differences from real hardware. About 90% of the games load and run properly. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  The excellent MEMU MTX emulator has a good selection of games.
+The Memotech MTX runs at 4MHz which is faster than the Colecovision (and MSX, M5, SG, etc). This is reasonably well emulated - though the sound has minor inaccuracies due to some CTC chip timing differences from real hardware. About 90% of the games load and run properly. Sometimes you will have to run a [a1] or [a2] alternate dump of a game to get it to run properly.  When faced with the decision to use a .mtx formatted tape or a .com / .run, you should generally prefer the .mtx as it's closer to loading and running on a real machine. The excellent MEMU MTX emulator has a good selection of games.
 
 There is support for the awesome MTX MAGROM project... there are several multi-carts in this project. You can use either 1.05 or 1.05a of the MAGROM binary file or the V2 MAGROM Binary... just rename as .MTX and load it normally and once the Ready prompt shows, press the START button to issue the "ROM 7" command to launch the multi-cart menu. It's worth it!
 

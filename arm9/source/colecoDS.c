@@ -426,6 +426,7 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
                   combined += (s16)(mixbuf3[i] - 32768);
                   combined += (s16)(mixbuf4[i] - 32768);
                   if (combined > 65535) combined = 65535;
+                  else if (combined < 0) combined = 0;
                   *p++ = (u16)combined;
               }
               p--; last_sample = *p;
@@ -443,12 +444,9 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
             u16 *p = (u16*)dest;
             for (int i=0; i<len*2; i++)
             {
-                // ------------------------------------------------------------------------
-                // We normalize the samples and mix them carefully to minimize clipping...
-                // ------------------------------------------------------------------------
-                s32 combined = mixbuf1[i];
-                combined += (s16)(mixbuf2[i] - 32768);
-                if (combined > 65535) combined = 65535;
+                s32 combined = (mixbuf1[i] + mixbuf2[i]);
+                combined -= 32767;
+                if (combined < 0) combined = 0;
                 *p++ = (u16)combined;
             }
             p--; last_sample = *p;
