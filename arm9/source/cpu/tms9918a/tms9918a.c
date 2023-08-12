@@ -562,6 +562,13 @@ byte Write9918(u8 iReg, u8 value)
     
   /* Enabling IRQs may cause an IRQ here */
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
+    
+  if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
+  if (memotech_mode)
+  {
+      if ((CTC[CTC_CHAN0].control & CTC_INT_ENABLE) == 0x00) bIRQ = 0;  // For Memotech MTX: if IE is disabled for CTC channel 0, do not generate interrupt.
+  }
+    
 
   /* VRAM can either be 4kB or 16kB - this checks if the bit has changed on this call which will force the logic in case 1 below */
   if (vdp_16k_mode_only) VRAMMask = 0x3FFF;    // For these machines, we only support 16K
@@ -707,7 +714,7 @@ ITCM_CODE byte RdCtrl9918(void)
   byte data;
 
   data = VDPStatus;
-  VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR);
+  VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR); // Clears VBLANK
   VDPCtrlLatch = 0;
     
   if (myConfig.clearInt == CPU_CLEAR_INT_ON_VDP_READ)
