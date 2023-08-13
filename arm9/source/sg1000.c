@@ -174,7 +174,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (kbd_key == 'F')           joy1 |= 0x04;
           if (kbd_key == 'V')           joy1 |= 0x08;
           if (kbd_key == KBD_KEY_DEL)   joy1 |= 0x10;
-          if (kbd_key == '\\')          joy1 |= 0x20;   // PI
+          if (kbd_key == '`')           joy1 |= 0x20;   // PI
           if (kbd_key == ':')           joy1 |= 0x40;
           if (kbd_key == '@')           joy1 |= 0x80;
         }
@@ -292,7 +292,8 @@ unsigned char cpu_readport_sg(register unsigned short Port)
 
       if ((Port_PPI_C & 0x07) == 0x05)  // Row 5
       {
-          if (kbd_key == KBD_KEY_F1)      joy2 |= 0x08; // FUNC
+          if (kbd_key == '\\')            joy2 |= 0x01; // British Pound
+          if (kbd_key == KBD_KEY_CODE)    joy2 |= 0x08; // FUNC
           if (key_code)                   joy2 |= 0x08; // FUNC
       }
       

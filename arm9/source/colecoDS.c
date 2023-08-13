@@ -2019,7 +2019,7 @@ u8 handle_sc3000_keyboard_press(u16 iTx, u16 iTy)  // SC-3000 Keyboard
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
     {
-        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '\\'; // Repurpose to PII
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '`'; // Repurpose to PII
         else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
         else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
         else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
@@ -2032,7 +2032,7 @@ u8 handle_sc3000_keyboard_press(u16 iTx, u16 iTy)  // SC-3000 Keyboard
         else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
         else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
         else if ((iTx >= 181) && (iTx < 195))  kbd_key = '^';
-        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '@';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '\\'; // British Pound 
         else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
     }
     else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
@@ -2066,22 +2066,22 @@ u8 handle_sc3000_keyboard_press(u16 iTx, u16 iTy)  // SC-3000 Keyboard
         else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
         else if ((iTx >= 161) && (iTx < 178))  kbd_key = ';';
         else if ((iTx >= 178) && (iTx < 192))  kbd_key = ':';
-        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;
+        else if ((iTx >= 192) && (iTx < 208))  kbd_key = '@';
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
-        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
-        else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
-        else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
-        else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
-        else if ((iTx >= 78)  && (iTx < 94))   kbd_key = 'V';
-        else if ((iTx >= 94)  && (iTx < 109))  kbd_key = 'B';
-        else if ((iTx >= 109) && (iTx < 123))  kbd_key = 'N';
-        else if ((iTx >= 123) && (iTx < 139))  kbd_key = 'M';
-        else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
-        else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
-        else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
-        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;
+        if      ((iTx >= 0)   && (iTx < 31))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        else if ((iTx >= 31)  && (iTx < 47))   kbd_key = 'Z';
+        else if ((iTx >= 47)  && (iTx < 62))   kbd_key = 'X';
+        else if ((iTx >= 62)  && (iTx < 76))   kbd_key = 'C';
+        else if ((iTx >= 76)  && (iTx < 92))   kbd_key = 'V';
+        else if ((iTx >= 92)  && (iTx < 107))  kbd_key = 'B';
+        else if ((iTx >= 107) && (iTx < 121))  kbd_key = 'N';
+        else if ((iTx >= 121) && (iTx < 137))  kbd_key = 'M';
+        else if ((iTx >= 137) && (iTx < 152))  kbd_key = ',';
+        else if ((iTx >= 152) && (iTx < 167))  kbd_key = '.';
+        else if ((iTx >= 167) && (iTx < 181))  kbd_key = '/';
+        else if ((iTx >= 181) && (iTx < 214))  kbd_key = KBD_KEY_RET;
     }
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
