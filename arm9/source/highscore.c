@@ -15,9 +15,6 @@
 #include <unistd.h>
 #include "colecoDS.h"
 #include "colecogeneric.h"
-#include "ecranBas.h"
-#include "ecranBasSel.h"
-#include "ecranHaut.h"
 #include "printf.h"
 
 // ------------------------------------------------------------------------------

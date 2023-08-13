@@ -28,7 +28,6 @@
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/z80/ctc.h"
 #include "intro.h"
-#include "ecranBas.h"
 #include "adam_sm.h"
 #include "cvision_kbd.h"
 #include "msx_sm.h"
@@ -40,9 +39,10 @@
 #include "alpha_kbd.h"
 #include "einstein_kbd.h"
 #include "pv2000_sm.h"
-#include "ecranDebug.h"
-#include "ecranBasSel.h"
-#include "ecranHaut.h"
+#include "debug_ovl.h"
+#include "options.h"
+#include "colecovision.h"
+#include "topscreen.h"
 #include "wargames.h"
 #include "mousetrap.h"
 #include "gateway.h"
@@ -2868,9 +2868,9 @@ void colecoDSInit(void)
   bg0 = bgInit(0, BgType_Text8bpp,  BgSize_T_256x512, 31,0);
   bg1 = bgInit(1, BgType_Text8bpp,  BgSize_T_256x512, 29,0);
   bgSetPriority(bg0,1);bgSetPriority(bg1,0);
-  decompress(ecranHautTiles,  bgGetGfxPtr(bg0), LZ77Vram);
-  decompress(ecranHautMap,  (void*) bgGetMapPtr(bg0), LZ77Vram);
-  dmaCopy((void*) ecranHautPal,(void*)  BG_PALETTE,256*2);
+  decompress(topscreenTiles,  bgGetGfxPtr(bg0), LZ77Vram);
+  decompress(topscreenMap,  (void*) bgGetMapPtr(bg0), LZ77Vram);
+  dmaCopy((void*) topscreenPal,(void*)  BG_PALETTE,256*2);
   unsigned  short dmaVal =*(bgGetMapPtr(bg0)+51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1),32*24*2);
 
@@ -2892,9 +2892,9 @@ void BottomScreenOptions(void)
     bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 31,0);
     bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x256, 29,0);
     bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
-    decompress(ecranBasSelTiles, bgGetGfxPtr(bg0b), LZ77Vram);
-    decompress(ecranBasSelMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
-    dmaCopy((void*) ecranBasSelPal,(void*) BG_PALETTE_SUB,256*2);
+    decompress(optionsTiles, bgGetGfxPtr(bg0b), LZ77Vram);
+    decompress(optionsMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
+    dmaCopy((void*) optionsPal,(void*) BG_PALETTE_SUB,256*2);
     unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
@@ -3078,11 +3078,11 @@ void BottomScreenKeypad(void)
       }
       else
       {
-          //  Init bottom screen
-          decompress(ecranBasTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(ecranBasMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          //  Init bottom screen with the standard colecovision overlay
+          decompress(colecovisionTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(colecovisionMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) ecranBasPal,(void*) BG_PALETTE_SUB,256*2);
+          dmaCopy((void*) colecovisionPal,(void*) BG_PALETTE_SUB,256*2);
       }
 #endif
     }
