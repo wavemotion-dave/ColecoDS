@@ -20,8 +20,8 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 
-#include "ecranBasSel.h"
-#include "ecranHaut.h"
+#include "options.h"
+#include "topscreen.h"
 
 #include "CRC32.h"
 #include "printf.h"
@@ -643,7 +643,7 @@ void showRandomPreviewSnaps(void) {
       uEcran-=3;
       for (uY=24;uY<33;uY++) {
         for (uX=0;uX<12;uX++) {
-          *(pusEcran + (14+uX) + ((10+uY-24)<<5)) = *(bgGetMapPtr(bg0) + (uY+uEcran*9)*32 + uX+12); //*((u16*) &ecranHaut_map[uY+uEcran*9][uX+12] );
+          *(pusEcran + (14+uX) + ((10+uY-24)<<5)) = *(bgGetMapPtr(bg0) + (uY+uEcran*9)*32 + uX+12);
         }
       }
     }
@@ -651,7 +651,7 @@ void showRandomPreviewSnaps(void) {
     {
       for (uY=24;uY<33;uY++) {
         for (uX=0;uX<12;uX++) {
-          *(pusEcran + (14+uX) + ((10+uY-24)<<5)) = *(bgGetMapPtr(bg0) + (uY+uEcran*9)*32 + uX); //*((u16*) &ecranHaut_map[uY+uEcran*9][uX] );
+          *(pusEcran + (14+uX) + ((10+uY-24)<<5)) = *(bgGetMapPtr(bg0) + (uY+uEcran*9)*32 + uX);
         }
       }
     }
@@ -2312,9 +2312,9 @@ void colecoDSChangeOptions(void)
   bg0 = bgInit(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
   bg1 = bgInit(1, BgType_Text8bpp, BgSize_T_256x512, 29,0);
   bgSetPriority(bg0,1);bgSetPriority(bg1,0);
-  decompress(ecranHautTiles, bgGetGfxPtr(bg0), LZ77Vram);
-  decompress(ecranHautMap, (void*) bgGetMapPtr(bg0), LZ77Vram);
-  dmaCopy((void*) ecranHautPal,(void*) BG_PALETTE,256*2);
+  decompress(topscreenTiles, bgGetGfxPtr(bg0), LZ77Vram);
+  decompress(topscreenMap, (void*) bgGetMapPtr(bg0), LZ77Vram);
+  dmaCopy((void*) topscreenPal,(void*) BG_PALETTE,256*2);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0) + 51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
   AffChaine(28,23,1,"V");AffChaine(29,23,1,VERSIONCLDS);

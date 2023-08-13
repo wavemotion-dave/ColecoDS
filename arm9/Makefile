@@ -72,7 +72,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  ecranBas.o ecranDebug.o adam_sm.o cvision_kbd.o alpha_kbd.o msx_sm.o msx_full.o mtx_full.o svi_full.o msx_japan.o adam_full.o einstein_kbd.o pv2000_sm.o cvision.o ecranBasSel.o ecranHaut.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o  
+OSPECIALS :=  colecovision.o options.o debug_ovl.o adam_sm.o cvision_kbd.o alpha_kbd.o msx_sm.o msx_full.o mtx_full.o svi_full.o msx_japan.o adam_full.o einstein_kbd.o pv2000_sm.o cvision.o topscreen.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o pdev_bg0.o pdev_tbg0.o  
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -140,7 +140,7 @@ $(ARM9ELF)	:	$(OFILES)
 	@$(bin2o)
 
 # BG------------------------
-ecranBas.s ecranBas.h : ecranBas.png
+colecovision.s colecovision.h : colecovision.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 adam_sm.s adam_sm.h : adam_sm.png
@@ -179,13 +179,13 @@ einstein_kbd.s einstein_kbd.h : einstein_kbd.png
 pv2000_sm.s pv2000_sm.h : pv2000_sm.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
-ecranDebug.s ecranDebug.h : ecranDebug.png
+debug_ovl.s debug_ovl.h : debug_ovl.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
-ecranBasSel.s ecranBasSel.h : ecranBasSel.png
+options.s options.h : options.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
     
-ecranHaut.s ecranHaut.h : ecranHaut.png
+topscreen.s topscreen.h : topscreen.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 
 wargames.s wargames.h : wargames.png
