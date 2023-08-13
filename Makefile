@@ -1,4 +1,10 @@
 #---------------------------------------------------------------------------------
+# path to tools - this can be deleted if you set the path in windows
+#---------------------------------------------------------------------------------
+#export DEVKITPRO=/opt/devkitpro
+#export DEVKITARM=/opt/devkitpro/devkitARM
+#
+#---------------------------------------------------------------------------------
 .SUFFIXES:
 #---------------------------------------------------------------------------------
 ifeq ($(strip $(DEVKITARM)),)
@@ -9,14 +15,9 @@ include $(DEVKITARM)/ds_rules
 
 export TARGET		:=	ColecoDS
 export TOPDIR		:=	$(CURDIR)
-export VERSION		:=  8.3c
+export VERSION		:=  8.3d
 
 ICON 		:= -b $(CURDIR)/logo.bmp "ColecoDS $(VERSION);wavemotion-dave;https://github.com/wavemotion-dave/ColecoDS" 
-
-#---------------------------------------------------------------------------------
-# path to tools - this can be deleted if you set the path in windows
-#---------------------------------------------------------------------------------
-#export PATH		:=	$(DEVKITARM)/bin:$(PATH)
 
 .PHONY: $(TARGET).arm7 $(TARGET).arm9
 

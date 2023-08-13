@@ -337,6 +337,7 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
 };
 
 extern u8 msx_scc_enable;
+extern u8 sg1000_double_reset;
 
 // ----------------------------------------------
 // Game speeds constants... first entry is 100%
@@ -688,10 +689,10 @@ void ResetColecovision(void)
   pv2000_reset();                       // Reset the PV2000 specific vars
   einstein_reset();                     // Reset the Tatung Einstein specific vars
 
-  adam_CapsLock = 0;
-  adam_unsaved_data = 0;
+  adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
+  adam_unsaved_data = 0;                // No unsaved ADAM tape/disk data to start
 
-  write_EE_counter=0;
+  write_EE_counter=0;                   // Nothing to write for EEPROM yet
 
   // -----------------------------------------------------------------------
   // By default, many of the machines use a simple flat 64K memory model
@@ -707,8 +708,10 @@ void ResetColecovision(void)
   MemoryMap[5] = RAM_Memory + 0xA000;
   MemoryMap[6] = RAM_Memory + 0xC000;
   MemoryMap[7] = RAM_Memory + 0xE000;
-
-
+    
+  // ----------------------------------------------------------------------
+  // Based on the system that we are running, wipe memory appopriately...
+  // ----------------------------------------------------------------------
   if (sg1000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
@@ -742,9 +745,10 @@ void ResetColecovision(void)
   }
   else if (adam_mode)
   {
-      colecoWipeRAM();
+      colecoWipeRAM();                          // Wipe the RAM area
       adam_128k_mode = 0;                       // Normal 64K ADAM to start
-      SetupAdam(false);
+      sgm_reset();                              // Make sure the SGM memory is not functional
+      SetupAdam(true);                          // Full reset of ADAMNet
   }
   else if (pencil2_mode)
   {
@@ -795,10 +799,11 @@ void ResetColecovision(void)
   timingFrames  = 0;
   emuFps=0;
 
-  XBuf = XBuf_A;                      // Set the initial screen ping-pong buffer to A
+  XBuf = XBuf_A;        // Set the initial screen ping-pong buffer to A
 
   ResetStatusFlags();   // Some static status flags for the UI mostly
 
+  // And we've got some debug data we can use for development... reset these.
   debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0; debug5 = 0; debug6 = 0;
 }
 
@@ -1890,7 +1895,7 @@ u8 handle_svi_keyboard_press(u16 iTx, u16 iTy)  // SVI Keyboard
     return MENU_CHOICE_NONE;
 }
 
-u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX/Etc Keyboard
+u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX Keyboard
 {
     if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
     {
@@ -2354,7 +2359,6 @@ void colecoDS_main(void)
             emuActFrames = 0;
 
             // A bit of a hack for the SC-3000 Survivors Multi-Cart
-            extern u8 sg1000_double_reset;
             if (sg1000_double_reset)
             {
                 sg1000_double_reset=false;
@@ -3039,10 +3043,10 @@ void BottomScreenKeypad(void)
     {
 #ifdef DEBUG_Z80
           //  Init bottom screen
-          decompress(ecranDebugTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(ecranDebugMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          decompress(debug_ovlTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(debug_ovlMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) ecranDebugPal,(void*) BG_PALETTE_SUB,256*2);
+          dmaCopy((void*) debug_ovlPal,(void*) BG_PALETTE_SUB,256*2);
 #else
       if (msx_mode)
       {

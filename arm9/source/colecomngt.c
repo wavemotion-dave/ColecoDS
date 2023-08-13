@@ -68,11 +68,6 @@ u8 bIsComplicatedRAM __attribute__((section(".dtcm"))) = 0;   // Set to 1 if we 
 
 char lastAdamDataPath[256];
 
-// --------------------------------------------------------------------------------------
-// Some sprite data arrays for the Mario character that walks around the upper screen..
-extern const unsigned short sprPause_Palette[16];
-extern const unsigned char sprPause_Bitmap[2560];
-
 u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
 u8 ay_reg_idx     __attribute__((section(".dtcm"))) = 0;
@@ -181,7 +176,7 @@ void colecoWipeRAM(void)
   }
   else if (adam_mode)
   {
-    // ADAM has special handling...
+      // ADAM has special handling...
       u8 pattern = 0x00;                               // Default to all-clear
       if (myConfig.memWipe == 1) pattern = 0x30;       // The 0x30 pattern tends to make most things start up properly... don't ask.
       if (myConfig.memWipe == 2) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
@@ -918,12 +913,12 @@ void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
   {
-      if (machine_mode & MODE_MSX)      {cpu_writeport_msx(Port, Value); return;}
-      if (machine_mode & MODE_SG_1000)  {cpu_writeport_sg(Port, Value); return;}
-      if (machine_mode & MODE_SORDM5)   {cpu_writeport_m5(Port, Value); return;}
-      if (machine_mode & MODE_PV2000)   {cpu_writeport_pv2000(Port, Value); return;}
+      if (machine_mode & MODE_MSX)      {cpu_writeport_msx(Port, Value);      return;}
+      if (machine_mode & MODE_SG_1000)  {cpu_writeport_sg(Port, Value);       return;}
+      if (machine_mode & MODE_SORDM5)   {cpu_writeport_m5(Port, Value);       return;}
+      if (machine_mode & MODE_PV2000)   {cpu_writeport_pv2000(Port, Value);   return;}
       if (machine_mode & MODE_MEMOTECH) {cpu_writeport_memotech(Port, Value); return;}
-      if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value); return;}
+      if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value);      return;}
       if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
   }
     

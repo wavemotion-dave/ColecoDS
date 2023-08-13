@@ -353,6 +353,14 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.4: ??-????-2023 by wavemotion-dave
+* Added SVI keyboard graphic and improved SVI keyboard handling.
+* Spectravideo SVI-3x8 cartridges supported up to 64K.
+* Fixed bug with VDP re-enable of interrupts.
+* Ability to run games at 90% to 130% on a per-game basis (See game configuration).
+* Improved mixing of SN+AY sound chips for the few games that utilize both.
+* Refactor of keypad graphics and fix for the options overlay so it paints the whole screen. This also frees up precious RAM!
+
 V8.3: 10-Aug-2023 by wavemotion-dave
 * Fix for keyboard handler so that more than one key can be pressed at a time (otherwise you get stutter when moving/shooting in keyboard-mapped games).
 * Major overhaul of the Memotech MTX emulation to improve emulation, sound and general stability.
