@@ -142,6 +142,7 @@ extern u8 key_shift;
 extern u8 key_ctrl;
 extern u8 key_code;
 extern u8 key_graph;
+extern u8 key_dia;
 extern u32 last_tape_pos;
 extern u32 LastROMSize;
 extern u8 OldPortC;
