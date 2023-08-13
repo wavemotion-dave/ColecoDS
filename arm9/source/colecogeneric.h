@@ -41,7 +41,7 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  defaultMSX;
     u8  emuText;
     u8  msxCartOverlay;
-    u8  global_06;
+    u8  defSprites;
     u8  global_07;
     u8  global_08;
     u8  global_09;
