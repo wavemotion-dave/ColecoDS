@@ -76,8 +76,13 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           AffChaine(4,0,6, "FUNC");
           key_code = 1;
       }
+      else if (last_special_key == KBD_KEY_DIA)   // For diaeresis key
+      {
+          AffChaine(4,0,6, "DIER");
+          key_dia = 1;
+      }
 
-      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
+      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH) && (kbd_key != KBD_KEY_DIA))
       {
           if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
       }
@@ -87,7 +92,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
   if (kbd_key == KBD_KEY_GRAPH)
   {
       AffChaine(4,0,6, "GRPH");
-      sc3000_graph_showing = 10;
+      sc3000_graph_showing = 50;
   }
   else if (sc3000_graph_showing)
   {
@@ -129,10 +134,12 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (kbd_key == 'Q')           joy1 |= 0x02;
           if (kbd_key == 'A')           joy1 |= 0x04;
           if (kbd_key == 'Z')           joy1 |= 0x08;
-          if (kbd_key == KBD_KEY_ESC)   joy1 |= 0x10;
+          if (kbd_key == KBD_KEY_DIA)   joy1 |= 0x10;
           if (kbd_key == ',')           joy1 |= 0x20;
           if (kbd_key == 'K')           joy1 |= 0x40;
           if (kbd_key == 'I')           joy1 |= 0x80;
+            
+          if (key_dia)                  joy1 |= 0x10;
         }
 
         if ((Port_PPI_C & 0x07) == 0x01)  // Row 1

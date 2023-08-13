@@ -1402,6 +1402,7 @@ void SetDefaultGameConfig(void)
     }
     
     if (sg1000_mode == 2)                       myConfig.overlay = 16; // SC-3000 uses the full keyboard
+    if (sg1000_mode == 2)                       myConfig.vertSync= 0;  // SC-3000 does not use vertical sync
     if (msx_mode == 1)                          myConfig.overlay = (myGlobalConfig.msxCartOverlay ? 10:0);  // MSX cart-based games follows the global default
     if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard    
     if (msx_mode == 2)                          myConfig.msxBios = myGlobalConfig.defaultMSX;  // If loading cassette, must have real MSX bios

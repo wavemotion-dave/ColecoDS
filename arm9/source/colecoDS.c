@@ -140,6 +140,7 @@ u8 key_shift __attribute__((section(".dtcm"))) = false;
 u8 key_ctrl  __attribute__((section(".dtcm"))) = false;
 u8 key_code  __attribute__((section(".dtcm"))) = false;
 u8 key_graph __attribute__((section(".dtcm"))) = false;
+u8 key_dia   __attribute__((section(".dtcm"))) = false;
 
 // ------------------------------------------------------------------------------------------
 // Various sound chips in the system. We emulate the SN and AY sound chips but both of
@@ -2085,7 +2086,8 @@ u8 handle_sc3000_keyboard_press(u16 iTx, u16 iTy)  // SC-3000 Keyboard
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_GRAPH;
-        else if ((iTx >= 30)  && (iTx < 190))  kbd_key = ' ';
+        else if ((iTx >= 30)  && (iTx < 61))   {kbd_key = KBD_KEY_DIA; last_special_key = KBD_KEY_DIA; last_special_key_dampen = 20;}
+        else if ((iTx >= 61)  && (iTx < 190))  kbd_key = ' ';
         else if ((iTx >= 180) && (iTx < 212))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 212) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
@@ -2721,6 +2723,7 @@ void colecoDS_main(void)
       key_ctrl = false;
       key_code = false;
       key_graph = false;
+      key_dia = false;
 
       ucDEUX  = 0;
       nds_key  = keysCurrent();     // Get any current keys pressed on the NDS
