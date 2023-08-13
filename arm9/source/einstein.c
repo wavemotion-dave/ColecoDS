@@ -260,7 +260,7 @@ void einstein_swap_memory(void)
 unsigned char cpu_readport_einstein(register unsigned short Port) 
 {
   // MTX ports are 8-bit
-  Port &= 0x003F; 
+  Port &= 0xFF; 
 
   if (Port == 0x00 || Port == 0x01 || Port==0x04 || Port== 0x05) // Reset port
   {
@@ -375,14 +375,14 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
 
 
 // ------------------------------------------------------------------------------------
-// Memotech MTX IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
+// Tatung Einstein IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
 // ------------------------------------------------------------------------------------
 void cpu_writeport_einstein(register unsigned short Port,register unsigned char Value) 
 {
-    // MTX ports are 8-bit
-    Port &= 0x003F;
+    // Einstien ports are 8-bit
+    Port &= 0xFF;
     
-    if (Port == 0x00 || Port == 0x01 || Port==0x04 || Port== 0x05) // Reset port
+    if (Port == 0x00 || Port == 0x01 || Port==0x04 || Port== 0x05) // Reset port (with mirrors)
     {
         memset(ay_reg, 0x00, 16);    // Clear the AY registers...
     }
@@ -417,7 +417,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     // Z80-CTC Area
     // This is only a partial implementation of the CTC logic - just enough
     // to handle the VDP and Sound Generation and very little else. This is
-    // NOT accurate emulation - but it's good enough to render the Memotech
+    // NOT accurate emulation - but it's good enough to render the Einstien
     // games as playable in this emulator.
     // ----------------------------------------------------------------------
     else if (Port >= 0x28 && Port <= 0x2F)

@@ -281,8 +281,8 @@ extern C24XX EEPROM;
 extern u8 adam_ram_lo, adam_ram_hi;
 extern u8 io_show_status;
 
-extern void showMainMenu(void);
-extern void InitBottomScreen(void);
+extern void BottomScreenOptions(void);
+extern void BottomScreenKeypad(void);
 extern void PauseSound(void);
 extern void UnPauseSound(void);
 extern void ResetStatusFlags(void);

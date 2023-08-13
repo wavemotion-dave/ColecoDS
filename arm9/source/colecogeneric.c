@@ -507,10 +507,9 @@ u8 showMessage(char *szCh1, char *szCh2) {
   u16 iTx, iTy;
   u8 uRet=ID_SHM_CANCEL;
   u8 ucGau=0x00, ucDro=0x00,ucGauS=0x00, ucDroS=0x00, ucCho = ID_SHM_YES;
+    
+  BottomScreenOptions();
 
-  dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-  unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); 
-  dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
   AffChaine(16-strlen(szCh1)/2,10,6,szCh1);
   AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
   AffChaine(8,14,6,("> YES <"));
@@ -605,7 +604,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
   }
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
   
-  InitBottomScreen();  // Could be generic or overlay...
+  BottomScreenKeypad();  // Could be generic or overlay...
   
   return uRet;
 }
@@ -2306,7 +2305,7 @@ void colecoDSChangeOptions(void)
 {
   u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 8, bOK=0;
   
-  // Affiche l'ecran en haut
+  // Upper Screen Background
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
   vramSetBankA(VRAM_A_MAIN_BG);
   vramSetBankB(VRAM_B_MAIN_SPRITE_0x06400000);
@@ -2320,15 +2319,8 @@ void colecoDSChangeOptions(void)
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
   AffChaine(28,23,1,"V");AffChaine(29,23,1,VERSIONCLDS);
 
-  // Affiche le clavier en bas
-  bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
-  bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x512, 29,0);
-  bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
-  decompress(ecranBasSelTiles, bgGetGfxPtr(bg0b), LZ77Vram);
-  decompress(ecranBasSelMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
-  dmaCopy((void*) ecranBasSelPal,(void*) BG_PALETTE_SUB,256*2);
-  dmaVal = *(bgGetMapPtr(bg1b)+24*32); 
-  dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
+  // Lower Screen Background
+  BottomScreenOptions();
 
   affInfoOptions(ucY);
   

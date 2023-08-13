@@ -635,10 +635,7 @@ void highscore_display(u32 crc)
     // ---------------------------------------------
     // Setup lower screen for High Score dispay...
     // ---------------------------------------------
-    dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-    unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32); 
-    dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-    swiWaitForVBlank();
+    BottomScreenOptions();
 
     // ---------------------------------------------------------------------------------
     // Check if the current CRC32 is in our High Score database...
@@ -675,7 +672,7 @@ void highscore_display(u32 crc)
         if (keysCurrent() & KEY_Y) highscore_options(foundIdx, crc);
     }
     
-    InitBottomScreen();
+    BottomScreenKeypad();
 }
 
 // End of file
