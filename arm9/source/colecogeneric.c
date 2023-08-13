@@ -1401,7 +1401,7 @@ void SetDefaultGameConfig(void)
         if (file_crc == 0x70142655)             myConfig.spinSpeed = 0;         // Victory
     }
     
-    if (sg1000_mode == 2)                       myConfig.overlay = 11; // SC-3000 uses the full keyboard (Memotech MTX close enough)
+    if (sg1000_mode == 2)                       myConfig.overlay = 16; // SC-3000 uses the full keyboard
     if (msx_mode == 1)                          myConfig.overlay = (myGlobalConfig.msxCartOverlay ? 10:0);  // MSX cart-based games follows the global default
     if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard    
     if (msx_mode == 2)                          myConfig.msxBios = myGlobalConfig.defaultMSX;  // If loading cassette, must have real MSX bios
@@ -1722,7 +1722,7 @@ const struct options_t Option_Table[3][20] =
     // Page 1
     {
         {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", 
-                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD", "EINSTEIN KBD", "SVI KEYBOARD"},                                                 &myConfig.overlay,    16},
+                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD", "EINSTEIN KBD", "SVI KEYBOARD", "SC-3000 KBD"},                                  &myConfig.overlay,    17},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
