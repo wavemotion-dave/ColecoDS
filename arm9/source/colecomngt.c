@@ -268,7 +268,7 @@ u8 colecoInit(char *szGame)
   if (msx_mode)      AY_Enable=true;
   if (svi_mode)      AY_Enable=true;
   if (einstein_mode) AY_Enable=true;
-  if (msx_mode) InitBottomScreen();  // Could Need to ensure the MSX layout is shown
+  if (msx_mode) BottomScreenKeypad();  // Could Need to ensure the MSX layout is shown
     
   // -----------------------------------------------------------------
   // Change graphic mode to initiate emulation.
@@ -404,7 +404,7 @@ void colecoRun(void)
 {
   DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
-  showMainMenu();                       // Show the game-related screen
+  BottomScreenKeypad();                 // Show the game-related screen with keypad / keyboard
 }
 
 /*********************************************************************************

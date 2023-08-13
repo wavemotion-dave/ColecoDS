@@ -353,14 +353,6 @@ u8 spinY_left   __attribute__((section(".dtcm"))) = 0;
 u8 spinY_right  __attribute__((section(".dtcm"))) = 0;
 
 // ------------------------------------------------------------
-// Utility function to show the background for the main menu
-// ------------------------------------------------------------
-void showMainMenu(void)
-{
-  dmaCopy((void*) bgGetMapPtr(bg0b),(void*) bgGetMapPtr(bg1b),32*24*2);
-}
-
-// ------------------------------------------------------------
 // Utility function to pause the sound...
 // ------------------------------------------------------------
 void SoundPause(void)
@@ -1225,10 +1217,7 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
       // ---------------------------------------------------
       // Put up a generic background for this mini-menu...
       // ---------------------------------------------------
-      dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32);
-      dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-      swiWaitForVBlank();
+      BottomScreenOptions();
     }
 
     if (adam_mode)
@@ -1463,7 +1452,7 @@ void CassetteMenu(void)
   while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
   WAITVBL;WAITVBL;
 
-  InitBottomScreen();  // Could be generic or overlay...
+  BottomScreenKeypad();  // Could be generic or overlay...
 
   SoundUnPause();
 }
@@ -1482,10 +1471,7 @@ void MiniMenuShow(bool bClearScreen, u8 sel)
       // ---------------------------------------------------
       // Put up a generic background for this mini-menu...
       // ---------------------------------------------------
-      dmaCopy((void*) bgGetMapPtr(bg0b)+30*32*2,(void*) bgGetMapPtr(bg0b),32*24*2);
-      unsigned short dmaVal = *(bgGetMapPtr(bg0b)+24*32);
-      dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-      swiWaitForVBlank();
+      BottomScreenOptions();
     }
 
     AffChaine(8,7,6,                                           " CV MINI MENU  ");
@@ -1550,7 +1536,7 @@ u8 MiniMenu(void)
   while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
   WAITVBL;WAITVBL;
 
-  InitBottomScreen();  // Could be generic or overlay...
+  BottomScreenKeypad();  // Could be generic or overlay...
 
   SoundUnPause();
 
@@ -2299,7 +2285,7 @@ void colecoDS_main(void)
   u8 meta_key = 0;
 
   // Returns when  user has asked for a game to run...
-  showMainMenu();
+  BottomScreenOptions();
 
   // Get the Coleco Machine Emualtor ready
   colecoInit(gpFic[ucGameAct].szName);
@@ -2515,7 +2501,7 @@ void colecoDS_main(void)
                 {
                     ResetColecovision();
                 }
-                showMainMenu();
+                BottomScreenKeypad();
                 SoundUnPause();
                 break;
 
@@ -2527,7 +2513,7 @@ void colecoDS_main(void)
                       memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
                       return;
                   }
-                  showMainMenu();
+                  BottomScreenKeypad();
                   DisplayStatusLine(true);
                   SoundUnPause();
                 break;
@@ -2556,6 +2542,7 @@ void colecoDS_main(void)
                         SaveNow = 1;
                         colecoSaveState();
                     }
+                    BottomScreenKeypad();
                     SoundUnPause();
                 }
                 break;
@@ -2566,7 +2553,7 @@ void colecoDS_main(void)
                     SoundPause();
                     if (IsFullKeyboard())
                     {
-                        if  (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES)
+                        if (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES)
                         {
                           LoadNow = 1;
                           colecoLoadState();
@@ -2577,7 +2564,8 @@ void colecoDS_main(void)
                         LoadNow = 1;
                         colecoLoadState();
                     }
-                   SoundUnPause();
+                    BottomScreenKeypad();
+                    SoundUnPause();
                 }
                 break;
 
@@ -2853,11 +2841,12 @@ void colecoDS_main(void)
 // ----------------------------------------------------------------------------------------
 void useVRAM(void)
 {
-  vramSetBankE(VRAM_E_LCD );                 // Not using this  for video but 64K of faster RAM always useful!  Mapped  at 0x06880000 -   We use this block of 128K memory to store 4x MSX BIOS flavors
-  vramSetBankF(VRAM_F_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06890000 -   ..
-  vramSetBankG(VRAM_G_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x06894000 -   ..
-  vramSetBankH(VRAM_H_LCD );                 // Not using this  for video but 32K of faster RAM always useful!  Mapped  at 0x06898000 -   ..
-  vramSetBankI(VRAM_I_LCD );                 // Not using this  for video but 16K of faster RAM always useful!  Mapped  at 0x068A0000 -   1K Used for the Look Up Table... 15K available
+  vramSetBankD(VRAM_D_LCD );                 // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   Currently unused (future expansion)
+  vramSetBankE(VRAM_E_LCD );                 // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   We use this block of 128K memory to store 4x MSX BIOS flavors
+  vramSetBankF(VRAM_F_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
+  vramSetBankG(VRAM_G_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..
+  vramSetBankH(VRAM_H_LCD );                 // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
+  vramSetBankI(VRAM_I_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   16K Used for the VDP Look Up Table
 }
 
 /*********************************************************************************
@@ -2869,9 +2858,8 @@ void colecoDSInit(void)
   videoSetMode(MODE_0_2D  | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
   videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE  | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
   vramSetBankA(VRAM_A_MAIN_BG);
-  vramSetBankB(VRAM_B_MAIN_SPRITE);          // Once emulation of game starts, we steal this back for an additional 128K of VRAM at 0x6820000
+  vramSetBankB(VRAM_B_MAIN_SPRITE);          // Once emulation of game starts, we steal this back for an additional 128K of VRAM at 0x6820000 which we will use as a snapshot buffer for taking screen pics
   vramSetBankC(VRAM_C_SUB_BG);
-  vramSetBankD(VRAM_D_SUB_SPRITE);
 
   //  Stop blending effect of intro
   REG_BLDCNT=0; REG_BLDCNT_SUB=0; REG_BLDY=0; REG_BLDY_SUB=0;
@@ -2886,24 +2874,35 @@ void colecoDSInit(void)
   unsigned  short dmaVal =*(bgGetMapPtr(bg0)+51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1),32*24*2);
 
-  // Render the bottom screen for "options select" mode
-  bg0b  = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x512, 31,0);
-  bg1b  = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x512, 29,0);
-  bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
-  decompress(ecranBasSelTiles,  bgGetGfxPtr(bg0b), LZ77Vram);
-  decompress(ecranBasSelMap,  (void*) bgGetMapPtr(bg0b), LZ77Vram);
-  dmaCopy((void*) ecranBasSelPal,(void*)  BG_PALETTE_SUB,256*2);
-  dmaVal  = *(bgGetMapPtr(bg0b)+24*32);
-  dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
+  // Put up the options screen 
+  BottomScreenOptions();
 
   //  Find the files
   colecoDSFindFiles();
 }
 
+
+void BottomScreenOptions(void)
+{
+    swiWaitForVBlank();
+    
+    // ---------------------------------------------------
+    // Put up the options select screen background...
+    // ---------------------------------------------------
+    bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 31,0);
+    bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x256, 29,0);
+    bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
+    decompress(ecranBasSelTiles, bgGetGfxPtr(bg0b), LZ77Vram);
+    decompress(ecranBasSelMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
+    dmaCopy((void*) ecranBasSelPal,(void*) BG_PALETTE_SUB,256*2);
+    unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
+}
+
 // ---------------------------------------------------------------------------
 // Setup the bottom screen - mostly for menu, high scores, options, etc.
 // ---------------------------------------------------------------------------
-void InitBottomScreen(void)
+void BottomScreenKeypad(void)
 {
     if (myConfig.overlay == 1)  // Wargames
     {
@@ -3108,7 +3107,7 @@ void colecoDSInitCPU(void)
   // -----------------------------------------------
   // Init bottom screen do display correct overlay
   // -----------------------------------------------
-  InitBottomScreen();
+  BottomScreenKeypad();
 
   // -----------------------------------------------------
   //  Load the correct Bios ROM for the given machine
@@ -3351,7 +3350,7 @@ void LoadBIOSFiles(void)
     if (fp == NULL) fp = fopen("/data/bios/hb-10_basic-bios1.rom", "rb");
     
     
-    // Casio PV-7 and PV-16 are the exact same BIOS as the HB-10
+    // Casio PV-7 and PV-16 are the exact same BIOS as the HB-10 so if we couldn't find that, we try the pv-7
     if (fp == NULL) fp = fopen("pv-7.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/pv-7.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/pv-7.rom", "rb");
