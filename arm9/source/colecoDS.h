@@ -272,7 +272,7 @@ extern u8 soundEmuPause;
 extern u8 write_EE_counter;
 extern u8 msx_japanese_matrix;
 
-extern int bg0, bg1, bg0b,bg1b;
+extern int bg0, bg1, bg0b, bg1b;
 
 extern u16 *pVidFlipBuf;                         // Video flipping buffer
 

@@ -1253,6 +1253,7 @@ void SetDefaultGlobalConfig(void)
     myGlobalConfig.defaultMSX     = 1;    // Default to the MSX.ROM if available
     myGlobalConfig.emuText        = 1;    // Default is to show Emulator Text
     myGlobalConfig.msxCartOverlay = 1;    // Default is to show Keyboard for CART games
+    myGlobalConfig.defSprites     = 0;    // Default is to show 32 sprites (real hardware is 4 per line)
 }
 
 void SetDefaultGameConfig(void)
@@ -1267,7 +1268,7 @@ void SetDefaultGameConfig(void)
     myConfig.autoFire    = 0;                           // Default to no auto-fire on either button
     myConfig.isPAL       = 0;                           // Default to NTSC
     myConfig.overlay     = 0;                           // Default to normal CV overlay
-    myConfig.maxSprites  = 0;                           // 0 means allow 32 sprites... 1 means limit to the original 4 sprites of the VDP
+    myConfig.maxSprites  = myGlobalConfig.defSprites;   // 0 means allow 32 sprites... 1 means limit to the original 4 sprites of the VDP
     myConfig.vertSync    = (isDSiMode() ? 1:0);         // Default is Vertical Sync ON for DSi and OFF for DS-LITE
     myConfig.spinSpeed   = 0;                           // Default spin speed is normal
     myConfig.touchPad    = 0;                           // Nothing special about the touch-pad by default
@@ -1756,6 +1757,7 @@ const struct options_t Option_Table[3][20] =
         {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
         {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"},                                                         &myGlobalConfig.defaultMSX,     7},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
+        {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},
         {"SHOW BAD OPS",   {"NO", "YES"},                                                                                                                                                       &myGlobalConfig.showBadOps,     2},
         
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
