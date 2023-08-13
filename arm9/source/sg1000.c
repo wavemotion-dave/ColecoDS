@@ -71,12 +71,32 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           AffChaine(4,0,6, "CTRL");
           key_ctrl = 1;
       }
+      else if (last_special_key == KBD_KEY_CODE)   // For FUNC for now
+      {
+          AffChaine(4,0,6, "FUNC");
+          key_code = 1;
+      }
 
       if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
       {
           if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
       }
   }
+
+  static u8 sc3000_graph_showing = 0;
+  if (kbd_key == KBD_KEY_GRAPH)
+  {
+      AffChaine(4,0,6, "GRPH");
+      sc3000_graph_showing = 10;
+  }
+  else if (sc3000_graph_showing)
+  {
+      if (--sc3000_graph_showing == 0)
+      {
+        AffChaine(4,0,6, "    ");
+      }
+  }
+
     
   // SG-1000 ports are 8-bit
   Port &= 0x00FF; 
@@ -257,16 +277,28 @@ unsigned char cpu_readport_sg(register unsigned short Port)
       if ((Port_PPI_C & 0x07) == 0x04)  // Row 4
       {
           if (kbd_key == '^')             joy2 |= 0x01;
+          
+        //  5   '6' 'Y' 'H' 'N' --- LA  CR  --- YEN --- --- FNC
+        //  6   '7' 'U' 'J' 'M' --- RA  UA  --- BRK GRP CTL SHF
+        //  7   1U  1D  1L  1R  1TL 1TR 2U  2D  2L  2R  2TL 2TR
       }
 
+      if ((Port_PPI_C & 0x07) == 0x05)  // Row 5
+      {
+          if (kbd_key == KBD_KEY_F1)      joy2 |= 0x08; // FUNC
+          if (key_code)                   joy2 |= 0x08; // FUNC
+      }
+      
       if ((Port_PPI_C & 0x07) == 0x06)  // Row 6
       {
-          if (kbd_key == KBD_KEY_BRK)     joy2 |= 0x01;
+        //  6   '7' 'U' 'J' 'M' --- RA  UA  --- BRK GRP CTL SHF
           if (kbd_key == KBD_KEY_STOP)    joy2 |= 0x01;
+          if (kbd_key == KBD_KEY_GRAPH)   joy2 |= 0x02;
           if (kbd_key == KBD_KEY_CTRL)    joy2 |= 0x04;
           if (kbd_key == KBD_KEY_SHIFT)   joy2 |= 0x08;
-          if (key_shift)                  joy2 |= 0x08;
+          
           if (key_ctrl)                   joy2 |= 0x04;
+          if (key_shift)                  joy2 |= 0x08;
       }
       if ((Port_PPI_C & 0x07) == 0x07)  // Row 7 (joystick)
       {
@@ -299,7 +331,7 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
         else
             game_no = (Value & 0x1f) | (Value & 0xc0) >> 1;
         if (game_no == romBankMask)
-        {
+        {            
             memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
         }
         else

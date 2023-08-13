@@ -54,7 +54,7 @@ const u32 crc32_table[256] = {
 // ------------------------------------------------------------------------------------
 // Read the file in and compute CRC... it's a bit slow but good enough and accurate!
 // ------------------------------------------------------------------------------------
-u8 file_crc_buffer[1024];
+u8 file_crc_buffer[2048];
 u32 getFileCrc(const char* filename)
 {
     extern u32 file_size;
@@ -65,9 +65,9 @@ u32 getFileCrc(const char* filename)
     file_size=0;
     while ((bytesRead = fread(file_crc_buffer, 1, sizeof(file_crc_buffer), file)) > 0)
     {
+        file_size += bytesRead;
         for (int i=0; i < bytesRead; i++)
         {
-            file_size++;
             crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)file_crc_buffer[i]]; 
         }
     }

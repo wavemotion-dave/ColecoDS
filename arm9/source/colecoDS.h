@@ -245,7 +245,6 @@ extern u16 machine_mode;
 extern u8 kbd_keys_pressed;
 extern u8 kbd_keys[12];
 
-
 extern char lastAdamDataPath[];
 extern u32 tape_pos, tape_len;
 

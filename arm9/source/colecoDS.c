@@ -38,6 +38,7 @@
 #include "adam_full.h"
 #include "alpha_kbd.h"
 #include "einstein_kbd.h"
+#include "sc3000_kbd.h"
 #include "pv2000_sm.h"
 #include "debug_ovl.h"
 #include "options.h"
@@ -415,9 +416,8 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
                   // ------------------------------------------------------------------------
                   // We normalize the samples and mix them carefully to minimize clipping...
                   // ------------------------------------------------------------------------
-                  s32 combined = mixbuf1[i];
-                  combined += (s16)(mixbuf3[i] - 32768);
-                  combined += (s16)(mixbuf4[i] - 32768);
+                  s32 combined = mixbuf1[i] + mixbuf3[i] + mixbuf4[i];
+                  combined -= 65535;
                   if (combined > 65535) combined = 65535;
                   else if (combined < 0) combined = 0;
                   *p++ = (u16)combined;
@@ -480,7 +480,7 @@ void setupStream(void)
   myStream.format     = MM_STREAM_16BIT_STEREO; // format = stereo  16-bit
   myStream.timer      = MM_TIMER0;              // use hardware timer 0
   myStream.manual     = false;                  // use automatic filling
-  mmStreamOpen( &myStream );
+  mmStreamOpen(&myStream);
 
   //----------------------------------------------------------------
   //  when using 'automatic' filling, your callback will be triggered
@@ -913,8 +913,7 @@ void ShowDebugZ80(void)
         siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); AffChaine(5,idx++,7, tmp);
         siprintf(tmp, "CTC%d constant = %-8lu", chan, (u32)CTC[chan].constant); AffChaine(5,idx++,7, tmp);
         siprintf(tmp, "CTC%d counter  = %-8lu", chan, (u32)CTC[chan].counter); AffChaine(5,idx++,7, tmp);
-    }
-    
+    }    
 #endif
     idx++;
 }
@@ -1995,6 +1994,106 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX Keyboard
     return MENU_CHOICE_NONE;
 }
 
+u8 handle_sc3000_keyboard_press(u16 iTx, u16 iTy)  // SC-3000 Keyboard
+{
+    if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
+    {
+        if      (iTy < 120)   kbd_key = KBD_KEY_UP;
+        else if (iTy > 145)   kbd_key = KBD_KEY_DOWN;
+        else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
+        else                  kbd_key = KBD_KEY_RIGHT;
+    }
+    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with F1 thru F8)
+    {
+        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = 0;
+        else if ((iTx >= 22)  && (iTx < 49))   kbd_key = 0;
+        else if ((iTx >= 49)  && (iTx < 75))   kbd_key = 0;
+        else if ((iTx >= 75)  && (iTx < 101))  kbd_key = 0;
+        else if ((iTx >= 101) && (iTx < 127))  kbd_key = 0;
+        else if ((iTx >= 127) && (iTx < 153))  kbd_key = 0;
+        else if ((iTx >= 153) && (iTx < 180))  kbd_key = 0;
+        else if ((iTx >= 180) && (iTx < 205))  kbd_key = 0;
+        else if ((iTx >= 205) && (iTx < 232))  kbd_key = 0;
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_HOME;
+    }
+    else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
+    {
+        if      ((iTx >= 0)   && (iTx < 15))   kbd_key = '\\'; // Repurpose to PII
+        else if ((iTx >= 15)  && (iTx < 31))   kbd_key = '1';
+        else if ((iTx >= 31)  && (iTx < 45))   kbd_key = '2';
+        else if ((iTx >= 45)  && (iTx < 61))   kbd_key = '3';
+        else if ((iTx >= 61)  && (iTx < 75))   kbd_key = '4';
+        else if ((iTx >= 75)  && (iTx < 91))   kbd_key = '5';
+        else if ((iTx >= 91)  && (iTx < 106))  kbd_key = '6';
+        else if ((iTx >= 106) && (iTx < 121))  kbd_key = '7';
+        else if ((iTx >= 121) && (iTx < 135))  kbd_key = '8';
+        else if ((iTx >= 135) && (iTx < 151))  kbd_key = '9';
+        else if ((iTx >= 151) && (iTx < 165))  kbd_key = '0';
+        else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
+        else if ((iTx >= 181) && (iTx < 195))  kbd_key = '^';
+        else if ((iTx >= 195) && (iTx < 210))  kbd_key = '@';
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_DEL;
+    }
+    else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
+    {
+        if      ((iTx >= 0)   && (iTx < 23))   {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}
+        else if ((iTx >= 23)  && (iTx < 39))   kbd_key = 'Q';
+        else if ((iTx >= 39)  && (iTx < 54))   kbd_key = 'W';
+        else if ((iTx >= 54)  && (iTx < 69))   kbd_key = 'E';
+        else if ((iTx >= 69)  && (iTx < 83))   kbd_key = 'R';
+        else if ((iTx >= 83)  && (iTx < 99))   kbd_key = 'T';
+        else if ((iTx >= 99)  && (iTx < 113))  kbd_key = 'Y';
+        else if ((iTx >= 113) && (iTx < 129))  kbd_key = 'U';
+        else if ((iTx >= 129) && (iTx < 143))  kbd_key = 'I';
+        else if ((iTx >= 143) && (iTx < 158))  kbd_key = 'O';
+        else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
+        else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
+        else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+    }
+    else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
+    {
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
+        else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
+        else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
+        else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
+        else if ((iTx >= 72)  && (iTx < 87))   kbd_key = 'F';
+        else if ((iTx >= 87)  && (iTx < 102))  kbd_key = 'G';
+        else if ((iTx >= 102) && (iTx < 117))  kbd_key = 'H';
+        else if ((iTx >= 117) && (iTx < 132))  kbd_key = 'J';
+        else if ((iTx >= 132) && (iTx < 147))  kbd_key = 'K';
+        else if ((iTx >= 147) && (iTx < 161))  kbd_key = 'L';
+        else if ((iTx >= 161) && (iTx < 178))  kbd_key = ';';
+        else if ((iTx >= 178) && (iTx < 192))  kbd_key = ':';
+        else if ((iTx >= 192) && (iTx < 214))  kbd_key = KBD_KEY_RET;
+    }
+    else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
+    {
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
+        else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
+        else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
+        else if ((iTx >= 78)  && (iTx < 94))   kbd_key = 'V';
+        else if ((iTx >= 94)  && (iTx < 109))  kbd_key = 'B';
+        else if ((iTx >= 109) && (iTx < 123))  kbd_key = 'N';
+        else if ((iTx >= 123) && (iTx < 139))  kbd_key = 'M';
+        else if ((iTx >= 139) && (iTx < 154))  kbd_key = ',';
+        else if ((iTx >= 154) && (iTx < 169))  kbd_key = '.';
+        else if ((iTx >= 169) && (iTx < 184))  kbd_key = '/';
+        else if ((iTx >= 184) && (iTx < 214))  kbd_key = KBD_KEY_RET;
+    }
+    else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_GRAPH;
+        else if ((iTx >= 30)  && (iTx < 190))  kbd_key = ' ';
+        else if ((iTx >= 180) && (iTx < 212))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 212) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+
+    return MENU_CHOICE_NONE;
+}
+
+
 u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
 {
     if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with F1 thru F8)
@@ -2461,6 +2560,10 @@ void colecoDS_main(void)
         {
             meta_key = handle_svi_keyboard_press(iTx, iTy);
         }
+        else if (myConfig.overlay == 16) // SC-3000 Keyboard
+        {
+            meta_key = handle_sc3000_keyboard_press(iTx, iTy);
+        }        
         else    // Normal 12 button virtual keypad
         {
             meta_key = handle_normal_virtual_keypad(iTx, iTy);
@@ -3038,6 +3141,14 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) svi_fullPal,(void*) BG_PALETTE_SUB,256*2);
     }
+    else if (myConfig.overlay == 16) // SC-3000 Keyboard
+    {
+      //  Init bottom screen
+      decompress(sc3000_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(sc3000_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) sc3000_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+    }
     
     else // Generic Overlay
     {
@@ -3528,7 +3639,8 @@ int main(int argc, char **argv)
 
   irqSet(IRQ_VBLANK,  irqVBlank);
   irqEnable(IRQ_VBLANK);
-
+    
+  
   // -----------------------------------------------------------------
   // Grab the BIOS before we try to switch any directories around...
   // -----------------------------------------------------------------

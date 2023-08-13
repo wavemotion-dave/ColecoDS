@@ -520,6 +520,8 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 {
   u8 bOK = 0;
 
+  AffChaine(0,0,6, "LOADING...");
+    
   FILE* handle = fopen(path, "rb");  
   if (handle != NULL) 
   {
@@ -529,27 +531,17 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
     int romSize = ftell(handle);
     sg1000_double_reset = false;
     
-    if (sg1000_mode && (romSize == (2048 * 1024)))   // Look for .sc Multicart
+    // ----------------------------------------------------------------------
+    // Look for the Survivors .sc Multicart  (2MB!) or .sc MegaCart (4MB!)
+    // ----------------------------------------------------------------------
+    if (sg1000_mode && ((romSize == (2048 * 1024)) || (romSize == (4096 * 1024))))   
     {
-        fseek(handle, romSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
-        fread((void*) ROM_Memory, 0x8000, 1, handle);  // Read 32K from that last block
-        memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
+        fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
+        fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
+        memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
         fclose(handle);
         strcpy(lastAdamDataPath, path);
-        romBankMask = 0x3F;
-        sg1000_double_reset = true;
-        machine_mode = MODE_SG_1000;
-        return bOK;
-    }
-    else
-    if (sg1000_mode && (romSize == (4096 * 1024)))   // Look for .sc Megacart
-    {
-        fseek(handle, romSize-0x8000, SEEK_SET);       // Seek to the last 32K block (this is the menu system)
-        fread((void*) ROM_Memory, 0x8000, 1, handle);  // Read 32K from that last block
-        memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
-        fclose(handle);
-        strcpy(lastAdamDataPath, path);
-        romBankMask = 0x7F;
+        romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
         machine_mode = MODE_SG_1000;
         return bOK;
