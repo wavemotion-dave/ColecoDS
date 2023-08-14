@@ -139,6 +139,7 @@ ADAM Compatibility :
 * If the game uses a CP/M disk, try chaning the Memory Wipe to 'ADAM CPM' which helps.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). It's not all ADAM keys but should be enough to play games.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only whenthe tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
+* If an ADAM game does not load on first try, just reset it. It usually loads on the second try. Go figure.
 
 MSX Compatibility :
 -----------------------
