@@ -231,7 +231,7 @@ This emulator supports .sg files as ROM loads up to 48K. Generally all SG-1000 g
 
 Sega SC-3000 Compatibility :
 -----------------------
-This emulator supports .sc files as ROM only (not cassettes) but ColecoDS will support the amazing SC-3000 Survivors Multi-Cart and MEGA-Cart. Strongly prefer the Multi-Cart as it's smaller and contains the same selection of tape games. Just rename the 2MB or 4MB binary as .sc to load in ColecoDS.
+This emulator supports .sc files as ROM only (not cassettes) but ColecoDS will support the amazing SC-3000 Survivors Multi-Cart and MEGA-Cart. Strongly prefer the Multi-Cart as it's smaller and contains the same selection of tape games. Just rename the 2MB or 4MB binary as .sc to load in ColecoDS.  The emulation handles 32K of RAM in the upper memory area (so anything like Basic IIIb will work fine).
 
 Casio PV-2000 Compatibility :
 -----------------------
