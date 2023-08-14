@@ -115,8 +115,7 @@ extern void colecoDSFindFiles(void);
 extern void colecoDSChangeOptions(void);
 extern void MSX_InitialMemoryLayout(u32 romSize);
 
-extern void AffChaine(int iX,int iY,int iScr,char *szMessage);
-extern void dsPrintValue(int iX,int iY,int iScr,char *szMessage);
+extern void DSPrint(int iX,int iY,int iScr,char *szMessage);
 extern unsigned int crc32 (unsigned int crc, const unsigned char *buf, unsigned int len);
 
 extern void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr, unsigned char valEnd, unsigned char uWait);

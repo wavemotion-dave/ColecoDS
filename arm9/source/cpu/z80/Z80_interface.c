@@ -841,7 +841,7 @@ void Z80_Trap_Bad_Ops(char *prefix, byte I, word W)
     {
         char tmp[32];
         sprintf(tmp, "ILLOP: %s %02X %04X", prefix, I, W);
-        AffChaine(0,0,6, tmp);
+        DSPrint(0,0,6, tmp);
     }
 }
 

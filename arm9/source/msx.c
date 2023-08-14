@@ -131,28 +131,28 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               if (--last_special_key_dampen == 0)
               {
                   last_special_key = 0;
-                  AffChaine(4,0,6, "    ");
+                  DSPrint(4,0,6, "    ");
               }
           }
 
           if (last_special_key == KBD_KEY_SHIFT) 
           { 
-            AffChaine(4,0,6, "SHFT");
+            DSPrint(4,0,6, "SHFT");
             key_shift = 1;
           }
           else if (last_special_key == KBD_KEY_CTRL)  
           {
-            AffChaine(4,0,6, "CTRL");
+            DSPrint(4,0,6, "CTRL");
             key_ctrl = 1;
           }
           else if (last_special_key == KBD_KEY_CODE)
           {
-            AffChaine(4,0,6, (msx_japanese_matrix ? "KANA":"CODE"));
+            DSPrint(4,0,6, (msx_japanese_matrix ? "KANA":"CODE"));
             key_code = 1;
           }
           else if (last_special_key == KBD_KEY_GRAPH)
           {
-            AffChaine(4,0,6, "GRPH");
+            DSPrint(4,0,6, "GRPH");
             key_graph = 1;
           }
 

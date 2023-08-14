@@ -510,10 +510,10 @@ u8 showMessage(char *szCh1, char *szCh2) {
     
   BottomScreenOptions();
 
-  AffChaine(16-strlen(szCh1)/2,10,6,szCh1);
-  AffChaine(16-strlen(szCh2)/2,12,6,szCh2);
-  AffChaine(8,14,6,("> YES <"));
-  AffChaine(20,14,6,("  NO   "));
+  DSPrint(16-strlen(szCh1)/2,10,6,szCh1);
+  DSPrint(16-strlen(szCh2)/2,12,6,szCh2);
+  DSPrint(8,14,6,("> YES <"));
+  DSPrint(20,14,6,("  NO   "));
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
 
   while (uRet == ID_SHM_CANCEL) 
@@ -526,8 +526,8 @@ u8 showMessage(char *szCh1, char *szCh2) {
       iTy = touch.py;
       if ( (iTx>8*8) && (iTx<8*8+7*8) && (iTy>14*8-4) && (iTy<15*8+4) ) {
         if (!ucGauS) {
-          AffChaine(8,14,6,("> YES <"));
-          AffChaine(20,14,6,("  NO   "));
+          DSPrint(8,14,6,("> YES <"));
+          DSPrint(20,14,6,("  NO   "));
           ucGauS = 1;
           if (ucCho == ID_SHM_YES) {
             uRet = ucCho;
@@ -541,8 +541,8 @@ u8 showMessage(char *szCh1, char *szCh2) {
         ucGauS = 0;
       if ( (iTx>20*8) && (iTx<20*8+7*8) && (iTy>14*8-4) && (iTy<15*8+4) ) {
         if (!ucDroS) {
-          AffChaine(8,14,6,("  YES  "));
-          AffChaine(20,14,6,("> NO  <"));
+          DSPrint(8,14,6,("  YES  "));
+          DSPrint(20,14,6,("> NO  <"));
           ucDroS = 1;
           if (ucCho == ID_SHM_NO) {
             uRet = ucCho;
@@ -565,13 +565,13 @@ u8 showMessage(char *szCh1, char *szCh2) {
         ucGau = 1;
         if (ucCho == ID_SHM_YES) {
           ucCho = ID_SHM_NO;
-          AffChaine(8,14,6,("  YES  "));
-          AffChaine(20,14,6,("> NO  <"));
+          DSPrint(8,14,6,("  YES  "));
+          DSPrint(20,14,6,("> NO  <"));
         }
         else {
           ucCho  = ID_SHM_YES;
-          AffChaine(8,14,6,("> YES <"));
-          AffChaine(20,14,6,("  NO   "));
+          DSPrint(8,14,6,("> YES <"));
+          DSPrint(20,14,6,("  NO   "));
         }
         WAITVBL;
       } 
@@ -584,13 +584,13 @@ u8 showMessage(char *szCh1, char *szCh2) {
         ucDro = 1;
         if (ucCho == ID_SHM_YES) {
           ucCho  = ID_SHM_NO;
-          AffChaine(8,14,6,("  YES  "));
-          AffChaine(20,14,6,("> NO  <"));
+          DSPrint(8,14,6,("  YES  "));
+          DSPrint(20,14,6,("> NO  <"));
         }
         else {
           ucCho  = ID_SHM_YES;
-          AffChaine(8,14,6,("> YES <"));
-          AffChaine(20,14,6,("  NO   "));
+          DSPrint(8,14,6,("> YES <"));
+          DSPrint(20,14,6,("  NO   "));
         }
         WAITVBL;
       } 
@@ -667,10 +667,10 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
   u8 maxLen;
   char szName2[40];
   
-  AffChaine(30,8,0,(NoDebGame>0 ? "<" : " "));
-  AffChaine(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
+  DSPrint(30,8,0,(NoDebGame>0 ? "<" : " "));
+  DSPrint(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
   siprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
-  AffChaine(2,6,0, szName);
+  DSPrint(2,6,0, szName);
   for (ucBcl=0;ucBcl<14; ucBcl++) {
     ucGame= ucBcl+NoDebGame;
     if (ucGame < countCV) 
@@ -682,16 +682,16 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
         siprintf(szName2, " %s]",szName);
         szName2[0]='[';
         siprintf(szName,"%-28s",szName2);
-        AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
+        DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
       }
       else {
         siprintf(szName,"%-28s",strupr(szName));
-        AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
+        DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
       }
     }
     else
     {
-        AffChaine(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),"                            ");
+        DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),"                            ");
     }
   }
 }
@@ -864,7 +864,7 @@ u8 colecoDSLoadFile(void)
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B))!=0);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-  AffChaine(7,5,0,"A=SELECT,  B=EXIT");
+  DSPrint(7,5,0,"A=SELECT,  B=EXIT");
 
   colecoDSFindFiles();
     
@@ -1065,7 +1065,7 @@ u8 colecoDSLoadFile(void)
         }
         strncpy(szName,gpFic[ucGameAct].szName+uLenFic,28);
         szName[28] = '\0';
-        AffChaine(1,8+romSelected,2,szName);
+        DSPrint(1,8+romSelected,2,szName);
       }
     }
     showRandomPreviewSnaps();
@@ -1088,7 +1088,7 @@ void SaveConfig(bool bShow)
     FILE *fp;
     int slot = 0;
     
-    if (bShow) dsPrintValue(6,0,0, (char*)"SAVING CONFIGURATION");
+    if (bShow) DSPrint(6,0,0, (char*)"SAVING CONFIGURATION");
 
     // Set the global configuration version number...
     myGlobalConfig.config_ver = CONFIG_VER;
@@ -1137,12 +1137,12 @@ void SaveConfig(bool bShow)
         fwrite(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp); // Write the global config
         fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);         // Write the array of all configurations
         fclose(fp);
-    } else dsPrintValue(4,0,0, (char*)"ERROR SAVING CONFIG FILE");
+    } else DSPrint(4,0,0, (char*)"ERROR SAVING CONFIG FILE");
 
     if (bShow) 
     {
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        dsPrintValue(4,0,0, (char*)"                        ");
+        DSPrint(4,0,0, (char*)"                        ");
     }
 }
 
@@ -1759,7 +1759,7 @@ const struct options_t Option_Table[3][20] =
         {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"},                                                         &myGlobalConfig.defaultMSX,     7},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},
-        {"SHOW BAD OPS",   {"NO", "YES"},                                                                                                                                                       &myGlobalConfig.showBadOps,     2},
+        {"SHOW BAD OPS",   {"NO", "YES", "FULL DEBUG"},                                                                                                                                         &myGlobalConfig.showBadOps,     3},
         
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }
@@ -1774,24 +1774,24 @@ u8 display_options_list(bool bFullDisplay)
     char strBuf[35];
     int len=0;
     
-    dsPrintValue(1,21, 0, (char *)"                              ");
+    DSPrint(1,21, 0, (char *)"                              ");
     if (bFullDisplay)
     {
         while (true)
         {
             siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][len].label, Option_Table[option_table][len].option[*(Option_Table[option_table][len].option_val)]);
-            dsPrintValue(1,5+len, (len==0 ? 2:0), strBuf); len++;
+            DSPrint(1,5+len, (len==0 ? 2:0), strBuf); len++;
             if (Option_Table[option_table][len].label == NULL) break;
         }
 
         // Blank out rest of the screen... option menus are of different lengths...
         for (int i=len; i<16; i++) 
         {
-            dsPrintValue(1,5+i, 0, (char *)"                               ");
+            DSPrint(1,5+i, 0, (char *)"                               ");
         }
     }
 
-    dsPrintValue(1,22, 0, (char *)"  B=EXIT, X=MORE, START=SAVE  ");
+    DSPrint(1,22, 0, (char *)"  B=EXIT, X=MORE, START=SAVE  ");
     return len;    
 }
 
@@ -1825,25 +1825,25 @@ void colecoDSGameOptions(bool bIsGlobal)
             if (keysCurrent() & KEY_UP) // Previous option
             {
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                dsPrintValue(1,5+optionHighlighted,0, strBuf);
+                DSPrint(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                dsPrintValue(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_DOWN) // Next option
             {
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                dsPrintValue(1,5+optionHighlighted,0, strBuf);
+                DSPrint(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                dsPrintValue(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,5+optionHighlighted,2, strBuf);
             }
 
             if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
             {
                 *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) + 1) % Option_Table[option_table][optionHighlighted].option_max;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                dsPrintValue(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
             {
@@ -1852,7 +1852,7 @@ void colecoDSGameOptions(bool bIsGlobal)
                 else
                     *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) - 1) % Option_Table[option_table][optionHighlighted].option_max;
                 siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
-                dsPrintValue(1,5+optionHighlighted,2, strBuf);
+                DSPrint(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_START)  // Save Options
             {
@@ -1898,29 +1898,29 @@ void DisplayKeymapName(u32 uY)
   char szCha[34];
 
   siprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
-  AffChaine(1, 6,(uY==  6 ? 2 : 0),szCha);
+  DSPrint(1, 6,(uY==  6 ? 2 : 0),szCha);
   siprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
-  AffChaine(1, 7,(uY==  7 ? 2 : 0),szCha);
+  DSPrint(1, 7,(uY==  7 ? 2 : 0),szCha);
   siprintf(szCha," PAD LEFT  : %-17s",szKeyName[myConfig.keymap[2]]);
-  AffChaine(1, 8,(uY==  8 ? 2 : 0),szCha);
+  DSPrint(1, 8,(uY==  8 ? 2 : 0),szCha);
   siprintf(szCha," PAD RIGHT : %-17s",szKeyName[myConfig.keymap[3]]);
-  AffChaine(1, 9,(uY== 9 ? 2 : 0),szCha);
+  DSPrint(1, 9,(uY== 9 ? 2 : 0),szCha);
   siprintf(szCha," KEY A     : %-17s",szKeyName[myConfig.keymap[4]]);
-  AffChaine(1,10,(uY== 10 ? 2 : 0),szCha);
+  DSPrint(1,10,(uY== 10 ? 2 : 0),szCha);
   siprintf(szCha," KEY B     : %-17s",szKeyName[myConfig.keymap[5]]);
-  AffChaine(1,11,(uY== 11 ? 2 : 0),szCha);
+  DSPrint(1,11,(uY== 11 ? 2 : 0),szCha);
   siprintf(szCha," KEY X     : %-17s",szKeyName[myConfig.keymap[6]]);
-  AffChaine(1,12,(uY== 12 ? 2 : 0),szCha);
+  DSPrint(1,12,(uY== 12 ? 2 : 0),szCha);
   siprintf(szCha," KEY Y     : %-17s",szKeyName[myConfig.keymap[7]]);
-  AffChaine(1,13,(uY== 13 ? 2 : 0),szCha);
+  DSPrint(1,13,(uY== 13 ? 2 : 0),szCha);
   siprintf(szCha," KEY R     : %-17s",szKeyName[myConfig.keymap[8]]);
-  AffChaine(1,14,(uY== 14 ? 2 : 0),szCha);
+  DSPrint(1,14,(uY== 14 ? 2 : 0),szCha);
   siprintf(szCha," KEY L     : %-17s",szKeyName[myConfig.keymap[9]]);
-  AffChaine(1,15,(uY== 15 ? 2 : 0),szCha);
+  DSPrint(1,15,(uY== 15 ? 2 : 0),szCha);
   siprintf(szCha," START     : %-17s",szKeyName[myConfig.keymap[10]]);
-  AffChaine(1,16,(uY== 16 ? 2 : 0),szCha);
+  DSPrint(1,16,(uY== 16 ? 2 : 0),szCha);
   siprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
-  AffChaine(1,17,(uY== 17 ? 2 : 0),szCha);
+  DSPrint(1,17,(uY== 17 ? 2 : 0),szCha);
 }
 
 u8 keyMapType = 0;
@@ -1956,10 +1956,10 @@ void colecoDSChangeKeymap(void)
   // --------------------------------------------------
   // Give instructions to the user...
   // --------------------------------------------------
-  AffChaine(1 ,19,0,("   D-PAD : CHANGE KEY MAP    "));
-  AffChaine(1 ,20,0,("       B : RETURN MAIN MENU  "));
-  AffChaine(1 ,21,0,("       X : SWAP KEYMAP TYPE  "));
-  AffChaine(1 ,22,0,("   START : SAVE KEYMAP       "));
+  DSPrint(1 ,19,0,("   D-PAD : CHANGE KEY MAP    "));
+  DSPrint(1 ,20,0,("       B : RETURN MAIN MENU  "));
+  DSPrint(1 ,21,0,("       X : SWAP KEYMAP TYPE  "));
+  DSPrint(1 ,22,0,("   START : SAVE KEYMAP       "));
   DisplayKeymapName(ucY);
   
   // -----------------------------------------------------------------------
@@ -2078,13 +2078,13 @@ void DisplayFileName(void)
     siprintf(szName,"%s",gpFic[ucGameChoice].szName);
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
-    AffChaine((16 - (strlen(szName)/2)),21,0,szName);
+    DSPrint((16 - (strlen(szName)/2)),21,0,szName);
     if (strlen(gpFic[ucGameChoice].szName) >= 35)   // If there is more than a few characters left, show it on the 2nd line
     {
         siprintf(szName,"%s",gpFic[ucGameChoice].szName+30);
         for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
         if (strlen(szName)>30) szName[30]='\0';
-        AffChaine((16 - (strlen(szName)/2)),22,0,szName);
+        DSPrint((16 - (strlen(szName)/2)),22,0,szName);
     }
 }
 
@@ -2093,12 +2093,12 @@ void DisplayFileName(void)
 //*****************************************************************************
 void affInfoOptions(u32 uY) 
 {
-    AffChaine(2, 8,(uY== 8 ? 2 : 0),("         LOAD  GAME         "));
-    AffChaine(2,10,(uY==10 ? 2 : 0),("         PLAY  GAME         "));
-    AffChaine(2,12,(uY==12 ? 2 : 0),("     REDEFINE  KEYS         "));
-    AffChaine(2,14,(uY==14 ? 2 : 0),("         GAME  OPTIONS      "));
-    AffChaine(2,16,(uY==16 ? 2 : 0),("       GLOBAL  OPTIONS      "));
-    AffChaine(2,18,(uY==18 ? 2 : 0),("         QUIT  EMULATOR     "));
+    DSPrint(2, 8,(uY== 8 ? 2 : 0),("         LOAD  GAME         "));
+    DSPrint(2,10,(uY==10 ? 2 : 0),("         PLAY  GAME         "));
+    DSPrint(2,12,(uY==12 ? 2 : 0),("     REDEFINE  KEYS         "));
+    DSPrint(2,14,(uY==14 ? 2 : 0),("         GAME  OPTIONS      "));
+    DSPrint(2,16,(uY==16 ? 2 : 0),("       GLOBAL  OPTIONS      "));
+    DSPrint(2,18,(uY==18 ? 2 : 0),("         QUIT  EMULATOR     "));
 }
 
 // --------------------------------------------------------------------
@@ -2109,9 +2109,9 @@ void NoGameSelected(u32 ucY)
     unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32); 
     while (keysCurrent()  & (KEY_START | KEY_A));
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-    AffChaine(5,10,0,("   NO GAME SELECTED   ")); 
-    AffChaine(5,12,0,("  PLEASE, USE OPTION  ")); 
-    AffChaine(5,14,0,("      LOAD  GAME      "));
+    DSPrint(5,10,0,("   NO GAME SELECTED   ")); 
+    DSPrint(5,12,0,("  PLEASE, USE OPTION  ")); 
+    DSPrint(5,14,0,("      LOAD  GAME      "));
     while (!(keysCurrent()  & (KEY_START | KEY_A)));
     while (keysCurrent()  & (KEY_START | KEY_A));
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
@@ -2320,7 +2320,7 @@ void colecoDSChangeOptions(void)
   dmaCopy((void*) topscreenPal,(void*) BG_PALETTE,256*2);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0) + 51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
-  AffChaine(28,23,1,"V");AffChaine(29,23,1,VERSIONCLDS);
+  DSPrint(28,23,1,"V");DSPrint(29,23,1,VERSIONCLDS);
 
   // Lower Screen Background
   BottomScreenOptions();
@@ -2450,12 +2450,7 @@ void colecoDSChangeOptions(void)
 // Displays a message on the screen
 //*****************************************************************************
 
-void dsPrintValue(int iX,int iY,int iScr,char *szMessage)
-{
-    AffChaine(iX,iY,iScr,szMessage);
-}
-
-void AffChaine(int iX,int iY,int iScr,char *szMessage) {
+void DSPrint(int iX,int iY,int iScr,char *szMessage) {
   u16 *pusEcran,*pusMap;
   u16 usCharac;
   char szTexte[128],*pTrTxt=szTexte;
