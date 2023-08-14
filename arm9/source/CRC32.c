@@ -8,6 +8,7 @@
 //
 // The ColecoDS emulator is offered as-is, without any warranty. Please see readme.md
 // =====================================================================================
+#include <nds.h>
 #include <stdio.h>
 #include <string.h>
 #include "CRC32.h"
@@ -55,7 +56,7 @@ const u32 crc32_table[256] = {
 // Read the file in and compute CRC... it's a bit slow but good enough and accurate!
 // ------------------------------------------------------------------------------------
 u8 file_crc_buffer[2048];
-u32 getFileCrc(const char* filename)
+ITCM_CODE u32 getFileCrc(const char* filename)
 {
     extern u32 file_size;
     u32 crc = 0xFFFFFFFF;

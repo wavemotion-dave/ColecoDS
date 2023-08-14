@@ -225,10 +225,15 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           }
           else
           {
+              // Player 1
               if (JoyState & JST_UP)    joy1 |= 0x01;
               if (JoyState & JST_DOWN)  joy1 |= 0x02;
               if (JoyState & JST_LEFT)  joy1 |= 0x04;
               if (JoyState & JST_RIGHT) joy1 |= 0x08;
+              
+              // Player 2
+              if (JoyState & JST_UP<<16)    joy1 |= 0x40;
+              if (JoyState & JST_DOWN<<16)  joy1 |= 0x80;
           }     
 
           if (JoyState & JST_FIREL) joy1 |= 0x10;
@@ -246,10 +251,15 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           }
           else
           {
+              // Player 1
               if (JoyState & JST_UP)    joy1 |= 0x01;
               if (JoyState & JST_DOWN)  joy1 |= 0x02;
               if (JoyState & JST_LEFT)  joy1 |= 0x04;
               if (JoyState & JST_RIGHT) joy1 |= 0x08;
+              
+              // Player 2
+              if (JoyState & JST_UP<<16)    joy1 |= 0x40;
+              if (JoyState & JST_DOWN<<16)  joy1 |= 0x80;
           }     
 
           if (JoyState & JST_FIREL) joy1 |= 0x10;
@@ -308,9 +318,14 @@ unsigned char cpu_readport_sg(register unsigned short Port)
           if (key_ctrl)                   joy2 |= 0x04;
           if (key_shift)                  joy2 |= 0x08;
       }
+      
       if ((Port_PPI_C & 0x07) == 0x07)  // Row 7 (joystick)
       {
-        //if (JoyState & JST_BLUE) joy2 |= 0x10;    // Reset (not sure this is used)
+          // Player 2
+          if (JoyState & JST_LEFT<<16)  joy2 |= 0x01;
+          if (JoyState & JST_RIGHT<<16) joy2 |= 0x02;
+          if (JoyState & JST_FIREL<<16) joy2 |= 0x04;
+          if (JoyState & JST_FIRER<<16) joy2 |= 0x08;
       }
       return (~joy2);
   }

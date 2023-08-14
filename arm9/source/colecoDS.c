@@ -1734,7 +1734,8 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX Keyboard
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
         else if ((iTx >= 174) && (iTx < 189))  kbd_key = (msx_japanese_matrix ? ']' : '[');
         else if ((iTx >= 189) && (iTx < 203))  kbd_key = (msx_japanese_matrix ? '`' : ']');
-        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+        else if ((iTx >= 203) && (iTx < 214))  kbd_key = KBD_KEY_DEAD;
+        else if ((iTx >= 214) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
@@ -2004,7 +2005,7 @@ u8 handle_sc3000_keyboard_press(u16 iTx, u16 iTy)  // SC-3000 Keyboard
         else if (iTx < 234)   kbd_key = KBD_KEY_LEFT;
         else                  kbd_key = KBD_KEY_RIGHT;
     }
-    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row with F1 thru F8)
+    else if ((iTy >= 12) && (iTy < 42))    // Row 1 (top row is mostly blank for the SC-3000... just the HOME key)
     {
         if      ((iTx >= 0)   && (iTx < 22))   kbd_key = 0;
         else if ((iTx >= 22)  && (iTx < 49))   kbd_key = 0;
