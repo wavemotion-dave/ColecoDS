@@ -835,85 +835,85 @@ void ShowDebugZ80(void)
     extern u8 romBankMask;
     extern u8 Port20, Port53, Port60;
     siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "VStat %02X Data=%02X", VDPStatus, VDPDlatch);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "VAddr %04X", VAddr);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     idx++;
     siprintf(tmp, "Z80PC %04X", CPU.PC.W);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "Z80SP %04X", CPU.SP.W);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "Z80A  %04X", CPU.AF.W);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "IRQ   %04X", CPU.IRequest);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     siprintf(tmp, "IREQ  %d", CPU.User);
-    AffChaine(0,idx++,7, tmp);
+    DSPrint(0,idx++,7, tmp);
     idx++;
 
     if (AY_Enable)
     {
         siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         idx++;
     }
     else
     {
         siprintf(tmp, "SN0 %04X %04X %2d", sncol.ch0Frq, sncol.ch0Reg, sncol.ch0Att);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "SN1 %04X %04X %2d", sncol.ch1Frq, sncol.ch1Reg, sncol.ch1Att);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "SN2 %04X %04X %2d", sncol.ch2Frq, sncol.ch2Reg, sncol.ch2Att);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "SN3 %04X %04X %2d", sncol.ch3Frq, sncol.ch3Reg, sncol.ch3Att);
-        AffChaine(0,idx++,7, tmp);
+        DSPrint(0,idx++,7, tmp);
         idx++;
     }
 
-    siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             AffChaine(0,idx++,7, tmp);
-    siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            AffChaine(0,idx++,7, tmp);
+    siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
+    siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
+    siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             DSPrint(0,idx++,7, tmp);
+    siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
 
     idx = 1;
-    siprintf(tmp, "D1 %-5lu %04X", debug1, (u16)debug1); AffChaine(19,idx++,7, tmp);
-    siprintf(tmp, "D2 %-5lu %04X", debug2, (u16)debug2); AffChaine(19,idx++,7, tmp);
-    siprintf(tmp, "D3 %-5lu %04X", debug3, (u16)debug3); AffChaine(19,idx++,7, tmp);
-    siprintf(tmp, "D4 %-5lu %04X", debug4, (u16)debug4); AffChaine(19,idx++,7, tmp);
+    siprintf(tmp, "D1 %-5lu %04X", debug1, (u16)debug1); DSPrint(19,idx++,7, tmp);
+    siprintf(tmp, "D2 %-5lu %04X", debug2, (u16)debug2); DSPrint(19,idx++,7, tmp);
+    siprintf(tmp, "D3 %-5lu %04X", debug3, (u16)debug3); DSPrint(19,idx++,7, tmp);
+    siprintf(tmp, "D4 %-5lu %04X", debug4, (u16)debug4); DSPrint(19,idx++,7, tmp);
     idx++;
-    siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); AffChaine(19,idx++,7, tmp);
-    siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    AffChaine(19,idx++,7, tmp);
-    siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); AffChaine(19,idx++,7, tmp);
+    siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
+    siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
+    siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
 #else
     idx = 1;
-    siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); AffChaine(5,idx++,7, tmp);
-    siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); AffChaine(5,idx++,7, tmp);
-    siprintf(tmp, "D3 %-12lu %08lX", debug3, debug3); AffChaine(5,idx++,7, tmp);
-    siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); AffChaine(5,idx++,7, tmp);
-    siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); AffChaine(5,idx++,7, tmp);
-    siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); AffChaine(5,idx++,7, tmp);
+    siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); DSPrint(5,idx++,7, tmp);
+    siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); DSPrint(5,idx++,7, tmp);
+    siprintf(tmp, "D3 %-12lu %08lX", debug3, debug3); DSPrint(5,idx++,7, tmp);
+    siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); DSPrint(5,idx++,7, tmp);
+    siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); DSPrint(5,idx++,7, tmp);
+    siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); DSPrint(5,idx++,7, tmp);
     
     for (int chan=0; chan<=3; chan++)
     {
-        siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); AffChaine(5,idx++,7, tmp);
-        siprintf(tmp, "CTC%d constant = %-8lu", chan, (u32)CTC[chan].constant); AffChaine(5,idx++,7, tmp);
-        siprintf(tmp, "CTC%d counter  = %-8lu", chan, (u32)CTC[chan].counter); AffChaine(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d constant = %-8lu", chan, (u32)CTC[chan].constant); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "CTC%d counter  = %-8lu", chan, (u32)CTC[chan].counter); DSPrint(5,idx++,7, tmp);
     }    
 #endif
     idx++;
@@ -938,13 +938,13 @@ void DisplayStatusLine(bool bForce)
         if ((last_sg1000_mode != sg1000_mode) || bForce)
         {
             last_sg1000_mode = sg1000_mode;
-            AffChaine(23,0,6, (sg1000_mode == 2 ? "SC-3000":"SG-1000"));
+            DSPrint(23,0,6, (sg1000_mode == 2 ? "SC-3000":"SG-1000"));
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
-            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (pv2000_mode)
@@ -952,7 +952,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_pv2000_mode != pv2000_mode) || bForce)
         {
             last_pv2000_mode = pv2000_mode;
-            AffChaine(23,0,6, "PV-2000");
+            DSPrint(23,0,6, "PV-2000");
         }
     }
     else if (sordm5_mode)
@@ -960,7 +960,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_sordm5_mode != sordm5_mode) || bForce)
         {
             last_sordm5_mode = sordm5_mode;
-            AffChaine(23,0,6, "SORD M5");
+            DSPrint(23,0,6, "SORD M5");
         }
     }
     else if (memotech_mode)
@@ -968,7 +968,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_memotech_mode != memotech_mode) || bForce)
         {
             last_memotech_mode = memotech_mode;
-            AffChaine(20,0,6, "MEMOTECH MTX");
+            DSPrint(20,0,6, "MEMOTECH MTX");
             last_pal_mode = 99;
         }
         if ((memotech_mode == 2) && (last_tape_pos != tape_pos) && (!memotech_magrom_present))
@@ -976,13 +976,13 @@ void DisplayStatusLine(bool bForce)
             last_tape_pos = tape_pos;
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
-            AffChaine(9,0,6, tmp);
+            DSPrint(9,0,6, tmp);
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
-            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (msx_mode)
@@ -1001,13 +1001,13 @@ void DisplayStatusLine(bool bForce)
                 case 6: siprintf(tmp, "PV-7    %3dK",                  (int)(LastROMSize/1024));    break;     // Casio PV-7 (just 8K at the top of slot 0)
                 default:siprintf(tmp, "MSX     %3dK",                  (int)(LastROMSize/1024));    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }            
-            AffChaine(20,0,6, tmp);
+            DSPrint(20,0,6, tmp);
             last_pal_mode = 99;
         }
         if (last_msx_scc_enable != msx_scc_enable)
         {   
             // SCC and CAS are mutually exclusive so we can reuse the same area on screen...
-            AffChaine(9,0,6, "SCC");
+            DSPrint(9,0,6, "SCC");
             last_msx_scc_enable = msx_scc_enable;
         }
         if ((last_tape_pos != tape_pos) && (msx_mode == 2))
@@ -1015,13 +1015,13 @@ void DisplayStatusLine(bool bForce)
             last_tape_pos = tape_pos;
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
-            AffChaine(9,0,6, tmp);
+            DSPrint(9,0,6, tmp);
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
-            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
         if (write_EE_counter > 0)
         {
@@ -1031,7 +1031,7 @@ void DisplayStatusLine(bool bForce)
                 // Save EE now!
                 msxSaveEEPROM();
             }
-            AffChaine(5,0,6, (write_EE_counter ? "EE":"  "));
+            DSPrint(5,0,6, (write_EE_counter ? "EE":"  "));
         }
 
     }
@@ -1040,7 +1040,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_svi_mode != svi_mode) || bForce)
         {
             last_svi_mode = svi_mode;
-            AffChaine(20,0,6, "SPECTRAVIDEO");
+            DSPrint(20,0,6, "SPECTRAVIDEO");
             last_pal_mode = 99;
         }
         if ((last_tape_pos != tape_pos) && (svi_mode == 1))
@@ -1048,12 +1048,12 @@ void DisplayStatusLine(bool bForce)
             last_tape_pos = tape_pos;
             char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
-            AffChaine(9,0,6, tmp);
+            DSPrint(9,0,6, tmp);
         }
         if (last_pal_mode != myConfig.isPAL)
         {
             last_pal_mode = myConfig.isPAL;
-            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (adam_mode)
@@ -1061,25 +1061,25 @@ void DisplayStatusLine(bool bForce)
         if ((last_adam_mode != adam_mode) || bForce)
         {
             last_adam_mode = adam_mode;
-            AffChaine(25,0,6, "ADAM");
+            DSPrint(25,0,6, "ADAM");
         }
 
-        AffChaine(20,0,6, (adam_CapsLock ? "CAP":"   "));
+        DSPrint(20,0,6, (adam_CapsLock ? "CAP":"   "));
 
         if (io_show_status)
         {
-            AffChaine(30,0,6, (io_show_status == 2 ? "WR":"RD"));
+            DSPrint(30,0,6, (io_show_status == 2 ? "WR":"RD"));
             io_show_status = 0;
         }
         else
-            AffChaine(30,0,6, "  ");
+            DSPrint(30,0,6, "  ");
     }
     else if (pencil2_mode)
     {
         if ((pencil2_mode != last_pencil_mode) || bForce)
         {
             last_pencil_mode = pencil2_mode;
-            AffChaine(22,0,6, "PENCIL II");
+            DSPrint(22,0,6, "PENCIL II");
         }
     }
     else if (creativision_mode)
@@ -1087,26 +1087,26 @@ void DisplayStatusLine(bool bForce)
         if ((creativision_mode != last_pencil_mode) || bForce)
         {
             last_pencil_mode = creativision_mode;
-            AffChaine(20,0,6, "CREATIVISION");
+            DSPrint(20,0,6, "CREATIVISION");
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
-            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else if (einstein_mode)
     {
         if ((einstein_mode != last_einstein_mode) || bForce)
         {
-            AffChaine(22,0,6, "EINSTEIN");
+            DSPrint(22,0,6, "EINSTEIN");
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
         {
             last_pal_mode = myConfig.isPAL;
-            AffChaine(0,0,6, myConfig.isPAL ? "PAL":"   ");
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
     }
     else    // Various Colecovision Possibilities
@@ -1114,19 +1114,19 @@ void DisplayStatusLine(bool bForce)
         if ((last_sgm_mode != sgm_enable) || bForce)
         {
             last_sgm_mode = sgm_enable;
-            AffChaine(28,0,6, (sgm_enable ? "SGM":"   "));
+            DSPrint(28,0,6, (sgm_enable ? "SGM":"   "));
         }
 
         if ((last_ay_mode != AY_Enable) || bForce)
         {
             last_ay_mode = AY_Enable;
-            AffChaine(25,0,6, (AY_Enable ? "AY":"  "));
+            DSPrint(25,0,6, (AY_Enable ? "AY":"  "));
         }
 
         if ((last_mc_mode != romBankMask) || bForce)
         {
             last_mc_mode = romBankMask;
-            AffChaine(22,0,6, (romBankMask ? "MC":"  "));
+            DSPrint(22,0,6, (romBankMask ? "MC":"  "));
         }
 
         if (write_EE_counter > 0)
@@ -1137,7 +1137,7 @@ void DisplayStatusLine(bool bForce)
                 // Save EE now!
                 colecoSaveEEPROM();
             }
-            AffChaine(30,0,6, (write_EE_counter ? "EE":"  "));
+            DSPrint(30,0,6, (write_EE_counter ? "EE":"  "));
         }
     }
 }
@@ -1151,12 +1151,12 @@ void SaveAdamTapeOrDisk(void)
 {
     if (io_show_status) return; // Don't save while io status
 
-    AffChaine(12,0,6, "SAVING");
+    DSPrint(12,0,6, "SAVING");
     if (strstr(lastAdamDataPath, ".ddp") != 0)
         SaveFDI(&Tapes[0], lastAdamDataPath, FMT_DDP);
     else
         SaveFDI(&Disks[0], lastAdamDataPath, FMT_ADMDSK);
-    AffChaine(12,0,6, "      ");
+    DSPrint(12,0,6, "      ");
     DisplayStatusLine(true);
     adam_unsaved_data = 0;
 }
@@ -1227,29 +1227,29 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
 
     if (adam_mode)
     {
-        AffChaine(8,8,6,                    "DIGITAL DATA MENU");
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DDP/DSK  ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DDP/DSK  ");  cassete_menu_items++;
-        AffChaine(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU     ");  cassete_menu_items++;
+        DSPrint(8,8,6,                    "DIGITAL DATA MENU");
+        DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DDP/DSK  ");  cassete_menu_items++;
+        DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DDP/DSK  ");  cassete_menu_items++;
+        DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU     ");  cassete_menu_items++;
         if (adam_unsaved_data)
         {
-            AffChaine(3, 15, 0, "DDP/DSK HAS UNSAVED DATA!");
+            DSPrint(3, 15, 0, "DDP/DSK HAS UNSAVED DATA!");
         }
     }
     else
     {
-        AffChaine(9,7,6,                    "CASSETTE MENU");
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE CASSETTE    ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP CASSETTE    ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " REWIND CASSETTE  ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " CLOAD  RUN       ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " BLOAD 'CAS:',R   ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN   'CAS:'     ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " LOAD  ''         ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN              ");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN EINSTEIN .COM");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN MEMOTECH .RUN");  cassete_menu_items++;
-        AffChaine(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU        ");  cassete_menu_items++;
+        DSPrint(9,7,6,                    "CASSETTE MENU");
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE CASSETTE    ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP CASSETTE    ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " REWIND CASSETTE  ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " CLOAD  RUN       ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " BLOAD 'CAS:',R   ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN   'CAS:'     ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " LOAD  ''         ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN              ");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN EINSTEIN .COM");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN MEMOTECH .RUN");  cassete_menu_items++;
+        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU        ");  cassete_menu_items++;
     }
     DisplayFileName();
 }
@@ -1266,14 +1266,14 @@ void CassetteMenu(void)
 
   if (creativision_mode)
   {
-      AffChaine(5,0,0, "BAS LOADING");
+      DSPrint(5,0,0, "BAS LOADING");
       creativision_loadBAS();
       WAITVBL;WAITVBL;WAITVBL;WAITVBL;
       BufferKey('R');
       BufferKey('U');
       BufferKey('N');
       BufferKey(KBD_KEY_RET);
-      AffChaine(5,0,0, "           ");
+      DSPrint(5,0,0, "           ");
       SoundUnPause();
       return;
   }
@@ -1309,13 +1309,13 @@ void CassetteMenu(void)
                     {
                         if (msx_mode || svi_mode)   // Not supporting Memotech MTX yet...
                         {
-                            AffChaine(12,0,6, "SAVING");
+                            DSPrint(12,0,6, "SAVING");
                             FILE *fp;
                             fp = fopen(gpFic[ucGameChoice].szName, "wb");
                             fwrite(ROM_Memory, tape_len, 1, fp);
                             fclose(fp);
                             WAITVBL;WAITVBL;
-                            AffChaine(12,0,6, "      ");
+                            DSPrint(12,0,6, "      ");
                             DisplayStatusLine(true);
                         }
                     }
@@ -1347,9 +1347,9 @@ void CassetteMenu(void)
                   if (!adam_mode && (tape_pos>0))
                   {
                       tape_pos = 0;
-                      AffChaine(12,0,6, "REWOUND");
+                      DSPrint(12,0,6, "REWOUND");
                       WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-                      AffChaine(12,0,6, "       ");
+                      DSPrint(12,0,6, "       ");
                       DisplayStatusLine(true);
                       CassetteMenuShow(true, menuSelection);
                   }
@@ -1479,13 +1479,13 @@ void MiniMenuShow(bool bClearScreen, u8 sel)
       BottomScreenOptions();
     }
 
-    AffChaine(8,7,6,                                           " CV MINI MENU  ");
-    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " RESET  GAME   ");  mini_menu_items++;
-    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " QUIT   GAME   ");  mini_menu_items++;
-    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " HIGH   SCORE  ");  mini_menu_items++;
-    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " SAVE   STATE  ");  mini_menu_items++;
-    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " LOAD   STATE  ");  mini_menu_items++;
-    AffChaine(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " EXIT   MENU   ");  mini_menu_items++;
+    DSPrint(8,7,6,                                           " CV MINI MENU  ");
+    DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " RESET  GAME   ");  mini_menu_items++;
+    DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " QUIT   GAME   ");  mini_menu_items++;
+    DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " HIGH   SCORE  ");  mini_menu_items++;
+    DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " SAVE   STATE  ");  mini_menu_items++;
+    DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " LOAD   STATE  ");  mini_menu_items++;
+    DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " EXIT   MENU   ");  mini_menu_items++;
 }
 
 // ------------------------------------------------------------------------
@@ -1611,7 +1611,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
-        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = 0; last_kbd_key = 0; last_special_key = KBD_KEY_CTRL; AffChaine(4,0,6, "CTRL");}
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = 0; last_kbd_key = 0; last_special_key = KBD_KEY_CTRL; DSPrint(4,0,6, "CTRL");}
         else if ((iTx >= 27)  && (iTx < 43))   kbd_key = 'A';
         else if ((iTx >= 43)  && (iTx < 58))   kbd_key = 'S';
         else if ((iTx >= 58)  && (iTx < 72))   kbd_key = 'D';
@@ -1629,7 +1629,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
-        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = 0;  last_kbd_key = 0; last_special_key = KBD_KEY_SHIFT; AffChaine(4,0,6, "SHFT");}
+        if      ((iTx >= 0)   && (iTx < 33))   {kbd_key = 0;  last_kbd_key = 0; last_special_key = KBD_KEY_SHIFT; DSPrint(4,0,6, "SHFT");}
         else if ((iTx >= 33)  && (iTx < 49))   kbd_key = 'Z';
         else if ((iTx >= 49)  && (iTx < 64))   kbd_key = 'X';
         else if ((iTx >= 64)  && (iTx < 78))   kbd_key = 'C';
@@ -1669,7 +1669,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         }
         last_special_key = 0;
         mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-        AffChaine(4,0,6, "    ");
+        DSPrint(4,0,6, "    ");
     }
     if (last_kbd_key != 255) last_kbd_key = kbd_key;
 
@@ -1773,14 +1773,14 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX Keyboard
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
         else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
         else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 191))  {kbd_key = KBD_KEY_CODE; if (msx_japanese_matrix) {AffChaine(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
+        else if ((iTx >= 163) && (iTx < 191))  {kbd_key = KBD_KEY_CODE; if (msx_japanese_matrix) {DSPrint(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
         else if ((iTx >= 191) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     
     if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
     {
-        AffChaine(4,0,6,"    ");
+        DSPrint(4,0,6,"    ");
         bKanaShown = 0;
     }
 
@@ -1889,7 +1889,7 @@ u8 handle_svi_keyboard_press(u16 iTx, u16 iTy)  // SVI Keyboard
     
     if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
     {
-        AffChaine(4,0,6,"    ");
+        DSPrint(4,0,6,"    ");
         bKanaShown = 0;
     }
 
@@ -2455,7 +2455,7 @@ void colecoDS_main(void)
                 szChai[1] = '0' + (emuFps%100) / 10;
                 szChai[2] = '0' + (emuFps%100) % 10;
                 szChai[3] = 0;
-                AffChaine(0,0,6,szChai);
+                DSPrint(0,0,6,szChai);
             }
             DisplayStatusLine(false);
             emuActFrames = 0;
@@ -2509,10 +2509,10 @@ void colecoDS_main(void)
         }
 
       // If the Z80 Debugger is enabled, call it
-#ifdef DEBUG_Z80
-      ShowDebugZ80();
-#endif
-
+      if (myGlobalConfig.showBadOps == 2)
+      {
+          ShowDebugZ80();
+      }
 
       // -----------------------------------------------------------
       // This is where we accumualte the keys pressed... up to 12!
@@ -2736,10 +2736,10 @@ void colecoDS_main(void)
       }
       else if ((nds_key & KEY_L) && (nds_key & KEY_R))
       {
-            AffChaine(5,0,0,"SNAPSHOT");
+            DSPrint(5,0,0,"SNAPSHOT");
             screenshot();
             WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-            AffChaine(5,0,0,"        ");
+            DSPrint(5,0,0,"        ");
       }
       else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y))
       {
@@ -3153,16 +3153,16 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) sc3000_kbdPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    
-    else // Generic Overlay
+    else if (myGlobalConfig.showBadOps == 2)  // Full Z80 Debug
     {
-#ifdef DEBUG_Z80
           //  Init bottom screen
           decompress(debug_ovlTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
           decompress(debug_ovlMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) debug_ovlPal,(void*) BG_PALETTE_SUB,256*2);
-#else
+    }
+    else // Generic Overlay
+    {
       if (msx_mode)
       {
           //  Init bottom screen
@@ -3203,7 +3203,6 @@ void BottomScreenKeypad(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) colecovisionPal,(void*) BG_PALETTE_SUB,256*2);
       }
-#endif
     }
 
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
@@ -3702,19 +3701,19 @@ int main(int argc, char **argv)
         if (myGlobalConfig.showBiosInfo)
         {
             u8 idx = 6;
-            AffChaine(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
-                                         AffChaine(2,idx++,0,"coleco.rom     BIOS FOUND");
-            if (bMSXBiosFound)          {AffChaine(2,idx++,0,"msx.rom        BIOS FOUND"); }
-            if (bSVIBiosFound)          {AffChaine(2,idx++,0,"svi.rom        BIOS FOUND"); }
-            if (bSordBiosFound)         {AffChaine(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
-            if (bPV2000BiosFound)       {AffChaine(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
-            if (bPencilBiosFound)       {AffChaine(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
-            if (bEinsteinBiosFound)     {AffChaine(2,idx++,0,"einstein.rom   BIOS FOUND"); }
-            if (bCreativisionBiosFound) {AffChaine(2,idx++,0,"bioscv.rom     BIOS FOUND"); }
-            if (bAdamBiosFound)         {AffChaine(2,idx++,0,"eos.rom        BIOS FOUND"); }
-            if (bAdamBiosFound)         {AffChaine(2,idx++,0,"writer.rom     BIOS FOUND"); }
-            AffChaine(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
-            AffChaine(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
+            DSPrint(2,idx++,0,"LOADING BIOS FILES ..."); idx++;
+                                         DSPrint(2,idx++,0,"coleco.rom     BIOS FOUND");
+            if (bMSXBiosFound)          {DSPrint(2,idx++,0,"msx.rom        BIOS FOUND"); }
+            if (bSVIBiosFound)          {DSPrint(2,idx++,0,"svi.rom        BIOS FOUND"); }
+            if (bSordBiosFound)         {DSPrint(2,idx++,0,"sordm5.rom     BIOS FOUND"); }
+            if (bPV2000BiosFound)       {DSPrint(2,idx++,0,"pv2000.rom     BIOS FOUND"); }
+            if (bPencilBiosFound)       {DSPrint(2,idx++,0,"pencil2.rom    BIOS FOUND"); }
+            if (bEinsteinBiosFound)     {DSPrint(2,idx++,0,"einstein.rom   BIOS FOUND"); }
+            if (bCreativisionBiosFound) {DSPrint(2,idx++,0,"bioscv.rom     BIOS FOUND"); }
+            if (bAdamBiosFound)         {DSPrint(2,idx++,0,"eos.rom        BIOS FOUND"); }
+            if (bAdamBiosFound)         {DSPrint(2,idx++,0,"writer.rom     BIOS FOUND"); }
+            DSPrint(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
+            DSPrint(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
 
             while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
             while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))==0);
@@ -3723,10 +3722,10 @@ int main(int argc, char **argv)
     }
     else
     {
-        AffChaine(2,10,0,"ERROR: coleco.rom NOT FOUND");
-        AffChaine(2,12,0,"ERROR: CANT RUN WITHOUT BIOS");
-        AffChaine(2,14,0,"Put coleco.rom in same dir");
-        AffChaine(2,15,0,"as EMULATOR or /ROMS/BIOS");
+        DSPrint(2,10,0,"ERROR: coleco.rom NOT FOUND");
+        DSPrint(2,12,0,"ERROR: CANT RUN WITHOUT BIOS");
+        DSPrint(2,14,0,"Put coleco.rom in same dir");
+        DSPrint(2,15,0,"as EMULATOR or /ROMS/BIOS");
         while(1) ;  // We're done... Need a coleco bios to run a CV emulator
     }
 

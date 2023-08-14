@@ -76,7 +76,7 @@ void colecoSaveState()
       szFile[len-1] = 'v';
   }
   strcpy(szCh1,"SAVING...");
-  AffChaine(6,0,0,szCh1);
+  DSPrint(6,0,0,szCh1);
   
   FILE *handle = fopen(szFile, "wb+");  
   if (handle != NULL) 
@@ -295,9 +295,9 @@ void colecoSaveState()
       strcpy(szCh1,"OK ");
     else
       strcpy(szCh1,"ERR");
-     AffChaine(15,0,0,szCh1);
+     DSPrint(15,0,0,szCh1);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-    AffChaine(6,0,0,"             "); 
+    DSPrint(6,0,0,"             "); 
     DisplayStatusLine(true);
   }
   else {
@@ -337,7 +337,7 @@ void colecoLoadState()
     if (handle != NULL) 
     {    
          strcpy(szCh1,"LOADING...");
-         AffChaine(6,0,0,szCh1);
+         DSPrint(6,0,0,szCh1);
        
         // Read Version
         u16 save_ver = 0xBEEF;
@@ -570,17 +570,17 @@ void colecoLoadState()
           strcpy(szCh1,"OK ");
         else
           strcpy(szCh1,"ERR");
-         AffChaine(15,0,0,szCh1);
+         DSPrint(15,0,0,szCh1);
         
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        AffChaine(6,0,0,"             ");  
+        DSPrint(6,0,0,"             ");  
         DisplayStatusLine(true);
       }
       else
       {
-        AffChaine(6,0,0,"NO SAVED GAME");
+        DSPrint(6,0,0,"NO SAVED GAME");
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        AffChaine(6,0,0,"             ");  
+        DSPrint(6,0,0,"             ");  
       }
 
     fclose(handle);

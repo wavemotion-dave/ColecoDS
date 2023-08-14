@@ -373,17 +373,17 @@ ITCM_CODE void creativision_input(void)
         if (--last_special_key_dampen == 0)
         {
             last_special_key = 0;
-            AffChaine(4,0,6, "    ");
+            DSPrint(4,0,6, "    ");
         }
     }
     if (last_special_key == KBD_KEY_SHIFT) 
     { 
-        AffChaine(4,0,6, "SHFT");
+        DSPrint(4,0,6, "SHFT");
         KEYBD[PA1] &= 0x7f;   // SHIFT
     }
     if (last_special_key == KBD_KEY_CTRL)  
     {
-        AffChaine(4,0,6, "CTRL");
+        DSPrint(4,0,6, "CTRL");
         KEYBD[PA0] &= 0x7f;   // CTRL
     }
     if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL))

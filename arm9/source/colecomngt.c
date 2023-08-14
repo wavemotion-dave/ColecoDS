@@ -520,7 +520,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
 {
   u8 bOK = 0;
 
-  AffChaine(0,0,6, "LOADING...");
+  DSPrint(0,0,6, "LOADING...");
     
   FILE* handle = fopen(path, "rb");  
   if (handle != NULL) 
