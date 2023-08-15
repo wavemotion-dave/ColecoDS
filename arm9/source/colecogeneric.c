@@ -1510,7 +1510,7 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x47be051f)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
     if (file_crc == 0x107b5ddc)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
     if (file_crc == 0x2b1087cf)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
-    
+    if (file_crc == 0x4891613b)                 myConfig.overlay = 13; // Hanimex Pencil II BASIC uses simplified keyboard    
 
     // ----------------------------------------------------------------------------------
     // Some CreatiVision games that want the new CV overlay keypad/keybaord

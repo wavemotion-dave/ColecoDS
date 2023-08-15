@@ -462,7 +462,6 @@ mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 // -------------------------------------------------------------------------------------------
 void setupStream(void)
 {
-
   //----------------------------------------------------------------
   //  initialize maxmod with our small 3-effect soundbank
   //----------------------------------------------------------------
