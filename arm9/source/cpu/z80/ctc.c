@@ -46,7 +46,7 @@ static u8 CTC_ProcessChannel(u8 chan)
         if (--CTC[chan].counter == 0) // Has this timer reached 0?
         {
             CTC_ResetCounter(chan);
-            if (CTC[chan].control & CTC_INT_ENABLE)  {if (CPU.IRequest == INT_NONE) CPU.IRequest = CTC[chan].vector;}
+            if (CTC[chan].control & CTC_INT_ENABLE)  {CPU.IRequest = CTC[chan].vector;}
             return 1;
         }
     } else CTC_ResetCounter(chan);
