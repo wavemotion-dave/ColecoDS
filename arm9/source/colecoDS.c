@@ -1772,9 +1772,9 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX Keyboard
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
         else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
         else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 191))  {kbd_key = KBD_KEY_CODE; if (msx_japanese_matrix) {DSPrint(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
-        else if ((iTx >= 191) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
-        else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+        else if ((iTx >= 163) && (iTx < 192))  {kbd_key = KBD_KEY_CODE; if (msx_japanese_matrix) {DSPrint(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
+        else if ((iTx >= 192) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     
     if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)

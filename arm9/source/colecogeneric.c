@@ -2223,6 +2223,8 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".COM") != 0) checkCOM = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".rom") != 0) checkROM = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".ROM") != 0) checkROM = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".col") != 0) checkROM = 1;  // Coleco types - check if MSX or SVI
+    if (strstr(gpFic[ucGameChoice].szName, ".COL") != 0) checkROM = 1;  // Coleco types - check if MSX or SVI
     
     if (checkROM) CheckRomHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX or SVI cart - this may set msx_mode=1 or svi_mode=2
     
