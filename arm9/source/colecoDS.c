@@ -1647,8 +1647,8 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
     {
         if      ((iTx >= 1)   && (iTx < 33))   {if (last_kbd_key != 255) adam_CapsLock = 1-adam_CapsLock; last_kbd_key=255;}
         else if ((iTx >= 33)  && (iTx < 190))  kbd_key = ' ';
-        else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
-        else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+        else if ((iTx >= 190) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     else {kbd_key = 0; last_kbd_key = 0;}
 
@@ -1880,10 +1880,10 @@ u8 handle_svi_keyboard_press(u16 iTx, u16 iTy)  // SVI Keyboard
     {
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
         else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
-        else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 181))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}
-        else if ((iTx >= 181) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
-        else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
+        else if ((iTx >= 53)  && (iTx < 156))  kbd_key = ' ';
+        else if ((iTx >= 156) && (iTx < 180))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}
+        else if ((iTx >= 180) && (iTx < 212))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 212) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     
     if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
@@ -1988,8 +1988,8 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX Keyboard
     {
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
         else if ((iTx >= 30)  && (iTx < 190))  kbd_key = ' ';
-        else if ((iTx >= 190) && (iTx < 235))  return MENU_CHOICE_CASSETTE;
-        else if ((iTx >= 235) && (iTx < 255))  return MENU_CHOICE_MENU;
+        else if ((iTx >= 190) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
 
     return MENU_CHOICE_NONE;
