@@ -843,13 +843,124 @@ void SetupAdam(bool bResetAdamNet)
     if (bResetAdamNet)  ResetPCB();
 }
 
+unsigned char cpu_readport_pencil2(register unsigned short Port)
+{
+    u8 key = 0x00;
+    // PencilII ports are 8-bit
+    Port &= 0x00FF;
+    
+    if ((Port & 0xE0) == 0xE0)
+    {
+        switch(Port) 
+        {
+            case 0xE0: // Joystick/Keypad Data
+              Port = (Port&0x02) ? (JoyState>>16):JoyState;
+              Port = JoyMode     ? (Port>>8):Port;
+              return(~Port&0x7F);
+
+            case 0xE1: // Keyboard Data
+              if (kbd_key == 'J')           key |= 0x01;
+              if (kbd_key == ',')           key |= 0x02;
+              if (kbd_key == '.')           key |= 0x04;
+              if (kbd_key == 'M')           key |= 0x08;
+              if (kbd_key == 'F')           key |= 0x20;
+              if (kbd_key == 'N')           key |= 0x40;
+              return(~key);
+
+            case 0xE3: // Keyboard Data
+              if (kbd_key == ' ')           key |= 0x04;
+              if (kbd_key == 'C')           key |= 0x08;
+              if (kbd_key == 'B')           key |= 0x20;
+              if (kbd_key == 'H')           key |= 0x40;
+              if (key_ctrl)                 key |= 0x01;
+              if (key_shift)                key |= 0x10;
+              return(~key);
+
+            case 0xE4: // Keyboard Data
+              if (kbd_key == KBD_KEY_RET)   key |= 0x01;
+              if (kbd_key == 'O')           key |= 0x02;
+              if (kbd_key == 'P')           key |= 0x04;
+              if (kbd_key == 'I')           key |= 0x08;
+              if (kbd_key == '4')           key |= 0x20;
+              if (kbd_key == 'T')           key |= 0x40;
+              return(~key);
+
+            case 0xE6: // Keyboard Data
+              if (kbd_key == 'Q')           key |= 0x01;
+              if (kbd_key == 'W')           key |= 0x02;
+              if (kbd_key == 'X')           key |= 0x04;
+              if (kbd_key == 'E')           key |= 0x08;
+              if (kbd_key == '7')           key |= 0x10;
+              if (kbd_key == '5')           key |= 0x20;
+              if (kbd_key == '6')           key |= 0x40;
+              return(~key);
+
+            case 0xE8: // Keyboard Data
+              if (kbd_key == ':')           key |= 0x01;
+              if (kbd_key == 'L')           key |= 0x02;
+              if (kbd_key == ';')           key |= 0x04;
+              if (kbd_key == 'K')           key |= 0x08;
+              if (kbd_key == 'R')           key |= 0x20;
+              if (kbd_key == 'G')           key |= 0x40;
+              return(~key);
+
+            case 0xEA: // Keyboard Data
+              if (kbd_key == 'Z')           key |= 0x01;
+              if (kbd_key == 'A')           key |= 0x02;
+              if (kbd_key == 'S')           key |= 0x04;
+              if (kbd_key == 'D')           key |= 0x08;
+              if (kbd_key == 'U')           key |= 0x10;
+              if (kbd_key == 'V')           key |= 0x20;
+              if (kbd_key == 'Y')           key |= 0x40;
+              return(~key);
+
+            case 0xF0: // Keyboard Data
+              if (kbd_key == '-')           key |= 0x01;
+              if (kbd_key == '9')           key |= 0x02;
+              if (kbd_key == '0')           key |= 0x04;
+              if (kbd_key == '8')           key |= 0x08;
+              return(~key);
+
+            case 0xF2: // Keyboard Data
+              if (kbd_key == '1')           key |= 0x01;
+              if (kbd_key == '2')           key |= 0x02;
+              if (kbd_key == '3')           key |= 0x04;
+              if (kbd_key == KBD_KEY_F1)    key |= 0x08;
+              return(~key);
+        }
+    }
+    else
+    {
+        switch(Port & 0xE0) 
+        {
+            case 0x20:
+              return Port20 & 0x0F;
+              break;
+
+            case 0x40: // Printer Status - not used
+              return(0xFF);
+              break;
+
+            case 0x60:  // Memory Port - probably not used on Pencil2
+              return Port60;
+              break;
+
+            case 0xA0: /* VDP Status/Data */
+              return(Port&0x01 ? RdCtrl9918():RdData9918());
+        }
+    }
+
+    // No such port
+    return(NORAM);    
+}
+
 /** InZ80() **************************************************/
 /** Z80 emulation calls this function to read a byte from   **/
 /** a given I/O port.                                       **/
 /*************************************************************/
 unsigned char cpu_readport16(register unsigned short Port) 
 {
-  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
+  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2))
   {
       if (machine_mode & MODE_MSX)      {return cpu_readport_msx(Port);}
       if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}    
@@ -858,6 +969,7 @@ unsigned char cpu_readport16(register unsigned short Port)
       if (machine_mode & MODE_MEMOTECH) {return cpu_readport_memotech(Port);}    
       if (machine_mode & MODE_SVI)      {return cpu_readport_svi(Port);}
       if (machine_mode & MODE_EINSTEIN) {return cpu_readport_einstein(Port);}
+      if (machine_mode & MODE_PENCIL2)  {return cpu_readport_pencil2(Port);}
   }
     
   // Colecovision ports are 8-bit
@@ -883,9 +995,9 @@ unsigned char cpu_readport16(register unsigned short Port)
       return Port60;
       break;
 
-    case 0xE0: // Joysticks Data
-      Port = Port&0x02? (JoyState>>16):JoyState;
-      Port = JoyMode?   (Port>>8):Port;
+    case 0xE0: // Joystick/Keypad Data
+      Port = (Port&0x02) ? (JoyState>>16):JoyState;
+      Port = JoyMode     ? (Port>>8):Port;
       return(~Port&0x7F);
 
     case 0xA0: /* VDP Status/Data */

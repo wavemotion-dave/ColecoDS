@@ -259,6 +259,12 @@ cat pen702a.bin pen702b.bin > TreasureHunt.pen
 
 This should leave you with a 12k ROM called TreasureHunt.pen which is now playable on your ColecoDS system!
 
+You can do the same thing with the BASIC cart (which has a 4K gap so we copy the 4K rom twice):
+
+copy /b 203.bin + 1-or.bin + 1-or.bin + 202.bin BASIC.pen
+cat  203.bin 1-or.bin 1-or.bin 202.bin > BASIC.pen
+
+
 Tatung Einstein Compatibility :
 -----------------------
 The base 64K machine is emulated. Right now only .COM files will play. Out in the interwebs, you will mostly only find .dsk files and the .COM files need to be extracted from them. The easiest way is to use one of the following programs:
@@ -354,13 +360,17 @@ would personally try them:
 
 Versions :
 -----------------------
-V8.4: ??-????-2023 by wavemotion-dave
+V8.4: 15-Aug-2023 by wavemotion-dave
 * Added SVI keyboard graphic and improved SVI keyboard handling.
-* Spectravideo SVI-3x8 cartridges supported up to 64K.
-* Fixed bug with VDP re-enable of interrupts.
+* Added Sega SC-3000 keyboard graphic and improved SC-3000 keyboard handling.
+* Improved PV-2000 keyboard handling.
+* Added preliminary keyboard support for Hanimex Pencil II - just enough to run BASIC if you dare.
+* Spectravideo SVI-3x8 cartridges supported up to 64K. Load .rom and the emulator will figure it out.
+* Fixed bug with VDP re-enable of interrupts (unsure if this affected anything, but it's corrected anyway).
 * Ability to run games at 90% to 130% on a per-game basis (See game configuration).
 * Improved mixing of SN+AY sound chips for the few games that utilize both.
-* Refactor of keypad graphics and fix for the options overlay so it paints the whole screen. This also frees up precious RAM!
+* Refactor of keypad graphics and fix for the options overlay so it paints the whole screen without graphical problems (e.g. showing part of the underlying screen). This also frees up precious RAM!
+* Other tweaks, fixes and improvements as time permitted.
 
 V8.3: 10-Aug-2023 by wavemotion-dave
 * Fix for keyboard handler so that more than one key can be pressed at a time (otherwise you get stutter when moving/shooting in keyboard-mapped games).

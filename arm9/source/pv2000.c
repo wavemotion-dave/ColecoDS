@@ -214,9 +214,9 @@ unsigned char cpu_readport_pv2000(register unsigned short Port)
           if (kbd_key == KBD_KEY_DEL)   joy1 |= 0x04;
       }
       
-      if ((Port_PPI_CTRL & 0x0F) == 0x09)    // STOP
+      if ((Port_PPI_CTRL & 0x0F) == 0x09)    // Unused
       {
-          if (kbd_key == KBD_KEY_STOP)  joy1 |= 0x08;
+          
       }
       
       return joy1;
@@ -264,12 +264,17 @@ unsigned char cpu_readport_pv2000(register unsigned short Port)
       }
       if ((Port_PPI_CTRL & 0x0F) == 0x04)    // Player 1 START and SELECT
       {
-          if (JoyState == JST_0)     joy1 |= 0x02;    // START
-          if (JoyState == JST_STAR)  joy1 |= 0x04;    // SELECT
+          if (kbd_key == '\\')         joy1 |= 0x01;    // YEN
+          if (JoyState == JST_0)       joy1 |= 0x02;    // START
+          if (JoyState == JST_STAR)    joy1 |= 0x04;    // SELECT
+          if (kbd_key == KBD_KEY_HOME) joy1 |= 0x08;    // HOME
       }
       if ((Port_PPI_CTRL & 0x0F) == 0x05)
       {
-
+          if (kbd_key == KBD_KEY_F5)    joy1 |= 0x01;   // Diagonals...
+          if (kbd_key == KBD_KEY_F6)    joy1 |= 0x02;
+          if (kbd_key == KBD_KEY_F7)    joy1 |= 0x04;
+          if (kbd_key == KBD_KEY_F8)    joy1 |= 0x08;
       }
       if ((Port_PPI_CTRL & 0x0F) == 0x06)    // Joystick Left Right
       {
@@ -288,8 +293,13 @@ unsigned char cpu_readport_pv2000(register unsigned short Port)
       
       if ((Port_PPI_CTRL & 0x0F) == 0x08)    // Joystick Attack Buttons
       {
-          if (JoyState & JST_FIREL)   joy1 |= 0x01;
-          if (JoyState & JST_FIRER)   joy1 |= 0x02;
+          if (JoyState & JST_FIREL)   joy1 |= 0x01; // Attack 1
+          if (JoyState & JST_FIRER)   joy1 |= 0x02; // Attack 2
+      }
+      
+      if ((Port_PPI_CTRL & 0x0F) == 0x09)    // BREAK /STOP Button
+      {
+          if (kbd_key == KBD_KEY_STOP)   joy1 |= 0x08;
       }
       
       return joy1;
@@ -299,6 +309,7 @@ unsigned char cpu_readport_pv2000(register unsigned short Port)
       u8 joy1 = 0x00;
       if (JoyState == JST_BLUE)     joy1 |= 0x01;   // COLOR
       if (JoyState == JST_PURPLE)   joy1 |= 0x02;   // FUNC
+      if (kbd_key == KBD_KEY_CTRL)  joy1 |= 0x02;   // FUNC
       if (key_graph)                joy1 |= 0x01;   // COLOR
       if (key_ctrl)                 joy1 |= 0x02;   // FUNC
       if (key_shift)                joy1 |= 0x04;   // SHIFT
