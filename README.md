@@ -240,7 +240,7 @@ This emulator supports .pv files as ROM only (not cassettes).  Rename any .bin f
 
 Sord M5 Compatibility :
 -----------------------
-This emulator supports .m5 files as ROM loads up to 32K. Generally all Sord M5 games run with high compatibility with just slight variations in sound emulation due to CTC chip emulation not being perfect.
+This emulator supports .m5 files as ROM loads up to 20K. In addition, the EM-5 memory expansion is present giving an extra 32K of RAM beyond the stock 4K provided by the Sord M5. Generally all Sord M5 games run with high compatibility with just slight variations in sound emulation due to CTC chip emulation not being perfect.
 
 Hanimex Pencil II Compatibility :
 -----------------------
