@@ -212,6 +212,7 @@ extern u32 debug6;
 #define KBD_KEY_UNDO        37
 #define KBD_KEY_LF          38
 #define KBD_KEY_DIA         39
+#define KBD_KEY_YEN         40
 #define KBD_KEY_CAS         255
 
 extern u16 emuFps;

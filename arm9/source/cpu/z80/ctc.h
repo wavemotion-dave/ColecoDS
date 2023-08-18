@@ -38,6 +38,7 @@ typedef struct
 } CTC_t;
 
 extern CTC_t CTC[CTC_CHAN_MAX];
+extern u8 ctc_process_m5;
 
 extern void CTC_Timer(u32 cpu_cycles);
 extern void CTC_ResetCounter(u8 chan);
