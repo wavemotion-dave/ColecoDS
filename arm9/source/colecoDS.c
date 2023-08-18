@@ -39,6 +39,7 @@
 #include "alpha_kbd.h"
 #include "einstein_kbd.h"
 #include "sc3000_kbd.h"
+#include "m5_kbd.h"
 #include "pv2000_sm.h"
 #include "debug_ovl.h"
 #include "options.h"
@@ -1667,7 +1668,7 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
             PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
         }
         last_special_key = 0;
-        mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+        if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
         DSPrint(4,0,6, "    ");
     }
     if (last_kbd_key != 255) last_kbd_key = kbd_key;
@@ -1990,6 +1991,82 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX Keyboard
         else if ((iTx >= 30)  && (iTx < 190))  kbd_key = ' ';
         else if ((iTx >= 190) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+
+    return MENU_CHOICE_NONE;
+}
+
+u8 handle_sordm5_keyboard_press(u16 iTx, u16 iTy)  // Sord M5 Keyboard
+{
+    if ((iTy >= 44) && (iTy < 74))   // Row 2 (number row)
+    {
+        if      ((iTx >= 4)   && (iTx < 23))   kbd_key = '1';
+        else if ((iTx >= 23)  && (iTx < 42))   kbd_key = '2';
+        else if ((iTx >= 42)  && (iTx < 61))   kbd_key = '3';
+        else if ((iTx >= 61)  && (iTx < 81))   kbd_key = '4';
+        else if ((iTx >= 81)  && (iTx < 99))   kbd_key = '5';
+        else if ((iTx >= 99)  && (iTx < 118))  kbd_key = '6';
+        else if ((iTx >= 118) && (iTx < 137))  kbd_key = '7';
+        else if ((iTx >= 137) && (iTx < 156))  kbd_key = '8';
+        else if ((iTx >= 156) && (iTx < 175))  kbd_key = '9';
+        else if ((iTx >= 175) && (iTx < 194))  kbd_key = '0';
+        else if ((iTx >= 194) && (iTx < 213))  kbd_key = '-';
+        else if ((iTx >= 213) && (iTx < 232))  kbd_key = '^';
+        else if ((iTx >= 232) && (iTx < 255))  kbd_key = '\\';
+    }
+    else if ((iTy >= 74) && (iTy < 104))  // Row 3 (QWERTY row)
+    {
+        if      ((iTx >= 8)   && (iTx < 26))   kbd_key = 'Q';
+        else if ((iTx >= 26)  && (iTx < 45))   kbd_key = 'W';
+        else if ((iTx >= 45)  && (iTx < 64))   kbd_key = 'E';
+        else if ((iTx >= 64)  && (iTx < 83))   kbd_key = 'R';
+        else if ((iTx >= 84)  && (iTx < 102))  kbd_key = 'T';
+        else if ((iTx >= 102) && (iTx < 121))  kbd_key = 'Y';
+        else if ((iTx >= 121) && (iTx < 140))  kbd_key = 'U';
+        else if ((iTx >= 140) && (iTx < 159))  kbd_key = 'I';
+        else if ((iTx >= 159) && (iTx < 178))  kbd_key = 'O';
+        else if ((iTx >= 178) && (iTx < 197))  kbd_key = 'P';
+        else if ((iTx >= 197) && (iTx < 216))  kbd_key = '@';
+        else if ((iTx >= 216) && (iTx < 235))  kbd_key = '[';
+    }
+    else if ((iTy >= 104) && (iTy < 134)) // Row 4 (ASDF row)
+    {
+        if      ((iTx >= 14)  && (iTx < 32))   kbd_key = 'A';
+        else if ((iTx >= 32)  && (iTx < 51))   kbd_key = 'S';
+        else if ((iTx >= 51)  && (iTx < 70))   kbd_key = 'D';
+        else if ((iTx >= 70)  && (iTx < 89))   kbd_key = 'F';
+        else if ((iTx >= 89)  && (iTx < 108))  kbd_key = 'G';
+        else if ((iTx >= 108) && (iTx < 127))  kbd_key = 'H';
+        else if ((iTx >= 127) && (iTx < 146))  kbd_key = 'J';
+        else if ((iTx >= 146) && (iTx < 165))  kbd_key = 'K';
+        else if ((iTx >= 165) && (iTx < 184))  kbd_key = 'L';
+        else if ((iTx >= 184) && (iTx < 203))  kbd_key = ';';
+        else if ((iTx >= 203) && (iTx < 222))  kbd_key = ':';
+        else if ((iTx >= 222) && (iTx < 241))  kbd_key = ']';
+    }
+    else if ((iTy >= 134) && (iTy < 164)) // Row 5 (ZXCV row)
+    {
+        if      ((iTx >= 18)  && (iTx < 37))   kbd_key = 'Z';
+        else if ((iTx >= 37)  && (iTx < 56))   kbd_key = 'X';
+        else if ((iTx >= 56)  && (iTx < 75))   kbd_key = 'C';
+        else if ((iTx >= 75)  && (iTx < 94))   kbd_key = 'V';
+        else if ((iTx >= 94)  && (iTx < 113))  kbd_key = 'B';
+        else if ((iTx >= 113) && (iTx < 132))  kbd_key = 'N';
+        else if ((iTx >= 132) && (iTx < 151))  kbd_key = 'M';
+        else if ((iTx >= 151) && (iTx < 170))  kbd_key = ',';
+        else if ((iTx >= 170) && (iTx < 189))  kbd_key = '.';
+        else if ((iTx >= 189) && (iTx < 208))  kbd_key = '/';
+        else if ((iTx >= 208) && (iTx < 227))  kbd_key = '_';
+        else if ((iTx >= 227) && (iTx < 255))  kbd_key = KBD_KEY_RET;
+    }
+    else if ((iTy >= 164) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
+    {
+        if      ((iTx >= 1)   && (iTx < 32))  {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        else if ((iTx >= 32)  && (iTx < 64))  {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
+        else if ((iTx >= 64)  && (iTx < 96))  {kbd_key = KBD_KEY_CODE; last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}
+        else if ((iTx >= 96)  && (iTx < 190))  kbd_key = ' ';
+        else if ((iTx >= 190) && (iTx < 222))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 222) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
 
     return MENU_CHOICE_NONE;
@@ -2331,7 +2408,7 @@ u8 handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Generic and Simplified Alph
         if (kbd_key != last_kbd_key && (kbd_key != 0) && (last_kbd_key != 255))
         {
             PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
-            mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+            if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
             last_kbd_key = kbd_key;
         }
     }
@@ -2566,6 +2643,10 @@ void colecoDS_main(void)
         {
             meta_key = handle_sc3000_keyboard_press(iTx, iTy);
         }        
+        else if (myConfig.overlay == 17) // SORD M5 Keyboard
+        {
+            meta_key = handle_sordm5_keyboard_press(iTx, iTy);
+        }        
         else    // Normal 12 button virtual keypad
         {
             meta_key = handle_normal_virtual_keypad(iTx, iTy);
@@ -2696,7 +2777,10 @@ void colecoDS_main(void)
         {
             if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
             {
-                if (!adam_mode) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback... ADAM handers do this for us
+                if (!adam_mode)
+                {
+                    if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback... ADAM handers do this for us
+                }
             }
             lastUN = (ucUN ? ucUN:kbd_key);
         }
@@ -2902,7 +2986,7 @@ void colecoDS_main(void)
                           if (kbd_key != last_mapped_key && (kbd_key != 0) && (last_mapped_key != 255))
                           {
                               PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
-                              mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+                              if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
                               last_mapped_key = kbd_key;
                           }                            
                       }
@@ -3151,6 +3235,14 @@ void BottomScreenKeypad(void)
       decompress(sc3000_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) sc3000_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 17) // Sord M5 Keyboard
+    {
+      //  Init bottom screen
+      decompress(m5_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(m5_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) m5_kbdPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else if (myGlobalConfig.showBadOps == 2)  // Full Z80 Debug
     {

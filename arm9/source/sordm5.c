@@ -59,8 +59,13 @@ unsigned char cpu_readport_m5(register unsigned short Port)
           DSPrint(4,0,6, "CTRL");
           key_ctrl = 1;
       }
+      else if (last_special_key == KBD_KEY_CODE)  
+      {
+          DSPrint(4,0,6, "FUNC");
+          key_code = 1;
+      }
 
-      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
+      if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE))
       {
           if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
       }
@@ -80,6 +85,7 @@ unsigned char cpu_readport_m5(register unsigned short Port)
       u8 joy1 = 0x00;
 
       if (key_ctrl)                 joy1 |= 0x01;
+      if (key_code)                 joy1 |= 0x02;
       if (key_shift)                joy1 |= 0x04;
       if (kbd_key == ' ')           joy1 |= 0x40;
       if (kbd_key == KBD_KEY_RET)   joy1 |= 0x80;
@@ -206,7 +212,7 @@ unsigned char cpu_readport_m5(register unsigned short Port)
           if (kbd_key == '^')      joy1 |= 0x08;
           if (kbd_key == '.')      joy1 |= 0x10;
           if (kbd_key == '/')      joy1 |= 0x20;
-          if (kbd_key == '@')      joy1 |= 0x40;
+          if (kbd_key == '_')      joy1 |= 0x40;
           if (kbd_key == '\\')     joy1 |= 0x80;
       }
       return joy1;

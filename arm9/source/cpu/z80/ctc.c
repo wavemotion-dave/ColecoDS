@@ -30,6 +30,9 @@
 // -----------------------------------------------------------
 u8 ctc_to_vdp = CTC_CHAN_MAX;   
 
+// By default, always process CTC for Sord M5. Mahjong doesn't work right with this so that game disables...
+u8 ctc_process_m5 = 1;
+
 // ----------------------------------------------------
 // This is our master CTC array for all four channels.
 // ----------------------------------------------------
@@ -119,18 +122,21 @@ void CTC_Timer(u32 cpu_cycles)
         // channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which are not
         // supchaned. Channel 3 is the VDP interrupt. So we save time/effort and only deal with chan1.
         // --------------------------------------------------------------------------------------------
-        for (u8 chan = CTC_CHAN1; chan <= CTC_CHAN1; chan++)
+        if (ctc_process_m5)
         {
-            if (CTC[chan].running)
+            for (u8 chan = CTC_CHAN1; chan <= CTC_CHAN1; chan++)
             {
-                if ((CTC[chan].control & CTC_COUNTER_MODE) == 0) // We only process timers here... 
+                if (CTC[chan].running)
                 {
-                    u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
-                    u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
-                    CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
-                    for (u32 i=0; i < process_count; i++)
+                    if ((CTC[chan].control & CTC_COUNTER_MODE) == 0) // We only process timers here... 
                     {
-                        CTC_ProcessChannel(chan);
+                        u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
+                        u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
+                        CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
+                        for (u32 i=0; i < process_count; i++)
+                        {
+                            CTC_ProcessChannel(chan);
+                        }
                     }
                 }
             }

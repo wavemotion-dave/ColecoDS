@@ -19,7 +19,7 @@
 #include "colecoDS.h"
 #include "colecomngt.h"
 #include "colecogeneric.h"
-
+#include "cpu/z80/ctc.h"
 #include "options.h"
 #include "topscreen.h"
 
@@ -1284,7 +1284,7 @@ void SetDefaultGameConfig(void)
     myConfig.msxBeeper   = 0;                           // Assume no MSX beeper required - only a few games need this
     myConfig.cvisionLoad = 0;                           // Default to normal Legacy A/B load for CreatiVision games
     myConfig.gameSpeed   = 0;                           // Default is 100% game speed
-    myConfig.reserved1   = 0;
+    myConfig.keyMute     = 0;                           // Default is no mute (key click heard)
     myConfig.reserved2   = 0;
     myConfig.reserved3   = 0;    
     myConfig.reserved4   = 0;    
@@ -1409,16 +1409,19 @@ void SetDefaultGameConfig(void)
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 11; // Memotech MTX default to full keyboard
-    if (svi_mode)                               myConfig.overlay = 15; // SVI default to full keyboard
     if (einstein_mode)                          myConfig.overlay = 14; // Tatung Einstein defaults to full keyboard
+    if (svi_mode)                               myConfig.overlay = 15; // SVI default to full keyboard
+    if (sordm5_mode)                            myConfig.overlay = 17; // Sord M5 defautls to full keyboard
+    
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
-    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;   // Colecovision Boulder Dash only works with the DrZ80 core
-    if (file_crc == 0xb32c9e08)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
-    if (file_crc == 0xa2edc01d)                 myConfig.cpuCore = 0;   // Sord M5 Mahjong (Jong Kyo) only works with the DrZ80 core
+    ctc_process_m5 = 1;
+    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;  // Colecovision Boulder Dash only works with the DrZ80 core
+    if (file_crc == 0xb32c9e08)                 ctc_process_m5 = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
+    if (file_crc == 0xa2edc01d)                 ctc_process_m5 = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
     
     // --------------------------------------------------------
     // These ADAM games use the larger full keyboard
@@ -1507,9 +1510,6 @@ void SetDefaultGameConfig(void)
     
     // And some special BASIC carts that want full keyboards
     if (file_crc == 0x69a92b72)                 myConfig.overlay = 11; // PV-2000 BASIC uses keyboard
-    if (file_crc == 0x47be051f)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
-    if (file_crc == 0x107b5ddc)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
-    if (file_crc == 0x2b1087cf)                 myConfig.overlay = 11; // Sord M5 BASIC uses keyboard
     if (file_crc == 0x4891613b)                 myConfig.overlay = 13; // Hanimex Pencil II BASIC uses simplified keyboard    
 
     // ----------------------------------------------------------------------------------
@@ -1619,6 +1619,7 @@ void SetDefaultGameConfig(void)
     
     if (file_crc == 0xf9934809)                 myConfig.dpad = DPAD_DIAGONALS;  // Reveal needs diagonals    
     
+    // Sort out a handful of games that are clearly PAL or NTSC
     if (file_crc == 0x0084b239)                 myConfig.isPAL = 1;     // Survivors Multi-Cart is PAL
     if (file_crc == 0x76a3d2e2)                 myConfig.isPAL = 1;     // Survivors MEGA-Cart is PAL
     
@@ -1632,7 +1633,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x31ff229b)                 myConfig.isPAL   = 0;   // Memotech Hustle Chummy is an NTSC conversion
     if (file_crc == 0x025e77dc)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
     if (file_crc == 0x95e71c67)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
-    
+    if (file_crc == 0xc10a6e96)                 myConfig.isPAL   = 1;   // Sord M5 Chess is PAL
+
     if (file_crc == 0xdddd1396)                 myConfig.cvEESize = C24XX_256B; // Black Onyx is 256 bytes... Boxxle is 32K. Other EE are unknown...
     
     if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
@@ -1723,7 +1725,7 @@ const struct options_t Option_Table[3][20] =
     // Page 1
     {
         {"OVERLAY",        {"GENERIC", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", 
-                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD", "EINSTEIN KBD", "SVI KEYBOARD", "SC-3000 KBD"},                                  &myConfig.overlay,    17},
+                            "ADAM KEYBOARD", "MSX KEYBOARD", "MTX KEYBOARD", "CREATIVISION", "ALPHA KEYBOARD", "EINSTEIN KBD", "SVI KEYBOARD", "SC-3000 KBD", "SORD M5 KBD"},                   &myConfig.overlay,    18},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
@@ -1744,6 +1746,7 @@ const struct options_t Option_Table[3][20] =
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
         {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
+        {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
