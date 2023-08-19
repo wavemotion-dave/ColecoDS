@@ -31,8 +31,6 @@
 u8 ctc_to_vdp = CTC_CHAN_MAX;   
 
 // By default, always process CTC for Sord M5. Mahjong doesn't work right with this so that game disables...
-u8 ctc_process_m5 = 1;
-
 // ----------------------------------------------------
 // This is our master CTC array for all four channels.
 // ----------------------------------------------------
@@ -123,22 +121,16 @@ void CTC_Timer(u32 cpu_cycles)
         // use timers but I've not seen any game that uses them. Although channel 0 and 2 are
         // likely never re-purposed for general use timing, we check them to be safe. 
         // --------------------------------------------------------------------------------------------
-        if (ctc_process_m5)
+        if (CTC[CTC_CHAN1].running)
         {
-            for (u8 chan = CTC_CHAN0; chan <= CTC_CHAN2; chan++)
+            if ((CTC[CTC_CHAN1].control & CTC_COUNTER_MODE) == 0) // We only process timers here... 
             {
-                if (CTC[chan].running)
+                u32 cpu_clocks_to_process = cpu_cycles + CTC[CTC_CHAN1].cpuClockRemainder;
+                u32 process_count = (cpu_clocks_to_process / CTC[CTC_CHAN1].cpuClocksPerCTC);
+                CTC[CTC_CHAN1].cpuClockRemainder = (cpu_clocks_to_process % CTC[CTC_CHAN1].cpuClocksPerCTC);
+                for (u32 i=0; i < process_count; i++)
                 {
-                    if ((CTC[chan].control & CTC_COUNTER_MODE) == 0) // We only process timers here... 
-                    {
-                        u32 cpu_clocks_to_process = cpu_cycles + CTC[chan].cpuClockRemainder;
-                        u32 process_count = (cpu_clocks_to_process / CTC[chan].cpuClocksPerCTC);
-                        CTC[chan].cpuClockRemainder = (cpu_clocks_to_process % CTC[chan].cpuClocksPerCTC);
-                        for (u32 i=0; i < process_count; i++)
-                        {
-                            CTC_ProcessChannel(chan);
-                        }
-                    }
+                    CTC_ProcessChannel(CTC_CHAN1);
                 }
             }
         }

@@ -64,6 +64,7 @@ extern u8 AY_Enable;
 extern u8 lastBank; 
 extern u32 file_crc;
 extern u8 AY_EnvelopeOn;
+extern u8 ctc_enabled;
 
 extern u8 adam_ram_lo;
 extern u8 adam_ram_hi;

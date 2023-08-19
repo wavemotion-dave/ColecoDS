@@ -1418,10 +1418,7 @@ void SetDefaultGameConfig(void)
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
-    ctc_process_m5 = 1;
     if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;  // Colecovision Boulder Dash only works with the DrZ80 core
-    if (file_crc == 0xb32c9e08)                 ctc_process_m5 = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
-    if (file_crc == 0xa2edc01d)                 ctc_process_m5 = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
     
     // --------------------------------------------------------
     // These ADAM games use the larger full keyboard

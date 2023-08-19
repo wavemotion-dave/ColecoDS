@@ -305,6 +305,8 @@ u8 colecoInit(char *szGame)
   else if (sordm5_mode)  // Load Sord M5 cartridge
   {
       ctc_enabled = true;
+      if (file_crc == 0xb32c9e08)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
+      if (file_crc == 0xa2edc01d)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
       colecoWipeRAM();
       RetFct = loadrom(szGame,RAM_Memory+0x2000,0x5000);  // Load up to 20K
   }
