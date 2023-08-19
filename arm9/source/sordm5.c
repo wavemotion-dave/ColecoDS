@@ -313,7 +313,7 @@ void sordm5_check_keyboard_interrupt(void)
 {
     static u8 last_m5_kbd=0; 
     static u32 last_m5_joy=0;
-    if (ctc_process_m5)
+    if (ctc_enabled)
     {
       if (kbd_key || JoyState) 
       {
