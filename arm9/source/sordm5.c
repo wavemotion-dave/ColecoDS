@@ -96,16 +96,25 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   {
       
       u8 joy1 = 0x00;
-      if (JoyState & JST_FIREL) joy1 |= 0x01;  // '1' (joystick button 1)
-      if (JoyState & JST_FIRER) joy1 |= 0x02;  // '2' (joystick button 2)
-      if (JoyState == JST_1)   joy1 |= 0x01;  // '1'
-      if (JoyState == JST_2)   joy1 |= 0x02;  // '2'
-      if (JoyState == JST_3)   joy1 |= 0x04;  // '3'
-      if (JoyState == JST_4)   joy1 |= 0x08;  // '4'
-      if (JoyState == JST_5)   joy1 |= 0x10;  // '5'
-      if (JoyState == JST_6)   joy1 |= 0x20;  // '6'
-      if (JoyState == JST_7)   joy1 |= 0x40;  // '7'
-      if (JoyState == JST_8)   joy1 |= 0x80;  // '8'
+      // -------------------------------------------------
+      // Check joystick fire buttons or keypad area
+      // -------------------------------------------------
+      if (JoyState)
+      {
+          if (JoyState & JST_FIREL)     joy1 |= 0x01;  // '1' (P1 joystick button 1)
+          if (JoyState & JST_FIRER)     joy1 |= 0x02;  // '2' (P1 joystick button 2)
+          if (JoyState & JST_FIREL<<16) joy1 |= 0x10;  // '5' (P2 joystick button 1)
+          if (JoyState & JST_FIRER<<16) joy1 |= 0x20;  // '6' (P2 joystick button 2)
+
+          if (JoyState == JST_1)   joy1 |= 0x01;  // '1'
+          if (JoyState == JST_2)   joy1 |= 0x02;  // '2'
+          if (JoyState == JST_3)   joy1 |= 0x04;  // '3'
+          if (JoyState == JST_4)   joy1 |= 0x08;  // '4'
+          if (JoyState == JST_5)   joy1 |= 0x10;  // '5'
+          if (JoyState == JST_6)   joy1 |= 0x20;  // '6'
+          if (JoyState == JST_7)   joy1 |= 0x40;  // '7'
+          if (JoyState == JST_8)   joy1 |= 0x80;  // '8'
+      }
       
       // -------------------------------------------------
       // Check every key that might have been pressed...
@@ -244,17 +253,20 @@ unsigned char cpu_readport_m5(register unsigned short Port)
   {
       u8 joy1 = 0x00;
       
-      // Player 1
-      if (JoyState & JST_UP)     joy1 |= 0x02;
-      if (JoyState & JST_DOWN)   joy1 |= 0x08;
-      if (JoyState & JST_LEFT)   joy1 |= 0x04;
-      if (JoyState & JST_RIGHT)  joy1 |= 0x01;      
-      
-      // Player 2
-      if (JoyState & (JST_UP<<16))    joy1 |= 0x20;
-      if (JoyState & (JST_DOWN<<16))  joy1 |= 0x80;
-      if (JoyState & (JST_LEFT<<16))  joy1 |= 0x40;
-      if (JoyState & (JST_RIGHT<<16)) joy1 |= 0x10;
+      if (JoyState)
+      {
+          // Player 1
+          if (JoyState & JST_UP)     joy1 |= 0x02;
+          if (JoyState & JST_DOWN)   joy1 |= 0x08;
+          if (JoyState & JST_LEFT)   joy1 |= 0x04;
+          if (JoyState & JST_RIGHT)  joy1 |= 0x01;      
+
+          // Player 2
+          if (JoyState & (JST_UP<<16))    joy1 |= 0x20;
+          if (JoyState & (JST_DOWN<<16))  joy1 |= 0x80;
+          if (JoyState & (JST_LEFT<<16))  joy1 |= 0x40;
+          if (JoyState & (JST_RIGHT<<16)) joy1 |= 0x10;
+      }
         
       return (joy1);
   }
@@ -293,7 +305,6 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
     }
     else if (Port < 0x30) sn76496W(Value, &sncol);
 }
-
 
 // ---------------------------------------------------------
 // The Sord M5 has Z80-CTC vars that need to be reset.

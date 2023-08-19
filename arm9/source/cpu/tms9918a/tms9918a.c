@@ -775,9 +775,13 @@ byte Loop9918(void)
       /* Generate IRQ when enabled and when VBlank flag goes up */
       bIRQ = TMS9918_VBlankON && !(VDPStatus&TMS9918_STAT_VBLANK);
       if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
-      if (memotech_mode)
+      else if (memotech_mode)
       {
           if ((CTC[CTC_CHAN0].control & CTC_INT_ENABLE) == 0x00) bIRQ = 0;  // For Memotech MTX: if IE is disabled for CTC channel 0, do not generate interrupt.
+      }
+      else if (sordm5_mode)
+      {
+          if ((CTC[CTC_CHAN3].control & CTC_INT_ENABLE) == 0x00) bIRQ = 0;  // For Sord M5: if IE is disabled for CTC channel 3, do not generate interrupt.
       }
 
       /* Set VBlank status flag */
@@ -889,9 +893,13 @@ void Reset9918(void)
     if (msx_mode || adam_mode || svi_mode) vdp_16k_mode_only = 1;
     else vdp_16k_mode_only = 0;
     
-    if (msx_mode || svi_mode || sordm5_mode || memotech_mode || sg1000_mode)
+    if (msx_mode || svi_mode || sg1000_mode)
     {
-        vdp_int_source = INT_RST38;
+        vdp_int_source = INT_RST38; 
+    }
+    else if (sordm5_mode || memotech_mode)
+    {
+        vdp_int_source = INT_NONE;  // Both of these machines use the CTC for VDP interrupts and those will happen with CTC writes (ctc.c)
     }
     else if (einstein_mode)
     {

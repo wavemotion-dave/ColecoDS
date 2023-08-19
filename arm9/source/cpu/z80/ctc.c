@@ -117,14 +117,15 @@ void CTC_Timer(u32 cpu_cycles)
     else    // Sord M5 mode
     {
         // ---------------------------------------------------------------------------------------------
-        // CTC Channel 1 is always the sound generator - it's the only one we have to contend with.
-        // Originally we were handling channels 0, 1 and 2 but there was never any program usage of
-        // channels 0 and 2 which were mainly for Serial IO for cassette drives, etc. which are not
-        // supchaned. Channel 3 is the VDP interrupt. So we save time/effort and only deal with chan1.
+        // CTC Channel 1 is always the sound generator - it's the main one we have to contend with.
+        // Channel 3 is the VDP interrupt.
+        // Channel 0 and 2 are used for Serial IO. It's possible they can be repurposed for general
+        // use timers but I've not seen any game that uses them. Although channel 0 and 2 are
+        // likely never re-purposed for general use timing, we check them to be safe. 
         // --------------------------------------------------------------------------------------------
         if (ctc_process_m5)
         {
-            for (u8 chan = CTC_CHAN1; chan <= CTC_CHAN1; chan++)
+            for (u8 chan = CTC_CHAN0; chan <= CTC_CHAN2; chan++)
             {
                 if (CTC[chan].running)
                 {

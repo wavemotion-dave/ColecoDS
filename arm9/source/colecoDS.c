@@ -110,7 +110,8 @@ u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K 
 // switches between gaming systems.
 // --------------------------------------------------------------------------
 u8 ColecoBios[0x2000]     = {0};  // We keep the Coleco  8K BIOS around to swap in/out
-u8 SordM5Bios[0x2000]     = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
+u8 SordM5BiosJP[0x2000]   = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
+u8 SordM5BiosEU[0x2000]   = {0};  // We keep the Sord M5 8K BIOS around to swap in/out
 u8 PV2000Bios[0x4000]     = {0};  // We keep the Casio PV-2000 16K BIOS around to swap in/out
 u8 AdamEOS[0x2000]        = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
 u8 AdamWRITER[0x8000]     = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
@@ -726,7 +727,10 @@ void ResetColecovision(void)
   else if (sordm5_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(RAM_Memory,SordM5Bios,0x2000);     // Restore Sord M5 BIOS
+      if (myConfig.isPAL)
+        memcpy(RAM_Memory,SordM5BiosEU,0x2000); // Restore Sord M5 BIOS - PAL from Europe
+      else
+        memcpy(RAM_Memory,SordM5BiosJP,0x2000); // Restore Sord M5 BIOS - NTSC from Japan
   }
   else if (memotech_mode)
   {
@@ -962,6 +966,12 @@ void DisplayStatusLine(bool bForce)
             last_sordm5_mode = sordm5_mode;
             DSPrint(23,0,6, "SORD M5");
         }
+        if (last_pal_mode != myConfig.isPAL && !myGlobalConfig.showFPS)
+        {
+            last_pal_mode = myConfig.isPAL;
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
+        }
+        
     }
     else if (memotech_mode)
     {
@@ -3323,7 +3333,10 @@ void colecoDSInitCPU(void)
   // -----------------------------------------------------
   if (sordm5_mode)
   {
-      memcpy(RAM_Memory,SordM5Bios,0x2000);
+      if (myConfig.isPAL)
+        memcpy(RAM_Memory,SordM5BiosEU,0x2000);
+      else
+        memcpy(RAM_Memory,SordM5BiosJP,0x2000);
   }
   else if (pv2000_mode)
   {
@@ -3407,10 +3420,24 @@ void LoadBIOSFiles(void)
     if (fp != NULL)
     {
         bSordBiosFound = true;
-        fread(SordM5Bios, 0x2000, 1, fp);
+        fread(SordM5BiosJP, 0x2000, 1, fp);
         fclose(fp);
     }
 
+    fp = fopen("sordm5p.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/sordm5p.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/sordm5p.rom", "rb");
+    if (fp != NULL)
+    {
+        bSordBiosFound = true;
+        fread(SordM5BiosEU, 0x2000, 1, fp);
+        fclose(fp);
+    }
+    else 
+    {
+        memcpy(SordM5BiosEU, SordM5BiosJP, 0x2000); // Otherwise the JP bios will have to do for both
+    }
+    
     // -----------------------------------------------------------
     // Try to load the Casio PV-2000 ROM BIOS
     // -----------------------------------------------------------
