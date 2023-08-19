@@ -1219,10 +1219,27 @@ ITCM_CODE u32 LoopZ80()
               {
                   CTC_Timer(cycles_to_process);    
               }
-              if (einstein_mode && (CPU.IRequest == INT_NONE))  // If the keyboard is generating an interrupt...
-              {
-                  einstein_handle_interrupts();
-                  if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+              if (CPU.IRequest == INT_NONE)
+              {              
+                  if (einstein_mode)  // For Einstein, check if the keyboard is generating an interrupt...
+                  {
+                      einstein_handle_interrupts();
+                      if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+                  }
+                  else if (sordm5_mode)  // For Sord M5, check if the keyboard is generating an interrupt...
+                  {
+                      static u8 last_m5_kbd=0; 
+                      static u32 last_m5_joy=0;
+                      if (ctc_process_m5)
+                      {
+                          if (kbd_key || JoyState) 
+                          {
+                              if ((kbd_key != last_m5_kbd) || (JoyState != last_m5_joy)) CPU.IRequest = vdp_int_source; // Sord M5 cascades interupts for keyboard onto the VDP
+                          }
+                          last_m5_kbd = kbd_key;
+                          last_m5_joy = JoyState;
+                      }
+                  }
               }
           }
 

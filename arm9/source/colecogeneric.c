@@ -1633,7 +1633,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x31ff229b)                 myConfig.isPAL   = 0;   // Memotech Hustle Chummy is an NTSC conversion
     if (file_crc == 0x025e77dc)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
     if (file_crc == 0x95e71c67)                 myConfig.isPAL   = 0;   // Memotech OldMac is an NTSC conversion
-    if (file_crc == 0xc10a6e96)                 myConfig.isPAL   = 1;   // Sord M5 Chess is PAL
+    if (file_crc == 0xc10a6e96)                 myConfig.isPAL   = 1;   // Sord M5 Master Chess is PAL
+    if (file_crc == 0xca2cd257)                 myConfig.isPAL   = 1;   // Sord M5 Reversi is PAL
 
     if (file_crc == 0xdddd1396)                 myConfig.cvEESize = C24XX_256B; // Black Onyx is 256 bytes... Boxxle is 32K. Other EE are unknown...
     
