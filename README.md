@@ -360,6 +360,12 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.5: ??-???-2023 by wavemotion-dave
+* Added Sord M5 keyboard graphic and improved Sord M5 keyboard handling.
+* Fixed Sord M5 keyboard interrupts so that games like Jumping Jack and Drops play.
+* Added ability to switch Sord M5 BIOS from sordm5.rom to sordm5p.rom when playing PAL games.
+* Added ability to disable the key click when using a game/program that already provides key feedback.
+
 V8.4: 15-Aug-2023 by wavemotion-dave
 * Added SVI keyboard graphic and improved SVI keyboard handling.
 * Added Sega SC-3000 keyboard graphic and improved SC-3000 keyboard handling.

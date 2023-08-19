@@ -3022,6 +3022,12 @@ void colecoDS_main(void)
       // Accumulate all bits above into the Joystick State var...
       // ---------------------------------------------------------
       JoyState = ucUN | ucDEUX;
+        
+      // If we are Sord M5 we need to check if this generates a keyboard interrupt
+      if (sordm5_mode)
+      {
+          sordm5_check_keyboard_interrupt();
+      }
 
       // --------------------------------------------------
       // Handle Auto-Fire if enabled in configuration...

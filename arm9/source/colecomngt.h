@@ -177,6 +177,7 @@ extern void einstein_handle_interrupts(void);
 extern void einstein_load_com_file(void);
 extern void einstien_restore_bios(void);
 extern void memotech_launch_run_file(void);
+extern void sordm5_check_keyboard_interrupt(void);
 
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 

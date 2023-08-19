@@ -307,6 +307,24 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
 }
 
 // ---------------------------------------------------------
+// The Sord M5 generates interrupts on key press. 
+// ---------------------------------------------------------
+void sordm5_check_keyboard_interrupt(void)
+{
+    static u8 last_m5_kbd=0; 
+    static u32 last_m5_joy=0;
+    if (ctc_process_m5)
+    {
+      if (kbd_key || JoyState) 
+      {
+          if ((kbd_key != last_m5_kbd) || (JoyState != last_m5_joy)) keyboard_interrupt = vdp_int_source; // Sord M5 cascades interupts for keyboard onto the VDP
+      }
+      last_m5_kbd = kbd_key;
+      last_m5_joy = JoyState;
+    }
+}
+
+// ---------------------------------------------------------
 // The Sord M5 has Z80-CTC vars that need to be reset.
 // ---------------------------------------------------------
 void sordm5_reset(void)
@@ -316,6 +334,7 @@ void sordm5_reset(void)
         // Reset the Z80-CTC stuff...
         CTC_Init(CTC_CHAN3);                // CTC channel 3 is the VDP interrupt
         vdp_int_source = INT_NONE;          // No IRQ set to start (part of CTC writes)
+        keyboard_interrupt = INT_NONE;      // No keyboard int to start
     }
 }
 
