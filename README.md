@@ -360,7 +360,7 @@ would personally try them:
 
 Versions :
 -----------------------
-V8.5: ??-???-2023 by wavemotion-dave
+V8.5: 20-Aug-2023 by wavemotion-dave
 * Added Sord M5 keyboard graphic and improved Sord M5 keyboard handling.
 * Fixed Sord M5 keyboard interrupts so that games like Jumping Jack and Drops play.
 * Added ability to switch Sord M5 BIOS from sordm5.rom to sordm5p.rom when playing PAL games.
