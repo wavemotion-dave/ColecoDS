@@ -1,0 +1,1 @@
+spyhunter.o: spyhunter.s

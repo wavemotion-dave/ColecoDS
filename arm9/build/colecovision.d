@@ -1,0 +1,1 @@
+colecovision.o: colecovision.s
