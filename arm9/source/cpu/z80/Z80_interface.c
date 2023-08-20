@@ -98,11 +98,11 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 
 // -----------------------------------------------------------------------
 // Zemina 8K mapper:
-//Page (8kB)	Switching address	Initial segment
-//4000h~5FFFh (mirror: C000h~DFFFh)	4000h (mirrors: 4001h~5FFFh)	0
-//6000h~7FFFh (mirror: E000h~FFFFh)	6000h (mirrors: 6001h~7FFFh)	1
-//8000h~9FFFh (mirror: 0000h~1FFFh)	8000h (mirrors: 8001h~9FFFh)	2
-//A000h~BFFFh (mirror: 2000h~3FFFh)	A000h (mirrors: A001h~BFFFh)	3
+//Page (8kB)    Switching address   Initial segment
+//4000h~5FFFh (mirror: C000h~DFFFh) 4000h (mirrors: 4001h~5FFFh)    0
+//6000h~7FFFh (mirror: E000h~FFFFh) 6000h (mirrors: 6001h~7FFFh)    1
+//8000h~9FFFh (mirror: 0000h~1FFFh) 8000h (mirrors: 8001h~9FFFh)    2
+//A000h~BFFFh (mirror: 2000h~3FFFh) A000h (mirrors: A001h~BFFFh)    3
 // -----------------------------------------------------------------------
 void HandleZemina8K(u32* src, u8 block, u16 address)
 {
@@ -150,8 +150,8 @@ void HandleZemina8K(u32* src, u8 block, u16 address)
 
 // -------------------------------------------------------------------------
 // The ZENMIA 16K Mapper:
-// 4000h~7FFFh 	via writes to 4000h-7FFF
-// 8000h~BFFFh 	via writes to 8000h-BFFF
+// 4000h~7FFFh  via writes to 4000h-7FFF
+// 8000h~BFFFh  via writes to 8000h-BFFF
 // -------------------------------------------------------------------------
 void HandleZemina16K(u32* src, u8 block, u16 address)
 {
@@ -202,10 +202,10 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
 {
     // --------------------------------------------------------
     // Konami 8K mapper with SCC 
-    //	Bank 1: 4000h - 5FFFh - mapped via writes to 5000h
-    //	Bank 2: 6000h - 7FFFh - mapped via writes to 7000h
-    //	Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
-    //	Bank 4: A000h - BFFFh - mapped via writes to B000h
+    //  Bank 1: 4000h - 5FFFh - mapped via writes to 5000h
+    //  Bank 2: 6000h - 7FFFh - mapped via writes to 7000h
+    //  Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
+    //  Bank 4: A000h - BFFFh - mapped via writes to B000h
     // --------------------------------------------------------
     if (bROMInSlot[1] && (address == 0x5000))
     {
@@ -254,8 +254,8 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
 
 // -------------------------------------------------------------------------
 // The ASCII 16K Mapper:
-// 4000h~7FFFh 	via writes to 6000h
-// 8000h~BFFFh 	via writes to 7000h or 77FFh
+// 4000h~7FFFh  via writes to 6000h
+// 8000h~BFFFh  via writes to 7000h or 77FFh
 // -------------------------------------------------------------------------
 void HandleAscii16K(u32* src, u8 block, u16 address)
 {
@@ -392,6 +392,21 @@ void cpu_writemem16 (u8 value,u16 address)
     // -------------------------------------------------------------
     else if (machine_mode & MODE_SG_1000)
     {
+        // -------------------------------------------------------
+        // A few SG-1000 games use the SMSmapper. 
+        // Most notably Loretta no Shouzou: Sherlock Holmes and 
+        // the SG-1000 port of Prince of Persia.
+        // $fffd 0 ($0000-$3fff)
+        // $fffe 1 ($4000-$7fff)
+        // $ffff 2 ($8000-$bfff)
+        // -------------------------------------------------------
+        if (sg1000_sms_mapper && (address >= 0xFFFD))
+        {
+            if      (address == 0xFFFD) memcpy(RAM_Memory+0x0000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
+            else if (address == 0xFFFE) memcpy(RAM_Memory+0x4000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
+            else if (address == 0xFFFF) memcpy(RAM_Memory+0x8000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
+        }
+        
         // Allow normal SG-1000, SC-3000 writes, plus allow for 8K RAM Expanders...
         if ((address >= 0x8000) || (address >= 0x2000 && address < 0x4000))
         {
@@ -491,9 +506,9 @@ void cpu_writemem16 (u8 value,u16 address)
                 // ---------------------------------------------------------------------------------
                 // The Konami 8K Mapper without SCC:
                 // 4000h-5FFFh - fixed ROM area (not swappable)
-                // 6000h~7FFFh (mirror: E000h~FFFFh)	6000h (mirrors: 6001h~7FFFh)	1
-                // 8000h~9FFFh (mirror: 0000h~1FFFh)	8000h (mirrors: 8001h~9FFFh)	Random
-                // A000h~BFFFh (mirror: 2000h~3FFFh)	A000h (mirrors: A001h~BFFFh)	Random
+                // 6000h~7FFFh (mirror: E000h~FFFFh)    6000h (mirrors: 6001h~7FFFh)    1
+                // 8000h~9FFFh (mirror: 0000h~1FFFh)    8000h (mirrors: 8001h~9FFFh)    Random
+                // A000h~BFFFh (mirror: 2000h~3FFFh)    A000h (mirrors: A001h~BFFFh)    Random
                 // ---------------------------------------------------------------------------------
                 if (mapperType == KON8)
                 {
@@ -542,10 +557,10 @@ void cpu_writemem16 (u8 value,u16 address)
                 {
                     // -------------------------------------------------------------------------
                     // The ASCII 8K Mapper:
-                    // 4000h~5FFFh (mirror: C000h~DFFFh)	6000h (mirrors: 6001h~67FFh)	0
-                    // 6000h~7FFFh (mirror: E000h~FFFFh)	6800h (mirrors: 6801h~68FFh)	0
-                    // 8000h~9FFFh (mirror: 0000h~1FFFh)	7000h (mirrors: 7001h~77FFh)	0
-                    // A000h~BFFFh (mirror: 2000h~3FFFh)	7800h (mirrors: 7801h~7FFFh)	0     
+                    // 4000h~5FFFh (mirror: C000h~DFFFh)    6000h (mirrors: 6001h~67FFh)    0
+                    // 6000h~7FFFh (mirror: E000h~FFFFh)    6800h (mirrors: 6801h~68FFh)    0
+                    // 8000h~9FFFh (mirror: 0000h~1FFFh)    7000h (mirrors: 7001h~77FFh)    0
+                    // A000h~BFFFh (mirror: 2000h~3FFFh)    7800h (mirrors: 7801h~7FFFh)    0     
                     // -------------------------------------------------------------------------
                     if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x6800))
                     {
@@ -702,7 +717,7 @@ u32 z80_rebasePC(u16 address) {
 }
 
 void z80_irq_callback(void) {
-	drz80.Z80_IRQ = 0x00;
+    drz80.Z80_IRQ = 0x00;
 }
 
 
@@ -788,16 +803,16 @@ void DrZ80_Reset(void) {
 
   drz80.Z80A = 0x00 <<24;
   drz80.Z80F = (1<<2); // set ZFlag 
-  drz80.Z80BC = 0x0000	<<16;
-  drz80.Z80DE = 0x0000	<<16;
-  drz80.Z80HL = 0x0000	<<16;
+  drz80.Z80BC = 0x0000  <<16;
+  drz80.Z80DE = 0x0000  <<16;
+  drz80.Z80HL = 0x0000  <<16;
   drz80.Z80A2 = 0x00 <<24;
   drz80.Z80F2 = 1<<2;  // set ZFlag 
   drz80.Z80BC2 = 0x0000 <<16;
   drz80.Z80DE2 = 0x0000 <<16;
   drz80.Z80HL2 = 0x0000 <<16;
-  drz80.Z80IX = 0xFFFF	<<16;
-  drz80.Z80IY = 0xFFFF	<<16;
+  drz80.Z80IX = 0xFFFF  <<16;
+  drz80.Z80IY = 0xFFFF  <<16;
   drz80.Z80I = 0x00;
   drz80.Z80IM = 0x00;
   drz80.Z80_IRQ = 0x00;

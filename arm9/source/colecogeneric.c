@@ -195,7 +195,6 @@ const u32 cv_no_mirror_games[] =
   0x7a93c6e5,   //	Beamrider.rom
   0xdf65fc87,   //	Blockade Runner.rom
   0x9b547ba8,   //	Boulder Dash.rom
-  0xb3044aa6,   //	Boulder Dash.sav
   0x829c967d,   //	Brain Strainers.rom
   0x00b37475,   //	Buck Rogers - Planet of Zoom.rom
   0x9e1fab59,   //	Bump 'n' Jump.rom
@@ -209,7 +208,6 @@ const u32 cv_no_mirror_games[] =
   0x5eeb81de,   //	Chuck Norris Superkicks.rom
   0x4e8b4c1d,   //	Congo Bongo.rom
   0x39d4215b,   //	Cosmic Avenger.rom
-  0xab146fc6,   //	Cosmic Avenger.sav
   0x7c2c7c41,   //	Cosmic Crisis.rom
   0x890682b3,   //	Dam Busters, The.rom
   0xbff86a98,   //	Dance Fantasy.rom
@@ -235,7 +233,6 @@ const u32 cv_no_mirror_games[] =
   0xd0110137,   //	Front Line.rom
   0x6a7a162a,   //	Galaxian.rom
   0xfdb75be6,   //	Gateway to Apshai.rom
-  0x66c725ec,   //	Gateway to Apshai.sav
   0xff46becc,   //	Gorf.rom
   0x29fea563,   //	Gust Buster.rom
   0x27cbf26d,   //	Gyruss.rom

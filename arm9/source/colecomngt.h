@@ -51,6 +51,7 @@ extern SN76496 sccABC;
 extern SN76496 sccDE;
 
 extern u8 msx_scc_enable;
+extern u8 sg1000_sms_mapper;
 
 extern u8 JoyMode;                      // Joystick / Paddle management
 extern u32 JoyState;                    // Joystick / Paddle management
