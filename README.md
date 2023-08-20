@@ -228,7 +228,7 @@ This emulator will support .cas files for the Spectravideo SV-328 (64K machine).
 
 Sega SG-1000 Compatibility :
 -----------------------
-This emulator supports .sg files as ROM loads up to 48K. Generally all SG-1000 games run with high compatibility (mostly thanks to the very simple architecture which is quite like the Colecovision).  The 8K Dahjee RAM expansion and additional RAM above 1K supported.
+This emulator supports .sg files as ROM loads up to 48K plus the few SMS mapper games up to 512K (Loretta no Shouzou: Sherlock Holmes and the SG-1000 port of Prince of Persia). Generally all SG-1000 games run with high compatibility (mostly thanks to the very simple architecture which is quite like the Colecovision).  The 8K Dahjee RAM expansion and additional RAM above 1K supported.
 
 Sega SC-3000 Compatibility :
 -----------------------
@@ -365,6 +365,7 @@ V8.5: ??-???-2023 by wavemotion-dave
 * Fixed Sord M5 keyboard interrupts so that games like Jumping Jack and Drops play.
 * Added ability to switch Sord M5 BIOS from sordm5.rom to sordm5p.rom when playing PAL games.
 * Added ability to disable the key click when using a game/program that already provides key feedback.
+* Added the SMS mapper for the few SG-1000 games that use them (Most notably Loretta no Shouzou: Sherlock Holmes and the SG-1000 port of Prince of Persia).
 
 V8.4: 15-Aug-2023 by wavemotion-dave
 * Added SVI keyboard graphic and improved SVI keyboard handling.
