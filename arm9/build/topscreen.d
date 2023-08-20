@@ -1,1 +1,0 @@
-topscreen.o: topscreen.s
