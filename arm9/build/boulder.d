@@ -1,1 +1,0 @@
-boulder.o: boulder.s

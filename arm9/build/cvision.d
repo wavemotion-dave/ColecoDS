@@ -1,1 +1,0 @@
-cvision.o: cvision.s

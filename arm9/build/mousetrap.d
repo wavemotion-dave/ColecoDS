@@ -1,1 +1,0 @@
-mousetrap.o: mousetrap.s
