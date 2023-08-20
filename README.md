@@ -241,6 +241,8 @@ This emulator supports .pv files as ROM only (not cassettes).  Rename any .bin f
 Sord M5 Compatibility :
 -----------------------
 This emulator supports .m5 files as ROM loads up to 20K. In addition, the EM-5 memory expansion is present giving an extra 32K of RAM beyond the stock 4K provided by the Sord M5. Generally all Sord M5 games run with high compatibility with just slight variations in sound emulation due to CTC chip emulation not being perfect.
+There are two known games (Master Chess and Reversi) that won't run with the default JP NTSC BIOS. For these, you need the EU PAL BIOS (CRC32 of 0x78848d39) - you can install this as sordm5p.rom in the same BIOS directory and when you choose PAL for an M5 game, it will try to use the alternate ROM.
+
 
 Hanimex Pencil II Compatibility :
 -----------------------
