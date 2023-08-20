@@ -1,1 +1,0 @@
-quest.o: quest.s
