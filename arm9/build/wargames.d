@@ -1,0 +1,1 @@
+wargames.o: wargames.s

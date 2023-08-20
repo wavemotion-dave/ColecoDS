@@ -1,0 +1,1 @@
+fixupmixup.o: fixupmixup.s
