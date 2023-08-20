@@ -98,6 +98,7 @@ void scan_keyboard(void)
               if (kbd_key == ' ')           myKeyData |= 0x40;
               if (kbd_key == KBD_KEY_ESC)   myKeyData |= 0x80;
           }
+          
           if (!(keyboard_w & 0x02))
           {
               if ((JoyState & JST_FIRER))   myKeyData |= 0x20;  // Same as DOWN
@@ -149,6 +150,7 @@ void scan_keyboard(void)
               if (kbd_key == '1')           myKeyData |= 0x40;
               if (kbd_key == KBD_KEY_F3)    myKeyData |= 0x80;
           }
+          
           if (!(keyboard_w & 0x20))
           {
               if (kbd_key == 'U')           myKeyData |= 0x01;
@@ -160,6 +162,7 @@ void scan_keyboard(void)
               if (kbd_key == 'Q')           myKeyData |= 0x40;
               if (kbd_key == KBD_KEY_F2)    myKeyData |= 0x80;
           }
+          
           if (!(keyboard_w & 0x40))
           {
               if (kbd_key == 'J')           myKeyData |= 0x01;
@@ -171,6 +174,7 @@ void scan_keyboard(void)
               if (kbd_key == 'A')           myKeyData |= 0x40;
               if (kbd_key == KBD_KEY_F1)    myKeyData |= 0x80;
           }
+          
           if (!(keyboard_w & 0x80))
           {
               if (kbd_key == 'M')           myKeyData |= 0x01;
@@ -309,6 +313,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
               if (JoyState & JST_RIGHT) adc_port = 0xFF;
               if (JoyState & JST_LEFT)  adc_port = 0x00;
           }
+          
           if ((adc_mux & 5) == 5) 
           {
               adc_port = 0x7F;
@@ -367,6 +372,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
   }
   else
   {
+      //zzz
   }
     
   // No such port

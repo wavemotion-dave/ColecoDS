@@ -32,7 +32,7 @@
 // ------------------------------------------------
 // Adam RAM is 128K (64K Intrinsic, 64K Expanded)
 // ------------------------------------------------
-u8 adam_128k_mode     = 0;
+u8 adam_128k_mode      = 0;
 u8 sg1000_double_reset = false;
 
 extern u8 msx_scc_enable;
@@ -65,6 +65,8 @@ u8 Port_PPI_B __attribute__((section(".dtcm"))) = 0x00;
 u8 Port_PPI_C __attribute__((section(".dtcm"))) = 0x00;
 
 u8 bIsComplicatedRAM __attribute__((section(".dtcm"))) = 0;   // Set to 1 if we have hotspots or other RAM needs
+
+u8 sg1000_sms_mapper __attribute__((section(".dtcm"))) = 0;   // Set to 1 if this is an SG-1000 game needing the SMS mapper
 
 char lastAdamDataPath[256];
 
@@ -622,11 +624,27 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             strcpy(lastAdamDataPath, path);
             creativision_loadrom(romSize);
         }
+        else if (sg1000_mode)
+        {
+            sg1000_sms_mapper = 0;
+            if (romSize <= (48*1024))
+            {
+                memcpy(ptr, ROM_Memory, romSize);     // Copy up to 48K flat into our memory map...
+            }
+            else // Assume this is one of the rare SMS memory mapper SG-1000 games unless it's a Survivors Cart
+            {
+                memcpy(ptr, ROM_Memory, 48*1024);     // Copy exactly 48K flat into our memory map... larger than this is the SMS mapper
+                if      (romSize <= 128*1024) sg1000_sms_mapper = 0x07;   // Up to 128K
+                else if (romSize <= 256*1024) sg1000_sms_mapper = 0x0F;   // Up to 256K
+                else if (romSize <= 512*1024) sg1000_sms_mapper = 0x1F;   // Up to 512K
+                else                          sg1000_sms_mapper = 0x00;   // It's probably one of the Multi/Mega Survivors Carts. No mapper.
+            }
+        }
         else
         // ----------------------------------------------------------------------
         // Do we fit within the standard 32K Colecovision Cart ROM memory space?
         // ----------------------------------------------------------------------
-        if (romSize <= (((sg1000_mode) ? 48:32)*1024)) // Allow SG ROMs to be up to 48K, otherwise 32K limit
+        if (romSize <= (32*1024)) // Allow up to 32K limit on Coleco Roms
         {
             memcpy(ptr, ROM_Memory, nmemb);
         }
