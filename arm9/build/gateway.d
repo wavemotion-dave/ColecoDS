@@ -1,1 +1,0 @@
-gateway.o: gateway.s
