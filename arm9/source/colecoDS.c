@@ -905,6 +905,7 @@ void ShowDebugZ80(void)
     siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
     siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
 #else
+    extern u32 halt_counter;
     idx = 1;
     siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); DSPrint(5,idx++,7, tmp);
     siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); DSPrint(5,idx++,7, tmp);
@@ -912,6 +913,7 @@ void ShowDebugZ80(void)
     siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); DSPrint(5,idx++,7, tmp);
     siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); DSPrint(5,idx++,7, tmp);
     siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); DSPrint(5,idx++,7, tmp);
+    siprintf(tmp, "HC %-12lu %08lX", halt_counter, halt_counter); DSPrint(5,idx++,7, tmp);
     
     for (int chan=0; chan<=3; chan++)
     {

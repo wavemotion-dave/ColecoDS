@@ -127,6 +127,7 @@ extern u8 BufferedKeys[32];
 extern u8 BufferedKeysWriteIdx;
 extern u8 BufferedKeysReadIdx;
 extern u16 keyboard_interrupt;
+extern u16 joystick_interrupt;
 
 // --------------------------------------------------
 // Some CPU and VDP and SGM stuff that we need

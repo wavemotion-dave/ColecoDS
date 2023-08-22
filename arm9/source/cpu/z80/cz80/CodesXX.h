@@ -230,6 +230,7 @@ case OUTA: I=OpZ80(CPU.PC.W++);OutZ80(I|(CPU.AF.W&0xFF00),CPU.AF.B.h);break;
 case INA:  I=OpZ80(CPU.PC.W++);CPU.AF.B.h=InZ80(I|(CPU.AF.W&0xFF00));break;
 
 case HALT:
+  halt_counter++;
   CPU.PC.W--;
   CPU.IFF|=IFF_HALT;
   CPU.IBackup=0;

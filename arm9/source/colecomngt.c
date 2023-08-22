@@ -1245,6 +1245,7 @@ ITCM_CODE u32 LoopZ80()
                   {
                       einstein_handle_interrupts();
                       if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+                      else if (joystick_interrupt) CPU.IRequest = joystick_interrupt;
                   }
                   else if (sordm5_mode)  // For Sord M5, check if the keyboard is generating an interrupt...
                   {
