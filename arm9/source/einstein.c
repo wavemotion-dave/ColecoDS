@@ -30,11 +30,16 @@
 u16 einstein_ram_start = 0x8000;
 u8 keyboard_w = 0x00;
 u8 key_int_mask = 0xFF;
+u8 joy_int_mask = 0xFF;
 u8 myKeyData = 0xFF;
 u8 adc_mux = 0x00;
 u16 keyboard_interrupt=0;
+u16 joystick_interrupt=0;
+
+extern u8 EinsteinBios[];
 
 #define KEYBOARD_VECTOR  0xF7
+#define JOYSTICK_VECTOR  0xFD
 
 void scan_keyboard(void)
 {
@@ -101,8 +106,6 @@ void scan_keyboard(void)
           
           if (!(keyboard_w & 0x02))
           {
-              if ((JoyState & JST_FIRER))   myKeyData |= 0x20;  // Same as DOWN
-
               if (kbd_key == 'I')           myKeyData |= 0x01;
               if (kbd_key == 'O')           myKeyData |= 0x02;
               if (kbd_key == 'P')           myKeyData |= 0x04;
@@ -127,8 +130,6 @@ void scan_keyboard(void)
 
           if (!(keyboard_w & 0x08))
           {
-              if ((JoyState&0x0F) == JST_PURPLE) myKeyData |= 0x40;  // Same as UP
-
               if (kbd_key == ',')           myKeyData |= 0x01;
               if (kbd_key == '.')           myKeyData |= 0x02;
               if (kbd_key == '/')           myKeyData |= 0x04;
@@ -197,7 +198,6 @@ void scan_keyboard(void)
 // --------------------------------------------------------------------------
 void einstien_restore_bios(void)
 {
-    extern u8 EinsteinBios[];
     
     memset(BIOS_Memory, 0xFF, 0x10000);
     memcpy(BIOS_Memory, EinsteinBios, 0x2000);
@@ -242,6 +242,74 @@ void einstein_swap_memory(void)
     }
 }
 
+u8 einstein_joystick_read(void)
+{
+  u8 adc_port = 0x7F;   // Center Position
+
+  if ((adc_mux & 0x02)) // Player 2 Joystick
+  {
+      if ((adc_mux & 5) == 4) 
+      {
+          adc_port = 0x7F;
+      }
+      if ((adc_mux & 5) == 5) 
+      {
+          adc_port = 0x7F;
+      }
+  }
+  else              // Player 1 Joystick
+  {
+      if (myConfig.dpad == DPAD_DIAGONALS)
+      {
+          if      (JoyState & JST_UP)    JoyState = (JST_UP    | JST_RIGHT);
+          else if (JoyState & JST_DOWN)  JoyState = (JST_DOWN  | JST_LEFT);
+          else if (JoyState & JST_LEFT)  JoyState = (JST_LEFT  | JST_UP);
+          else if (JoyState & JST_RIGHT) JoyState = (JST_RIGHT | JST_DOWN);
+      }
+
+      if ((adc_mux & 5) == 4) 
+      {
+          adc_port = 0x7F;
+          if (JoyState & JST_RIGHT) adc_port = 0xFF;
+          if (JoyState & JST_LEFT)  adc_port = 0x00;
+      }
+
+      if ((adc_mux & 5) == 5) 
+      {
+          adc_port = 0x7F;
+          if (JoyState & JST_UP)      adc_port = 0xFF;
+          if (JoyState & JST_DOWN)    adc_port = 0x00;
+          if ((JoyState&0xF) == JST_PURPLE) adc_port = 0xFF;
+          if ((JoyState&0xF) == JST_BLUE)   adc_port = 0x00;
+      }
+  }
+
+  return adc_port;    
+}
+
+u8 einstein_fire_read(void)
+{
+  u8 key_port = 0xFF;
+
+  // If either the keyboard or joystick interrupt is fired, reset it here...
+  if (keyboard_interrupt || joystick_interrupt)
+  {
+      CPU.IRequest=INT_NONE;
+      keyboard_interrupt = 0;
+      joystick_interrupt = 0;
+  }
+
+  // Fire buttons
+  if (JoyState & JST_FIREL) key_port &= ~0x01;  // P1 Button 1
+  if (JoyState & JST_FIRER) key_port &= ~0x02;  // P1 Button 2
+
+  if (key_graph) key_port &= ~0x20;  // GRAPH KEY
+  if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
+  if (key_shift) key_port &= ~0x80;  // SHIFT KEY
+
+  return key_port;
+}
+
 // ---------------------------------------------------------------------
 // The Einstein IO map is broken into chunks of 8 ports that are 
 // semi-related. The map looks like:
@@ -263,120 +331,65 @@ void einstein_swap_memory(void)
 // ---------------------------------------------------------------------
 unsigned char cpu_readport_einstein(register unsigned short Port) 
 {
-  // MTX ports are 8-bit
-  Port &= 0xFF; 
-
-  if (Port == 0x00 || Port == 0x01 || Port==0x04 || Port== 0x05) // Reset port
-  {
-      memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-  }
-  else if (Port == 0x24)
-  {
-      einstein_swap_memory();
-  }    
-  else if ((Port >= 0x18) && (Port <= 0x1B)) // Floppy Disk
-  {
-      return 0xFF;
-  }    
-  else if ((Port >= 0x30) && (Port <= 0x33)) // PIO
-  {
-      return 0xFF;
-  }    
-  else if ((Port >= 0x38) && (Port <= 0x3F))    // ADC
-  {
-      u8 adc_port = 0xFF;
-      
-      if (adc_mux & 0x02) // Player 2 Joystick
-      {
-          if ((adc_mux & 5) == 4) 
-          {
-              adc_port = 0x7F;
-          }
-          if ((adc_mux & 5) == 5) 
-          {
-              adc_port = 0x7F;
-          }
-      }
-      else              // Player 1 Joystick
-      {
-          if (myConfig.dpad == DPAD_DIAGONALS)
-          {
-              if      (JoyState & JST_UP)    JoyState = (JST_UP   | JST_RIGHT);
-              else if (JoyState & JST_DOWN)  JoyState = (JST_DOWN | JST_LEFT);
-              else if (JoyState & JST_LEFT)  JoyState = (JST_LEFT | JST_UP);
-              else if (JoyState & JST_RIGHT) JoyState = (JST_RIGHT | JST_DOWN);
-          }
-          
-          if ((adc_mux & 5) == 4) 
-          {
-              adc_port = 0x7F;
-              if (JoyState & JST_RIGHT) adc_port = 0xFF;
-              if (JoyState & JST_LEFT)  adc_port = 0x00;
-          }
-          
-          if ((adc_mux & 5) == 5) 
-          {
-              adc_port = 0x7F;
-              if (JoyState & JST_UP)    adc_port = 0xFF;
-              if (JoyState & JST_DOWN)  adc_port = 0x00;
-          }
-      }
-      
-      return adc_port;
-  }
-  else if (Port >= 0x28 && Port <= 0x2F)      // Z80-CTC Area
-  {
-      return CTC_Read(Port & 0x03);
-  }
-  else if ((Port == 0x08) || (Port == 0x09) || (Port == 0x0E) || (Port == 0x0F))  // VDP Area
-  {
-      if ((Port & 1)==0) return(RdData9918());
-      return(RdCtrl9918());
-  }
-  else if (Port == 0x02 || Port == 0x06)  // PSG Read... might be joypad data
-  {
-      // --------------
-      // Port A Read
-      // --------------
-      if (ay_reg_idx == 14)
-      {
-          return 0xFF;
-      }
-      // --------------
-      // Port B Read
-      // --------------
-      if (ay_reg_idx == 15)
-      {
-          scan_keyboard();
-          return myKeyData;
-      }            
-      return FakeAY_ReadData();
-  }        
-  else if ((Port == 0x20)) // Keyboard Read Port
-  {
-      u8 key_port = 0xFF;
-      
-      if (keyboard_interrupt)
-      {
-          CPU.IRequest=INT_NONE;
-          keyboard_interrupt = 0;
-      }
-      
-      if (JoyState & JST_FIREL) key_port &= ~0x01;
-      
-      if (key_graph) key_port &= ~0x20;  // CTRL KEY
-      if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
-      if (key_shift) key_port &= ~0x80;  // SHIFT KEY
-      
-      return key_port;
-  }
-  else
-  {
-      //zzz
-  }
+    // Einstein ports are 8-bit
+    Port &= 0xFF; 
     
-  // No such port
-  return(NORAM);
+    // ---------------------------------------------------------------
+    // Ports are broken up into blocks of 8 bytes selected by A3-A7
+    // ---------------------------------------------------------------
+    switch (Port & 0xF8) 
+    {
+        case 0x00:  // PSG Area
+            if (Port == 0x00 || Port == 0x01) memset(ay_reg, 0x00, 16);    // Clear the AY registers...
+            else
+            {
+                if (ay_reg_idx == 14) // Port A read is not connected
+                {
+                  return 0xFF;
+                }
+                else if (ay_reg_idx == 15) // Port B read is keyboard
+                {
+                  scan_keyboard();
+                  return myKeyData;
+                }            
+                return FakeAY_ReadData();
+            }
+            break;
+            
+        case 0x08:  // VDP Area
+            if ((Port & 1)==0) return(RdData9918());
+            return(RdCtrl9918());
+            break;
+            
+        case 0x10:  // PCI Area - Not implemented
+            return 0xFF;
+            break;
+            
+        case 0x18:  // FDC  Area - Not implemented
+            return 0x00;
+            break;
+            
+        case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
+            if      (Port == 0x20)  return einstein_fire_read();
+            else if (Port == 0x24)  {einstein_swap_memory(); return 0xFF;}
+            else if (Port == 0x25)  return joy_int_mask;
+            break;
+            
+        case 0x28:  // Z80-CTC Area
+            return CTC_Read(Port & 0x03);
+            break;
+            
+        case 0x30:  // PIO Area - Not implemented
+            return 0x00;
+            break;
+            
+        case 0x38:  // ADC Area
+            return einstein_joystick_read();
+            break;
+    }
+    
+    // No such port
+    return(NORAM);
 }
 
 
@@ -388,74 +401,55 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     // Einstien ports are 8-bit
     Port &= 0xFF;
     
-    if (Port == 0x00 || Port == 0x01 || Port==0x04 || Port== 0x05) // Reset port (with mirrors)
+    // ---------------------------------------------------------------
+    // Ports are broken up into blocks of 8 bytes selected by A3-A7
+    // ---------------------------------------------------------------
+    switch (Port & 0xF8) 
     {
-        memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-    }
-    else if (Port == 0x20)  // KEYBOARD INT MASK
-    {
-        key_int_mask = Value;   
-    }
-    else if (Port == 0x21)  // ADC INT MASK
-    {
-        //key_int_mask = Value;   
-    }
-    else if (Port == 0x25)  // JOYSTICK INT MASK
-    {
-        //key_int_mask = Value;   
-    }
-    else if (Port == 0x25)  // Drive Select
-    {
-        //if (Value & 1) einstein_ram_dirty();
-    }
-    else if (Port == 0x24)  // ROM vs RAM bank port
-    {
-        einstein_swap_memory();
-    }
-    else if ((Port >= 0x38) && (Port <= 0x3F))    // ADC
-    {
-        adc_mux = Value;
-    }    
-    else if ((Port >= 0x18) && (Port <= 0x1B)) // Floppy Disk
-    {
-    }    
-    // ----------------------------------------------------------------------
-    // Z80-CTC Area
-    // This is only a partial implementation of the CTC logic - just enough
-    // to handle the VDP and Sound Generation and very little else. This is
-    // NOT accurate emulation - but it's good enough to render the Einstien
-    // games as playable in this emulator.
-    // ----------------------------------------------------------------------
-    else if (Port >= 0x28 && Port <= 0x2F)
-    {
-        CTC_Write(Port & 0x03, Value);
-    }
-    else if ((Port == 0x08) || (Port == 0x09) || (Port == 0x0E) || (Port == 0x0F))  // VDP Area
-    {
-        if ((Port & 1) == 0) WrData9918(Value);
-        else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;
-    }
-    else if (Port == 0x02 || Port == 0x06) 
-    {
-        FakeAY_WriteIndex(Value & 0x0F);
-    }
-    else if (Port == 0x03 || Port == 0x07) 
-    {
-        FakeAY_WriteData(Value);
-        if (ay_reg_idx == 14) 
-        {
-            keyboard_w = Value;
-            scan_keyboard();
-        }
-    }
-    else if ((Port >= 0x10) && (Port <= 0x17))  // PCI
-    {
-    }
-    else if ((Port >= 0x30) && (Port <= 0x37))  // PIO
-    {
-    }
-    else
-    {
+        case 0x00:  // PSG Area
+            if (Port == 0x00 || Port == 0x01) memset(ay_reg, 0x00, 16);    // Clear the AY registers...
+            else if (Port & 1)
+            {
+                FakeAY_WriteData(Value);
+                if (ay_reg_idx == 14) 
+                {
+                    keyboard_w = Value;
+                    scan_keyboard();
+                }
+            }
+            else FakeAY_WriteIndex(Value & 0x0F);
+            break;
+            
+        case 0x08:  // VDP Area
+            if ((Port & 1) == 0) WrData9918(Value);
+            else if (WrCtrl9918(Value)) CPU.IRequest=INT_NONE;
+            break;
+            
+        case 0x10:  // PCI Area - Not implemented
+            break;
+            
+        case 0x18:  // FDC  Area - Not implemented
+            break;
+            
+        case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
+            if      (Port == 0x20)  key_int_mask = Value;   // KEYBOARD INT MASK
+            else if (Port == 0x21)  break;                  // ADC INT MASK
+            else if (Port == 0x22)  break;                  // ALPHA
+            else if (Port == 0x23)  break;                  // Drive Select
+            else if (Port == 0x24)  einstein_swap_memory(); // ROM vs RAM bank port
+            else if (Port == 0x25)  joy_int_mask = Value;   // JOYSTICK INT MASK
+            break;
+            
+        case 0x28:  // Z80-CTC Area
+            CTC_Write(Port & 0x03, Value);
+            break;
+            
+        case 0x30:  // PIO Area - Not implemented
+            break;
+            
+        case 0x38:  // ADC Area
+            adc_mux = Value;
+            break;
     }
 }
 
@@ -466,18 +460,70 @@ void einstein_handle_interrupts(void)
     
   if (++ein_key_dampen < 100) return;
   ein_key_dampen=0;
-  if ((CPU.IRequest == INT_NONE) && (keyboard_interrupt != KEYBOARD_VECTOR))
+    
+  if (CPU.IRequest == INT_NONE)
   {
-      if ((key_int_mask&1) == 0)
+      if (keyboard_interrupt != KEYBOARD_VECTOR)
       {
-        scan_keyboard();
-        if (myKeyData != 0xFF)  
-        {
-            keyboard_interrupt = KEYBOARD_VECTOR;
-        }
+          if ((key_int_mask&1) == 0)
+          {
+            scan_keyboard();
+            if (myKeyData != 0xFF)  
+            {
+                keyboard_interrupt = KEYBOARD_VECTOR;
+            }
+          }
+      }
+      
+      // If we haven't fired a keyboard ISR, check the joystick...
+      if (keyboard_interrupt != KEYBOARD_VECTOR)
+      {
+          if ((joy_int_mask&1) == 0)
+          {
+            if (JoyState & (JST_FIREL|JST_FIRER))
+            {
+                joystick_interrupt = JOYSTICK_VECTOR;
+            }
+          }
       }
   }
 }
+
+u8 com_load_filler[] = {
+  0xc3, 0x03, 0xfa, 0x00, 0x00, 0xc3, 0x00, 0xec,
+  0xc3, 0x22, 0xfc, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xd3, 0x24, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0x00, 0x20, 0x20, 0x20,
+  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+  0x00, 0x00, 0x00, 0x70, 0x00, 0x20, 0x20, 0x20,
+  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
+  0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
+  0x00, 0x00, 0x41, 0x58, 0x49, 0x4d, 0x41, 0x20,
+  0x20, 0x43, 0x4f, 0x4d, 0x00, 0x00, 0x00, 0x70,
+  0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00,
+  0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x00, 0x00,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5
+};
+
 
 void einstein_load_com_file(void)
 {
@@ -496,6 +542,7 @@ void einstein_load_com_file(void)
     MemoryMap[7] = RAM_Memory + 0xE000;
     
     // The Quickload will write the .COM file into memory at offset 0x100 and jump to it
+    memcpy(RAM_Memory+0x000, com_load_filler, 0x100);
     memcpy(RAM_Memory+0x100, ROM_Memory, tape_len);
     keyboard_interrupt=0;
     CPU.IRequest=INT_NONE;
@@ -503,6 +550,7 @@ void einstein_load_com_file(void)
     CPU.PC.W = 0x100;
     JumpZ80(CPU.PC.W);
 }
+
 
 // ---------------------------------------------------------
 // The Einstein has CTC plus some memory handling stuff

@@ -23,7 +23,7 @@ extern u8 kbd_key;
 
 extern Z80 CPU;
 
-extern u32 debug1, debug2, debug3;
+u32 halt_counter=0;
 
 
 /** INLINE ***************************************************/
@@ -55,7 +55,7 @@ extern void cpu_writeport16(unsigned short Port, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
 extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode;
-extern u16 vdp_int_source, keyboard_interrupt;
+extern u16 vdp_int_source, keyboard_interrupt, joystick_interrupt;
 INLINE byte OpZ80(word A)   { return*(MemoryMap[(A)>>13] + ((A)&0x1FFF));}
 #define WrZ80(A,V)          cpu_writemem16(V,A)
 #define OutZ80(P,V)         cpu_writeport16(P,V)
@@ -578,9 +578,9 @@ void IntZ80(Z80 *R,word Vector)
         {
             // Don't clear it... this will be cleared in RdCtrl9918()   
         }
-        else if (einstein_mode && (Vector == keyboard_interrupt))
+        else if (einstein_mode && ((Vector == keyboard_interrupt) || (Vector == joystick_interrupt)))
         {
-            // Don't clear it... will be cleared when program reads the keyboard in einstein.c IO
+            // Don't clear it... will be cleared when program reads the keyboard or Joystick in einstein.c
         }
         else
         {
