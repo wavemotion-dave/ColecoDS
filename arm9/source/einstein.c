@@ -89,14 +89,14 @@ void scan_keyboard(void)
       // -------------------------------------------------
       // Check every key that might have been pressed...
       // -------------------------------------------------
-      for (u8 i=0; i< (kbd_keys_pressed ? kbd_keys_pressed:1); i++) // Always one pass at least for joysticks...
+      for (u8 i=0; i< kbd_keys_pressed; i++)
       {
           kbd_key = kbd_keys[i];
           
           if (!(keyboard_w & 0x01))
           {
               if (kbd_key == KBD_KEY_STOP)  myKeyData |= 0x01;  // Break
-              if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x04;  // F0
+              if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x04; 
               if (kbd_key == KBD_KEY_F7)    myKeyData |= 0x08;
               if (kbd_key == KBD_KEY_CAPS)  myKeyData |= 0x10;
               if (kbd_key == KBD_KEY_RET)   myKeyData |= 0x20;
@@ -196,7 +196,7 @@ void scan_keyboard(void)
 // --------------------------------------------------------------------------
 // Move the Einstein BIOS back into default memory and point to it...
 // --------------------------------------------------------------------------
-void einstien_restore_bios(void)
+void einstein_restore_bios(void)
 {
     
     memset(BIOS_Memory, 0xFF, 0x10000);
@@ -251,8 +251,8 @@ u8 einstein_joystick_read(void)
       if ((adc_mux & 5) == 4) 
       {
           adc_port = 0x7F;
-      }
-      if ((adc_mux & 5) == 5) 
+      } 
+      else if ((adc_mux & 5) == 5) 
       {
           adc_port = 0x7F;
       }
@@ -273,8 +273,7 @@ u8 einstein_joystick_read(void)
           if (JoyState & JST_RIGHT) adc_port = 0xFF;
           if (JoyState & JST_LEFT)  adc_port = 0x00;
       }
-
-      if ((adc_mux & 5) == 5) 
+      else if ((adc_mux & 5) == 5) 
       {
           adc_port = 0x7F;
           if (JoyState & JST_UP)      adc_port = 0xFF;
@@ -340,8 +339,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
     switch (Port & 0xF8) 
     {
         case 0x00:  // PSG Area
-            if (Port == 0x00 || Port == 0x01) memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-            else
+            if (Port & 0x06)    // Is this port 2-6?
             {
                 if (ay_reg_idx == 14) // Port A read is not connected
                 {
@@ -354,6 +352,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
                 }            
                 return FakeAY_ReadData();
             }
+            else memset(ay_reg, 0x00, 16);    // Clear the AY registers... Port 0 or 1
             break;
             
         case 0x08:  // VDP Area
@@ -394,11 +393,11 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
 
 
 // ------------------------------------------------------------------------------------
-// Tatung Einstein IO Port Write - Need to handle SN sound, VDP and the Z80-CTC chip
+// Tatung Einstein IO Port Write - Need to handle AY sound, VDP and the Z80-CTC chip
 // ------------------------------------------------------------------------------------
 void cpu_writeport_einstein(register unsigned short Port,register unsigned char Value) 
 {
-    // Einstien ports are 8-bit
+    // Einstein ports are 8-bit
     Port &= 0xFF;
     
     // ---------------------------------------------------------------
@@ -407,17 +406,24 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
     switch (Port & 0xF8) 
     {
         case 0x00:  // PSG Area
-            if (Port == 0x00 || Port == 0x01) memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-            else if (Port & 1)
+            if (Port & 0x06)    // Is this port 2-6?
             {
-                FakeAY_WriteData(Value);
-                if (ay_reg_idx == 14) 
+                if (Port & 1)
                 {
-                    keyboard_w = Value;
-                    scan_keyboard();
+                    FakeAY_WriteData(Value);
+                    if (ay_reg_idx == 14) 
+                    {
+                        keyboard_w = Value;
+                        scan_keyboard();
+                    }
+                    else if (ay_reg_idx == 8)
+                    {
+                          extern u16 beeperFreq;
+                          if (!Value) beeperFreq++;
+                    }                   
                 }
-            }
-            else FakeAY_WriteIndex(Value & 0x0F);
+                else FakeAY_WriteIndex(Value & 0x0F);
+            } else memset(ay_reg, 0x00, 16);    // Clear the AY registers for port 0/1
             break;
             
         case 0x08:  // VDP Area
@@ -489,31 +495,33 @@ void einstein_handle_interrupts(void)
   }
 }
 
+// Filler for the first 256 bytes of memory borrowed from 
+// a dump using MAME debugger of ALIEN8.dsk.
 u8 com_load_filler[] = {
   0xc3, 0x03, 0xfa, 0x00, 0x00, 0xc3, 0x00, 0xec,
   0xc3, 0x22, 0xfc, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xd3, 0x24, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x79,
+  0xeb, 0xff, 0xeb, 0xc9, 0x00, 0x00, 0x00, 0x00,
+  0xc3, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0x00, 0x20, 0x20, 0x20,
   0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-  0x00, 0x00, 0x00, 0x70, 0x00, 0x20, 0x20, 0x20,
+  0x00, 0x00, 0x00, 0x64, 0x00, 0x20, 0x20, 0x20,
   0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
   0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
-  0x00, 0x00, 0x41, 0x58, 0x49, 0x4d, 0x41, 0x20,
-  0x20, 0x43, 0x4f, 0x4d, 0x00, 0x00, 0x00, 0x70,
+  0x00, 0x00, 0x4c, 0x49, 0x45, 0x4e, 0x38, 0x20,
+  0x20, 0x43, 0x4f, 0x4d, 0x00, 0x00, 0x00, 0x80,
   0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00,
-  0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x00, 0x00,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
+  0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00,
+  0x00, 0x41, 0x4c, 0x49, 0x45, 0x4e, 0x38, 0x20,
+  0x20, 0x43, 0x4f, 0x4d, 0x01, 0x00, 0x00, 0x64,
+  0x09, 0x00, 0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00,
+  0x0d, 0x00, 0x0e, 0x00, 0x0f, 0x00, 0x00, 0x00,
   0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
   0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
   0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
@@ -570,10 +578,29 @@ void einstein_reset(void)
         
         memset(ay_reg, 0x00, 16);    // Clear the AY registers...
         
-        einstien_restore_bios();
+        einstein_restore_bios();
     }
 }
 
+
+/*********************************************************************************
+ * A few ZX Speccy ports utilize the MSX beeper to "simulate" the sound...
+ ********************************************************************************/
+extern u16 beeperFreq;
+extern u8 msx_beeper_process;
+extern u8 beeperWasOn;
+void einstein_HandleBeeper(void)
+{
+    if (++msx_beeper_process & 1)
+    {
+      if (beeperFreq > 0)
+      {
+          BeeperON(30 * beeperFreq); // Frequency in Hz
+          beeperFreq = 0;            // Gather new Beeper freq
+          beeperWasOn=1;
+      } else {if (beeperWasOn) {BeeperOFF(); beeperWasOn=0;}}
+    }
+}
 
 // End of file
 

@@ -763,7 +763,7 @@ void ResetColecovision(void)
   else if (einstein_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      einstien_restore_bios();                  // Put the BIOS back in place and point to it
+      einstein_restore_bios();                  // Put the BIOS back in place and point to it
   }
   else if (creativision_mode)
   {
@@ -3372,7 +3372,7 @@ void colecoDSInitCPU(void)
   }
   else if (einstein_mode)
   {
-      einstien_restore_bios();
+      einstein_restore_bios();
   }
   else if (creativision_mode)
   {
