@@ -733,12 +733,16 @@ void colecoDSFindFiles(void)
       
     if(pent->d_type == DT_DIR) 
     {
-      if (!( (szFile[0] == '.') && (strlen(szFile) == 1))) 
+      if (!((szFile[0] == '.') && (strlen(szFile) == 1))) 
       {
-        strcpy(gpFic[uNbFile].szName,szFile);
-        gpFic[uNbFile].uType = DIRECT;
-        uNbFile++;
-        countCV++;
+        // Do not include the [sav] directory
+        if (strcasecmp(szFile, "sav") != 0)
+        {
+            strcpy(gpFic[uNbFile].szName,szFile);
+            gpFic[uNbFile].uType = DIRECT;
+            uNbFile++;
+            countCV++;
+        }
       }
     }
     else {
@@ -1601,7 +1605,10 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x111fc33b)                 myConfig.msxBeeper = 1;     // MSX Avenger uses beeper    
     if (file_crc == 0x690f9715)                 myConfig.msxBeeper = 1;     // MSX Batman (the movie) uses beeper
     if (file_crc == 0x3571f5d4)                 myConfig.msxBeeper = 1;     // MSX Master of the Universe uses beeper
-    if (file_crc == 0x2142bd10)                 myConfig.msxBeeper = 1;     // MSX Future Knight
+    if (file_crc == 0x2142bd10)                 myConfig.msxBeeper = 1;     // MSX Future Knight uses beeper
+    
+    if (file_crc == 0x094db111)                 myConfig.msxBeeper = 1;     // Einstein Druid uses beeper
+    if (file_crc == 0x94073b5c)                 myConfig.msxBeeper = 1;     // Einstein Alien 8 uses beeper
 
     // ------------------------------------------------------
     // A few games really want diagonal inputs enabled...
@@ -1740,7 +1747,7 @@ const struct options_t Option_Table[3][20] =
     // Page 2
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
-        {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
+        {"MSX/EIN BEEPER", {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
         {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},

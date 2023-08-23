@@ -1283,7 +1283,8 @@ ITCM_CODE u32 LoopZ80()
       // ------------------------------------------------------------------------------------
       if (myConfig.msxBeeper)
       {
-          MSX_HandleBeeper();
+          if (msx_mode) MSX_HandleBeeper();
+          else if (einstein_mode) einstein_HandleBeeper();
       }
       return 0;
   }

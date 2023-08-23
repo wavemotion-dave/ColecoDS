@@ -176,9 +176,10 @@ extern void pv2000_reset(void);
 extern void msx_reset(void);
 extern void msx_restore_bios(void);
 extern void MSX_HandleBeeper(void);
+extern void einstein_HandleBeeper(void);
 extern void einstein_handle_interrupts(void);
 extern void einstein_load_com_file(void);
-extern void einstien_restore_bios(void);
+extern void einstein_restore_bios(void);
 extern void memotech_launch_run_file(void);
 extern void sordm5_check_keyboard_interrupt(void);
 
