@@ -27,14 +27,14 @@
 
 #define NORAM 0xFF
 
-u16 einstein_ram_start = 0x8000;
+u16 einstein_ram_start __attribute__((section(".dtcm"))) = 0x8000;
+u16 keyboard_interrupt __attribute__((section(".dtcm"))) = 0;
+u16 joystick_interrupt __attribute__((section(".dtcm"))) = 0;
 u8 keyboard_w = 0x00;
 u8 key_int_mask = 0xFF;
 u8 joy_int_mask = 0xFF;
 u8 myKeyData = 0xFF;
 u8 adc_mux = 0x00;
-u16 keyboard_interrupt=0;
-u16 joystick_interrupt=0;
 
 extern u8 EinsteinBios[];
 
@@ -89,7 +89,7 @@ void scan_keyboard(void)
       // -------------------------------------------------
       // Check every key that might have been pressed...
       // -------------------------------------------------
-      for (u8 i=0; i< kbd_keys_pressed; i++)
+      for (u8 i=0; i < kbd_keys_pressed; i++)
       {
           kbd_key = kbd_keys[i];
           
@@ -364,7 +364,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
             return 0xFF;
             break;
             
-        case 0x18:  // FDC  Area - Not implemented
+        case 0x18:  // FDC Area - Not implemented
             return 0x00;
             break;
             
@@ -434,13 +434,13 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
         case 0x10:  // PCI Area - Not implemented
             break;
             
-        case 0x18:  // FDC  Area - Not implemented
+        case 0x18:  // FDC Area - Not implemented
             break;
             
         case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
             if      (Port == 0x20)  key_int_mask = Value;   // KEYBOARD INT MASK
-            else if (Port == 0x21)  break;                  // ADC INT MASK
-            else if (Port == 0x22)  break;                  // ALPHA
+            else if (Port == 0x21)  break;                  // ADC INT MASK (no game seems to use this so we don't implement)
+            else if (Port == 0x22)  break;                  // ALPHA LOCK
             else if (Port == 0x23)  break;                  // Drive Select
             else if (Port == 0x24)  einstein_swap_memory(); // ROM vs RAM bank port
             else if (Port == 0x25)  joy_int_mask = Value;   // JOYSTICK INT MASK
@@ -460,6 +460,9 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
 }
 
 
+// --------------------------------------------------------------------
+// For the einstein, we handle keyboard and joystick fire interrupts.
+// --------------------------------------------------------------------
 void einstein_handle_interrupts(void)
 {
   static u8 ein_key_dampen=0;
@@ -471,7 +474,7 @@ void einstein_handle_interrupts(void)
   {
       if (keyboard_interrupt != KEYBOARD_VECTOR)
       {
-          if ((key_int_mask&1) == 0)
+          if ((key_int_mask&1) == 0) // Bit 0 clear means enable interrupt handling
           {
             scan_keyboard();
             if (myKeyData != 0xFF)  
@@ -484,7 +487,7 @@ void einstein_handle_interrupts(void)
       // If we haven't fired a keyboard ISR, check the joystick...
       if (keyboard_interrupt != KEYBOARD_VECTOR)
       {
-          if ((joy_int_mask&1) == 0)
+          if ((joy_int_mask&1) == 0) // Bit 0 clear means enable interrupt handling
           {
             if (JoyState & (JST_FIREL|JST_FIRER))
             {
@@ -533,6 +536,11 @@ u8 com_load_filler[] = {
 };
 
 
+// ---------------------------------------------------------------------------------------
+// This is equivilent to the 'QUICKLOAD' option in MAME where we load up the .com file 
+// directly into memory starting at offset 0x100 and jump to it. Not every game works
+// this way but a fair number do... best we can do for now.
+// ---------------------------------------------------------------------------------------
 void einstein_load_com_file(void)
 {
     // --------------------------------------
@@ -584,7 +592,10 @@ void einstein_reset(void)
 
 
 /*********************************************************************************
- * A few ZX Speccy ports utilize the MSX beeper to "simulate" the sound...
+ * A few ZX Speccy ports utilize the beeper to "simulate" the sound... For 
+   the Einstein, this appears to be a rapid hit (writes) on PSG register 8
+   and we handle that in the IO write routine above. Not great but it will 
+   render enough sounds to make the few speccy ports playable.
  ********************************************************************************/
 extern u16 beeperFreq;
 extern u8 msx_beeper_process;
