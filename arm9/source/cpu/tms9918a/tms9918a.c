@@ -77,7 +77,7 @@ u8 TMS9918A_palette[16*3] __attribute__((section(".dtcm")))  = {
   0x20,0x80,0x20,   0xC0,0x40,0xA0,   0xA0,0xA0,0xA0,   0xE0,0xE0,0xE0,
 };
 
-u8 pVDPVidMem[0x10000] ALIGN(32) ={0};                  // VDP video memory... only 16K but we set to 64K so we don't have to handle out of bounds checks
+u8 pVDPVidMem[0x4000] ALIGN(32) ={0};                   // VDP video memory... TMS9918a has 16K of VRAM
 
 u16 CurLine     __attribute__((section(".dtcm")));      // Current scanline
 u8 VDP[16]      __attribute__((section(".dtcm")));      // VDP Registers
