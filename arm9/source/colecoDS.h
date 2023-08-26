@@ -17,7 +17,6 @@
 
 #define VERSIONCLDS "8.5"
 
-//#define FULL_DEBUG
 extern u32 debug1;
 extern u32 debug2;
 extern u32 debug3;

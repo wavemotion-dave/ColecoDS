@@ -1764,7 +1764,7 @@ const struct options_t Option_Table[3][20] =
         {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"},                                                         &myGlobalConfig.defaultMSX,     7},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},
-        {"SHOW BAD OPS",   {"NO", "YES", "FULL DEBUG"},                                                                                                                                         &myGlobalConfig.showBadOps,     3},
+        {"DEBUGGER",       {"OFF", "BAD OPS", "DEBUG", "FULL DEBUG"},                                                                                                                           &myGlobalConfig.debugger,       4},
         
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }

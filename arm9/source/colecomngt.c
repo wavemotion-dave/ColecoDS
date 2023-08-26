@@ -1259,9 +1259,7 @@ ITCM_CODE u32 LoopZ80()
           if(CPU.IRequest!=INT_NONE) 
           {
               IntZ80(&CPU, CPU.IRequest);
-#ifdef DEBUG_Z80 
               CPU.User++;   // Track Interrupt Requests
-#endif          
               if (pv2000_mode) 
               {
                   extern void pv2000_check_kbd(void);

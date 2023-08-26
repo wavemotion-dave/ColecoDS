@@ -852,7 +852,7 @@ int DrZ80_execute(int cycles)
 
 void Z80_Trap_Bad_Ops(char *prefix, byte I, word W)
 {
-    if (myGlobalConfig.showBadOps)
+    if (myGlobalConfig.debugger)
     {
         char tmp[32];
         sprintf(tmp, "ILLOP: %s %02X %04X", prefix, I, W);

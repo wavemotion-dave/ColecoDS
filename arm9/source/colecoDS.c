@@ -771,7 +771,7 @@ void ResetColecovision(void)
       creativision_restore_bios();
       creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
   }
-  else
+  else // Oh yeah... we're an actual Colecovision emulator! Almost forgot.
   {
       memset(RAM_Memory+0x2000, 0xFF, 0x6000);  // Reset non-mapped area between BIOS and RAM - SGM RAM might map here
       colecoWipeRAM();                          // Wipe main RAM area
@@ -815,113 +815,119 @@ void ResetColecovision(void)
 //*********************************************************************************
 // A mini Z80 debugger of sorts. Put out some Z80, VDP and SGM/Bank info on
 // screen every frame to help us debug some of the problem games. This is enabled
-// via a compile switch in colecoDS.h - uncomment the define for DEBUG_Z80 line.
+// via global configuration for debugger.
 //*********************************************************************************
 const char *VModeNames[] =
 {
-    "VDP_0  ",
-    "VDP_3  ",
-    "VDP_2  ",
-    "VDP_2+3",
-    "VDP_1  ",
-    "VDP_?5 ",
-    "VDP_1+2",
-    "VDP_?7 ",
+    "VDP0  ",
+    "VDP3  ",
+    "VDP2  ",
+    "VDP2+3",
+    "VDP1  ",
+    "VDP?5 ",
+    "VDP1+2",
+    "VDP?7 ",
 };
 
 void ShowDebugZ80(void)
 {
     char tmp[33];
     u8 idx=1;
-#ifdef FULL_DEBUG
-    extern u8 a_idx, b_idx, c_idx;
-    extern u8 lastBank;
-    extern u8 romBankMask;
-    extern u8 Port20, Port53, Port60;
-    siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "VStat %02X Data=%02X", VDPStatus, VDPDlatch);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "VAddr %04X", VAddr);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
-    DSPrint(0,idx++,7, tmp);
-    idx++;
-    siprintf(tmp, "Z80PC %04X", CPU.PC.W);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "Z80SP %04X", CPU.SP.W);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "Z80A  %04X", CPU.AF.W);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "IRQ   %04X", CPU.IRequest);
-    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "IREQ  %d", CPU.User);
-    DSPrint(0,idx++,7, tmp);
-    idx++;
 
-    if (AY_Enable)
+    if (myGlobalConfig.debugger == 3)
     {
-        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
+        extern u8 a_idx, b_idx, c_idx;
+        extern u8 lastBank;
+        extern u8 romBankMask;
+        extern u8 Port20, Port53, Port60;
+        siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
+        siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
+        siprintf(tmp, "VStat %02X Data=%02X", VDPStatus, VDPDlatch);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
+        siprintf(tmp, "VAddr %04X", VAddr);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
-        DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
+        siprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
         DSPrint(0,idx++,7, tmp);
         idx++;
+        siprintf(tmp, "Z80PC %04X", CPU.PC.W);
+        DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "Z80SP %04X", CPU.SP.W);
+        DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "Z80A  %04X", CPU.AF.W);
+        DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "IRQ   %04X", CPU.IRequest);
+        DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "IREQ  %d", CPU.User);
+        DSPrint(0,idx++,7, tmp);
+        idx++;
+
+        if (AY_Enable)
+        {
+            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
+            DSPrint(0,idx++,7, tmp);
+            idx++;
+        }
+        else
+        {
+            siprintf(tmp, "SN0 %04X %04X %2d", sncol.ch0Frq, sncol.ch0Reg, sncol.ch0Att);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "SN1 %04X %04X %2d", sncol.ch1Frq, sncol.ch1Reg, sncol.ch1Att);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "SN2 %04X %04X %2d", sncol.ch2Frq, sncol.ch2Reg, sncol.ch2Att);
+            DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "SN3 %04X %04X %2d", sncol.ch3Frq, sncol.ch3Reg, sncol.ch3Att);
+            DSPrint(0,idx++,7, tmp);
+            idx++;
+        }
+
+        siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
+
+        idx = 1;
+        siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
+        siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
+        siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
+        idx++;idx++;
+        siprintf(tmp, "D1 %-9lu %04X", debug1, (u16)debug1); DSPrint(15,idx++,7, tmp);
+        siprintf(tmp, "D2 %-9lu %04X", debug2, (u16)debug2); DSPrint(15,idx++,7, tmp);
+        siprintf(tmp, "D3 %-9lu %04X", debug3, (u16)debug3); DSPrint(15,idx++,7, tmp);
+        siprintf(tmp, "D4 %-9lu %04X", debug4, (u16)debug4); DSPrint(15,idx++,7, tmp);
+        siprintf(tmp, "D5 %-9lu %04X", debug5, (u16)debug5); DSPrint(15,idx++,7, tmp);
+        siprintf(tmp, "D6 %-9lu %04X", debug6, (u16)debug6); DSPrint(15,idx++,7, tmp);
     }
     else
     {
-        siprintf(tmp, "SN0 %04X %04X %2d", sncol.ch0Frq, sncol.ch0Reg, sncol.ch0Att);
-        DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "SN1 %04X %04X %2d", sncol.ch1Frq, sncol.ch1Reg, sncol.ch1Att);
-        DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "SN2 %04X %04X %2d", sncol.ch2Frq, sncol.ch2Reg, sncol.ch2Att);
-        DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "SN3 %04X %04X %2d", sncol.ch3Frq, sncol.ch3Reg, sncol.ch3Att);
-        DSPrint(0,idx++,7, tmp);
-        idx++;
+        extern u32 halt_counter;
+        idx = 1;
+        siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "D3 %-12lu %08lX", debug3, debug3); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "HC %-12lu %08lX", halt_counter, halt_counter); DSPrint(5,idx++,7, tmp);
+
+        for (int chan=0; chan<=3; chan++)
+        {
+            siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); DSPrint(5,idx++,7, tmp);
+            siprintf(tmp, "CTC%d constant = %-8lu", chan, (u32)CTC[chan].constant); DSPrint(5,idx++,7, tmp);
+            siprintf(tmp, "CTC%d counter  = %-8lu", chan, (u32)CTC[chan].counter); DSPrint(5,idx++,7, tmp);
+        }    
     }
-
-    siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             DSPrint(0,idx++,7, tmp);
-    siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
-
-    idx = 1;
-    siprintf(tmp, "D1 %-5lu %04X", debug1, (u16)debug1); DSPrint(19,idx++,7, tmp);
-    siprintf(tmp, "D2 %-5lu %04X", debug2, (u16)debug2); DSPrint(19,idx++,7, tmp);
-    siprintf(tmp, "D3 %-5lu %04X", debug3, (u16)debug3); DSPrint(19,idx++,7, tmp);
-    siprintf(tmp, "D4 %-5lu %04X", debug4, (u16)debug4); DSPrint(19,idx++,7, tmp);
-    idx++;
-    siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
-    siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
-    siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
-#else
-    extern u32 halt_counter;
-    idx = 1;
-    siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); DSPrint(5,idx++,7, tmp);
-    siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); DSPrint(5,idx++,7, tmp);
-    siprintf(tmp, "D3 %-12lu %08lX", debug3, debug3); DSPrint(5,idx++,7, tmp);
-    siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); DSPrint(5,idx++,7, tmp);
-    siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); DSPrint(5,idx++,7, tmp);
-    siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); DSPrint(5,idx++,7, tmp);
-    siprintf(tmp, "HC %-12lu %08lX", halt_counter, halt_counter); DSPrint(5,idx++,7, tmp);
-    
-    for (int chan=0; chan<=3; chan++)
-    {
-        siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "CTC%d constant = %-8lu", chan, (u32)CTC[chan].constant); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "CTC%d counter  = %-8lu", chan, (u32)CTC[chan].counter); DSPrint(5,idx++,7, tmp);
-    }    
-#endif
     idx++;
 }
 
@@ -2428,6 +2434,20 @@ u8 handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Generic and Simplified Alph
     return MENU_CHOICE_NONE;
 }
 
+u8 handle_debugger_overlay(u16 iTx, u16 iTy)
+{
+    if ((iTy >= 175) && (iTy < 192)) // Bottom row is where the debugger keys are...
+    {
+        if      ((iTx >= 1)   && (iTx < 125))  kbd_key = ' ';
+        if      ((iTx >= 125) && (iTx < 158))  return MENU_CHOICE_MENU;
+        else if ((iTx >= 158) && (iTx < 192))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 192) && (iTx < 255))  return MENU_CHOICE_MENU;
+    }
+    else {kbd_key = 0; last_kbd_key = 0;}
+
+    return MENU_CHOICE_NONE;
+}
+
 
 u8 handle_normal_virtual_keypad(u16 iTx, u16 iTy)  // All other normal overlays with keypad on the right and menu choices on the left
 {
@@ -2597,7 +2617,7 @@ void colecoDS_main(void)
         }
 
       // If the Z80 Debugger is enabled, call it
-      if (myGlobalConfig.showBadOps == 2)
+      if (myGlobalConfig.debugger >= 2)
       {
           ShowDebugZ80();
       }
@@ -2620,10 +2640,14 @@ void colecoDS_main(void)
         iTx = touch.px;
         iTy = touch.py;
 
+        if (myGlobalConfig.debugger == 3)
+        {
+            meta_key = handle_debugger_overlay(iTx, iTy);
+        }
         // --------------------------------------------------------------------------
         // Test the touchscreen rendering of the ADAM/MSX/SVI/CreatiVision keybaords
         // --------------------------------------------------------------------------
-        if (myConfig.overlay == 9) // ADAM Keyboard
+        else if (myConfig.overlay == 9) // ADAM Keyboard
         {
             meta_key = handle_adam_keyboard_press(iTx, iTy);
         }
@@ -3116,7 +3140,15 @@ void BottomScreenOptions(void)
 // ---------------------------------------------------------------------------
 void BottomScreenKeypad(void)
 {
-    if (myConfig.overlay == 1)  // Wargames
+    if (myGlobalConfig.debugger == 3)  // Full Z80 Debug overrides things... put up the debugger overlay
+    {
+          //  Init bottom screen
+          decompress(debug_ovlTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(debug_ovlMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) debug_ovlPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 1)  // Wargames
     {
       //  Init bottom screen
       decompress(wargamesTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3261,14 +3293,6 @@ void BottomScreenKeypad(void)
       decompress(m5_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) m5_kbdPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myGlobalConfig.showBadOps == 2)  // Full Z80 Debug
-    {
-          //  Init bottom screen
-          decompress(debug_ovlTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(debug_ovlMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) debug_ovlPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay
     {
