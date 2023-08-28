@@ -2277,7 +2277,7 @@ u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
         else if ((iTx >= 165) && (iTx < 180))  kbd_key = ';';
         else if ((iTx >= 180) && (iTx < 195))  kbd_key = ':';
         else if ((iTx >= 195) && (iTx < 210))  kbd_key = KBD_KEY_RIGHT;        
-        else if ((iTx >= 214) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+        else if ((iTx >= 214) && (iTx < 255))  {kbd_key = KBD_KEY_STOP; if (last_special_key == KBD_KEY_CTRL) einstien_load_dsk_file();}
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
