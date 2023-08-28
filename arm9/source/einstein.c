@@ -291,6 +291,7 @@ void scan_keyboard(void)
         kbd_key = KBD_KEY_STOP;
         kbd_keys[kbd_keys_pressed++] = KBD_KEY_STOP;
     }
+    kbd_key = kbd_keys[0];
     if (kbd_key == 0)
     {
         // Nothing pressed... short-circut    
