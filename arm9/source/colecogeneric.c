@@ -819,6 +819,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".ein") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
         if ( (strcasecmp(strrchr(szFile, '.'), ".pen") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -2220,8 +2226,10 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".CAS") != 0) cas_load = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".ddp") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".DDP") != 0) adam_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) adam_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) adam_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else adam_mode = 1;}
+    if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else adam_mode = 1;}
+    if (strstr(gpFic[ucGameChoice].szName, ".ein") != 0) einstein_mode = 2;
+    if (strstr(gpFic[ucGameChoice].szName, ".EIN") != 0) einstein_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".pen") != 0) pencil2_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".PEN") != 0) pencil2_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".com") != 0) checkCOM = 1;

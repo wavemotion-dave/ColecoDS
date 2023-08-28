@@ -228,6 +228,7 @@ void ProcessBufferedKeys(void)
     static u8 dampen = 0;
     static u8 buf_held = 0;
     static u8 buf_shift = 0;
+    static u8 buf_ctrl = 0;
     if (creativision_mode) return;  // Special handling in creativision.c
     
     if (++dampen >= next_dampen_time) // Roughly 50ms... experimentally good enough for all systems.
@@ -237,13 +238,14 @@ void ProcessBufferedKeys(void)
             buf_held = BufferedKeys[BufferedKeysReadIdx];
             BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
             if (buf_held == KBD_KEY_SHIFT) buf_shift = 2; else {if (buf_shift) buf_shift--;}
+            if (buf_held == KBD_KEY_CTRL)  buf_ctrl = 6; else {if (buf_ctrl) buf_ctrl--;}
             if (buf_held == 255) {buf_held = 0; next_dampen_time=60;} else next_dampen_time = (memotech_mode ? 1:5);
         } else buf_held = 0;
         dampen = 0;
     }
 
     // See if the shift key should be virtually pressed along with this buffered key...
-    if (buf_held) {kbd_keys[kbd_keys_pressed++] = buf_held; if (buf_shift) key_shift=1;}
+    if (buf_held) {kbd_keys[kbd_keys_pressed++] = buf_held; if (buf_shift) key_shift=1; if (buf_ctrl) key_ctrl=1;}
 }
 
 

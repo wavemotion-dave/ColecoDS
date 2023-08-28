@@ -35,14 +35,256 @@ u8 key_int_mask = 0xFF;
 u8 joy_int_mask = 0xFF;
 u8 myKeyData = 0xFF;
 u8 adc_mux = 0x00;
+u8 drive_select = 0xFF;
 
 extern u8 EinsteinBios[];
 
 #define KEYBOARD_VECTOR  0xF7
 #define JOYSTICK_VECTOR  0xFD
 
+// -----------------------------------------------------------------------------------------
+// Allocate the Floppy Drive Controller structure where we track the registers and the
+// track buffer to handle FDC requests. Right now we're only handling basic seeks and 
+// sector reads, but that's good enough to get the vast majority of Einstein .dsk games
+// playing properly.
+// -----------------------------------------------------------------------------------------
+struct FDC_t FDC;
+
+
+// Status Register:
+//   Bit |      Type I      |    Type II    |   Type III    | Comments
+//   ----+------------------+---------------+---------------+-------------------
+//    7  |    Motor on      | ---------- Motor on --------- | / If bit 3 is
+//    6  |    Not used.     | -- Disk is write protected. - | | set then:
+//    5  |  Motor spin-up   |    Data type : 0 = normal.    | | If bit 4 is
+//       |    completed.    |                1 = deleted.   | | set, the error
+//    4  | Record not found | ----- Record not found ------ | / is in the ID
+//    3  |    CRC error.    | --------- CRC error --------- |<  field. If bit 4
+//    2  |   Not track 0    | ------ Lost data / byte ----- | \ is clear, the
+//    1  |   Data Request   | -------- Data request ------- | | error is in
+//    0  |       Busy       | ------------ Busy ----------- | \ the data field.
+
+void fdc_state_machine(void)
+{
+    static u8 fdc_busy_count = 0;
+    
+    if (FDC.seek_track_0)
+    {
+        if ((++fdc_busy_count % 3) == 0) FDC.status |= 0x02; else FDC.status &= ~0x02;
+        if (fdc_busy_count > 12)
+        {
+            fdc_busy_count = 0;
+        } else return;
+    }
+    else if (FDC.status & 0x01)
+    {
+        if (++fdc_busy_count > 3)   // Arbitrary amount of busy - change this for longer loads
+        {
+            fdc_busy_count = 0;     // Reset busy count
+            FDC.status &= ~0x01;    // Clear Busy Status
+        } else return;
+    }
+    
+    switch(FDC.command & 0xF0)
+    {
+        case 0x00: // Restore
+            FDC.track  = 0;         // Track buffer at zero
+            FDC.actTrack = 0;       // We're actually at track zero
+            FDC.seek_track_0  = 0;  // Not seeking track zero (we found it!)
+            FDC.wait_for_read = 2;  // No data to transfer
+            FDC.status = 0xA0;      // Motor spun up. Track zero. Not busy.
+            break;
+        case 0x10: // Seek Track
+            FDC.track = FDC.data;                       // Settle on requested track
+            FDC.actTrack = FDC.data;                    // Settle on requested track
+            FDC.seek_track_0  = 0;                      // Not seeking track zero
+            FDC.wait_for_read = 2;                      // No data to transfer
+            FDC.status = (FDC.actTrack ? 0xA4 : 0xA0);  // Motor Spun Up... Not busy. Check if Track zero
+            break;
+        case 0x20: // Step
+        case 0x30: // Step
+            debug5++;
+            FDC.status = 0x80;
+            break;
+        case 0x40: // Step in
+        case 0x50: // Step in
+            debug5++;
+            FDC.status = 0x80;
+            break;
+        case 0x60: // Step out
+        case 0x70: // Step out
+            debug5++;
+            FDC.status = 0x80;
+            break;
+        case 0x80: // Read Sector
+        case 0x90: // Read Sector
+            if (FDC.wait_for_read == 0)
+            {
+                if (FDC.track_buffer_idx >= FDC.track_buffer_end) // Is there any more data to put out?
+                {
+                    FDC.status &= ~0x03;            // Done. No longer busy.
+                    FDC.wait_for_read=2;            // Don't fetch more FDC data
+                    FDC.seek_byte_transfer = 0;     // And reset our counter
+                }
+                else
+                {
+                    FDC.status = 0x83;                                   // Data Ready and no errors... still busy
+                    FDC.data = FDC.track_buffer[FDC.track_buffer_idx++]; // Read data from our track buffer
+                    FDC.wait_for_read = 1;                               // Wait for the CPU to fetch the data
+                    if (++FDC.seek_byte_transfer >= 512)                 // Did we cross a sector boundary?
+                    {
+                        FDC.sector++;                               // Bump the sector number
+                        FDC.seek_byte_transfer = 0;                 // And reset our counter
+                    }
+                }
+            }
+            break;
+        case 0xA0: // Write Sector
+        case 0xB0: // Write Sector
+            debug5++;
+            FDC.status = 0x80;
+            break;
+        case 0xC0: // Read Address
+            debug5++;
+            FDC.status = 0x80;
+            break;
+        case 0xD0: // Force Interrupt
+            debug5++;
+            FDC.status = (FDC.actTrack ? 0xA4:0xA0);      // Motor Spun Up, Not Busy and Maybe Track Zero
+            break;
+        case 0xE0: // Read Track
+            debug5++;
+            FDC.status = 0x80;
+            break;
+        case 0xF0: // Write Track
+            debug5++;
+            FDC.status = 0x80;
+            break;
+    }
+}
+
+//  Address offset      Contains on read    on write
+//  ------------------------------------------------------
+//         0                 Status         Command
+//         1                 ------- Track --------
+//         2                 ------- Sector -------
+//         3                 ------- Data ---------
+//
+u8 fdc_read(u8 addr)
+{
+    fdc_state_machine();    // Clock the floppy drive controller state machine
+    
+    switch (addr)
+    {
+        case 0: return FDC.status;
+        case 1: return FDC.track;
+        case 2: return FDC.sector;
+        case 3: 
+            FDC.status &= ~0x02;     // Clear Data Available flag
+            FDC.wait_for_read = 0;   // Clock in next byte (or end sequence if we're read all there is)
+            return FDC.data;         // Return data to caller
+    }
+    
+    return 0x00;
+}
+
+// FDC Commands:
+//   I    Restore            0   0   0   0   h   v   r1  r0
+//   I    Seek               0   0   0   1   h   v   r1  r0
+//   I    Step               0   0   1   u   h   v   r1  r0
+//   I    Step in            0   1   0   u   h   v   r1  r0
+//   I    Step out           0   1   1   u   h   v   r1  r0
+//   II   Read sector        1   0   0   m  h/s  e  0/c  0
+//   II   Write sector       1   0   1   m  h/s  e  p/c  a
+//   III  Read address       1   1   0   0  h/0  e   0   0
+//   III  Read track         1   1   1   0  h/0  e   0   0
+//   III  Write track        1   1   1   1  h/0  e  p/0  0
+//   IV   Force interrupt    1   1   0   1   i3  i2  i1  i0
+void fdc_write(u8 addr, u8 data)
+{
+    if (drive_select != 0x01) return;
+    
+    if (FDC.status & 0x01) // If BUSY
+    {
+        if ((addr == 0) && ((data & 0xF0) == 0xD0))     // Only a Force Interrupt can override busy
+        {
+            FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
+        }
+        else
+        {
+            debug6++;
+            return;                                     // We were given a command while busy - ignore it.
+        }
+    }
+    
+    // -------------------------------------------------------
+    // Handle the write - most of the time it's a command...
+    // -------------------------------------------------------
+    switch (addr)
+    {
+        case 0: FDC.command = data; break;
+        case 1: FDC.track = data;   break;
+        case 2: FDC.sector = data;  break;
+        case 3: FDC.data = data;    break;
+    }
+    
+    // If command....
+    if (addr == 0x00)
+    {
+        if (data == 0x05)   // Restore
+        {
+            FDC.status = (FDC.actTrack ? 0xA5:0xA1);      // Motor Spun Up, Busy and Maybe Track Zero
+            FDC.wait_for_read = 2;                        // Not feteching any data
+            FDC.seek_track_0  = 1;                        // Seeking track 0
+        }
+        else
+        {
+            FDC.status = 0x81; // Default to motor ON and busy...
+            
+            if ((data&0xF0) == 0x90) // Read Sector... multiple
+            {
+                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                FDC.track_buffer_idx = FDC.sector*512;
+                FDC.track_buffer_end = 5120;
+                FDC.wait_for_read = 0; // Start fetching data
+            }
+            else if ((data&0xF0) == 0x80) // Read Sector... one sector
+            {
+                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                FDC.track_buffer_idx = FDC.sector*512;
+                FDC.track_buffer_end = FDC.track_buffer_idx+512;
+                FDC.wait_for_read = 0; // Start fetching data
+                FDC.seek_byte_transfer = 0;
+            }
+            else if ((data&0xF0) == 0xE0) // Read Track
+            {
+                debug5++;   
+            }
+            else if ((data&0xF0) == 0x10) // Seek Track
+            {
+                FDC.status = (FDC.actTrack ? 0xA5:0xA1);      // Motor Spun Up, Busy and Maybe Track Zero
+                FDC.wait_for_read = 2;  // Not feteching any data
+            }
+        }
+    }
+}
+
+void fdc_reset(void)
+{
+    memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
+    FDC.status = 0x80;                  // Motor on... nothing else (not busy)
+}
+
+u16 IssueCtrlBreak = 0;
+
 void scan_keyboard(void)
 {
+    if (IssueCtrlBreak)
+    {
+        IssueCtrlBreak--;
+        kbd_key = KBD_KEY_STOP;
+        kbd_keys[kbd_keys_pressed++] = KBD_KEY_STOP;
+    }
     if (kbd_key == 0)
     {
         // Nothing pressed... short-circut    
@@ -53,7 +295,7 @@ void scan_keyboard(void)
       // For the full keyboard overlay... this is a bit of a hack for SHIFT, CTRL and GRAPH
       if (last_special_key != 0)
       {
-          if ((last_special_key_dampen > 0) && (last_special_key_dampen != 20))
+          if ((last_special_key_dampen > 0) && (last_special_key_dampen != 50))
           {
               if (--last_special_key_dampen == 0)
               {
@@ -80,7 +322,7 @@ void scan_keyboard(void)
 
           if ((kbd_key != 0) && (kbd_key != KBD_KEY_SHIFT) && (kbd_key != KBD_KEY_CTRL) && (kbd_key != KBD_KEY_CODE) && (kbd_key != KBD_KEY_GRAPH))
           {
-              if (last_special_key_dampen == 20) last_special_key_dampen = 19;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
+              if (last_special_key_dampen == 50) last_special_key_dampen = 49;    // Start the SHIFT/CONTROL countdown... this should be enough time for it to register
           }
       }
 
@@ -301,6 +543,11 @@ u8 einstein_fire_read(void)
   // Fire buttons
   if (JoyState & JST_FIREL) key_port &= ~0x01;  // P1 Button 1
   if (JoyState & JST_FIRER) key_port &= ~0x02;  // P1 Button 2
+   
+  if (IssueCtrlBreak)
+  {
+       key_ctrl=1;
+  }
 
   if (key_graph) key_port &= ~0x20;  // GRAPH KEY
   if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
@@ -352,7 +599,11 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
                 }            
                 return FakeAY_ReadData();
             }
-            else memset(ay_reg, 0x00, 16);    // Clear the AY registers... Port 0 or 1
+            else
+            {
+                memset(ay_reg, 0x00, 16);    // Clear the AY registers... Port 0 or 1
+                fdc_reset();                 // Reset is passed along to the FDC
+            }
             break;
             
         case 0x08:  // VDP Area
@@ -365,11 +616,12 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
             break;
             
         case 0x18:  // FDC Area - Not implemented
-            return 0x00;
+            return fdc_read(Port & 3);
             break;
             
         case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
             if      (Port == 0x20)  return einstein_fire_read();
+            else if (Port == 0x23)  return drive_select;
             else if (Port == 0x24)  {einstein_swap_memory(); return 0xFF;}
             else if (Port == 0x25)  return joy_int_mask;
             break;
@@ -423,7 +675,12 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
                     }                   
                 }
                 else FakeAY_WriteIndex(Value & 0x0F);
-            } else memset(ay_reg, 0x00, 16);    // Clear the AY registers for port 0/1
+            } 
+            else
+            {
+                memset(ay_reg, 0x00, 16);    // Clear the AY registers for port 0/1
+                fdc_reset();                 // Reset is passed along to the FDC
+            }
             break;
             
         case 0x08:  // VDP Area
@@ -435,13 +692,14 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             break;
             
         case 0x18:  // FDC Area - Not implemented
+            fdc_write(Port & 3, Value);
             break;
             
         case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
             if      (Port == 0x20)  key_int_mask = Value;   // KEYBOARD INT MASK
             else if (Port == 0x21)  break;                  // ADC INT MASK (no game seems to use this so we don't implement)
             else if (Port == 0x22)  break;                  // ALPHA LOCK
-            else if (Port == 0x23)  break;                  // Drive Select
+            else if (Port == 0x23)  drive_select = Value & 0xF; // Drive Select
             else if (Port == 0x24)  einstein_swap_memory(); // ROM vs RAM bank port
             else if (Port == 0x25)  joy_int_mask = Value;   // JOYSTICK INT MASK
             break;
@@ -489,7 +747,7 @@ void einstein_handle_interrupts(void)
       {
           if ((joy_int_mask&1) == 0) // Bit 0 clear means enable interrupt handling
           {
-            if (JoyState & (JST_FIREL|JST_FIRER))
+            if (JoyState & (JST_FIREL|JST_FIRER) || key_ctrl || key_shift || key_graph)
             {
                 joystick_interrupt = JOYSTICK_VECTOR;
             }
@@ -567,6 +825,31 @@ void einstein_load_com_file(void)
     JumpZ80(CPU.PC.W);
 }
 
+struct SectorInfo_t
+{
+    u8 track;
+    u8 side;
+    u8 sectorID;
+    u8 sectorSize;
+    u8 FDC_Status1;
+    u8 FDC_STatus2;
+    u8 unused1;
+    u8 unused2;
+};
+
+struct TrackInfo_t
+{
+    u8 trackName[12];
+    u8 unused1[4];
+    u8 trackNum;
+    u8 sideNum;
+    u8 unused2[2];
+    u8 sectorSize;
+    u8 numSectors;
+    u8 gapLen;
+    u8 filler;
+    struct SectorInfo_t SectorInfo[10];
+} TrackInfo;
 
 // ---------------------------------------------------------
 // The Einstein has CTC plus some memory handling stuff
@@ -585,9 +868,44 @@ void einstein_reset(void)
         key_int_mask = 0xFF;
         
         memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-        
+        fdc_reset();
         einstein_restore_bios();
+        
+        IssueCtrlBreak = 0;
+        
+        // ---------------------------------------------------------------------
+        // If this is an Einstein .DSK file we need to re-assemble the sectors
+        // into some logical pattern so we can more easily fetch and return 
+        // the data when asked for by the CPU.  The Einstein disk is laid out
+        // in a somewhat unusual manner probably to help speed up access. But
+        // we want tracks and sectors laid out sequentially.
+        // ---------------------------------------------------------------------
+        if (einstein_mode == 2) 
+        {
+            u8 *trackInfoPtr = ROM_Memory + 0x100;
+            for (int i=0; i<40; i++)    // 40 tracks
+            {
+                trackInfoPtr = ROM_Memory + (0x100 + (i*(5120+0x100)));
+                memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
+                trackInfoPtr += 0x100;                                // Skip over the TrackInfo
+                
+                for (int j=0; j<10; j++) // 10 sectors per track
+                {
+                    u8 *dest = &ROM_Memory[(512*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
+                    u8 *src  = trackInfoPtr + (j*512);
+                    for (int k=0; k<512; k++) // 512 bytes per sector
+                    {
+                        *dest++ = *src++;
+                    }
+                }
+            }
+        }
     }
+}
+
+void einstien_load_dsk_file(void)
+{
+    if (IssueCtrlBreak == 0) IssueCtrlBreak = 275;
 }
 
 
