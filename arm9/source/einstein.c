@@ -208,6 +208,7 @@ void fdc_write(u8 addr, u8 data)
     {
         if ((addr == 0) && ((data & 0xF0) == 0xD0))     // Only a Force Interrupt can override busy
         {
+            debug4++;
             FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
         }
         else
@@ -271,6 +272,7 @@ void fdc_write(u8 addr, u8 data)
 
 void fdc_reset(void)
 {
+    debug3++;
     memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
     FDC.status = 0x80;                  // Motor on... nothing else (not busy)
 }
