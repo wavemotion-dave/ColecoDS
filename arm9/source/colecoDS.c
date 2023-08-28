@@ -840,6 +840,7 @@ void ShowDebugZ80(void)
         extern u8 lastBank;
         extern u8 romBankMask;
         extern u8 Port20, Port53, Port60;
+#if 1
         siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
         DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
@@ -892,6 +893,23 @@ void ShowDebugZ80(void)
             idx++;
         }
 
+        if (einstein_mode)
+        {
+            idx -= 7;
+            siprintf(tmp, "FDC.Sta %-3d %02X", FDC.status, FDC.status);
+            DSPrint(18,idx++,7, tmp);
+            siprintf(tmp, "FDC.Cmd %-3d %02X", FDC.command, FDC.command);
+            DSPrint(18,idx++,7, tmp);
+            siprintf(tmp, "FDC.dat %-3d %02X", FDC.data, FDC.data);
+            DSPrint(18,idx++,7, tmp);
+            siprintf(tmp, "FDC.tra %-3d %02X", FDC.track, FDC.track);
+            DSPrint(18,idx++,7, tmp);
+            siprintf(tmp, "FDC.sec %-3d %02X", FDC.sector, FDC.sector);
+            DSPrint(18,idx++,7, tmp);
+            idx++;
+            
+        }
+
         siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             DSPrint(0,idx++,7, tmp);
@@ -908,6 +926,8 @@ void ShowDebugZ80(void)
         siprintf(tmp, "D4 %-9lu %04X", debug4, (u16)debug4); DSPrint(15,idx++,7, tmp);
         siprintf(tmp, "D5 %-9lu %04X", debug5, (u16)debug5); DSPrint(15,idx++,7, tmp);
         siprintf(tmp, "D6 %-9lu %04X", debug6, (u16)debug6); DSPrint(15,idx++,7, tmp);
+        
+#endif                
     }
     else
     {
@@ -2227,7 +2247,7 @@ u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
     }
     else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
     {
-        if      ((iTx >= 0)   && (iTx < 25))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 20;}
+        if      ((iTx >= 0)   && (iTx < 25))   {kbd_key = KBD_KEY_CTRL; last_special_key = KBD_KEY_CTRL; last_special_key_dampen = 50;}
         else if ((iTx >= 25)  && (iTx < 40))   kbd_key = 'Q';
         else if ((iTx >= 40)  && (iTx < 55))   kbd_key = 'W';
         else if ((iTx >= 55)  && (iTx < 70))   kbd_key = 'E';
@@ -2244,7 +2264,7 @@ u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
-        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 20;}
+        if      ((iTx >= 0)   && (iTx < 27))   {kbd_key = KBD_KEY_SHIFT; last_special_key = KBD_KEY_SHIFT; last_special_key_dampen = 50;}
         else if ((iTx >= 29)  && (iTx < 45))   kbd_key = 'A';
         else if ((iTx >= 45)  && (iTx < 60))   kbd_key = 'S';
         else if ((iTx >= 60)  && (iTx < 75))   kbd_key = 'D';
@@ -2276,7 +2296,7 @@ u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
     }
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
-        if      ((iTx >= 1)   && (iTx < 34))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
+        if      ((iTx >= 1)   && (iTx < 34))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 50;}
         else if ((iTx >= 34)  && (iTx < 182))  kbd_key = ' ';
         else if ((iTx >= 182) && (iTx < 213))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 213) && (iTx < 255))  return MENU_CHOICE_MENU;
@@ -2809,7 +2829,7 @@ void colecoDS_main(void)
         // ---------------------------------------------------------------------
         if (myConfig.touchPad) ucUN = ucUN << 16;
 
-        if (++dampenClick > 1)  // Make sure the key is pressed for an appreciable amount of time...
+        if (++dampenClick > 0)  // Make sure the key is pressed for an appreciable amount of time...
         {
             if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
             {
@@ -2864,8 +2884,15 @@ void colecoDS_main(void)
       {
           if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
           {
-              einstein_load_com_file();
-              WAITVBL;WAITVBL;WAITVBL;
+              if (einstein_mode == 2) // .dsk file
+              {
+                  einstien_load_dsk_file();
+              }
+              else
+              {
+                  einstein_load_com_file();
+                  WAITVBL;WAITVBL;WAITVBL;
+              }
           }
           else if (memotech_mode && (nds_key & KEY_START))
           {

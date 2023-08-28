@@ -152,6 +152,26 @@ extern u8 OldPortC;
 extern u8 myKeyData;
 extern u8 adc_mux;
 
+
+// The Einstein FDC controller
+struct FDC_t
+{
+    u8 status;
+    u8 command;
+    u8 track;
+    u8 sector;
+    u8 data;
+    u8 actTrack;
+    u8 track_buffer[5120];
+    u16 track_buffer_idx;
+    u16 track_buffer_end;
+    u8  wait_for_read;
+    u8  seek_track_0;
+    u16 seek_byte_transfer;
+    u16 spare;
+};
+extern struct FDC_t FDC;
+
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);
 extern void colecoUpdateScreen(void);
@@ -179,6 +199,7 @@ extern void MSX_HandleBeeper(void);
 extern void einstein_HandleBeeper(void);
 extern void einstein_handle_interrupts(void);
 extern void einstein_load_com_file(void);
+extern void einstien_load_dsk_file(void);
 extern void einstein_restore_bios(void);
 extern void memotech_launch_run_file(void);
 extern void sordm5_check_keyboard_interrupt(void);

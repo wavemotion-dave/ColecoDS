@@ -170,7 +170,11 @@ void colecoSaveState()
     // Some Tatung Einstein stuff...
     if (uNbO) uNbO = fwrite(&einstein_ram_start, sizeof(einstein_ram_start), 1, handle);                        
     if (uNbO) uNbO = fwrite(&keyboard_w, sizeof(keyboard_w), 1, handle);                        
-    if (uNbO) uNbO = fwrite(&key_int_mask, sizeof(key_int_mask), 1, handle);                        
+    if (uNbO) uNbO = fwrite(&key_int_mask, sizeof(key_int_mask), 1, handle);
+    if (einstein_mode == 2)
+    {
+        if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);        
+    }
       
     // Some spare memory we can eat into...
     if (uNbO) uNbO = fwrite(&spare, 512,1, handle); 
@@ -427,8 +431,12 @@ void colecoLoadState()
             // Some Tatung Einstein stuff...
             if (uNbO) uNbO = fread(&einstein_ram_start, sizeof(einstein_ram_start), 1, handle);                        
             if (uNbO) uNbO = fread(&keyboard_w, sizeof(keyboard_w), 1, handle);                        
-            if (uNbO) uNbO = fread(&key_int_mask, sizeof(key_int_mask), 1, handle);                        
-            
+            if (uNbO) uNbO = fread(&key_int_mask, sizeof(key_int_mask), 1, handle);
+            if (einstein_mode == 2)
+            {
+                if (uNbO) uNbO = fread(&FDC, sizeof(FDC), 1, handle);
+            }
+
             // Load spare memory for future use
             if (uNbO) uNbO = fread(&spare, 512,1, handle); 
 
