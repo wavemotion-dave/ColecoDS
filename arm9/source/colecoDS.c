@@ -1150,7 +1150,7 @@ void DisplayStatusLine(bool bForce)
         
         if (io_show_status)
         {
-            DSPrint(22,0,6, "DISK READ");
+            DSPrint(8,0,6, "DISK READ");
             if (io_show_status == 3)
             {
                 mmEffect(SFX_FLOPPY);
@@ -1159,7 +1159,7 @@ void DisplayStatusLine(bool bForce)
         }
         else
         {
-            DSPrint(22,0,6, "         ");
+            DSPrint(8,0,6, "         ");
         }
         
     }
