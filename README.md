@@ -26,7 +26,7 @@ Features :
 * Spectravideo SVI support (.cas or .rom) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
-* Tatung Einstein support (.com run-time files only) - requires einstein.rom BIOS
+* Tatung Einstein support (.dsk files or .com run-time files) - requires einstein.rom BIOS
 * Memotech MTX game support (.mtx or .run or .com files) - single loader games only.
 * Creativision game support (.cv) - requires bioscv.rom BIOS - supports ROMs up to 32K.
 * Full Controller button mapping and touch-screen input.
@@ -269,13 +269,13 @@ cat  203.bin 1-or.bin 1-or.bin 202.bin > BASIC.pen
 
 Tatung Einstein Compatibility :
 -----------------------
-The base 64K machine is emulated. Right now only .COM files will play. Out in the interwebs, you will mostly only find .dsk files and the .COM files need to be extracted from them. The easiest way is to use one of the following programs:
+The base 64K machine is emulated. Both .dsk files and .COM files will play. For both, you would load the file and press the START button to load them (for .com files, it will load and auto-run... for .dsk files the START button will emulate the CTRL-BREAK needed to boot the diskette). Out in the interwebs, you will mostly only find .dsk files and the .COM files can be extracted from them. The easiest way is to use one of the following programs:
 
 dsktool from https://github.com/charlierobson/einsdein-vitamins
 or 
 EDIP version 1e which you can find in the extras folder on the ColecoDS github page.
 
-With either of these tools, you should be able to extract more than 50 .COM games that currently work. This is definitely the least well supported "cousin system" in terms of compatibilty... but there is enough working that you can get a taste for the machine. A future version of the emulator might support .DSK files directly... but it's complicated and I haven't got it all figured out yet.
+With either of these tools, you should be able to extract more than 50 .COM games that currently work.  Or you can just stick to .dsk files. For some unknown reason, a few .dsk games like DRUID.dsk will not load and run properly - but if you extract the DRUID.COM program on that disk, it will load up fine. Emulation is rarely perfect.
 
 CreatiVision Compatibility :
 -----------------------
@@ -362,6 +362,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.6: ??-Aug-2023 by wavemotion-dave
+* Added .dsk support for Tatung Einstein games!
+* Improved Tatung Einstein keyboard and joystick handling.
+* Minor graphical tweaks and improvements as time allowed.
+
 V8.5: 20-Aug-2023 by wavemotion-dave
 * Added Sord M5 keyboard graphic and improved Sord M5 keyboard handling.
 * Fixed Sord M5 keyboard interrupts so that games like Jumping Jack and Drops play.
