@@ -78,7 +78,7 @@ void fdc_state_machine(void)
     }
     else if (FDC.status & 0x01)
     {
-        if (++fdc_busy_count > 3)   // Arbitrary amount of busy - change this for longer loads
+        if (++fdc_busy_count > 6)   // Arbitrary amount of busy - change this for longer loads
         {
             fdc_busy_count = 0;     // Reset busy count
             FDC.status &= ~0x01;    // Clear Busy Status
@@ -248,6 +248,7 @@ void fdc_write(u8 addr, u8 data)
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = 5120;
                 FDC.wait_for_read = 0; // Start fetching data
+                if (io_show_status == 0) io_show_status = 3;
             }
             else if ((data&0xF0) == 0x80) // Read Sector... one sector
             {
@@ -256,6 +257,7 @@ void fdc_write(u8 addr, u8 data)
                 FDC.track_buffer_end = FDC.track_buffer_idx+512;
                 FDC.wait_for_read = 0; // Start fetching data
                 FDC.seek_byte_transfer = 0;
+                if (io_show_status == 0) io_show_status = 3;
             }
             else if ((data&0xF0) == 0xE0) // Read Track
             {
@@ -270,10 +272,12 @@ void fdc_write(u8 addr, u8 data)
     }
 }
 
-void fdc_reset(void)
+void fdc_reset(u8 full_reset)
 {
-    debug3++;
-    memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
+    if (full_reset)
+    {
+        memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
+    }
     FDC.status = 0x80;                  // Motor on... nothing else (not busy)
 }
 
@@ -604,7 +608,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
             else
             {
                 memset(ay_reg, 0x00, 16);    // Clear the AY registers... Port 0 or 1
-                fdc_reset();                 // Reset is passed along to the FDC
+                fdc_reset(FALSE);            // Reset is passed along to the FDC
             }
             break;
             
@@ -681,7 +685,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             else
             {
                 memset(ay_reg, 0x00, 16);    // Clear the AY registers for port 0/1
-                fdc_reset();                 // Reset is passed along to the FDC
+                fdc_reset(FALSE);            // Reset is passed along to the FDC
             }
             break;
             
@@ -758,44 +762,6 @@ void einstein_handle_interrupts(void)
   }
 }
 
-// Filler for the first 256 bytes of memory borrowed from 
-// a dump using MAME debugger of ALIEN8.dsk.
-u8 com_load_filler[] = {
-  0xc3, 0x03, 0xfa, 0x00, 0x00, 0xc3, 0x00, 0xec,
-  0xc3, 0x22, 0xfc, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x79,
-  0xeb, 0xff, 0xeb, 0xc9, 0x00, 0x00, 0x00, 0x00,
-  0xc3, 0x80, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0xff, 0xff, 0xff, 0xff, 0x00, 0x20, 0x20, 0x20,
-  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-  0x00, 0x00, 0x00, 0x64, 0x00, 0x20, 0x20, 0x20,
-  0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff,
-  0x00, 0x00, 0x4c, 0x49, 0x45, 0x4e, 0x38, 0x20,
-  0x20, 0x43, 0x4f, 0x4d, 0x00, 0x00, 0x00, 0x80,
-  0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00,
-  0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00,
-  0x00, 0x41, 0x4c, 0x49, 0x45, 0x4e, 0x38, 0x20,
-  0x20, 0x43, 0x4f, 0x4d, 0x01, 0x00, 0x00, 0x64,
-  0x09, 0x00, 0x0a, 0x00, 0x0b, 0x00, 0x0c, 0x00,
-  0x0d, 0x00, 0x0e, 0x00, 0x0f, 0x00, 0x00, 0x00,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5,
-  0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5, 0xe5
-};
-
-
 // ---------------------------------------------------------------------------------------
 // This is equivilent to the 'QUICKLOAD' option in MAME where we load up the .com file 
 // directly into memory starting at offset 0x100 and jump to it. Not every game works
@@ -818,7 +784,6 @@ void einstein_load_com_file(void)
     MemoryMap[7] = RAM_Memory + 0xE000;
     
     // The Quickload will write the .COM file into memory at offset 0x100 and jump to it
-    memcpy(RAM_Memory+0x000, com_load_filler, 0x100);
     memcpy(RAM_Memory+0x100, ROM_Memory, tape_len);
     keyboard_interrupt=0;
     CPU.IRequest=INT_NONE;
@@ -870,10 +835,12 @@ void einstein_reset(void)
         key_int_mask = 0xFF;
         
         memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-        fdc_reset();
+        fdc_reset(TRUE);
         einstein_restore_bios();
         
         IssueCtrlBreak = 0;
+        
+        io_show_status = 0;
         
         // ---------------------------------------------------------------------
         // If this is an Einstein .DSK file we need to re-assemble the sectors
@@ -905,6 +872,11 @@ void einstein_reset(void)
     }
 }
 
+
+// -------------------------------------------------------------------------------
+// We force the Einstein into CTRL-BREAK which must be held for a reasonable
+// period of time for the system to see this and initiate a warm-boot to the DSK
+// -------------------------------------------------------------------------------
 void einstien_load_dsk_file(void)
 {
     if (IssueCtrlBreak == 0) IssueCtrlBreak = 275;

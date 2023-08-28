@@ -472,6 +472,7 @@ void setupStream(void)
   mmLoadEffect(SFX_CLICKNOQUIT);
   mmLoadEffect(SFX_KEYCLICK);
   mmLoadEffect(SFX_MUS_INTRO);
+  mmLoadEffect(SFX_FLOPPY);
 
   //----------------------------------------------------------------
   //  open stream
@@ -1146,6 +1147,21 @@ void DisplayStatusLine(bool bForce)
             last_pal_mode = myConfig.isPAL;
             DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
+        
+        if (io_show_status)
+        {
+            DSPrint(22,0,6, "DISK READ");
+            if (io_show_status == 3)
+            {
+                mmEffect(SFX_FLOPPY);
+            }
+            io_show_status--;
+        }
+        else
+        {
+            DSPrint(22,0,6, "         ");
+        }
+        
     }
     else    // Various Colecovision Possibilities
     {
