@@ -281,21 +281,12 @@ void fdc_reset(u8 full_reset)
     FDC.status = 0x80;                  // Motor on... nothing else (not busy)
 }
 
-u16 IssueCtrlBreak = 0;
-
 void scan_keyboard(void)
 {
-    if (IssueCtrlBreak)
-    {
-        IssueCtrlBreak--;
-        kbd_key = KBD_KEY_STOP;
-        kbd_keys[kbd_keys_pressed++] = KBD_KEY_STOP;
-    }
-    kbd_key = kbd_keys[0];
     if (kbd_key == 0)
     {
-        // Nothing pressed... short-circut    
-        myKeyData = 0x00;
+        myKeyData = 0xFF;
+        return;
     }
     else
     {
@@ -551,11 +542,6 @@ u8 einstein_fire_read(void)
   if (JoyState & JST_FIREL) key_port &= ~0x01;  // P1 Button 1
   if (JoyState & JST_FIRER) key_port &= ~0x02;  // P1 Button 2
    
-  if (IssueCtrlBreak)
-  {
-       key_ctrl=1;
-  }
-
   if (key_graph) key_port &= ~0x20;  // GRAPH KEY
   if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
   if (key_shift) key_port &= ~0x80;  // SHIFT KEY
@@ -742,7 +728,7 @@ void einstein_handle_interrupts(void)
           if ((key_int_mask&1) == 0) // Bit 0 clear means enable interrupt handling
           {
             scan_keyboard();
-            if (myKeyData != 0xFF)  
+            if (myKeyData != 0xFF)
             {
                 keyboard_interrupt = KEYBOARD_VECTOR;
             }
@@ -873,15 +859,6 @@ void einstein_reset(void)
     }
 }
 
-
-// -------------------------------------------------------------------------------
-// We force the Einstein into CTRL-BREAK which must be held for a reasonable
-// period of time for the system to see this and initiate a warm-boot to the DSK
-// -------------------------------------------------------------------------------
-void einstien_load_dsk_file(void)
-{
-    if (IssueCtrlBreak == 0) IssueCtrlBreak = 275;
-}
 
 
 /*********************************************************************************

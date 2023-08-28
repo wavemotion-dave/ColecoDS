@@ -199,6 +199,8 @@ u8 last_mapped_key   __attribute__((section(".dtcm"))) = 0;       // The last ma
 u8 kbd_keys_pressed  __attribute__((section(".dtcm"))) = 0;       // Each frame we check for keys pressed - since we can map keyboard keys to the NDS, there may be several pressed at once
 u8 kbd_keys[12]      __attribute__((section(".dtcm")));           // Up to 12 possible keys pressed at the same time (we have 12 NDS physical buttons though it's unlikely that more than 2 or maybe 3 would be pressed)
 
+u8 IssueCtrlBreak    __attribute__((section(".dtcm"))) = 0;       // For the Tatung Einstein to hold Ctrl-Break for a second or so...
+
 u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of rendering...
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
@@ -2293,7 +2295,7 @@ u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
         else if ((iTx >= 165) && (iTx < 180))  kbd_key = ';';
         else if ((iTx >= 180) && (iTx < 195))  kbd_key = ':';
         else if ((iTx >= 195) && (iTx < 210))  kbd_key = KBD_KEY_RIGHT;        
-        else if ((iTx >= 214) && (iTx < 255))  {kbd_key = KBD_KEY_STOP; if (last_special_key == KBD_KEY_CTRL) einstien_load_dsk_file();}
+        else if ((iTx >= 214) && (iTx < 255))  {kbd_key = KBD_KEY_STOP; if (last_special_key == KBD_KEY_CTRL) IssueCtrlBreak=30;}
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
@@ -2883,203 +2885,216 @@ void colecoDS_main(void)
 
       ucDEUX  = 0;
       nds_key  = keysCurrent();     // Get any current keys pressed on the NDS
-        
-      if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X))
+          
+      if (IssueCtrlBreak)   // For the Einstein only...
       {
-            lcdSwap();
-            WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-      }
-      else if ((nds_key & KEY_L) && (nds_key & KEY_R))
-      {
-            DSPrint(5,0,0,"SNAPSHOT");
-            screenshot();
-            WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-            DSPrint(5,0,0,"        ");
-      }
-      else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y))
-      {
-          if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
+          IssueCtrlBreak--;
+          key_ctrl = 1;
+          if (IssueCtrlBreak > 15)
           {
-              if (einstein_mode == 2) // .dsk file
+              kbd_key = KBD_KEY_STOP;
+              kbd_keys[kbd_keys_pressed++] = kbd_key;
+          }
+      }
+      else // Otherwise we're scanning for keys normally
+      {
+          if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_X))
+          {
+                lcdSwap();
+                WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+          }
+          else if ((nds_key & KEY_L) && (nds_key & KEY_R))
+          {
+                DSPrint(5,0,0,"SNAPSHOT");
+                screenshot();
+                WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+                DSPrint(5,0,0,"        ");
+          }
+          else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y))
+          {
+              if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
               {
-                  einstien_load_dsk_file();
+                  if (einstein_mode == 2) // .dsk file
+                  {
+                      IssueCtrlBreak = 30;  // Long enough for the Einstein to see the Ctrl-Break and boot the diskette
+                  }
+                  else
+                  {
+                      einstein_load_com_file();
+                      WAITVBL;WAITVBL;WAITVBL;
+                  }
               }
-              else
+              else if (memotech_mode && (nds_key & KEY_START))
               {
-                  einstein_load_com_file();
+                  extern u8 memotech_magrom_present;
+
+                  if (memotech_magrom_present)
+                  {
+                      BufferKey('R');
+                      BufferKey('O');
+                      BufferKey('M');
+                      BufferKey(' ');
+                      BufferKey('7');
+                      BufferKey(KBD_KEY_RET);
+                  }
+                  else
+                  if (memotech_mode == 2)   // .MTX file: enter LOAD "" into the keyboard buffer
+                  {
+                      if (memotech_mtx_500_only)
+                      {
+                          RAM_Memory[0xFA7A] = 0x00;
+
+                          BufferKey('N');
+                          BufferKey('E');
+                          BufferKey('W');
+                          BufferKey(KBD_KEY_RET);
+                          BufferKey(255);
+                      }
+
+                      BufferKey('L');
+                      BufferKey('O');
+                      BufferKey('A');
+                      BufferKey('D');
+                      BufferKey(KBD_KEY_SHIFT);
+                      BufferKey('2');
+                      BufferKey(KBD_KEY_SHIFT);
+                      BufferKey('2');
+                      BufferKey(KBD_KEY_RET);
+                  }
+                  else  // .RUN file: load and jump to program
+                  {
+                      memotech_launch_run_file();
+                  }
                   WAITVBL;WAITVBL;WAITVBL;
               }
-          }
-          else if (memotech_mode && (nds_key & KEY_START))
-          {
-              extern u8 memotech_magrom_present;
-
-              if (memotech_magrom_present)
+              else if ((svi_mode || (msx_mode==2)) && ((nds_key & KEY_START) || (nds_key & KEY_SELECT)))
               {
-                  BufferKey('R');
-                  BufferKey('O');
-                  BufferKey('M');
-                  BufferKey(' ');
-                  BufferKey('7');
-                  BufferKey(KBD_KEY_RET);
-              }
-              else
-              if (memotech_mode == 2)   // .MTX file: enter LOAD "" into the keyboard buffer
-              {
-                  if (memotech_mtx_500_only)
+                  if (nds_key & KEY_START)
                   {
-                      RAM_Memory[0xFA7A] = 0x00;
-
-                      BufferKey('N');
-                      BufferKey('E');
-                      BufferKey('W');
+                      BufferKey('C');
+                      BufferKey('L');
+                      BufferKey('O');
+                      BufferKey('A');
+                      BufferKey('D');
                       BufferKey(KBD_KEY_RET);
                       BufferKey(255);
+                      BufferKey('R');
+                      BufferKey('U');
+                      BufferKey('N');
+                      BufferKey(KBD_KEY_RET);
                   }
-                  
-                  BufferKey('L');
-                  BufferKey('O');
-                  BufferKey('A');
-                  BufferKey('D');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey('2');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey('2');
-                  BufferKey(KBD_KEY_RET);
-              }
-              else  // .RUN file: load and jump to program
-              {
-                  memotech_launch_run_file();
-              }
-              WAITVBL;WAITVBL;WAITVBL;
-          }
-          else if ((svi_mode || (msx_mode==2)) && ((nds_key & KEY_START) || (nds_key & KEY_SELECT)))
-          {
-              if (nds_key & KEY_START)
-              {
-                  BufferKey('C');
-                  BufferKey('L');
-                  BufferKey('O');
-                  BufferKey('A');
-                  BufferKey('D');
-                  BufferKey(KBD_KEY_RET);
-                  BufferKey(255);
-                  BufferKey('R');
-                  BufferKey('U');
-                  BufferKey('N');
-                  BufferKey(KBD_KEY_RET);
+                  else
+                  {
+                      BufferKey('B');
+                      BufferKey('L');
+                      BufferKey('O');
+                      BufferKey('A');
+                      BufferKey('D');
+                      BufferKey(KBD_KEY_SHIFT);
+                      BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
+                      BufferKey('C');
+                      BufferKey('A');
+                      BufferKey('S');
+                      if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                      BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
+                      BufferKey(KBD_KEY_SHIFT);
+                      BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
+                      BufferKey(',');
+                      BufferKey('R');
+                      BufferKey(KBD_KEY_RET);
+                  }
+                  WAITVBL;WAITVBL;WAITVBL;
               }
               else
+              // --------------------------------------------------------------------------------------------------
+              // There are 12 NDS buttons (D-Pad, XYAB, L/R and Start+Select) - we allow mapping of any of these.
+              // --------------------------------------------------------------------------------------------------
+              for (u8 i=0; i<12; i++)
               {
-                  BufferKey('B');
-                  BufferKey('L');
-                  BufferKey('O');
-                  BufferKey('A');
-                  BufferKey('D');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                  BufferKey('C');
-                  BufferKey('A');
-                  BufferKey('S');
-                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                  BufferKey(',');
-                  BufferKey('R');
-                  BufferKey(KBD_KEY_RET);
+                  if (nds_key & NDS_keyMap[i])
+                  {
+                      if (keyCoresp[myConfig.keymap[i]] < 0xFFFE0000)   // Normal key map
+                      {
+                          ucDEUX  |= keyCoresp[myConfig.keymap[i]];
+                      }
+                      else if (keyCoresp[myConfig.keymap[i]] < 0xFFFF0000)   // Special Spinner Handling
+                      {
+                          if      (keyCoresp[myConfig.keymap[i]] == META_SPINX_LEFT)  spinX_left  = 1;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_SPINX_RIGHT) spinX_right = 1;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_LEFT)  spinY_left  = 1;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_RIGHT) spinY_right = 1;
+                      }
+                      else // This is a keyboard maping... handle that here... just set the appopriate kbd_key
+                      {
+                          if      ((keyCoresp[myConfig.keymap[i]] >= META_KBD_A) && (keyCoresp[myConfig.keymap[i]] <= META_KBD_Z))  kbd_key = ('A' + (keyCoresp[myConfig.keymap[i]] - META_KBD_A));
+                          else if ((keyCoresp[myConfig.keymap[i]] >= META_KBD_0) && (keyCoresp[myConfig.keymap[i]] <= META_KBD_9))  kbd_key = ('0' + (keyCoresp[myConfig.keymap[i]] - META_KBD_0));
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE)     kbd_key = ' ';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)    kbd_key = (adam_mode ? ADAM_KEY_ENTER : KBD_KEY_RET);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ESC)       kbd_key = (adam_mode ? ADAM_KEY_ESC : KBD_KEY_ESC);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SHIFT)     key_shift = 1;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CTRL)      key_ctrl  = 1;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CODE)      key_code  = 1;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_GRAPH)     key_graph = 1;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_HOME)      kbd_key = (adam_mode ? ADAM_KEY_HOME  : KBD_KEY_HOME);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_UP)        kbd_key = (adam_mode ? ADAM_KEY_UP    : KBD_KEY_UP);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_DOWN)      kbd_key = (adam_mode ? ADAM_KEY_DOWN  : KBD_KEY_DOWN);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT)      kbd_key = (adam_mode ? ADAM_KEY_LEFT  : KBD_KEY_LEFT);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT)     kbd_key = (adam_mode ? ADAM_KEY_RIGHT : KBD_KEY_RIGHT);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PERIOD)    kbd_key = '.';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_COMMA)     kbd_key = ',';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_COLON)     kbd_key = ':';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SEMI)      kbd_key = ';';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_QUOTE)     kbd_key = (adam_mode ? ADAM_KEY_QUOTE : KBD_KEY_QUOTE);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SLASH)     kbd_key = '/';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_BACKSLASH) kbd_key = '\\';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PLUS)      kbd_key = '+';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_MINUS)     kbd_key = '-';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_LBRACKET)  kbd_key = '[';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RBRACKET)  kbd_key = ']';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_BS)        kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CARET)     kbd_key = '^';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ASTERISK)  kbd_key = '*';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ATSIGN)    kbd_key = '@';
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_TAB)       kbd_key = (adam_mode ? ADAM_KEY_TAB : KBD_KEY_TAB);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_INS)       kbd_key = (adam_mode ? ADAM_KEY_INS : KBD_KEY_INS);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_DEL)       kbd_key = (adam_mode ? ADAM_KEY_DEL : KBD_KEY_DEL);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CLR)       kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_CLEAR);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_UNDO)      kbd_key = (adam_mode ? ADAM_KEY_UNDO : KBD_KEY_UNDO);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_MOVE)      kbd_key = (adam_mode ? ADAM_KEY_MOVE : KBD_KEY_MOVE);                     
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_WILDCARD)  kbd_key = (adam_mode ? ADAM_KEY_WILDCARD : KBD_KEY_WILDCARD);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STORE)     kbd_key = (adam_mode ? ADAM_KEY_STORE : KBD_KEY_STORE);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PRINT)     kbd_key = (adam_mode ? ADAM_KEY_PRINT : KBD_KEY_PRINT);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STOP)      kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_STOP);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F1)        kbd_key = (adam_mode ? ADAM_KEY_F1 : KBD_KEY_F1);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F2)        kbd_key = (adam_mode ? ADAM_KEY_F2 : KBD_KEY_F2);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F3)        kbd_key = (adam_mode ? ADAM_KEY_F3 : KBD_KEY_F3);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F4)        kbd_key = (adam_mode ? ADAM_KEY_F4 : KBD_KEY_F4);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F5)        kbd_key = (adam_mode ? ADAM_KEY_F5 : KBD_KEY_F5);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F6)        kbd_key = (adam_mode ? ADAM_KEY_F6 : KBD_KEY_F6);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F7)        kbd_key = KBD_KEY_F7;
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F8)        kbd_key = KBD_KEY_F8;                      
+
+                          if (adam_mode)
+                          {
+                              if (kbd_key != last_mapped_key && (kbd_key != 0) && (last_mapped_key != 255))
+                              {
+                                  PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
+                                  if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
+                                  last_mapped_key = kbd_key;
+                              }                            
+                          }
+                          else if (kbd_key != 0)
+                          {
+                              kbd_keys[kbd_keys_pressed++] = kbd_key;
+                          }
+                      }
+                  }
               }
-              WAITVBL;WAITVBL;WAITVBL;
           }
           else
-          // --------------------------------------------------------------------------------------------------
-          // There are 12 NDS buttons (D-Pad, XYAB, L/R and Start+Select) - we allow mapping of any of these.
-          // --------------------------------------------------------------------------------------------------
-          for (u8 i=0; i<12; i++)
           {
-              if (nds_key & NDS_keyMap[i])
-              {
-                  if (keyCoresp[myConfig.keymap[i]] < 0xFFFE0000)   // Normal key map
-                  {
-                      ucDEUX  |= keyCoresp[myConfig.keymap[i]];
-                  }
-                  else if (keyCoresp[myConfig.keymap[i]] < 0xFFFF0000)   // Special Spinner Handling
-                  {
-                      if      (keyCoresp[myConfig.keymap[i]] == META_SPINX_LEFT)  spinX_left  = 1;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_SPINX_RIGHT) spinX_right = 1;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_LEFT)  spinY_left  = 1;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_SPINY_RIGHT) spinY_right = 1;
-                  }
-                  else // This is a keyboard maping... handle that here... just set the appopriate kbd_key
-                  {
-                      if      ((keyCoresp[myConfig.keymap[i]] >= META_KBD_A) && (keyCoresp[myConfig.keymap[i]] <= META_KBD_Z))  kbd_key = ('A' + (keyCoresp[myConfig.keymap[i]] - META_KBD_A));
-                      else if ((keyCoresp[myConfig.keymap[i]] >= META_KBD_0) && (keyCoresp[myConfig.keymap[i]] <= META_KBD_9))  kbd_key = ('0' + (keyCoresp[myConfig.keymap[i]] - META_KBD_0));
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SPACE)     kbd_key = ' ';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RETURN)    kbd_key = (adam_mode ? ADAM_KEY_ENTER : KBD_KEY_RET);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ESC)       kbd_key = (adam_mode ? ADAM_KEY_ESC : KBD_KEY_ESC);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SHIFT)     key_shift = 1;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CTRL)      key_ctrl  = 1;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CODE)      key_code  = 1;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_GRAPH)     key_graph = 1;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_HOME)      kbd_key = (adam_mode ? ADAM_KEY_HOME  : KBD_KEY_HOME);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_UP)        kbd_key = (adam_mode ? ADAM_KEY_UP    : KBD_KEY_UP);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_DOWN)      kbd_key = (adam_mode ? ADAM_KEY_DOWN  : KBD_KEY_DOWN);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_LEFT)      kbd_key = (adam_mode ? ADAM_KEY_LEFT  : KBD_KEY_LEFT);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RIGHT)     kbd_key = (adam_mode ? ADAM_KEY_RIGHT : KBD_KEY_RIGHT);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PERIOD)    kbd_key = '.';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_COMMA)     kbd_key = ',';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_COLON)     kbd_key = ':';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SEMI)      kbd_key = ';';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_QUOTE)     kbd_key = (adam_mode ? ADAM_KEY_QUOTE : KBD_KEY_QUOTE);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_SLASH)     kbd_key = '/';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_BACKSLASH) kbd_key = '\\';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PLUS)      kbd_key = '+';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_MINUS)     kbd_key = '-';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_LBRACKET)  kbd_key = '[';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_RBRACKET)  kbd_key = ']';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_BS)        kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CARET)     kbd_key = '^';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ASTERISK)  kbd_key = '*';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_ATSIGN)    kbd_key = '@';
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_TAB)       kbd_key = (adam_mode ? ADAM_KEY_TAB : KBD_KEY_TAB);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_INS)       kbd_key = (adam_mode ? ADAM_KEY_INS : KBD_KEY_INS);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_DEL)       kbd_key = (adam_mode ? ADAM_KEY_DEL : KBD_KEY_DEL);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_CLR)       kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_CLEAR);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_UNDO)      kbd_key = (adam_mode ? ADAM_KEY_UNDO : KBD_KEY_UNDO);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_MOVE)      kbd_key = (adam_mode ? ADAM_KEY_MOVE : KBD_KEY_MOVE);                     
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_WILDCARD)  kbd_key = (adam_mode ? ADAM_KEY_WILDCARD : KBD_KEY_WILDCARD);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STORE)     kbd_key = (adam_mode ? ADAM_KEY_STORE : KBD_KEY_STORE);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PRINT)     kbd_key = (adam_mode ? ADAM_KEY_PRINT : KBD_KEY_PRINT);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STOP)      kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_STOP);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F1)        kbd_key = (adam_mode ? ADAM_KEY_F1 : KBD_KEY_F1);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F2)        kbd_key = (adam_mode ? ADAM_KEY_F2 : KBD_KEY_F2);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F3)        kbd_key = (adam_mode ? ADAM_KEY_F3 : KBD_KEY_F3);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F4)        kbd_key = (adam_mode ? ADAM_KEY_F4 : KBD_KEY_F4);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F5)        kbd_key = (adam_mode ? ADAM_KEY_F5 : KBD_KEY_F5);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F6)        kbd_key = (adam_mode ? ADAM_KEY_F6 : KBD_KEY_F6);
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F7)        kbd_key = KBD_KEY_F7;
-                      else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F8)        kbd_key = KBD_KEY_F8;                      
-
-                      if (adam_mode)
-                      {
-                          if (kbd_key != last_mapped_key && (kbd_key != 0) && (last_mapped_key != 255))
-                          {
-                              PutKBD(kbd_key | (((adam_CapsLock && (kbd_key >= 'A') && (kbd_key <= 'Z')) || key_shift) ? CON_SHIFT:0));
-                              if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback...
-                              last_mapped_key = kbd_key;
-                          }                            
-                      }
-                      else if (kbd_key != 0)
-                      {
-                          kbd_keys[kbd_keys_pressed++] = kbd_key;
-                      }
-                  }
-              }
+              last_mapped_key = 0;
           }
-      }
-      else
-      {
-          last_mapped_key = 0;
       }
       
       // ------------------------------------------------------------------------------------------

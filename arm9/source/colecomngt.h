@@ -56,6 +56,8 @@ extern u8 sg1000_sms_mapper;
 extern u8 JoyMode;                      // Joystick / Paddle management
 extern u32 JoyState;                    // Joystick / Paddle management
 
+extern u8 IssueCtrlBreak;
+
 extern u8 sRamAtE000_OK;
 extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
