@@ -45,8 +45,13 @@ extern u8 EinsteinBios[];
 // -----------------------------------------------------------------------------------------
 // Allocate the Floppy Drive Controller structure where we track the registers and the
 // track buffer to handle FDC requests. Right now we're only handling basic seeks and 
-// sector reads, but that's good enough to get the vast majority of Einstein .dsk games
-// playing properly.
+// sector reads and sector writes, but that's good enough to get the vast majority of 
+// Einstein .dsk games playing properly.
+// 
+// Note, this poor-man implementation of an FDC 1770 controller chip is just enough
+// to make things work for the emulator. My basic understanding of all this was
+// gleaned from the WD1770 datasheet and, more usefully, this website:
+// https://www.cloud9.co.uk/james/BBCMicro/Documentation/wd1770.html
 // -----------------------------------------------------------------------------------------
 struct FDC_t FDC;
 
@@ -171,15 +176,18 @@ void fdc_state_machine(void)
             break;
             
         case 0xC0: // Read Address
+            debug1++;
             FDC.status = 0x80;                          // Not handled yet...
             break;
         case 0xD0: // Force Interrupt
             FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
             break;
         case 0xE0: // Read Track
+            debug2++;
             FDC.status = 0x80;                          // Not handled yet...
             break;
         case 0xF0: // Write Track
+            debug3++;
             FDC.status = 0x80;                          // Not handled yet...
             break;
     }
