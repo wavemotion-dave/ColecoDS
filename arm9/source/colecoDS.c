@@ -843,7 +843,7 @@ void ShowDebugZ80(void)
         extern u8 lastBank;
         extern u8 romBankMask;
         extern u8 Port20, Port53, Port60;
-#if 1
+
         siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
         DSPrint(0,idx++,7, tmp);
         siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
@@ -909,8 +909,11 @@ void ShowDebugZ80(void)
             DSPrint(18,idx++,7, tmp);
             siprintf(tmp, "FDC.sec %-3d %02X", FDC.sector, FDC.sector);
             DSPrint(18,idx++,7, tmp);
-            idx++;
-            
+            idx++; 
+            extern u32 halt_counter;
+            siprintf(tmp, "HALT %-12lu", halt_counter); 
+            DSPrint(18,idx++,7, tmp);
+            idx--;
         }
 
         siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
@@ -919,22 +922,31 @@ void ShowDebugZ80(void)
         siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
 
         idx = 1;
-        siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
-        siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
-        siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
-        idx++;idx++;
+        if (einstein_mode || sordm5_mode || memotech_mode)
+        {
+            for (int chan=0; chan<4; chan++)
+            {
+                siprintf(tmp, "C%d %02X %-4lu%-4lu", chan, CTC[chan].control, (u32)CTC[chan].constant, (u32)CTC[chan].counter); 
+                DSPrint(18,idx++,7, tmp);
+            }    
+        }
+        else
+        {
+            siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
+            siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
+            siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
+        }
+       
+        idx++;
         siprintf(tmp, "D1 %-9lu %04X", debug1, (u16)debug1); DSPrint(15,idx++,7, tmp);
         siprintf(tmp, "D2 %-9lu %04X", debug2, (u16)debug2); DSPrint(15,idx++,7, tmp);
         siprintf(tmp, "D3 %-9lu %04X", debug3, (u16)debug3); DSPrint(15,idx++,7, tmp);
         siprintf(tmp, "D4 %-9lu %04X", debug4, (u16)debug4); DSPrint(15,idx++,7, tmp);
         siprintf(tmp, "D5 %-9lu %04X", debug5, (u16)debug5); DSPrint(15,idx++,7, tmp);
         siprintf(tmp, "D6 %-9lu %04X", debug6, (u16)debug6); DSPrint(15,idx++,7, tmp);
-        
-#endif                
     }
     else
     {
-        extern u32 halt_counter;
         idx = 1;
         siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); DSPrint(5,idx++,7, tmp);
         siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); DSPrint(5,idx++,7, tmp);
@@ -942,13 +954,6 @@ void ShowDebugZ80(void)
         siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); DSPrint(5,idx++,7, tmp);
         siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); DSPrint(5,idx++,7, tmp);
         siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "HC %-12lu %08lX", halt_counter, halt_counter); DSPrint(5,idx++,7, tmp);
-        for (int chan=0; chan<=3; chan++)
-        {
-            siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); DSPrint(5,idx++,7, tmp);
-            siprintf(tmp, "CTC%d constant = %-8lu", chan, (u32)CTC[chan].constant); DSPrint(5,idx++,7, tmp);
-            siprintf(tmp, "CTC%d counter  = %-8lu", chan, (u32)CTC[chan].counter); DSPrint(5,idx++,7, tmp);
-        }    
     }
     idx++;
 }
