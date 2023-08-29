@@ -278,7 +278,7 @@ void colecoSaveState()
         if (uNbO) fwrite(&savedBUF, sizeof(savedBUF),1, handle);
         if (uNbO) fwrite(&savedLEN, sizeof(savedLEN),1, handle);
         if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
-        if (uNbO) fwrite(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
+        if (uNbO) fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
         if (uNbO) fwrite(spare, 32,1, handle);        
         if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
         if (adam_128k_mode) fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
@@ -538,7 +538,7 @@ void colecoLoadState()
                 if (uNbO) fread(&savedBUF, sizeof(savedBUF),1, handle);
                 if (uNbO) fread(&savedLEN, sizeof(savedLEN),1, handle);
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
-                if (uNbO) fread(&adam_unsaved_data, sizeof(adam_unsaved_data),1, handle);
+                if (uNbO) fread(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
                 if (uNbO) fread(spare, 32,1, handle);                
                 if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
                 if (adam_128k_mode) fread(RAM_Memory+0x10000, 0x10000,1, handle);

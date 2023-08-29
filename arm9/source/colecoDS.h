@@ -237,7 +237,7 @@ extern u8 svi_mode;
 extern u8 adam_mode;
 extern u8 coleco_mode;
 extern u8 adam_CapsLock;
-extern u8 adam_unsaved_data;
+extern u8 disk_unsaved_data;
 extern u8 creativision_mode;
 
 extern u16 machine_mode;
