@@ -350,7 +350,7 @@ u8 colecoInit(char *szGame)
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start
       adam_CapsLock = 0;
-      adam_unsaved_data = 0;
+      disk_unsaved_data = 0;
       colecoWipeRAM();
       RetFct = loadrom(szGame,RAM_Memory,0x10000);  
   }

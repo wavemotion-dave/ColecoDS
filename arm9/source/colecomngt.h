@@ -168,8 +168,10 @@ struct FDC_t
     u16 track_buffer_idx;
     u16 track_buffer_end;
     u8  wait_for_read;
+    u8  wait_for_write;
     u8  seek_track_0;
-    u16 seek_byte_transfer;
+    u8  seek_track_n;
+    u16 sector_byte_counter;
     u16 spare;
 };
 extern struct FDC_t FDC;
@@ -205,6 +207,8 @@ extern void einstien_load_dsk_file(void);
 extern void einstein_restore_bios(void);
 extern void memotech_launch_run_file(void);
 extern void sordm5_check_keyboard_interrupt(void);
+extern void einstein_save_disk(void);
+extern void einstein_swap_disk(char *szFileName);
 
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 

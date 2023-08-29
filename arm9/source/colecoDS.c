@@ -130,7 +130,7 @@ C24XX EEPROM;
 // Some ADAM and Tape related vars...
 // ------------------------------------------
 u8 adam_CapsLock        = 0;
-u8 adam_unsaved_data    = 0;
+u8 disk_unsaved_data    = 0;
 u8 write_EE_counter     = 0;
 u32 last_tape_pos       = 9999;
 
@@ -695,7 +695,7 @@ void ResetColecovision(void)
   einstein_reset();                     // Reset the Tatung Einstein specific vars
 
   adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
-  adam_unsaved_data = 0;                // No unsaved ADAM tape/disk data to start
+  disk_unsaved_data = 0;                // No unsaved ADAM tape/disk data to start
 
   write_EE_counter=0;                   // Nothing to write for EEPROM yet
 
@@ -943,7 +943,6 @@ void ShowDebugZ80(void)
         siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); DSPrint(5,idx++,7, tmp);
         siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); DSPrint(5,idx++,7, tmp);
         siprintf(tmp, "HC %-12lu %08lX", halt_counter, halt_counter); DSPrint(5,idx++,7, tmp);
-
         for (int chan=0; chan<=3; chan++)
         {
             siprintf(tmp, "CTC%d control  = 0x%02X    ", chan, CTC[chan].control); DSPrint(5,idx++,7, tmp);
@@ -1152,7 +1151,8 @@ void DisplayStatusLine(bool bForce)
         
         if (io_show_status)
         {
-            DSPrint(8,0,6, "DISK READ");
+            if (io_show_status == 5) {DSPrint(8,0,6, "DISK WRITE"); io_show_status = 3;}
+            if (io_show_status == 4) {DSPrint(8,0,6, "DISK READ "); io_show_status = 3;}
             if (io_show_status == 3)
             {
                 mmEffect(SFX_FLOPPY);
@@ -1161,7 +1161,7 @@ void DisplayStatusLine(bool bForce)
         }
         else
         {
-            DSPrint(8,0,6, "         ");
+            DSPrint(8,0,6, "          ");
         }
         
     }
@@ -1214,7 +1214,7 @@ void SaveAdamTapeOrDisk(void)
         SaveFDI(&Disks[0], lastAdamDataPath, FMT_ADMDSK);
     DSPrint(12,0,6, "      ");
     DisplayStatusLine(true);
-    adam_unsaved_data = 0;
+    disk_unsaved_data = 0;
 }
 
 
@@ -1267,7 +1267,7 @@ void CassetteInsert(char *filename)
 
 
 // ------------------------------------------------------------------------
-// Show the Cassette Menu text - highlight the selected row.
+// Show the Cassette/Disk Menu text - highlight the selected row.
 // ------------------------------------------------------------------------
 u8 cassete_menu_items = 0;
 void CassetteMenuShow(bool bClearScreen, u8 sel)
@@ -1287,9 +1287,20 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
         DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DDP/DSK  ");  cassete_menu_items++;
         DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DDP/DSK  ");  cassete_menu_items++;
         DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU     ");  cassete_menu_items++;
-        if (adam_unsaved_data)
+        if (disk_unsaved_data)
         {
             DSPrint(3, 15, 0, "DDP/DSK HAS UNSAVED DATA!");
+        }
+    }
+    else if (einstein_mode)
+    {
+        DSPrint(7,8,6,                    "EINSTEIN DISK MENU");
+        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DISK  ");  cassete_menu_items++;
+        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DISK  ");  cassete_menu_items++;
+        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU  ");  cassete_menu_items++;
+        if (disk_unsaved_data)
+        {
+            DSPrint(3, 15, 0, "DISK HAS UNSAVED DATA!");
         }
     }
     else
@@ -1311,7 +1322,7 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
 }
 
 // ------------------------------------------------------------------------
-// Handle Cassette mini-menu interface...
+// Handle Cassette/Disk mini-menu interface...
 // ------------------------------------------------------------------------
 void CassetteMenu(void)
 {
@@ -1355,11 +1366,19 @@ void CassetteMenu(void)
         {
             if (menuSelection == 0) // SAVE CASSETTE
             {
-                if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE DATA?") == ID_SHM_YES)
+                if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
                 {
                     if (adam_mode)
                     {
                         SaveAdamTapeOrDisk();
+                    }
+                    else if (einstein_mode)
+                    {
+                        DSPrint(12,0,6, "SAVING");
+                        einstein_save_disk();
+                        WAITVBL;WAITVBL;
+                        DSPrint(12,0,6, "      ");
+                        break;
                     }
                     else
                     {
@@ -1378,7 +1397,7 @@ void CassetteMenu(void)
                 }
                 CassetteMenuShow(true, menuSelection);
             }
-            if (menuSelection == 1) // SWAP CASSETTE
+            if (menuSelection == 1) // SWAP CASSETTE/DISK
             {
                 colecoDSLoadFile();
                 if (ucGameChoice >= 0)
@@ -1386,6 +1405,10 @@ void CassetteMenu(void)
                     if (adam_mode)
                     {
                         DigitalDataInsert(gpFic[ucGameChoice].szName);
+                    }
+                    else if (einstein_mode)
+                    {
+                        einstein_swap_disk(gpFic[ucGameChoice].szName);
                     }
                     else
                     {
@@ -1409,7 +1432,7 @@ void CassetteMenu(void)
                       DisplayStatusLine(true);
                       CassetteMenuShow(true, menuSelection);
                   }
-                  if (adam_mode) break;
+                  if (adam_mode | einstein_mode) break;
             }
             if (menuSelection == 3)
             {

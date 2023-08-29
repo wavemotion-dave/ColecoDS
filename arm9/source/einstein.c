@@ -70,7 +70,7 @@ void fdc_state_machine(void)
     
     if (FDC.seek_track_0)
     {
-        if ((++fdc_busy_count % 3) == 0) FDC.status |= 0x02; else FDC.status &= ~0x02;
+        if ((++fdc_busy_count % 3) == 0) FDC.status |= 0x02; else FDC.status &= ~0x02; // Produce some fake index pulses
         if (fdc_busy_count > 12)
         {
             fdc_busy_count = 0;
@@ -81,19 +81,19 @@ void fdc_state_machine(void)
         if (++fdc_busy_count > 6)   // Arbitrary amount of busy - change this for longer loads
         {
             fdc_busy_count = 0;     // Reset busy count
-            FDC.status &= ~0x01;    // Clear Busy Status
         } else return;
     }
     
     switch(FDC.command & 0xF0)
     {
         case 0x00: // Restore
-            FDC.track  = 0;         // Track buffer at zero
-            FDC.actTrack = 0;       // We're actually at track zero
-            FDC.seek_track_0  = 0;  // Not seeking track zero (we found it!)
-            FDC.wait_for_read = 2;  // No data to transfer
-            FDC.status = 0xA0;      // Motor spun up. Track zero. Not busy.
+            FDC.track  = 0;                             // Track buffer at zero
+            FDC.actTrack = 0;                           // We're actually at track zero
+            FDC.seek_track_0  = 0;                      // Not seeking track zero (we found it!)
+            FDC.wait_for_read = 2;                      // No data to transfer
+            FDC.status = 0xA0;                          // Motor spun up. Track zero. Not busy.
             break;
+            
         case 0x10: // Seek Track
             FDC.track = FDC.data;                       // Settle on requested track
             FDC.actTrack = FDC.data;                    // Settle on requested track
@@ -101,64 +101,86 @@ void fdc_state_machine(void)
             FDC.wait_for_read = 2;                      // No data to transfer
             FDC.status = (FDC.actTrack ? 0xA4 : 0xA0);  // Motor Spun Up... Not busy. Check if Track zero
             break;
+            
         case 0x20: // Step
         case 0x30: // Step
-            debug5++;
-            FDC.status = 0x80;
+            FDC.status = 0x80;                          // Not handled yet...
             break;
         case 0x40: // Step in
         case 0x50: // Step in
-            debug5++;
-            FDC.status = 0x80;
+            FDC.status = 0x80;                          // Not handled yet...
             break;
         case 0x60: // Step out
         case 0x70: // Step out
-            debug5++;
-            FDC.status = 0x80;
+            FDC.status = 0x80;                          // Not handled yet...
             break;
+            
         case 0x80: // Read Sector
         case 0x90: // Read Sector
             if (FDC.wait_for_read == 0)
             {
                 if (FDC.track_buffer_idx >= FDC.track_buffer_end) // Is there any more data to put out?
                 {
-                    FDC.status &= ~0x03;            // Done. No longer busy.
-                    FDC.wait_for_read=2;            // Don't fetch more FDC data
-                    FDC.seek_byte_transfer = 0;     // And reset our counter
+                    FDC.status &= ~0x03;                // Done. No longer busy.
+                    FDC.wait_for_read=2;                // Don't fetch more FDC data
+                    FDC.sector_byte_counter = 0;        // And reset our counter
                 }
                 else
                 {
                     FDC.status = 0x83;                                   // Data Ready and no errors... still busy
                     FDC.data = FDC.track_buffer[FDC.track_buffer_idx++]; // Read data from our track buffer
                     FDC.wait_for_read = 1;                               // Wait for the CPU to fetch the data
-                    if (++FDC.seek_byte_transfer >= 512)                 // Did we cross a sector boundary?
+                    if (++FDC.sector_byte_counter >= 512)                // Did we cross a sector boundary?
                     {
                         FDC.sector++;                               // Bump the sector number
-                        FDC.seek_byte_transfer = 0;                 // And reset our counter
+                        FDC.sector_byte_counter = 0;                // And reset our counter
                     }
                 }
             }
             break;
+            
         case 0xA0: // Write Sector
         case 0xB0: // Write Sector
-            debug5++;
-            FDC.status = 0x80;
+            if (FDC.wait_for_write == 3)
+            {
+                FDC.status = 0x83;          // We're good to accept data now
+                FDC.wait_for_write = 1;     // And start looking for data
+            }
+            else if (FDC.wait_for_write == 0)
+            {
+                disk_unsaved_data = 1;
+                FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
+                if (FDC.track_buffer_idx >= FDC.track_buffer_end)
+                {
+                    FDC.status = 0x80;              // Done. No longer busy.
+                    FDC.wait_for_write=2;           // Don't write more FDC data
+                    FDC.sector_byte_counter = 0;    // And reset our counter
+                    memcpy(&ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], FDC.track_buffer, 5120); // Write the track back to main memory                        
+                }
+                else
+                {
+                    FDC.status = 0x83;                      // No errors... still busy... and we can accept more data
+                    FDC.wait_for_write = 1;                 // Wait for the CPU to give us more data
+                    if (++FDC.sector_byte_counter >= 512)   // Did we cross a sector boundary?
+                    {
+                        FDC.sector++;                       // Bump the sector number
+                        FDC.sector_byte_counter = 0;        // And reset our counter
+                    }
+                }
+            }
             break;
+            
         case 0xC0: // Read Address
-            debug5++;
-            FDC.status = 0x80;
+            FDC.status = 0x80;                          // Not handled yet...
             break;
         case 0xD0: // Force Interrupt
-            debug5++;
-            FDC.status = (FDC.actTrack ? 0xA4:0xA0);      // Motor Spun Up, Not Busy and Maybe Track Zero
+            FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
             break;
         case 0xE0: // Read Track
-            debug5++;
-            FDC.status = 0x80;
+            FDC.status = 0x80;                          // Not handled yet...
             break;
         case 0xF0: // Write Track
-            debug5++;
-            FDC.status = 0x80;
+            FDC.status = 0x80;                          // Not handled yet...
             break;
     }
 }
@@ -172,6 +194,8 @@ void fdc_state_machine(void)
 //
 u8 fdc_read(u8 addr)
 {
+    if ((drive_select&0x0F) != 0x01) return 0x00;
+    
     fdc_state_machine();    // Clock the floppy drive controller state machine
     
     switch (addr)
@@ -202,40 +226,48 @@ u8 fdc_read(u8 addr)
 //   IV   Force interrupt    1   1   0   1   i3  i2  i1  i0
 void fdc_write(u8 addr, u8 data)
 {
-    if (drive_select != 0x01) return;
-    
-    if (FDC.status & 0x01) // If BUSY
-    {
-        if ((addr == 0) && ((data & 0xF0) == 0xD0))     // Only a Force Interrupt can override busy
-        {
-            debug4++;
-            FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
-        }
-        else
-        {
-            debug6++;
-            return;                                     // We were given a command while busy - ignore it.
-        }
-    }
+    if ((drive_select&0x0F) != 0x01) return;
     
     // -------------------------------------------------------
     // Handle the write - most of the time it's a command...
     // -------------------------------------------------------
     switch (addr)
     {
-        case 0: FDC.command = data; break;
-        case 1: FDC.track = data;   break;
-        case 2: FDC.sector = data;  break;
-        case 3: FDC.data = data;    break;
+        case 0: if (!(FDC.status & 0x01)) FDC.command = data;  break;
+        case 1: if (!(FDC.status & 0x01)) FDC.track   = data;  break;
+        case 2: if (!(FDC.status & 0x01)) FDC.sector  = data;  break;
+        case 3: 
+            FDC.data = data;  
+            FDC.status &= ~0x02;
+            FDC.wait_for_write = 0;
+            break;
     }
     
     // If command....
     if (addr == 0x00)
     {
-        if (data == 0x05)   // Restore
+        // First check if we are busy... if so, only a Force Interrupt can override us
+        if (FDC.status & 0x01)
+        {
+            if ((data & 0xF0) == 0xD0)     // Only a Force Interrupt can override busy
+            {
+                FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
+                memcpy(&ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], FDC.track_buffer, 5120); // Write the track back to main memory
+                FDC.wait_for_read = 2;                        // Not feteching any data
+                FDC.wait_for_write = 2;                       // Not writing any data
+                FDC.seek_track_0 = 0;                         // Not seeking track 0
+            }
+            else
+            {
+                return;                                     // We were given a command while busy - ignore it.
+            }
+        }
+        
+        if ((data&0xF0) == 0x00) // // Restore
         {
             FDC.status = (FDC.actTrack ? 0xA5:0xA1);      // Motor Spun Up, Busy and Maybe Track Zero
             FDC.wait_for_read = 2;                        // Not feteching any data
+            FDC.wait_for_write = 2;                       // Not writing any data
             FDC.seek_track_0  = 1;                        // Seeking track 0
         }
         else
@@ -248,7 +280,8 @@ void fdc_write(u8 addr, u8 data)
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = 5120;
                 FDC.wait_for_read = 0; // Start fetching data
-                if (io_show_status == 0) io_show_status = 3;
+                FDC.sector_byte_counter = 0;
+                if (io_show_status == 0) io_show_status = 4;
             }
             else if ((data&0xF0) == 0x80) // Read Sector... one sector
             {
@@ -256,17 +289,37 @@ void fdc_write(u8 addr, u8 data)
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = FDC.track_buffer_idx+512;
                 FDC.wait_for_read = 0; // Start fetching data
-                FDC.seek_byte_transfer = 0;
-                if (io_show_status == 0) io_show_status = 3;
+                FDC.sector_byte_counter = 0;
+                if (io_show_status == 0) io_show_status = 4;
             }
+            else if ((data&0xF0) == 0xB0) // Write Sector... multiple
+            {
+                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                FDC.track_buffer_idx = FDC.sector*512;
+                FDC.track_buffer_end = 5120;
+                FDC.sector_byte_counter = 0;
+                FDC.wait_for_write = 3; // Start the Write Process...
+                io_show_status = 5;
+                FDC.status = 0x81; // Default to motor ON and busy... we can't accept data yet
+            }
+            else if ((data&0xF0) == 0xA0) // Write Sector... one sector
+            {
+                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                FDC.track_buffer_idx = FDC.sector*512;
+                FDC.track_buffer_end = FDC.track_buffer_idx+512;
+                FDC.sector_byte_counter = 0;
+                FDC.wait_for_write = 3; // Start the Write Process...
+                io_show_status = 5;
+                FDC.status = 0x81; // Default to motor ON and busy... we can't accept data yet
+            }            
             else if ((data&0xF0) == 0xE0) // Read Track
             {
-                debug5++;   
             }
             else if ((data&0xF0) == 0x10) // Seek Track
             {
                 FDC.status = (FDC.actTrack ? 0xA5:0xA1);      // Motor Spun Up, Busy and Maybe Track Zero
                 FDC.wait_for_read = 2;  // Not feteching any data
+                FDC.wait_for_write = 2; // Not storing any data
             }
         }
     }
@@ -278,7 +331,9 @@ void fdc_reset(u8 full_reset)
     {
         memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
     }
-    FDC.status = 0x80;                  // Motor on... nothing else (not busy)
+    FDC.status = 0x80;      // Motor on... nothing else (not busy)
+    FDC.wait_for_read = 2;  // Not feteching any data
+    FDC.wait_for_write = 2; // Not storing any data
 }
 
 void scan_keyboard(void)
@@ -608,7 +663,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
             return 0xFF;
             break;
             
-        case 0x18:  // FDC Area - Not implemented
+        case 0x18:  // FDC Area
             return fdc_read(Port & 3);
             break;
             
@@ -684,7 +739,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
         case 0x10:  // PCI Area - Not implemented
             break;
             
-        case 0x18:  // FDC Area - Not implemented
+        case 0x18:  // FDC Area
             fdc_write(Port & 3, Value);
             break;
             
@@ -805,6 +860,77 @@ struct TrackInfo_t
     struct SectorInfo_t SectorInfo[10];
 } TrackInfo;
 
+
+// ---------------------------------------------------------------------
+// If this is an Einstein .DSK file we need to re-assemble the sectors
+// into some logical pattern so we can more easily fetch and return 
+// the data when asked for by the CPU.  The Einstein disk is laid out
+// in a somewhat unusual manner probably to help speed up access. But
+// we want tracks and sectors laid out sequentially.
+// ---------------------------------------------------------------------
+void einstein_load_disk(void)
+{
+    u8 *trackInfoPtr = ROM_Memory + 0x100;
+    for (int i=0; i<40; i++)    // 40 tracks
+    {
+        trackInfoPtr = ROM_Memory + (0x100 + (i*(5120+0x100)));
+        memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
+        trackInfoPtr += 0x100;                                // Skip over the TrackInfo
+
+        for (int j=0; j<10; j++) // 10 sectors per track
+        {
+            u8 *dest = &ROM_Memory[(512*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
+            u8 *src  = trackInfoPtr + (j*512);
+            for (int k=0; k<512; k++) // 512 bytes per sector
+            {
+                *dest++ = *src++;
+            }
+        }
+    }
+}
+
+void einstein_save_disk(void)
+{
+    u8 *trackInfoPtr = ROM_Memory + 0x100;
+    for (int i=0; i<40; i++)    // 40 tracks
+    {
+        trackInfoPtr = ROM_Memory + (0x100 + (i*(5120+0x100)));
+        memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
+        trackInfoPtr += 0x100;                                // Skip over the TrackInfo
+
+        for (int j=0; j<10; j++) // 10 sectors per track
+        {
+            u8 *src = &ROM_Memory[(512*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
+            u8 *dest  = trackInfoPtr + (j*512);
+            for (int k=0; k<512; k++) // 512 bytes per sector
+            {
+                *dest++ = *src++;
+            }
+        }
+    }
+    
+    FILE *fp = fopen(lastAdamDataPath, "wb");
+    if (fp != NULL)
+    {
+        fwrite(ROM_Memory, 1, tape_len, fp);
+        fclose(fp);
+    }
+    
+    disk_unsaved_data = 0;
+}
+
+void einstein_swap_disk(char *szFileName)
+{
+    strcpy(lastAdamDataPath, szFileName);
+    FILE *fp = fopen(szFileName, "rb");
+    if (fp != NULL)
+    {
+        tape_len = fread(ROM_Memory, 1, (512*1024), fp);
+        fclose(fp);
+        einstein_load_disk();
+    }    
+}
+
 // ---------------------------------------------------------
 // The Einstein has CTC plus some memory handling stuff
 // ---------------------------------------------------------
@@ -829,33 +955,11 @@ void einstein_reset(void)
         
         io_show_status = 0;
         
-        // ---------------------------------------------------------------------
-        // If this is an Einstein .DSK file we need to re-assemble the sectors
-        // into some logical pattern so we can more easily fetch and return 
-        // the data when asked for by the CPU.  The Einstein disk is laid out
-        // in a somewhat unusual manner probably to help speed up access. But
-        // we want tracks and sectors laid out sequentially.
-        // ---------------------------------------------------------------------
         if (einstein_mode == 2) 
         {
-            u8 *trackInfoPtr = ROM_Memory + 0x100;
-            for (int i=0; i<40; i++)    // 40 tracks
-            {
-                trackInfoPtr = ROM_Memory + (0x100 + (i*(5120+0x100)));
-                memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
-                trackInfoPtr += 0x100;                                // Skip over the TrackInfo
-                
-                for (int j=0; j<10; j++) // 10 sectors per track
-                {
-                    u8 *dest = &ROM_Memory[(512*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
-                    u8 *src  = trackInfoPtr + (j*512);
-                    for (int k=0; k<512; k++) // 512 bytes per sector
-                    {
-                        *dest++ = *src++;
-                    }
-                }
-            }
+            einstein_load_disk();   // Assemble the sectors of this disk for easy manipulation
         }
+        disk_unsaved_data = 0;
     }
 }
 
