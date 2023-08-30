@@ -169,10 +169,10 @@ struct FDC_t
     u16 track_buffer_end;
     u8  wait_for_read;
     u8  wait_for_write;
-    u8  seek_track_0;
     u8  drive;
+    u8  commandType;
+    u16 indexPulseCounter;
     u16 sector_byte_counter;
-    u16 spare;
 };
 extern struct FDC_t FDC;
 
