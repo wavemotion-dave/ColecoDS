@@ -2645,11 +2645,6 @@ void colecoDS_main(void)
                 sg1000_double_reset=false;
                 ResetColecovision();
             }
-            if (einstein_mode)
-            {
-                extern void einstein_fdc_clock_one_sec(void);
-                einstein_fdc_clock_one_sec();
-            }
 
             if (myConfig.isPAL) myConfig.vertSync=0;    // Force Sync OFF always in PAL mode
         }

@@ -173,6 +173,8 @@ struct FDC_t
     u8  commandType;
     u16 indexPulseCounter;
     u16 sector_byte_counter;
+    u16 write_track_byte_counter;
+    u16 write_track_allowed;
 };
 extern struct FDC_t FDC;
 
