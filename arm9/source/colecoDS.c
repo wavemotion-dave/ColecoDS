@@ -948,12 +948,17 @@ void ShowDebugZ80(void)
     else
     {
         idx = 1;
-        siprintf(tmp, "D1 %-12lu %08lX", debug1, debug1); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "D2 %-12lu %08lX", debug2, debug2); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "D3 %-12lu %08lX", debug3, debug3); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "D4 %-12lu %08lX", debug4, debug4); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "D5 %-12lu %08lX", debug5, debug5); DSPrint(5,idx++,7, tmp);
-        siprintf(tmp, "D6 %-12lu %08lX", debug6, debug6); DSPrint(5,idx++,7, tmp);
+        siprintf(tmp, "D1 %-8lu %04lX ", debug1, (debug1 < 0xFFFF ? debug1:0xFFFF)); DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "D2 %-8lu %04lX ", debug2, (debug2 < 0xFFFF ? debug2:0xFFFF)); DSPrint(0,idx++,7, tmp);
+        siprintf(tmp, "D3 %-8lu %04lX ", debug3, (debug3 < 0xFFFF ? debug3:0xFFFF)); DSPrint(0,idx++,7, tmp);
+        idx = 1;
+        siprintf(tmp, "D4 %-7lu %04lX", debug4, (debug4 < 0xFFFF ? debug4:0xFFFF)); DSPrint(17,idx++,7, tmp);
+        siprintf(tmp, "D5 %-7lu %04lX", debug5, (debug5 < 0xFFFF ? debug5:0xFFFF)); DSPrint(17,idx++,7, tmp);
+        siprintf(tmp, "D6 %-7lu %04lX", debug6, (debug6 < 0xFFFF ? debug6:0xFFFF)); DSPrint(17,idx++,7, tmp);
+        if (einstein_mode)
+        {
+            siprintf(tmp, "FDC.ST=%02X CM=%02X TR=%02X SE=%02X DR=%d", FDC.status, FDC.command, FDC.track, FDC.sector, FDC.drive); DSPrint(0,idx++,7, tmp);
+        }
     }
     idx++;
 }
@@ -1305,7 +1310,7 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU  ");  cassete_menu_items++;
         if (disk_unsaved_data)
         {
-            DSPrint(3, 15, 0, "DISK HAS UNSAVED DATA!");
+            DSPrint(6, 15, 0, "DISK HAS UNSAVED DATA!");
         }
     }
     else
