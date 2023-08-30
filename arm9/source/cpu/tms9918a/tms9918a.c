@@ -890,7 +890,7 @@ void Reset9918(void)
         tms_cpu_line = (myConfig.isPAL ? TMS9929_LINE     :   TMS9918_LINE);
     
     // Some machines only support a 16K VDP memory mode...
-    if (msx_mode || adam_mode || svi_mode) vdp_16k_mode_only = 1;
+    if (msx_mode || adam_mode || svi_mode || einstein_mode) vdp_16k_mode_only = 1;
     else vdp_16k_mode_only = 0;
     
     if (msx_mode || svi_mode || sg1000_mode)

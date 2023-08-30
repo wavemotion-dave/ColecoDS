@@ -35,12 +35,12 @@ u8 key_int_mask = 0xFF;
 u8 joy_int_mask = 0xFF;
 u8 myKeyData = 0xFF;
 u8 adc_mux = 0x00;
-u8 drive_select = 0xFF;
 
 extern u8 EinsteinBios[];
 
 #define KEYBOARD_VECTOR  0xF7
 #define JOYSTICK_VECTOR  0xFD
+
 
 // -----------------------------------------------------------------------------------------
 // Allocate the Floppy Drive Controller structure where we track the registers and the
@@ -54,6 +54,7 @@ extern u8 EinsteinBios[];
 // https://www.cloud9.co.uk/james/BBCMicro/Documentation/wd1770.html
 // -----------------------------------------------------------------------------------------
 struct FDC_t FDC;
+
 
 
 // Status Register:
@@ -96,7 +97,7 @@ void fdc_state_machine(void)
             FDC.actTrack = 0;                           // We're actually at track zero
             FDC.seek_track_0  = 0;                      // Not seeking track zero (we found it!)
             FDC.wait_for_read = 2;                      // No data to transfer
-            FDC.status = 0xA0;                          // Motor spun up. Track zero. Not busy.
+            FDC.status = 0xA2;                          // Motor spun up. Track zero. Not busy. Index pulse
             break;
             
         case 0x10: // Seek Track
@@ -113,11 +114,14 @@ void fdc_state_machine(void)
             break;
         case 0x40: // Step in
         case 0x50: // Step in
-            FDC.status = 0x80;                          // Not handled yet...
+            FDC.track++;
+            FDC.actTrack++;
+            FDC.status = 0x80;
             break;
         case 0x60: // Step out
         case 0x70: // Step out
-            FDC.status = 0x80;                          // Not handled yet...
+            if (FDC.track > 0) {FDC.track--; FDC.actTrack--;}
+            FDC.status = 0x80;
             break;
             
         case 0x80: // Read Sector
@@ -160,7 +164,38 @@ void fdc_state_machine(void)
                     FDC.status = 0x80;              // Done. No longer busy.
                     FDC.wait_for_write=2;           // Don't write more FDC data
                     FDC.sector_byte_counter = 0;    // And reset our counter
-                    memcpy(&ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], FDC.track_buffer, 5120); // Write the track back to main memory                        
+                    memcpy(&ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], FDC.track_buffer, 5120); // Write the track back to main memory                        
+                    if (FDC.track_buffer_idx >= 5120) FDC.actTrack++;
+                }
+                else
+                {
+                    FDC.status = 0x83;                      // No errors... still busy... and we can accept more data
+                    FDC.wait_for_write = 1;                 // Wait for the CPU to give us more data
+                    if (++FDC.sector_byte_counter >= 512)   // Did we cross a sector boundary?
+                    {
+                        FDC.sector++;                       // Bump the sector number
+                        FDC.sector_byte_counter = 0;        // And reset our counter
+                    }
+                }
+            }
+            break;
+            
+        case 0xF0: // Write Track
+            if (FDC.wait_for_write == 0)
+            {
+                disk_unsaved_data = 1;
+                if      (FDC.data == 0xF5) FDC.track_buffer[FDC.track_buffer_idx++] = 0xA1;
+                else if (FDC.data == 0xF6) FDC.track_buffer[FDC.track_buffer_idx++] = 0xC5;
+                else if (FDC.data == 0xF7) {FDC.track_buffer[FDC.track_buffer_idx++] = 0xA5; FDC.track_buffer[FDC.track_buffer_idx++] = 0x5A;}
+                else FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
+                debug6++;
+                if (FDC.track_buffer_idx >= FDC.track_buffer_end)
+                {
+                    FDC.status = 0x80;              // Done. No longer busy.
+                    FDC.wait_for_write=2;           // Don't write more FDC data
+                    FDC.sector_byte_counter = 0;    // And reset our counter
+                    memcpy(&ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], FDC.track_buffer, 5120); // Write the track back to main memory                        
+                    FDC.actTrack++; FDC.track++; FDC.sector=0;
                 }
                 else
                 {
@@ -183,11 +218,6 @@ void fdc_state_machine(void)
             FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
             break;
         case 0xE0: // Read Track
-            debug2++;
-            FDC.status = 0x80;                          // Not handled yet...
-            break;
-        case 0xF0: // Write Track
-            debug3++;
             FDC.status = 0x80;                          // Not handled yet...
             break;
     }
@@ -202,9 +232,12 @@ void fdc_state_machine(void)
 //
 u8 fdc_read(u8 addr)
 {
-    if ((drive_select&0x0F) != 0x01) return 0x00;
+    if (FDC.drive >= 2) return 0x00; // We only support drive 0/1
     
     fdc_state_machine();    // Clock the floppy drive controller state machine
+    
+    //debug5 = FDC.command;
+    debug5 = FDC.command;
     
     switch (addr)
     {
@@ -234,7 +267,7 @@ u8 fdc_read(u8 addr)
 //   IV   Force interrupt    1   1   0   1   i3  i2  i1  i0
 void fdc_write(u8 addr, u8 data)
 {
-    if ((drive_select&0x0F) != 0x01) return;
+    if (FDC.drive >= 2) return; // We only support drive 0/1
     
     // -------------------------------------------------------
     // Handle the write - most of the time it's a command...
@@ -260,23 +293,26 @@ void fdc_write(u8 addr, u8 data)
             if ((data & 0xF0) == 0xD0)     // Only a Force Interrupt can override busy
             {
                 FDC.status = (FDC.actTrack ? 0xA4:0xA0);    // Motor Spun Up, Not Busy and Maybe Track Zero
-                memcpy(&ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], FDC.track_buffer, 5120); // Write the track back to main memory
+                memcpy(&ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], FDC.track_buffer, 5120); // Write the track back to main memory
                 FDC.wait_for_read = 2;                        // Not feteching any data
                 FDC.wait_for_write = 2;                       // Not writing any data
                 FDC.seek_track_0 = 0;                         // Not seeking track 0
+                debug6++;
             }
             else
             {
+                debug1++;
                 return;                                     // We were given a command while busy - ignore it.
             }
         }
         
-        if ((data&0xF0) == 0x00) // // Restore
+        if ((data&0xF0) == 0x00) // Restore
         {
-            FDC.status = (FDC.actTrack ? 0xA5:0xA1);      // Motor Spun Up, Busy and Maybe Track Zero
-            FDC.wait_for_read = 2;                        // Not feteching any data
-            FDC.wait_for_write = 2;                       // Not writing any data
-            FDC.seek_track_0  = 1;                        // Seeking track 0
+            FDC.status = (FDC.actTrack ? 0xA5:0xA1);        // Motor On, Busy and Maybe Track Zero
+            FDC.wait_for_read = 2;                          // Not feteching any data
+            FDC.wait_for_write = 2;                         // Not writing any data
+            FDC.seek_track_0  = 1;                          // Seeking track 0
+            debug2++;
         }
         else
         {
@@ -284,7 +320,7 @@ void fdc_write(u8 addr, u8 data)
             
             if ((data&0xF0) == 0x90) // Read Sector... multiple
             {
-                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = 5120;
                 FDC.wait_for_read = 0; // Start fetching data
@@ -293,7 +329,7 @@ void fdc_write(u8 addr, u8 data)
             }
             else if ((data&0xF0) == 0x80) // Read Sector... one sector
             {
-                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = FDC.track_buffer_idx+512;
                 FDC.wait_for_read = 0; // Start fetching data
@@ -302,7 +338,7 @@ void fdc_write(u8 addr, u8 data)
             }
             else if ((data&0xF0) == 0xB0) // Write Sector... multiple
             {
-                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = 5120;
                 FDC.sector_byte_counter = 0;
@@ -312,7 +348,7 @@ void fdc_write(u8 addr, u8 data)
             }
             else if ((data&0xF0) == 0xA0) // Write Sector... one sector
             {
-                memcpy(FDC.track_buffer, &ROM_Memory[(512*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = FDC.track_buffer_idx+512;
                 FDC.sector_byte_counter = 0;
@@ -322,6 +358,17 @@ void fdc_write(u8 addr, u8 data)
             }            
             else if ((data&0xF0) == 0xE0) // Read Track
             {
+            }
+            else if ((data&0xF0) == 0xF0) // Write Track
+            {
+                memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+                FDC.sector = 0;
+                FDC.track_buffer_idx = 0;
+                FDC.track_buffer_end = 5120;
+                FDC.sector_byte_counter = 0;
+                FDC.wait_for_write = 1; // Start the Write Process...
+                io_show_status = 5;
+                FDC.status = 0x83; // Default to motor ON and busy... accept data immediately
             }
             else if ((data&0xF0) == 0x10) // Seek Track
             {
@@ -339,9 +386,29 @@ void fdc_reset(u8 full_reset)
     {
         memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
     }
+    
     FDC.status = 0x80;      // Motor on... nothing else (not busy)
     FDC.wait_for_read = 2;  // Not feteching any data
     FDC.wait_for_write = 2; // Not storing any data
+    debug4++;
+}
+
+void einstein_drive_sel(u8 sel)
+{
+    static u8 last_drive_select = 0;
+    
+    if      (sel & 0x01) FDC.drive = 0;
+    else if (sel & 0x02) FDC.drive = 1;
+    else                 FDC.drive = 2; // Nope
+    
+    if (FDC.drive != last_drive_select)
+    {
+        last_drive_select = FDC.drive;
+        FDC.status = 0x00;      // Motor off... 
+        // Do something here?
+    }
+    
+    debug3 = FDC.drive;
 }
 
 void scan_keyboard(void)
@@ -677,7 +744,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
             
         case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
             if      (Port == 0x20)  return einstein_fire_read();
-            else if (Port == 0x23)  return drive_select;
+            else if (Port == 0x23)  return FDC.drive;
             else if (Port == 0x24)  {einstein_swap_memory(); return 0xFF;}
             else if (Port == 0x25)  return joy_int_mask;
             break;
@@ -752,12 +819,12 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             break;
             
         case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
-            if      (Port == 0x20)  key_int_mask = Value;   // KEYBOARD INT MASK
-            else if (Port == 0x21)  break;                  // ADC INT MASK (no game seems to use this so we don't implement)
-            else if (Port == 0x22)  break;                  // ALPHA LOCK
-            else if (Port == 0x23)  drive_select = Value & 0xF; // Drive Select
-            else if (Port == 0x24)  einstein_swap_memory(); // ROM vs RAM bank port
-            else if (Port == 0x25)  joy_int_mask = Value;   // JOYSTICK INT MASK
+            if      (Port == 0x20)  key_int_mask = Value;       // KEYBOARD INT MASK
+            else if (Port == 0x21)  break;                      // ADC INT MASK (no game seems to use this so we don't implement)
+            else if (Port == 0x22)  break;                      // ALPHA LOCK
+            else if (Port == 0x23)  einstein_drive_sel(Value);  // Drive Select
+            else if (Port == 0x24)  einstein_swap_memory();     // ROM vs RAM bank port
+            else if (Port == 0x25)  joy_int_mask = Value;       // JOYSTICK INT MASK
             break;
             
         case 0x28:  // Z80-CTC Area
@@ -895,6 +962,35 @@ void einstein_load_disk(void)
             }
         }
     }
+}   
+ 
+
+void einstein_load_RAMdisk(void)
+{
+    FILE *fp = fopen("einstein.dsk", "rb");
+    if (fp != NULL)
+    {
+        fread(ROM_Memory + (256*1024), 1, 256*1024, fp);    // Read file into memory
+        fclose(fp);
+        
+        u8 *trackInfoPtr = ROM_Memory + (256*1024) + 0x100;
+        for (int i=0; i<40; i++)    // 40 tracks
+        {
+            trackInfoPtr = ROM_Memory + (256*1024) + (0x100 + (i*(5120+0x100)));
+            memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
+            trackInfoPtr += 0x100;                                // Skip over the TrackInfo
+
+            for (int j=0; j<10; j++) // 10 sectors per track
+            {
+                u8 *dest = &ROM_Memory[(768*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
+                u8 *src  = trackInfoPtr + (j*512);
+                for (int k=0; k<512; k++) // 512 bytes per sector
+                {
+                    *dest++ = *src++;
+                }
+            }
+        }
+    }
 }
 
 void einstein_save_disk(void)
@@ -936,7 +1032,7 @@ void einstein_swap_disk(char *szFileName)
         tape_len = fread(ROM_Memory, 1, (512*1024), fp);
         fclose(fp);
         einstein_load_disk();
-    }    
+    } 
 }
 
 // ---------------------------------------------------------
@@ -965,7 +1061,8 @@ void einstein_reset(void)
         
         if (einstein_mode == 2) 
         {
-            einstein_load_disk();   // Assemble the sectors of this disk for easy manipulation
+            einstein_load_disk();    // Assemble the sectors of this disk for easy manipulation
+            einstein_load_RAMdisk(); // And put the RAM disk in place
         }
         disk_unsaved_data = 0;
     }

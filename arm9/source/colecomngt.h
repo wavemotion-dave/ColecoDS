@@ -170,7 +170,7 @@ struct FDC_t
     u8  wait_for_read;
     u8  wait_for_write;
     u8  seek_track_0;
-    u8  seek_track_n;
+    u8  drive;
     u16 sector_byte_counter;
     u16 spare;
 };
