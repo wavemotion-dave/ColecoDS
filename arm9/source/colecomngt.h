@@ -211,6 +211,8 @@ extern void memotech_launch_run_file(void);
 extern void sordm5_check_keyboard_interrupt(void);
 extern void einstein_save_disk(void);
 extern void einstein_save_ramdisk(void);
+extern void einstein_init_ramdisk(void);
+extern void einstein_load_ramdisk(void);
 extern void einstein_swap_disk(char *szFileName);
 
 extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
