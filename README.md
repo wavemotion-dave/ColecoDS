@@ -269,13 +269,18 @@ cat  203.bin 1-or.bin 1-or.bin 202.bin > BASIC.pen
 
 Tatung Einstein Compatibility :
 -----------------------
-The base 64K machine is emulated. Both .dsk files and .COM files will play. For both, you would load the file and press the START button to load them (for .com files, it will load and auto-run... for .dsk files the START button will emulate the CTRL-BREAK needed to boot the diskette). Out in the interwebs, you will mostly only find .dsk files and the .COM files can be extracted from them. The easiest way is to use one of the following programs:
+The base 64K machine is emulated. Both .dsk files and .COM files will play. For both, you would load the file and press the START button to boot them (for .com files, it will load the file at 0x100 and auto-run... for .dsk files the START button will emulate the CTRL-BREAK needed to boot the diskette). Out in the interwebs, you will mostly only find .dsk files and the .COM files can be extracted from them. The easiest way is to use either Charlie Robson's einSDein-vitamins or EDIP to extract .COM files from disk images. Or just stick to .dsk files which are a bit more authentic to the experience of using a Tatung Einstein.
 
-dsktool from https://github.com/charlierobson/einsdein-vitamins
-or 
-EDIP version 1e which you can find in the extras folder on the ColecoDS github page.
+Two Tatung Einstein disk drives are supported. The default drive 0: is a standard single-sided, 40 track, 10 sector-per-track diskette with about 190K disk space available. This is the drive that will hold and load your .dsk file image when you run the emulation. 
 
-With either of these tools, you should be able to extract more than 50 .COM games that currently work.  Or you can just stick to .dsk files. For some unknown reason, a few .dsk games like DRUID.dsk will not load and run properly - but if you extract the DRUID.COM program on that disk, it will load up fine. Emulation is rarely perfect.
+The second drive 1: is a persistant RAM Disk that can be saved back to the SD card on your DS/DSi.  This comes pre-formatted (and you can re-initialize it using the DISK icon menu) with 190K of storage. To the emulator, it looks just like a standard second disk drive. You can copy often used programs and utilities to this disk - I use it to stash away a few flavors of XBAS so I've always got the right one on hand to play games.
+
+Both drives support read/write capabilities however, the writing will NOT auto-back those changes to your SD card. I might change that behavior in the future - but for now, any changes written to the emulated disks are transient until you go into the DISK icon menu and save them back to the SD card. I'm fairly confident that the disk write works fine - but until I get more testing hours from field-use, I don't want to inadvettantly screw up an original .dsk image and leave the onus on the user to save out the disk for now.
+
+Speaking of disk images, there are several places to find them... but I would recommend seeking out the 'Tatung Einstein Gamebase' which generally has disk images properly formatted and auto-booting for a more streamlined experience. Seek those out.
+
+Lastly, in addition to the standard 8K einstein.rom BIOS file (required for Einstein emulation), you can optionally provide an einstein2.rom file that will load (up to 8K) into 0x4000. This is the extra ROM slot in a real Einstein and can be used to house diagnostics roms or things like flexi-dos. 
+
 
 CreatiVision Compatibility :
 -----------------------
@@ -362,7 +367,7 @@ would personally try them:
 
 Versions :
 -----------------------
-V8.6: ??-Aug-2023 by wavemotion-dave
+V8.6: 31-Aug-2023 by wavemotion-dave
 * Added .dsk support for Tatung Einstein games!
 * Improved Tatung Einstein keyboard and joystick handling.
 * Minor graphical tweaks and improvements as time allowed.

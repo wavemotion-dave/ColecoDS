@@ -113,19 +113,16 @@ void fdc_state_machine(void)
             
         case 0x20: // Step
         case 0x30: // Step
-            debug1++;
             FDC.status = 0x80;                          // Not handled yet...
             break;
         case 0x40: // Step in
         case 0x50: // Step in
-            debug1++;
             FDC.track++;
             FDC.actTrack++;
             FDC.status = 0x80;
             break;
         case 0x60: // Step out
         case 0x70: // Step out
-            debug1++;
             if (FDC.track > 0) {FDC.track--; FDC.actTrack--;}
             FDC.status = 0x80;
             break;
@@ -227,6 +224,7 @@ void fdc_state_machine(void)
                     }
                     else
                     {
+                        // We're looking for the magic bytes... three F5 bytes followed by an FB to signify start of actual data
                         if (FDC.data == 0xF5) FDC.write_track_byte_counter++;
                         else
                         {
@@ -356,7 +354,6 @@ void fdc_write(u8 addr, u8 data)
             
             if ((data&0xF0) == 0x90) // Read Sector... multiple
             {
-                debug2++;
                 memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = 5120;
@@ -366,7 +363,6 @@ void fdc_write(u8 addr, u8 data)
             }
             else if ((data&0xF0) == 0x80) // Read Sector... one sector
             {
-                debug3++;
                 memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
                 FDC.track_buffer_idx = FDC.sector*512;
                 FDC.track_buffer_end = FDC.track_buffer_idx+512;
@@ -394,11 +390,10 @@ void fdc_write(u8 addr, u8 data)
             }            
             else if ((data&0xF0) == 0xE0) // Read Track
             {
-                debug1++;
+                // Not implemented yet... only for diagnostics use (nothing I've found uses this raw track read - not even xTal DOS)
             }
             else if ((data&0xF0) == 0xF0) // Write Track
             {
-                debug4++;
                 FDC.actTrack = FDC.track;
                 memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
                 FDC.sector = 0;
@@ -609,7 +604,7 @@ void einstein_restore_bios(void)
     
     memset(BIOS_Memory, 0xFF, 0x10000);
     memcpy(BIOS_Memory, EinsteinBios, 0x2000);
-    memcpy(BIOS_Memory+0x4000, EinsteinBios2, 0x1000);
+    memcpy(BIOS_Memory+0x4000, EinsteinBios2, 0x2000);
     
     MemoryMap[0] = BIOS_Memory + 0x0000;
     MemoryMap[1] = BIOS_Memory + 0x2000;
@@ -945,6 +940,10 @@ void einstein_load_com_file(void)
     JumpZ80(CPU.PC.W);
 }
 
+
+// -------------------------------------------------------------------------------------------------
+// This is used for CPC EXTENDED .dsk images which are the kind found for use with Tatung Einstein
+// -------------------------------------------------------------------------------------------------
 struct SectorInfo_t
 {
     u8 track;
@@ -1000,13 +999,16 @@ void einstein_load_disk(void)
     }
 }   
 
+// -----------------------------------------------------------------------------------------------------------
+// Our RAMDisk is a standard 200K floppy with no data - just a disk full of 0xE5 bytes ready to be loaded.
+// -----------------------------------------------------------------------------------------------------------
 unsigned char RAMDisk_Header[] = {
   0x45, 0x58, 0x54, 0x45, 0x4e, 0x44, 0x45, 0x44,
   0x20, 0x43, 0x50, 0x43, 0x20, 0x44, 0x53, 0x4b,
   0x20, 0x46, 0x69, 0x6c, 0x65, 0x0d, 0x0a, 0x44,
   0x69, 0x73, 0x6b, 0x2d, 0x49, 0x6e, 0x66, 0x6f,
-  0x0d, 0x0a, 0x43, 0x50, 0x44, 0x52, 0x65, 0x61,
-  0x64, 0x20, 0x76, 0x33, 0x2e, 0x32, 0x34, 0x00,
+  0x0d, 0x0a, 0x43, 0x6f, 0x6c, 0x65, 0x63, 0x6f,
+  0x44, 0x53, 0x20, 0x20, 0x20, 0x20, 0x20, 0x00,
   0x28, 0x01, 0x00, 0x00, 0x15, 0x15, 0x15, 0x15,
   0x15, 0x15, 0x15, 0x15, 0x15, 0x15, 0x15, 0x15,
   0x15, 0x15, 0x15, 0x15, 0x15, 0x15, 0x15, 0x15,
@@ -1070,45 +1072,49 @@ unsigned char RAMDisk_TrackInfo[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-void einstein_load_RAMdisk(void)
+
+void einstein_init_ramdisk(void)
+{
+    FILE *fp = fopen("einstein.ramd", "wb+");
+    fwrite(RAMDisk_Header, 1, sizeof(RAMDisk_Header), fp);
+    for (u8 track=0; track<40; track++)
+    {
+        RAMDisk_TrackInfo[0x10] = track;
+        RAMDisk_TrackInfo[0x18] = track;
+        RAMDisk_TrackInfo[0x20] = track;
+        RAMDisk_TrackInfo[0x28] = track;
+        RAMDisk_TrackInfo[0x30] = track;
+        RAMDisk_TrackInfo[0x38] = track;
+        RAMDisk_TrackInfo[0x40] = track;
+        RAMDisk_TrackInfo[0x48] = track;
+        RAMDisk_TrackInfo[0x50] = track;
+        RAMDisk_TrackInfo[0x58] = track;
+        RAMDisk_TrackInfo[0x60] = track;
+
+        RAMDisk_TrackInfo[0x18+2] = 0x00;
+        RAMDisk_TrackInfo[0x20+2] = 0x01;
+        RAMDisk_TrackInfo[0x28+2] = 0x02;
+        RAMDisk_TrackInfo[0x30+2] = 0x03;
+        RAMDisk_TrackInfo[0x38+2] = 0x04;
+        RAMDisk_TrackInfo[0x40+2] = 0x05;
+        RAMDisk_TrackInfo[0x48+2] = 0x06;
+        RAMDisk_TrackInfo[0x50+2] = 0x07;
+        RAMDisk_TrackInfo[0x58+2] = 0x08;
+        RAMDisk_TrackInfo[0x60+2] = 0x09;
+
+        fwrite(RAMDisk_TrackInfo, 1, sizeof(RAMDisk_TrackInfo), fp);
+        memset(FDC.track_buffer, 0xE5, 5120);
+        fwrite(FDC.track_buffer, 1, 5120, fp);
+    }       
+    fclose(fp);
+}
+
+void einstein_load_ramdisk(void)
 {
     FILE *fp = fopen("einstein.ramd", "rb");
     if (fp == NULL)
     {
-        fp = fopen("einstein.ramd", "wb+");
-        fwrite(RAMDisk_Header, 1, sizeof(RAMDisk_Header), fp);
-        for (u8 track=0; track<40; track++)
-        {
-            RAMDisk_TrackInfo[0x10] = track;
-            RAMDisk_TrackInfo[0x18] = track;
-            RAMDisk_TrackInfo[0x20] = track;
-            RAMDisk_TrackInfo[0x28] = track;
-            RAMDisk_TrackInfo[0x30] = track;
-            RAMDisk_TrackInfo[0x38] = track;
-            RAMDisk_TrackInfo[0x40] = track;
-            RAMDisk_TrackInfo[0x48] = track;
-            RAMDisk_TrackInfo[0x50] = track;
-            RAMDisk_TrackInfo[0x58] = track;
-            RAMDisk_TrackInfo[0x60] = track;
-
-            RAMDisk_TrackInfo[0x18+2] = 0x00;
-            RAMDisk_TrackInfo[0x20+2] = 0x01;
-            RAMDisk_TrackInfo[0x28+2] = 0x02;
-            RAMDisk_TrackInfo[0x30+2] = 0x03;
-            RAMDisk_TrackInfo[0x38+2] = 0x04;
-            RAMDisk_TrackInfo[0x40+2] = 0x05;
-            RAMDisk_TrackInfo[0x48+2] = 0x06;
-            RAMDisk_TrackInfo[0x50+2] = 0x07;
-            RAMDisk_TrackInfo[0x58+2] = 0x08;
-            RAMDisk_TrackInfo[0x60+2] = 0x09;
-            
-            fwrite(RAMDisk_TrackInfo, 1, sizeof(RAMDisk_TrackInfo), fp);
-            memset(FDC.track_buffer, 0xE5, 5120);
-            fwrite(FDC.track_buffer, 1, 5120, fp);
-        }       
-        
-        fclose(fp);
-        
+        einstein_init_ramdisk();
         fp = fopen("einstein.ramd", "rb");
     }
     
@@ -1166,6 +1172,7 @@ void einstein_save_disk(void)
     
     disk_unsaved_data = 0;
 }
+
 
 void einstein_save_ramdisk(void)
 {
@@ -1236,7 +1243,7 @@ void einstein_reset(void)
         if (einstein_mode == 2) 
         {
             einstein_drive_sel(0x01);
-            einstein_load_RAMdisk(); // First put the RAM disk in place - we don't allow saving this one
+            einstein_load_ramdisk(); // First put the RAM disk in place - we don't allow saving this one
             einstein_load_disk();    // Assemble the sectors of this disk for easy manipulation
         }
         disk_unsaved_data = 0;

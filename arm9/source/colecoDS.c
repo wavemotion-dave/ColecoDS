@@ -118,7 +118,7 @@ u8 AdamWRITER[0x8000]     = {0};  // We keep the ADAM WRITER.ROM bios around to 
 u8 SVIBios[0x8000]        = {0};  // We keep the SVI 32K BIOS around to swap in/out
 u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
-u8 EinsteinBios2[0x1000]  = {0};  // We keep the 4k Einstein diagnostics/peripheral BIOS around
+u8 EinsteinBios2[0x2000]  = {0};  // We keep the 8k Einstein diagnostics/peripheral BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
 u8 MSX_Bios[0x8000]       = {0};  // We store several kinds of MSX bios files in VRAM and copy out the one we want to use in msx_restore_bios() but this is for the ubiquitious MSX.ROM
 
@@ -1310,6 +1310,7 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DISK    ");  cassete_menu_items++;
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DISK    ");  cassete_menu_items++;
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE RAMDISK ");  cassete_menu_items++;
+        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " INIT RAMDISK ");  cassete_menu_items++;
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU    ");  cassete_menu_items++;
         if (disk_unsaved_data)    DSPrint(6, 15, 0,   "DISK HAS UNSAVED DATA!");
         if (ramdisk_unsaved_data) DSPrint(4, 16, 0, "RAMDISK HAS UNSAVED DATA!");
@@ -1438,10 +1439,10 @@ void CassetteMenu(void)
                   {
                     if  (showMessage("DO YOU REALLY WANT TO","WRITE RAMDISK DATA?") == ID_SHM_YES)
                     {
-                        DSPrint(12,0,6, "SAVING");
+                        DSPrint(10,0,6, "SAVING");
                         einstein_save_ramdisk();
                         WAITVBL;WAITVBL;
-                        DSPrint(12,0,6, "      ");
+                        DSPrint(10,0,6, "      ");
                         break;
                     }
                     CassetteMenuShow(true, menuSelection);
@@ -1459,23 +1460,39 @@ void CassetteMenu(void)
             }
             if (menuSelection == 3)
             {
-                  if (einstein_mode) break;
-                
-                  BufferKey('C');
-                  BufferKey('L');
-                  BufferKey('O');
-                  BufferKey('A');
-                  BufferKey('D');
-                  BufferKey(KBD_KEY_RET);
-                  BufferKey(255);
-                  BufferKey('R');
-                  BufferKey('U');
-                  BufferKey('N');
-                  BufferKey(KBD_KEY_RET);
+                if (einstein_mode)
+                {
+                    if  (showMessage("DO YOU REALLY WANT TO","INITIALIZE THE RAMDISK?") == ID_SHM_YES)
+                    {
+                        DSPrint(10,0,6, "ERASING");
+                        einstein_init_ramdisk();
+                        einstein_load_ramdisk();
+                        WAITVBL;WAITVBL;
+                        DSPrint(10,0,6, "       ");
+                        break;
+                    }
+                    CassetteMenuShow(true, menuSelection);
+                }
+                else
+                {
+                    BufferKey('C');
+                    BufferKey('L');
+                    BufferKey('O');
+                    BufferKey('A');
+                    BufferKey('D');
+                    BufferKey(KBD_KEY_RET);
+                    BufferKey(255);
+                    BufferKey('R');
+                    BufferKey('U');
+                    BufferKey('N');
+                    BufferKey(KBD_KEY_RET);
+                }
                   break;
             }
             if (menuSelection == 4)
             {
+                  if (einstein_mode) break;
+
                   BufferKey('B');
                   BufferKey('L');
                   BufferKey('O');
@@ -3822,9 +3839,9 @@ void LoadBIOSFiles(void)
     if (fp == NULL) fp = fopen("/data/bios/einstein2.rom", "rb");
     if (fp != NULL)
     {
-        fread(EinsteinBios2, 0x1000, 1, fp);
+        fread(EinsteinBios2, 0x2000, 1, fp);
         fclose(fp);
-    } else memset(EinsteinBios2, 0xFF, 0x1000);
+    } else memset(EinsteinBios2, 0xFF, 0x2000);
     
     // -----------------------------------------------------------
     // Next try to load the bioscv.rom (creativision)
