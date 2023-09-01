@@ -315,7 +315,7 @@ Keyboards :
 -----------------------
 A number of full keyboard overlays have been designed to bring more accuracy and enjoyment to the emulation. You can choose these on a per-game basis in Configuration.
 
-![Adam Keyboard](adam.png) ![MSX Keyboard](msx1.png) ![CreatiVision Keyboard](creativision.png)
+![Adam Keyboard](images/adam.png) ![MSX Keyboard](images/msx1.png) ![CreatiVision Keyboard](images/creativision.png)
 
 Blend Mode (DSi) :
 -----------------------
