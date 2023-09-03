@@ -1086,7 +1086,23 @@ void DisplayStatusLine(bool bForce)
             }
             DSPrint(5,0,6, (write_EE_counter ? "EE":"  "));
         }
-
+        if (msx_mode == 3)
+        {
+            if (io_show_status)
+            {
+                if (io_show_status == 5) {DSPrint(8,0,6, "DISK WRITE"); io_show_status = 3;}
+                if (io_show_status == 4) {DSPrint(8,0,6, "DISK READ "); io_show_status = 3;}
+                if (io_show_status == 3)
+                {
+                    mmEffect(SFX_FLOPPY);
+                }
+                io_show_status--;
+            }
+            else
+            {
+                DSPrint(8,0,6, "          ");
+            }            
+        }
     }
     else if (svi_mode)
     {
@@ -1176,7 +1192,6 @@ void DisplayStatusLine(bool bForce)
         {
             DSPrint(8,0,6, "          ");
         }
-        
     }
     else    // Various Colecovision Possibilities
     {
