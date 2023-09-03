@@ -254,7 +254,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
                   if (kbd_key == KBD_KEY_GRAPH) key1 |= 0x04;
                   if (kbd_key == KBD_KEY_CODE)  key1 |= 0x08;
                   if (kbd_key == KBD_KEY_ESC)   key1 |= 0x10;
-                  if (kbd_key == KBD_KEY_STOP)  key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_BREAK) key1 |= 0x20;
                   if (kbd_key == KBD_KEY_RET)   key1 |= 0x40;
                   if (kbd_key == KBD_KEY_LEFT)  key1 |= 0x80;
               }

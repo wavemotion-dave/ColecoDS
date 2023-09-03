@@ -304,7 +304,7 @@ unsigned char cpu_readport_sg(register unsigned short Port)
       if ((Port_PPI_C & 0x07) == 0x06)  // Row 6
       {
         //  6   '7' 'U' 'J' 'M' --- RA  UA  --- BRK GRP CTL SHF
-          if (kbd_key == KBD_KEY_STOP)    joy2 |= 0x01;
+          if (kbd_key == KBD_KEY_BREAK)   joy2 |= 0x01;
           if (kbd_key == KBD_KEY_GRAPH)   joy2 |= 0x02;
           if (kbd_key == KBD_KEY_CTRL)    joy2 |= 0x04;
           if (kbd_key == KBD_KEY_SHIFT)   joy2 |= 0x08;

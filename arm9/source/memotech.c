@@ -279,7 +279,7 @@ unsigned char cpu_readport_memotech(register unsigned short Port)
           
           if (scan_matrix & 0x01) // 0xFE
           {
-              if (kbd_key == KBD_KEY_STOP)  key1 |= 0x01;    // BREAK key on Memotech
+              if (kbd_key == KBD_KEY_BREAK) key1 |= 0x01;    // BREAK key on Memotech
               if (kbd_key == KBD_KEY_F1)    key1 |= 0x02;    // F1
           }
 

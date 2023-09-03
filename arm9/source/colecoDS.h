@@ -189,12 +189,13 @@ extern u32 debug6;
 #define KBD_KEY_CTRL        15
 #define KBD_KEY_SHIFT       16
 #define KBD_KEY_ESC         17
-#define KBD_KEY_STOP        18
+#define KBD_KEY_STOP        18  // Some machines call it 'STOP' and others 'BREAK' but reasonably similar functdionality    
+#define KBD_KEY_BREAK       18  // Some machines call it 'STOP' and others 'BREAK' but reasonably similar functdionality
 #define KBD_KEY_SEL         19
 #define KBD_KEY_RET         20
 #define KBD_KEY_DEL         21
 #define KBD_KEY_INS         22
-#define KBD_KEY_BRK         23
+#define KBD_KEY_UNUSED      23
 #define KBD_KEY_HOME        24
 #define KBD_KEY_QUOTE       25
 #define KBD_KEY_CAPS        26

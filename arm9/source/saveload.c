@@ -26,6 +26,7 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
+#include "fdc.h"
 #include "printf.h"
 
 #define NORAM 0xFF
@@ -171,7 +172,7 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&einstein_ram_start, sizeof(einstein_ram_start), 1, handle);                        
     if (uNbO) uNbO = fwrite(&keyboard_w, sizeof(keyboard_w), 1, handle);                        
     if (uNbO) uNbO = fwrite(&key_int_mask, sizeof(key_int_mask), 1, handle);
-    if (einstein_mode == 2)
+    if (einstein_mode == 2 || msx_mode == 3)
     {
         if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);        
     }

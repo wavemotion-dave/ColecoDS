@@ -819,6 +819,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".msk") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
         if ( (strcasecmp(strrchr(szFile, '.'), ".ein") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -1411,7 +1417,8 @@ void SetDefaultGameConfig(void)
     if (sg1000_mode == 2)                       myConfig.overlay = 16; // SC-3000 uses the full keyboard
     if (sg1000_mode == 2)                       myConfig.vertSync= 0;  // SC-3000 does not use vertical sync
     if (msx_mode == 1)                          myConfig.overlay = (myGlobalConfig.msxCartOverlay ? 10:0);  // MSX cart-based games follows the global default
-    if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard    
+    if (msx_mode == 2)                          myConfig.overlay = 10; // MSX with .cas defaults to full keyboard
+    if (msx_mode == 3)                          myConfig.overlay = 10; // MSX with .dsk defaults to full keyboard
     if (msx_mode == 2)                          myConfig.msxBios = myGlobalConfig.defaultMSX;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
@@ -2222,6 +2229,10 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".RUN") != 0) memotech_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".msx") != 0) msx_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".MSX") != 0) msx_mode = 1;
+    
+    if (strstr(gpFic[ucGameChoice].szName, ".msk") != 0) msx_mode = 3;
+    if (strstr(gpFic[ucGameChoice].szName, ".MSK") != 0) msx_mode = 3;    
+    
     if (strstr(gpFic[ucGameChoice].szName, ".cas") != 0) cas_load = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".CAS") != 0) cas_load = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".ddp") != 0) adam_mode = 1;
