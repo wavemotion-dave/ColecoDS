@@ -54,6 +54,7 @@
 #include "quest.h"
 #include "hal2010.h"
 #include "cvision.h"
+#include "fdc.h"
 
 #include "soundbank.h"
 #include "soundbank_bin.h"
@@ -205,6 +206,7 @@ u8 IssueCtrlBreak    __attribute__((section(".dtcm"))) = 0;       // For the Tat
 u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of rendering...
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
+u8 touch_debounce = 0;
 
 // The DS/DSi has 12 keys that can be mapped
 u16 NDS_keyMap[12] __attribute__((section(".dtcm"))) = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
@@ -897,7 +899,7 @@ void ShowDebugZ80(void)
             idx++;
         }
 
-        if (einstein_mode)
+        if (einstein_mode || (msx_mode == 3))
         {
             idx -= 7;
             siprintf(tmp, "FDC.Sta %-3d %02X", FDC.status, FDC.status);
@@ -956,9 +958,9 @@ void ShowDebugZ80(void)
         siprintf(tmp, "D4 %-7lu %04lX", debug4, (debug4 < 0xFFFF ? debug4:0xFFFF)); DSPrint(17,idx++,7, tmp);
         siprintf(tmp, "D5 %-7lu %04lX", debug5, (debug5 < 0xFFFF ? debug5:0xFFFF)); DSPrint(17,idx++,7, tmp);
         siprintf(tmp, "D6 %-7lu %04lX", debug6, (debug6 < 0xFFFF ? debug6:0xFFFF)); DSPrint(17,idx++,7, tmp);
-        if (einstein_mode)
+        if (einstein_mode || (msx_mode == 3))
         {
-            siprintf(tmp, "FDC.ST=%02X CM=%02X TR=%02X SE=%02X DR=%d", FDC.status, FDC.command, FDC.track, FDC.sector, FDC.drive); DSPrint(0,idx++,7, tmp);
+            siprintf(tmp, "FD.ST=%02X CM=%02X TR=%02X SI=%02X SE=%02X", FDC.status, FDC.command, FDC.track, FDC.side, FDC.sector); DSPrint(0,idx++,7, tmp);
         }
     }
     idx++;
@@ -1312,8 +1314,8 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE RAMDISK ");  cassete_menu_items++;
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " INIT RAMDISK ");  cassete_menu_items++;
         DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU    ");  cassete_menu_items++;
-        if (disk_unsaved_data)    DSPrint(6, 15, 0,   "DISK HAS UNSAVED DATA!");
-        if (ramdisk_unsaved_data) DSPrint(4, 16, 0, "RAMDISK HAS UNSAVED DATA!");
+        if (disk_unsaved_data)    DSPrint(6, 16, 0,   "DISK HAS UNSAVED DATA!");
+        if (ramdisk_unsaved_data) DSPrint(4, 17, 0, "RAMDISK HAS UNSAVED DATA!");
     }
     else
     {
@@ -1965,7 +1967,7 @@ u8 handle_svi_keyboard_press(u16 iTx, u16 iTy)  // SVI Keyboard
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
         else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
         else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
-        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_BREAK;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
@@ -2073,7 +2075,7 @@ u8 handle_mtx_keyboard_press(u16 iTx, u16 iTy)  // MTX Keyboard
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
         else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
         else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
-        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_BREAK;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
@@ -2248,7 +2250,7 @@ u8 handle_sc3000_keyboard_press(u16 iTx, u16 iTy)  // SC-3000 Keyboard
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
         else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
         else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
-        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_STOP;
+        else if ((iTx >= 210) && (iTx < 255))  kbd_key = KBD_KEY_BREAK;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
@@ -2360,7 +2362,7 @@ u8 handle_einstein_keyboard_press(u16 iTx, u16 iTy)  // Einstein Keyboard
         else if ((iTx >= 165) && (iTx < 180))  kbd_key = ';';
         else if ((iTx >= 180) && (iTx < 195))  kbd_key = ':';
         else if ((iTx >= 195) && (iTx < 210))  kbd_key = KBD_KEY_RIGHT;        
-        else if ((iTx >= 214) && (iTx < 255))  {kbd_key = KBD_KEY_STOP; if (last_special_key == KBD_KEY_CTRL) IssueCtrlBreak=30;}
+        else if ((iTx >= 214) && (iTx < 255))  {kbd_key = KBD_KEY_BREAK; if (last_special_key == KBD_KEY_CTRL) IssueCtrlBreak=30;}
     }
     else if ((iTy >= 132) && (iTy < 162)) // Row 5 (ZXCV row)
     {
@@ -2738,194 +2740,201 @@ void colecoDS_main(void)
       ucUN  = 0;
       if  (keysCurrent() & KEY_TOUCH)
       {
-        touchPosition touch;
-        touchRead(&touch);
-        iTx = touch.px;
-        iTy = touch.py;
+          // ----------------------------------------------------------------------------------
+          // Just a bit of touch debounce so ensure key is pressed for a fraction of a second.
+          // ----------------------------------------------------------------------------------
+          if (++touch_debounce > 1)
+          {
+            touchPosition touch;
+            touchRead(&touch);
+            iTx = touch.px;
+            iTy = touch.py;
 
-        if (myGlobalConfig.debugger == 3)
-        {
-            meta_key = handle_debugger_overlay(iTx, iTy);
-        }
-        // --------------------------------------------------------------------------
-        // Test the touchscreen rendering of the ADAM/MSX/SVI/CreatiVision keybaords
-        // --------------------------------------------------------------------------
-        else if (myConfig.overlay == 9) // ADAM Keyboard
-        {
-            meta_key = handle_adam_keyboard_press(iTx, iTy);
-        }
-        else if (myConfig.overlay == 10) // MSX Keyboard
-        {
-            meta_key = handle_msx_keyboard_press(iTx, iTy);
-        }
-        else if (myConfig.overlay == 11) // Memotech MTX Keyboard
-        {
-            meta_key = handle_mtx_keyboard_press(iTx, iTy);
-        }
-        else if (myConfig.overlay == 12) // Creativision Keyboard
-        {
-            meta_key = handle_cvision_keyboard_press(iTx, iTy);
-        }
-        else if (myConfig.overlay == 13) // Simplified Alpha Keyboard
-        {
-            meta_key = handle_alpha_keyboard_press(iTx, iTy);
-        }
-        else if (myConfig.overlay == 14) // Tatung Einstein Keyboard
-        {
-            meta_key = handle_einstein_keyboard_press(iTx, iTy);
-        }
-        else if (myConfig.overlay == 15) // SVI Keyboard
-        {
-            meta_key = handle_svi_keyboard_press(iTx, iTy);
-        }
-        else if (myConfig.overlay == 16) // SC-3000 Keyboard
-        {
-            meta_key = handle_sc3000_keyboard_press(iTx, iTy);
-        }        
-        else if (myConfig.overlay == 17) // SORD M5 Keyboard
-        {
-            meta_key = handle_sordm5_keyboard_press(iTx, iTy);
-        }        
-        else    // Normal 12 button virtual keypad
-        {
-            meta_key = handle_normal_virtual_keypad(iTx, iTy);
-
-            ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
-            ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
-            ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
-
-            ucUN = ( ((iTx>=137) && (iTy>=73) && (iTx<=171) && (iTy<=110)) ? 0x0D: ucUN);
-            ucUN = ( ((iTx>=171) && (iTy>=73) && (iTx<=210) && (iTy<=110)) ? 0x0C: ucUN);
-            ucUN = ( ((iTx>=210) && (iTy>=73) && (iTx<=248) && (iTy<=110)) ? 0x01: ucUN);
-
-            ucUN = ( ((iTx>=137) && (iTy>=111) && (iTx<=171) && (iTy<=147)) ? 0x0A: ucUN);
-            ucUN = ( ((iTx>=171) && (iTy>=111) && (iTx<=210) && (iTy<=147)) ? 0x0E: ucUN);
-            ucUN = ( ((iTx>=210) && (iTy>=111) && (iTx<=248) && (iTy<=147)) ? 0x04: ucUN);
-
-            ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
-            ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
-            ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
-        }
-          
-        if (kbd_key != 0)
-        {
-            kbd_keys[kbd_keys_pressed++] = kbd_key;
-        }
-
-        // If the special menu key indicates we should show the choice menu, do so here...
-        if (meta_key == MENU_CHOICE_MENU)
-        {
-            meta_key = MiniMenu();
-        }
-
-        // -------------------------------------------------------------------
-        // If one of the special meta keys was picked, we handle that here...
-        // -------------------------------------------------------------------
-        switch (meta_key)
-        {
-            case MENU_CHOICE_RESET_GAME:
-                SoundPause();
-                // Ask for verification
-                if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES)
-                {
-                    ResetColecovision();
-                }
-                BottomScreenKeypad();
-                SoundUnPause();
-                break;
-
-            case MENU_CHOICE_END_GAME:
-                  SoundPause();
-                  //  Ask for verification
-                  if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES)
-                  {
-                      memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
-                      return;
-                  }
-                  BottomScreenKeypad();
-                  DisplayStatusLine(true);
-                  SoundUnPause();
-                break;
-
-            case MENU_CHOICE_HI_SCORE:
-                SoundPause();
-                highscore_display(file_crc);
-                DisplayStatusLine(true);
-                SoundUnPause();
-                break;
-
-            case MENU_CHOICE_SAVE_GAME:
-                if  (!SaveNow)
-                {
-                    SoundPause();
-                    if (IsFullKeyboard())
-                    {
-                        if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES)
-                        {
-                          SaveNow = 1;
-                          colecoSaveState();
-                        }
-                    }
-                    else
-                    {
-                        SaveNow = 1;
-                        colecoSaveState();
-                    }
-                    BottomScreenKeypad();
-                    SoundUnPause();
-                }
-                break;
-
-            case MENU_CHOICE_LOAD_GAME:
-                if  (!LoadNow)
-                {
-                    SoundPause();
-                    if (IsFullKeyboard())
-                    {
-                        if (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES)
-                        {
-                          LoadNow = 1;
-                          colecoLoadState();
-                        }
-                    }
-                    else
-                    {
-                        LoadNow = 1;
-                        colecoLoadState();
-                    }
-                    BottomScreenKeypad();
-                    SoundUnPause();
-                }
-                break;
-
-            case MENU_CHOICE_CASSETTE:
-                CassetteMenu();
-                break;
-
-            default:
-                SaveNow = 0;
-                LoadNow = 0;
-        }
-
-        // ---------------------------------------------------------------------
-        // If we are mapping the touch-screen keypad to P2, we shift these up.
-        // ---------------------------------------------------------------------
-        if (myConfig.touchPad) ucUN = ucUN << 16;
-
-        if (++dampenClick > 0)  // Make sure the key is pressed for an appreciable amount of time...
-        {
-            if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
+            if (myGlobalConfig.debugger == 3)
             {
-                if (!adam_mode)
-                {
-                    if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback... ADAM handers do this for us
-                }
+                meta_key = handle_debugger_overlay(iTx, iTy);
             }
-            lastUN = (ucUN ? ucUN:kbd_key);
-        }
+            // ------------------------------------------------------------
+            // Test the touchscreen for various full keyboard handlers... 
+            // ------------------------------------------------------------
+            else if (myConfig.overlay == 9) // ADAM Keyboard
+            {
+                meta_key = handle_adam_keyboard_press(iTx, iTy);
+            }
+            else if (myConfig.overlay == 10) // MSX Keyboard
+            {
+                meta_key = handle_msx_keyboard_press(iTx, iTy);
+            }
+            else if (myConfig.overlay == 11) // Memotech MTX Keyboard
+            {
+                meta_key = handle_mtx_keyboard_press(iTx, iTy);
+            }
+            else if (myConfig.overlay == 12) // Creativision Keyboard
+            {
+                meta_key = handle_cvision_keyboard_press(iTx, iTy);
+            }
+            else if (myConfig.overlay == 13) // Simplified Alpha Keyboard
+            {
+                meta_key = handle_alpha_keyboard_press(iTx, iTy);
+            }
+            else if (myConfig.overlay == 14) // Tatung Einstein Keyboard
+            {
+                meta_key = handle_einstein_keyboard_press(iTx, iTy);
+            }
+            else if (myConfig.overlay == 15) // SVI Keyboard
+            {
+                meta_key = handle_svi_keyboard_press(iTx, iTy);
+            }
+            else if (myConfig.overlay == 16) // SC-3000 Keyboard
+            {
+                meta_key = handle_sc3000_keyboard_press(iTx, iTy);
+            }        
+            else if (myConfig.overlay == 17) // SORD M5 Keyboard
+            {
+                meta_key = handle_sordm5_keyboard_press(iTx, iTy);
+            }        
+            else    // Normal 12 button virtual keypad
+            {
+                meta_key = handle_normal_virtual_keypad(iTx, iTy);
+
+                ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
+                ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
+                ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
+
+                ucUN = ( ((iTx>=137) && (iTy>=73) && (iTx<=171) && (iTy<=110)) ? 0x0D: ucUN);
+                ucUN = ( ((iTx>=171) && (iTy>=73) && (iTx<=210) && (iTy<=110)) ? 0x0C: ucUN);
+                ucUN = ( ((iTx>=210) && (iTy>=73) && (iTx<=248) && (iTy<=110)) ? 0x01: ucUN);
+
+                ucUN = ( ((iTx>=137) && (iTy>=111) && (iTx<=171) && (iTy<=147)) ? 0x0A: ucUN);
+                ucUN = ( ((iTx>=171) && (iTy>=111) && (iTx<=210) && (iTy<=147)) ? 0x0E: ucUN);
+                ucUN = ( ((iTx>=210) && (iTy>=111) && (iTx<=248) && (iTy<=147)) ? 0x04: ucUN);
+
+                ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
+                ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
+                ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
+            }
+
+            if (kbd_key != 0)
+            {
+                kbd_keys[kbd_keys_pressed++] = kbd_key;
+            }
+
+            // If the special menu key indicates we should show the choice menu, do so here...
+            if (meta_key == MENU_CHOICE_MENU)
+            {
+                meta_key = MiniMenu();
+            }
+
+            // -------------------------------------------------------------------
+            // If one of the special meta keys was picked, we handle that here...
+            // -------------------------------------------------------------------
+            switch (meta_key)
+            {
+                case MENU_CHOICE_RESET_GAME:
+                    SoundPause();
+                    // Ask for verification
+                    if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES)
+                    {
+                        ResetColecovision();
+                    }
+                    BottomScreenKeypad();
+                    SoundUnPause();
+                    break;
+
+                case MENU_CHOICE_END_GAME:
+                      SoundPause();
+                      //  Ask for verification
+                      if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES)
+                      {
+                          memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
+                          return;
+                      }
+                      BottomScreenKeypad();
+                      DisplayStatusLine(true);
+                      SoundUnPause();
+                    break;
+
+                case MENU_CHOICE_HI_SCORE:
+                    SoundPause();
+                    highscore_display(file_crc);
+                    DisplayStatusLine(true);
+                    SoundUnPause();
+                    break;
+
+                case MENU_CHOICE_SAVE_GAME:
+                    if  (!SaveNow)
+                    {
+                        SoundPause();
+                        if (IsFullKeyboard())
+                        {
+                            if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES)
+                            {
+                              SaveNow = 1;
+                              colecoSaveState();
+                            }
+                        }
+                        else
+                        {
+                            SaveNow = 1;
+                            colecoSaveState();
+                        }
+                        BottomScreenKeypad();
+                        SoundUnPause();
+                    }
+                    break;
+
+                case MENU_CHOICE_LOAD_GAME:
+                    if  (!LoadNow)
+                    {
+                        SoundPause();
+                        if (IsFullKeyboard())
+                        {
+                            if (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES)
+                            {
+                              LoadNow = 1;
+                              colecoLoadState();
+                            }
+                        }
+                        else
+                        {
+                            LoadNow = 1;
+                            colecoLoadState();
+                        }
+                        BottomScreenKeypad();
+                        SoundUnPause();
+                    }
+                    break;
+
+                case MENU_CHOICE_CASSETTE:
+                    CassetteMenu();
+                    break;
+
+                default:
+                    SaveNow = 0;
+                    LoadNow = 0;
+            }
+
+            // ---------------------------------------------------------------------
+            // If we are mapping the touch-screen keypad to P2, we shift these up.
+            // ---------------------------------------------------------------------
+            if (myConfig.touchPad) ucUN = ucUN << 16;
+
+            if (++dampenClick > 0)  // Make sure the key is pressed for an appreciable amount of time...
+            {
+                if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
+                {
+                    if (!adam_mode)
+                    {
+                        if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback... ADAM handers do this for us
+                    }
+                }
+                lastUN = (ucUN ? ucUN:kbd_key);
+            }
+          }
       } //  SCR_TOUCH
       else
       {
+        touch_debounce = 0;
         SaveNow=LoadNow = 0;
         lastUN = 0;  dampenClick = 0;
         last_kbd_key = 0;

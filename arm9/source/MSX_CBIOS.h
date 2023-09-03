@@ -37,3 +37,5 @@
 
 
 extern unsigned char CBios[];
+extern unsigned char fastdrom_cdx2[];
+extern unsigned char cdx_2_rom[];
