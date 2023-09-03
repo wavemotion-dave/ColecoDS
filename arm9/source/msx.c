@@ -29,7 +29,6 @@
 
 #define NORAM 0xFF
 
-
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
 // ---------------------------------------
@@ -58,6 +57,8 @@ u32 LastROMSize         = 0;
 u8  msx_japanese_matrix = 0;        // Default to International keyboard layout. Set to '1' to enable Japanese layout.
 
 static u8 header_MSX[8] = { 0x1f,0xa6,0xde,0xba,0xcc,0x13,0x7d,0x74 };
+
+extern unsigned char fastdrom_cdx2[];
 
 // ------------------------------------------------------------------
 // MSX IO Port Read - just VDP and Joystick to contend with...
@@ -457,11 +458,9 @@ void msx_slot_map_generic(unsigned char Value)
             {
                 bROMInSlot[1] = 1;
                 bRAMInSlot[1] = 0;
-                MemoryMap[2] = cdx_2_rom + 0x0000;
-                MemoryMap[3] = cdx_2_rom + 0x2000;
                 
-                //MemoryMap[2] = fastdrom_cdx2 + 0x0000;
-                //MemoryMap[3] = fastdrom_cdx2 + 0x2000;                
+                MemoryMap[2] = fastdrom_cdx2 + 0x0000;
+                MemoryMap[3] = fastdrom_cdx2 + 0x2000;                
                 
                 break;
             }
