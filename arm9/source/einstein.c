@@ -59,7 +59,7 @@ void einstein_drive_sel(u8 sel)
         last_drive_select = FDC.drive;
         if (FDC.drive < 2)
         {
-            memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.actTrack * 5120)], 5120); // Get the track into our buffer
+            memcpy(FDC.track_buffer, &ROM_Memory[((FDC.drive ? 768:512)*1024) + (FDC.track * 5120)], 5120); // Get the track into our buffer
             FDC.track_buffer_idx = FDC.sector*512;
             FDC.track_buffer_end = FDC.track_buffer_idx+512;
             FDC.sector_byte_counter = 0;
