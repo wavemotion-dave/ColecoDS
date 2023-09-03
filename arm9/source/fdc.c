@@ -68,11 +68,11 @@ void fdc_buffer_track(void)
 {
     u16 track_len = Geom.sectorSize*Geom.sectors;
     if (FDC.drive == 0)
-        memcpy(FDC.track_buffer, Geom.disk0 + (((Geom.sides * FDC.actTrack) + FDC.side) * track_len), track_len+512); // Get the entire track into our buffer
+        memcpy(FDC.track_buffer, Geom.disk0 + (((Geom.sides * FDC.track) + FDC.side) * track_len), track_len+512); // Get the entire track into our buffer
     else
     {
         debug6 += 9999;
-        memcpy(FDC.track_buffer, Geom.disk1 + (((Geom.sides * FDC.actTrack) + FDC.side) * track_len), track_len+512); // Get the entire track into our buffer
+        memcpy(FDC.track_buffer, Geom.disk1 + (((Geom.sides * FDC.track) + FDC.side) * track_len), track_len+512); // Get the entire track into our buffer
     }
     FDC.track_dirty[FDC.drive] = 0;
 }
@@ -83,9 +83,9 @@ void fdc_flush_track(void)
     {
         u16 track_len = Geom.sectorSize*Geom.sectors;
         if (FDC.drive == 0)
-            memcpy(Geom.disk0 + (((Geom.sides * FDC.actTrack) + FDC.side) * track_len), FDC.track_buffer, track_len); // Write the track back to main memory in case it changed
+            memcpy(Geom.disk0 + (((Geom.sides * FDC.track) + FDC.side) * track_len), FDC.track_buffer, track_len); // Write the track back to main memory in case it changed
         else
-            memcpy(Geom.disk1 + (((Geom.sides * FDC.actTrack) + FDC.side) * track_len), FDC.track_buffer, track_len); // Write the track back to main memory in case it changed
+            memcpy(Geom.disk1 + (((Geom.sides * FDC.track) + FDC.side) * track_len), FDC.track_buffer, track_len); // Write the track back to main memory in case it changed
         FDC.track_dirty[FDC.drive] = 0;
     }
 }
@@ -142,9 +142,8 @@ void fdc_state_machine(void)
             // No break
         case 0x10: // Seek Track
             FDC.track = FDC.data;                       // Settle on requested track
-            FDC.actTrack = FDC.data;                    // Settle on requested track
             FDC.wait_for_read = 2;                      // No data to transfer
-            FDC.status |= (FDC.actTrack ? 0x24 : 0x20); // Motor Spun Up / Heads Engaged... Check if Track zero
+            FDC.status |= (FDC.track ? 0x24 : 0x20); // Motor Spun Up / Heads Engaged... Check if Track zero
             FDC.status &= ~0x01;                        // Not busy
             break;
             
@@ -157,16 +156,14 @@ void fdc_state_machine(void)
                 {
                     if (FDC.track > 0) 
                     {
-                        if (FDC.command & 0x10) FDC.track--; 
-                        FDC.actTrack--;
+                        FDC.track--; 
                     }
                 }
                 else // Inwards
                 {
-                    if (FDC.command & 0x10) FDC.track++; 
-                    FDC.actTrack++;
+                    FDC.track++;
                 }
-                FDC.status |= (FDC.actTrack ? 0x24 : 0x20); // Motor Spun Up / Heads Engaged... Check if Track zero
+                FDC.status |= (FDC.track ? 0x24 : 0x20);    // Motor Spun Up / Heads Engaged... Check if Track zero
                 FDC.status &= ~0x01;                        // Not busy
             }
             break;
@@ -175,11 +172,9 @@ void fdc_state_machine(void)
         case 0x50: // Step in
             if (FDC.status & 0x01)
             {
-                debug2++; debug4=FDC.command;
                 FDC.stepDirection = 0; // Step inwards
-                if (FDC.command & 0x10) FDC.track++; 
-                FDC.actTrack++;
-                FDC.status |= (FDC.actTrack ? 0x24 : 0x20); // Motor Spun Up / Heads Engaged... Check if Track zero
+                FDC.track++; 
+                FDC.status |= (FDC.track ? 0x24 : 0x20);   // Motor Spun Up / Heads Engaged... Check if Track zero
                 FDC.status &= ~0x01;                        // Not busy
             }
             break;
@@ -188,14 +183,12 @@ void fdc_state_machine(void)
         case 0x70: // Step out
             if (FDC.status & 0x01)
             {
-                debug3++;
                 FDC.stepDirection = 1;  // Step Outwards... towards track 0
                 if (FDC.track > 0) 
                 {
-                    if (FDC.command & 0x10) FDC.track--; 
-                    FDC.actTrack--;
+                    FDC.track--; 
                 }
-                FDC.status |= (FDC.actTrack ? 0x24 : 0x20); // Motor Spun Up / Heads Engaged... Check if Track zero
+                FDC.status |= (FDC.track ? 0x24 : 0x20);    // Motor Spun Up / Heads Engaged... Check if Track zero
                 FDC.status &= ~0x01;                        // Not busy
             }
             break;
@@ -286,7 +279,7 @@ void fdc_state_machine(void)
                             if (++FDC.sector == Geom.sectors)   // Bump the sector count
                             {
                                 fdc_flush_track();              // Write the buffer back out 
-                                if (FDC.track < Geom.tracks) {FDC.track++; FDC.actTrack++;} else {FDC.track=FDC.actTrack=0;}
+                                if (FDC.track < Geom.tracks) FDC.track++; else FDC.track=0;
                                 FDC.sector = Geom.startSector;
                                 FDC.write_track_allowed = 2;
                             }
@@ -317,9 +310,9 @@ void fdc_state_machine(void)
             break;
         case 0xD0: // Force Interrupt
             if (Geom.fdc_type == WD1770)
-                FDC.status = (FDC.actTrack ? 0xA4:0xA0);  // Motor Spun Up, Not Busy and Maybe Track Zero
+                FDC.status = (FDC.track ? 0xA4:0xA0);   // Motor Spun Up, Not Busy and Maybe Track Zero
             else
-                FDC.status = (FDC.actTrack ? 0x24:0x20);  // Drive ready, Not Busy and Maybe Track Zero
+                FDC.status = (FDC.track ? 0x24:0x20);   // Drive ready, Not Busy and Maybe Track Zero
             break;
         case 0xE0: // Read Track
             debug5++;
@@ -431,13 +424,13 @@ void fdc_write(u8 addr, u8 data)
             
             if ((data&0xF0) == 0x00)                        // Restore (Seek Track 0)
             {
-                FDC.status |= (FDC.actTrack ? 0x04:0x00);   // Check if we are track 0
+                FDC.status |= (FDC.track ? 0x04:0x00);      // Check if we are track 0
                 FDC.wait_for_read = 2;                      // Not feteching any data
                 FDC.wait_for_write = 2;                     // Not writing any data
             }
             else if ((data&0xF0) == 0x10)                   // Seek Track
             {
-                FDC.status |= (FDC.actTrack ? 0x04:0x00);   // Check if we are track 0
+                FDC.status |= (FDC.track ? 0x04:0x00);      // Check if we are track 0
                 FDC.wait_for_read = 2;                      // Not feteching any data
                 FDC.wait_for_write = 2;                     // Not storing any data
             }
@@ -453,9 +446,9 @@ void fdc_write(u8 addr, u8 data)
             if ((data & 0xF0) == 0xD0)     // Force Interrupt... ensure we are back to Type-I status...
             {
                 if (Geom.fdc_type == WD1770)
-                    FDC.status = (FDC.actTrack ? 0xA4:0xA0);  // Motor Spun Up, Not Busy and Maybe Track Zero
+                    FDC.status = (FDC.track ? 0xA4:0xA0);     // Motor Spun Up, Not Busy and Maybe Track Zero
                 else
-                    FDC.status = (FDC.actTrack ? 0x24:0x20);  // Drive ready, Not Busy and Maybe Track Zero
+                    FDC.status = (FDC.track ? 0x24:0x20);     // Drive ready, Not Busy and Maybe Track Zero
                 fdc_flush_track();                            // In case any data changed, write it back to main memory
                 FDC.wait_for_read = 2;                        // Not feteching any data
                 FDC.wait_for_write = 2;                       // Not writing any data
@@ -486,7 +479,6 @@ void fdc_write(u8 addr, u8 data)
             }
             else if ((data&0xF0) == 0xF0) // Write Track
             {
-                FDC.actTrack = FDC.track;
                 fdc_buffer_track();                                         // Get track into our buffer
                 FDC.sector = Geom.startSector;                              // We always start a track write at the first sector
                 FDC.track_buffer_idx = 0;                                   // From the top

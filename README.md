@@ -22,7 +22,7 @@ Features :
 * Sega SG-1000 game support (.sg roms)
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
-* MSX1 game support (.msx or .rom or.cas) up to 1024K 
+* MSX1 game support (.msx or .rom or.cas or .dsk) up to 1024K 
 * Spectravideo SVI support (.cas or .rom) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
@@ -154,6 +154,8 @@ Considering this is a Colecovision emulator, the MSX1 support and compatibility 
 MSX is not a single machine but a standard - there are lots of machines and lots of BIOS files. The one I did most of my testing is MSX.ROM with a CRC32 of 94ee12f3 - this is the one used by many other MSX emulators. ColecoDS also supports four other specific machines - see the BIOS section above for details on those roms.
 
 MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload or run commands (or use the Cassette menu for more choices).
+
+MSX1 disks are supported in .DSK format. The files must be raw sector dumps and the file must be exactly 720K in size to detect properly (typical of the .dsk images you find 'out there').
 
 The MSX memory is based on which MSX rom BIOS you are using:
 ```
