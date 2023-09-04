@@ -2227,8 +2227,8 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".CAS") != 0) cas_load = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".ddp") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".DDP") != 0) adam_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else if (file_size/1024 == 720) msx_mode = 3; else adam_mode = 1;}
-    if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else if (file_size/1024 == 720) msx_mode = 3; else adam_mode = 1;}
+    if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else if (file_size/1024 == 720 || file_size/1024 == 360) msx_mode = 3; else adam_mode = 1;}
+    if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else if (file_size/1024 == 720 || file_size/1024 == 360) msx_mode = 3; else adam_mode = 1;}
     if (strstr(gpFic[ucGameChoice].szName, ".ein") != 0) einstein_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".EIN") != 0) einstein_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".pen") != 0) pencil2_mode = 1;
