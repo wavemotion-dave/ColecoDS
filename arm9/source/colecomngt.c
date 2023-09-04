@@ -218,6 +218,11 @@ void BufferKey(u8 key)
     BufferedKeysWriteIdx = (BufferedKeysWriteIdx+1) % 32;
 }
 
+void BufferKeys(char *str)
+{
+    for (int i=0; i<strlen(str); i++)  BufferKey((u8)str[i]);
+}
+
 // ---------------------------------------------------------------------------------------
 // Called every frame... so 1/50th or 1/60th of a second. We will virtually 'press' and 
 // hold the key for roughly a tenth of a second and be smart about shift keys...
@@ -594,7 +599,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             adam_128k_mode = 0;          // Normal 64K ADAM to start
             SetupAdam(false);
             // The .ddp or .dsk is now in ROM_Memory[]
-            if (strstr(path, ".ddp") != 0)
+            if (isAdamDDP())
             {
                 ChangeTape(0, path);
                 strcpy(lastAdamDataPath, path);

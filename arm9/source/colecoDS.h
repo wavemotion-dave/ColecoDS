@@ -153,7 +153,7 @@ extern u32 debug6;
 #define META_KBD_WILDCARD   0xFFFF0046
 #define META_KBD_STORE      0xFFFF0047
 #define META_KBD_PRINT      0xFFFF0048
-#define META_KBD_STOP       0xFFFF0049
+#define META_KBD_STOP_BRK   0xFFFF0049
 #define META_KBD_F1         0xFFFF004A
 #define META_KBD_F2         0xFFFF004B
 #define META_KBD_F3         0xFFFF004C
@@ -219,6 +219,9 @@ extern u16 emuFps;
 extern u16 emuActFrames;
 extern u16 timingFrames;
 
+extern u8 msx_scc_enable;
+extern u8 sg1000_double_reset;
+
 extern u8 spinX_left;
 extern u8 spinX_right;
 extern u8 spinY_left;
@@ -239,6 +242,7 @@ extern u8 adam_mode;
 extern u8 coleco_mode;
 extern u8 adam_CapsLock;
 extern u8 disk_unsaved_data;
+extern u8 ramdisk_unsaved_data;
 extern u8 creativision_mode;
 
 extern u16 machine_mode;
@@ -294,5 +298,6 @@ extern void colecoLoadEEPROM(void);
 extern void ResetColecovision(void);
 extern u32  creativision_run(void);
 extern void msx_patch_bios(void);
+extern bool isAdamDDP(void);
 
 #endif

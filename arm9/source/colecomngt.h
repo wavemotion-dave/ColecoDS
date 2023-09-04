@@ -196,6 +196,7 @@ extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
 extern u32 LoopZ80();
 extern void MegaCartBankSwitch(u8 bank);
 extern void BufferKey(u8 key);
+extern void BufferKeys(char *str);
 
 extern void MSX_HandleCassette(register Z80 *r);
 extern void MTX_HandleCassette(register Z80 *r);

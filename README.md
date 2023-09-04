@@ -155,7 +155,7 @@ MSX is not a single machine but a standard - there are lots of machines and lots
 
 MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload or run commands (or use the Cassette menu for more choices).
 
-MSX1 disks are supported in .DSK format. The files must be raw sector dumps and the file must be exactly 720K in size to detect properly (typical of the .dsk images you find 'out there').
+MSX1 disks are supported in .DSK format. The files must be raw sector dumps and the file must be exactly 360K (SS) or 720K (DS) in size to detect properly (typical of the .dsk images you find 'out there').
 
 The MSX memory is based on which MSX rom BIOS you are using:
 ```
