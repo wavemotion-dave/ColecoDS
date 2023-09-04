@@ -1860,7 +1860,7 @@ void msx_reset(void)
         MSX_InitialMemoryLayout(LastROMSize);
         if (msx_mode == 3) // .dsk based MSX 
         {
-            fdc_init(WD2793, 1, 2, 80, 9, 512, 1, ROM_Memory, NULL);
+            fdc_init(WD2793, 1, (tape_len/1024 == 360) ? 1:2, 80, 9, 512, 1, ROM_Memory, NULL);
             fdc_reset(true);
         }
     }
