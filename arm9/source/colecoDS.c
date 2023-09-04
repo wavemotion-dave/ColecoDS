@@ -207,6 +207,7 @@ u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of r
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
 u8 touch_debounce = 0;
+u8 key_debounce = 0;
 
 // The DS/DSi has 12 keys that can be mapped
 u16 NDS_keyMap[12] __attribute__((section(".dtcm"))) = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
@@ -334,7 +335,7 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     META_KBD_WILDCARD,
     META_KBD_STORE,
     META_KBD_PRINT,
-    META_KBD_STOP,
+    META_KBD_STOP_BRK,
     META_KBD_F1,
     META_KBD_F2,
     META_KBD_F3,
@@ -344,9 +345,6 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
     META_KBD_F7,
     META_KBD_F8
 };
-
-extern u8 msx_scc_enable;
-extern u8 sg1000_double_reset;
 
 // ----------------------------------------------
 // Game speeds constants... first entry is 100%
@@ -966,6 +964,14 @@ void ShowDebugZ80(void)
     idx++;
 }
 
+// ----------------------------------------------------------------
+// Check if we have an ADAM .ddp file (otherwise assume .dsk file)
+// ----------------------------------------------------------------
+bool isAdamDDP(void)
+{
+    if ((strstr(lastAdamDataPath, ".ddp") != 0) || (strstr(lastAdamDataPath, ".DDP") != 0)) return true;
+    return false;
+}
 
 
 // ------------------------------------------------------------
@@ -1046,7 +1052,7 @@ void DisplayStatusLine(bool bForce)
             last_msx_mode = msx_mode;
             switch (myConfig.msxBios)
             {
-                case 1: siprintf(tmp, "%-7s %3dK", msx_rom_str_short, (int)(LastROMSize/1024));    break;     // MSX (64K machine... use variable name)
+                case 1: siprintf(tmp, "%-7s %3dK", msx_rom_str_short,  (int)(LastROMSize/1024));    break;     // MSX (64K machine... use variable name)
                 case 2: siprintf(tmp, "CX5M    %3dK",                  (int)(LastROMSize/1024));    break;     // Yamaha CX5M (32K mapped in slot 0)
                 case 3: siprintf(tmp, "HX-10   %3dK",                  (int)(LastROMSize/1024));    break;     // Toshiba HX-10 (64K mapped in slot 2)
                 case 4: siprintf(tmp, "HB-10   %3dK",                  (int)(LastROMSize/1024));    break;     // Sony HB-10 (16K mapped in slot 0)
@@ -1139,6 +1145,7 @@ void DisplayStatusLine(bool bForce)
         {
             DSPrint(30,0,6, (io_show_status == 2 ? "WR":"RD"));
             io_show_status = 0;
+            if (!isAdamDDP()) mmEffect(SFX_FLOPPY);
         }
         else
             DSPrint(30,0,6, "  ");
@@ -1236,7 +1243,7 @@ void SaveAdamTapeOrDisk(void)
     if (io_show_status) return; // Don't save while io status
 
     DSPrint(12,0,6, "SAVING");
-    if (strstr(lastAdamDataPath, ".ddp") != 0)
+    if (isAdamDDP())
         SaveFDI(&Tapes[0], lastAdamDataPath, FMT_DDP);
     else
         SaveFDI(&Disks[0], lastAdamDataPath, FMT_ADMDSK);
@@ -1246,6 +1253,9 @@ void SaveAdamTapeOrDisk(void)
 }
 
 
+// -----------------------------------------------------
+// Load a new Adam .ddp or .dsk file into main memory.
+// -----------------------------------------------------
 void DigitalDataInsert(char *filename)
 {
     FILE *fp;
@@ -1293,14 +1303,105 @@ void CassetteInsert(char *filename)
     fclose(fp);
 }
 
+#define MENU_ACTION_END             255 // Always the last sentinal value
+#define MENU_ACTION_EXIT            0   // Exit the menu
+#define MENU_ACTION_SAVE            1   // Save Disk or Cassette
+#define MENU_ACTION_SWAP            2   // Swap Disk or Cassette
+#define MENU_ACTION_REWIND          3   // Rewind the Cassette
+#define MENU_ACTION_CLOAD_RUN       4   // Issue CLOAD RUN
+#define MENU_ACTION_BLOAD_CAS       5   // Issue BLOAD CAS
+#define MENU_ACTION_RUN_CAS         6   // ISSUE RUN CAS
+#define MENU_ACTION_LOAD            7   // ISSUE LOAD
+#define MENU_ACTION_RUN             8   // ISSUE RUN
+#define MENU_ACTION_RUN_EIN         20  // Load Einstein .COM FILE
+#define MENU_ACTION_RUN_MTX         21  // Load MTX .RUN FILE
+#define MENU_ACTION_SAVE_RAMDISK    22  // Save Einstein RAMDISK
+#define MENU_ACTION_INIT_RAMDISK    23  // Init Einstein RAMDISK
+
+typedef struct 
+{
+    char *menu_string;
+    u8    menu_action;
+} MenuItem_t;
+
+typedef struct 
+{
+    char *title;
+    u8   start_row;
+    MenuItem_t menulist[10];
+} CassetteDiskMenu_t;
+
+
+CassetteDiskMenu_t adam_ddp_menu =
+{
+    "ADAM DIGITAL DATA MENU",
+    5,
+    {
+        {" SAVE DDP/DSK  ",         MENU_ACTION_SAVE},
+        {" SWAP DDP/DSK  ",         MENU_ACTION_SWAP},
+        {" EXIT MENU     ",         MENU_ACTION_EXIT},
+        {" NULL          ",         MENU_ACTION_END},
+    },
+};
+
+CassetteDiskMenu_t msx_digital_menu =
+{
+    "MSX CASSETTE/DISK MENU",
+    5,
+    {
+        {" SAVE CASSETTE    ",      MENU_ACTION_SAVE},
+        {" SWAP CASSETTE    ",      MENU_ACTION_SWAP},
+        {" REWIND CASSETTE  ",      MENU_ACTION_REWIND},
+        {" CLOAD  RUN       ",      MENU_ACTION_CLOAD_RUN},
+        {" BLOAD 'CAS:',R   ",      MENU_ACTION_BLOAD_CAS},
+        {" RUN   'CAS:'     ",      MENU_ACTION_RUN_CAS},
+        {" EXIT MENU        ",      MENU_ACTION_EXIT},
+        {" NULL             ",      MENU_ACTION_END},
+    },
+};
+
+CassetteDiskMenu_t einstein_disk_menu =
+{
+    "EINSTEIN DISK MENU",
+    5,
+    {
+        {" SAVE DISK0        ",     MENU_ACTION_SAVE},
+        {" SWAP DISK0        ",     MENU_ACTION_SWAP},
+        {" SAVE RAMDISK      ",     MENU_ACTION_SAVE_RAMDISK},
+        {" INIT RAMDISK      ",     MENU_ACTION_INIT_RAMDISK},
+        {" RUN  EINSTEIN .COM",     MENU_ACTION_RUN_EIN},
+        {" EXIT MENU         ",     MENU_ACTION_EXIT},
+        {" NULL              ",     MENU_ACTION_END},
+    },
+};
+
+
+CassetteDiskMenu_t generic_cassette_menu =
+{
+    "CASSETTE MENU",
+    5,
+    {
+        {" SAVE CASSETTE    ",      MENU_ACTION_SAVE},
+        {" SWAP CASSETTE    ",      MENU_ACTION_SWAP},
+        {" REWIND CASSETTE  ",      MENU_ACTION_REWIND},
+        {" LOAD ''          ",      MENU_ACTION_LOAD},
+        {" RUN              ",      MENU_ACTION_RUN},
+        {" RUN MEMOTECH .RUN",      MENU_ACTION_RUN_MTX},
+        {" EXIT MENU        ",      MENU_ACTION_EXIT},
+        {" NULL             ",      MENU_ACTION_END},
+    },
+};
+
+CassetteDiskMenu_t *menu = &generic_cassette_menu;
 
 // ------------------------------------------------------------------------
 // Show the Cassette/Disk Menu text - highlight the selected row.
 // ------------------------------------------------------------------------
-u8 cassete_menu_items = 0;
+u8 cassette_menu_items = 0;
 void CassetteMenuShow(bool bClearScreen, u8 sel)
 {
-    cassete_menu_items = 0;
+    cassette_menu_items = 0;
+    
     if (bClearScreen)
     {
       // ---------------------------------------------------
@@ -1308,45 +1409,45 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
       // ---------------------------------------------------
       BottomScreenOptions();
     }
-
+    
+    // ---------------------------------------------------
+    // Pick the right context menu based on the machine
+    // ---------------------------------------------------
+                        menu = &generic_cassette_menu;
+    if (adam_mode)      menu = &adam_ddp_menu;
+    if (msx_mode)       menu = &msx_digital_menu;
+    if (einstein_mode)  menu = &einstein_disk_menu;
+    
+    // Display the menu title
+    DSPrint(16-(strlen(menu->title)/2), menu->start_row, 6, menu->title);
+    
+    // And display all of the menu items
+    while (menu->menulist[cassette_menu_items].menu_action != MENU_ACTION_END)
+    {
+        DSPrint(16-(strlen(menu->menulist[cassette_menu_items].menu_string)/2), menu->start_row+2+cassette_menu_items, (cassette_menu_items == sel) ? 7:6, menu->menulist[cassette_menu_items].menu_string);
+        cassette_menu_items++;   
+    }
+    
+    // --------------------------------------------------------------------
+    // Some systems need to show if we hae unsaved data to warn the user.
+    // --------------------------------------------------------------------
     if (adam_mode)
     {
-        DSPrint(8,8,6,                    "DIGITAL DATA MENU");
-        DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DDP/DSK  ");  cassete_menu_items++;
-        DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DDP/DSK  ");  cassete_menu_items++;
-        DSPrint(8,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU     ");  cassete_menu_items++;
-        if (disk_unsaved_data)
-        {
-            DSPrint(3, 15, 0, "DDP/DSK HAS UNSAVED DATA!");
-        }
+        if (disk_unsaved_data) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,     "DDP/DSK HAS UNSAVED DATA!");
+    }
+    else if (msx_mode)
+    {
+        if (disk_unsaved_data) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,     "  DISK HAS UNSAVED DATA! ");
     }
     else if (einstein_mode)
     {
-        extern u8 ramdisk_unsaved_data;
-        DSPrint(7,8,6,                    "EINSTEIN DISK MENU");
-        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE DISK    ");  cassete_menu_items++;
-        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP DISK    ");  cassete_menu_items++;
-        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE RAMDISK ");  cassete_menu_items++;
-        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " INIT RAMDISK ");  cassete_menu_items++;
-        DSPrint(9,10+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU    ");  cassete_menu_items++;
-        if (disk_unsaved_data)    DSPrint(6, 16, 0,   "DISK HAS UNSAVED DATA!");
-        if (ramdisk_unsaved_data) DSPrint(4, 17, 0, "RAMDISK HAS UNSAVED DATA!");
+        if (disk_unsaved_data)    DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
+        if (ramdisk_unsaved_data) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  "RAMDISK HAS UNSAVED DATA!");
     }
-    else
-    {
-        DSPrint(9,7,6,                    "CASSETTE MENU");
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SAVE CASSETTE    ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " SWAP CASSETTE    ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " REWIND CASSETTE  ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " CLOAD  RUN       ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " BLOAD 'CAS:',R   ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN   'CAS:'     ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " LOAD  ''         ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN              ");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN EINSTEIN .COM");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " RUN MEMOTECH .RUN");  cassete_menu_items++;
-        DSPrint(8,9+cassete_menu_items,(sel==cassete_menu_items)?2:0,  " EXIT MENU        ");  cassete_menu_items++;
-    }
+    
+    // ----------------------------------------------------------------------------------------------
+    // And near the bottom, display the file/rom/disk/cassette that is currently loaded into memory.
+    // ----------------------------------------------------------------------------------------------
     DisplayFileName();
 }
 
@@ -1360,22 +1461,27 @@ void CassetteMenu(void)
   SoundPause();
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
 
+  // -------------------------------------------------------------------------------------------------
+  // Creativision is a bit special... if cassette button pressed we try to load a .BAS file directly.
+  // -------------------------------------------------------------------------------------------------
   if (creativision_mode)
   {
       DSPrint(5,0,0, "BAS LOADING");
       creativision_loadBAS();
       WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-      BufferKey('R');
-      BufferKey('U');
-      BufferKey('N');
+      BufferKeys("RUN");
       BufferKey(KBD_KEY_RET);
       DSPrint(5,0,0, "           ");
       SoundUnPause();
       return;
   }
 
+  // --------------------------------------------------------------------------------------------
+  // Otherwise we are showing the cassette menu based on the current machine being emulated...
+  // --------------------------------------------------------------------------------------------
   CassetteMenuShow(true, menuSelection);
 
+  u8 bExitMenu = false;
   while (true)
   {
     nds_key = keysCurrent();
@@ -1383,210 +1489,192 @@ void CassetteMenu(void)
     {
         if (nds_key & KEY_UP)
         {
-            menuSelection = (menuSelection > 0) ? (menuSelection-1):(cassete_menu_items-1);
+            menuSelection = (menuSelection > 0) ? (menuSelection-1):(cassette_menu_items-1);
             CassetteMenuShow(false, menuSelection);
         }
         if (nds_key & KEY_DOWN)
         {
-            menuSelection = (menuSelection+1) % cassete_menu_items;
+            menuSelection = (menuSelection+1) % cassette_menu_items;
             CassetteMenuShow(false, menuSelection);
         }
-        if (nds_key & KEY_A)
+        if (nds_key & KEY_A)    // User has picked a menu item... let's see what it is!
         {
-            if (menuSelection == 0) // SAVE CASSETTE
+            switch(menu->menulist[menuSelection].menu_action)
             {
-                if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
-                {
-                    if (adam_mode)
+                case MENU_ACTION_EXIT:
+                    bExitMenu = true;
+                    break;
+                    
+                case MENU_ACTION_SAVE:
+                    if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
                     {
-                        SaveAdamTapeOrDisk();
-                    }
-                    else if (einstein_mode)
-                    {
-                        DSPrint(12,0,6, "SAVING");
-                        einstein_save_disk();
-                        WAITVBL;WAITVBL;
-                        DSPrint(12,0,6, "      ");
-                        break;
-                    }
-                    else
-                    {
-                        if (msx_mode || svi_mode)   // Not supporting Memotech MTX yet...
+                        if (adam_mode)
+                        {
+                            SaveAdamTapeOrDisk();
+                        }
+                        else if (einstein_mode)
                         {
                             DSPrint(12,0,6, "SAVING");
-                            FILE *fp;
-                            fp = fopen(gpFic[ucGameChoice].szName, "wb");
-                            fwrite(ROM_Memory, tape_len, 1, fp);
-                            fclose(fp);
+                            einstein_save_disk();
                             WAITVBL;WAITVBL;
                             DSPrint(12,0,6, "      ");
-                            DisplayStatusLine(true);
+                            bExitMenu = true;
+                        }
+                        else
+                        {
+                            if (msx_mode || svi_mode)   // Not supporting Memotech MTX yet...
+                            {
+                                DSPrint(12,0,6, "SAVING");
+                                FILE *fp;
+                                fp = fopen(gpFic[ucGameChoice].szName, "wb");
+                                fwrite(ROM_Memory, tape_len, 1, fp);
+                                fclose(fp);
+                                WAITVBL;WAITVBL;
+                                DSPrint(12,0,6, "      ");
+                                DisplayStatusLine(true);
+                            }
                         }
                     }
-                }
-                CassetteMenuShow(true, menuSelection);
-            }
-            if (menuSelection == 1) // SWAP CASSETTE/DISK
-            {
-                colecoDSLoadFile();
-                if (ucGameChoice >= 0)
-                {
-                    if (adam_mode)
+                    CassetteMenuShow(true, menuSelection);
+                    break;
+                    
+                case MENU_ACTION_SAVE_RAMDISK:
+                    if (einstein_mode)
                     {
-                        DigitalDataInsert(gpFic[ucGameChoice].szName);
+                        if  (showMessage("DO YOU REALLY WANT TO","WRITE RAMDISK DATA?") == ID_SHM_YES)
+                        {
+                            DSPrint(10,0,6, "SAVING");
+                            einstein_save_ramdisk();
+                            WAITVBL;WAITVBL;
+                            DSPrint(10,0,6, "      ");
+                            bExitMenu = true;
+                        }
+                        CassetteMenuShow(true, menuSelection);
                     }
-                    else if (einstein_mode)
+                    break;
+
+                case MENU_ACTION_INIT_RAMDISK:
+                    if (einstein_mode)
                     {
-                        einstein_swap_disk(gpFic[ucGameChoice].szName);
+                        if  (showMessage("DO YOU REALLY WANT TO","INITIALIZE THE RAMDISK?") == ID_SHM_YES)
+                        {
+                            DSPrint(10,0,6, "ERASING");
+                            einstein_init_ramdisk();
+                            einstein_load_ramdisk();
+                            WAITVBL;WAITVBL;
+                            DSPrint(10,0,6, "       ");
+                            bExitMenu = true;
+                        }
+                        CassetteMenuShow(true, menuSelection);
+                    }
+                    break;
+                    
+                case MENU_ACTION_SWAP:
+                    colecoDSLoadFile();
+                    if (ucGameChoice >= 0)
+                    {
+                        if (adam_mode)
+                        {
+                            DigitalDataInsert(gpFic[ucGameChoice].szName);
+                        }
+                        else if (einstein_mode)
+                        {
+                            einstein_swap_disk(gpFic[ucGameChoice].szName);
+                        }
+                        else
+                        {
+                            CassetteInsert(gpFic[ucGameChoice].szName);
+                        }
+                        bExitMenu = true;
                     }
                     else
                     {
-                        CassetteInsert(gpFic[ucGameChoice].szName);
+                        CassetteMenuShow(true, menuSelection);
                     }
                     break;
-                }
-                else
-                {
-                    CassetteMenuShow(true, menuSelection);
-                }
-            }
-            if (menuSelection == 2) // REWIND (ADAM = EXIT, EINSTEIN = SAVE RAMDISK)
-            {
-                  if (einstein_mode)
-                  {
-                    if  (showMessage("DO YOU REALLY WANT TO","WRITE RAMDISK DATA?") == ID_SHM_YES)
+                    
+                case MENU_ACTION_REWIND:
+                    if (tape_pos>0)
                     {
-                        DSPrint(10,0,6, "SAVING");
-                        einstein_save_ramdisk();
-                        WAITVBL;WAITVBL;
-                        DSPrint(10,0,6, "      ");
-                        break;
+                        tape_pos = 0;
+                        DSPrint(12,0,6, "REWOUND");
+                        WAITVBL;WAITVBL;WAITVBL;WAITVBL;
+                        DSPrint(12,0,6, "       ");
+                        DisplayStatusLine(true);
+                        CassetteMenuShow(true, menuSelection);
                     }
-                    CassetteMenuShow(true, menuSelection);
-                  }
-                  else if (!adam_mode && (tape_pos>0))
-                  {
-                      tape_pos = 0;
-                      DSPrint(12,0,6, "REWOUND");
-                      WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-                      DSPrint(12,0,6, "       ");
-                      DisplayStatusLine(true);
-                      CassetteMenuShow(true, menuSelection);
-                  }
-                  if (adam_mode) break;
-            }
-            if (menuSelection == 3)
-            {
-                if (einstein_mode)
-                {
-                    if  (showMessage("DO YOU REALLY WANT TO","INITIALIZE THE RAMDISK?") == ID_SHM_YES)
-                    {
-                        DSPrint(10,0,6, "ERASING");
-                        einstein_init_ramdisk();
-                        einstein_load_ramdisk();
-                        WAITVBL;WAITVBL;
-                        DSPrint(10,0,6, "       ");
-                        break;
-                    }
-                    CassetteMenuShow(true, menuSelection);
-                }
-                else
-                {
-                    BufferKey('C');
-                    BufferKey('L');
-                    BufferKey('O');
-                    BufferKey('A');
-                    BufferKey('D');
+                    break;
+                    
+                case MENU_ACTION_CLOAD_RUN:
+                    BufferKeys("CLOAD");
                     BufferKey(KBD_KEY_RET);
                     BufferKey(255);
-                    BufferKey('R');
-                    BufferKey('U');
-                    BufferKey('N');
+                    BufferKeys("RUN");
                     BufferKey(KBD_KEY_RET);
-                }
-                  break;
-            }
-            if (menuSelection == 4)
-            {
-                  if (einstein_mode) break;
+                    bExitMenu = true;
+                    break;
+                    
+                case MENU_ACTION_BLOAD_CAS:
+                    BufferKeys("BLOAD");
+                    BufferKey(KBD_KEY_SHIFT);
+                    BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
+                    BufferKeys("CAS");
+                    if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                    BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
+                    BufferKey(KBD_KEY_SHIFT);
+                    BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
+                    BufferKey(',');
+                    BufferKey('R');
+                    BufferKey(KBD_KEY_RET);
+                    bExitMenu = true;
+                    break;
+                    
+                case MENU_ACTION_RUN_CAS:
+                    BufferKeys("RUN");
+                    BufferKey(KBD_KEY_SHIFT);
+                    BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
+                    BufferKeys("CAS");
+                    if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
+                    BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
+                    BufferKey(KBD_KEY_SHIFT);
+                    BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
+                    BufferKey(KBD_KEY_RET);
+                    bExitMenu = true;
+                    break;
+                    
+                case MENU_ACTION_LOAD:
+                    BufferKeys("LOAD");
+                    BufferKey(KBD_KEY_SHIFT);
+                    BufferKey('2');
+                    BufferKey(KBD_KEY_SHIFT);
+                    BufferKey('2');
+                    BufferKey(KBD_KEY_RET);
+                    bExitMenu = true;
+                    break;
+                    
+                case MENU_ACTION_RUN:
+                    BufferKeys("RUN");
+                    BufferKey(KBD_KEY_RET);
+                    bExitMenu = true;
+                    break;
 
-                  BufferKey('B');
-                  BufferKey('L');
-                  BufferKey('O');
-                  BufferKey('A');
-                  BufferKey('D');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                  BufferKey('C');
-                  BufferKey('A');
-                  BufferKey('S');
-                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                  BufferKey(',');
-                  BufferKey('R');
-                  BufferKey(KBD_KEY_RET);
-                  break;
-            }
-            if (menuSelection == 5)
-            {
-                  BufferKey('R');
-                  BufferKey('U');
-                  BufferKey('N');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                  BufferKey('C');
-                  BufferKey('A');
-                  BufferKey('S');
-                  if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                  BufferKey(KBD_KEY_RET);
-                  break;
-            }
-            if (menuSelection == 6)
-            {
-                  BufferKey('L');
-                  BufferKey('O');
-                  BufferKey('A');
-                  BufferKey('D');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey('2');
-                  BufferKey(KBD_KEY_SHIFT);
-                  BufferKey('2');
-                  BufferKey(KBD_KEY_RET);
-                  break;
-            }
-            if (menuSelection == 7)
-            {
-                  BufferKey('R');
-                  BufferKey('U');
-                  BufferKey('N');
-                  BufferKey(KBD_KEY_RET);
-                  break;
-            }
-            if (menuSelection == 8)
-            {
-                  einstein_load_com_file();
-                  break;
-            }
-            if (menuSelection == 9)
-            {
-                memotech_launch_run_file();
-                break;
-            }
-            if (menuSelection == 10)
-            {
-                break;
+                case MENU_ACTION_RUN_EIN:
+                    einstein_load_com_file();
+                    bExitMenu = true;
+                    break;
+                    
+                case MENU_ACTION_RUN_MTX:
+                    memotech_launch_run_file();
+                    bExitMenu = true;
+                    break;
             }
         }
         if (nds_key & KEY_B)
         {
-            break;
+            bExitMenu = true;
         }
 
+        if (bExitMenu) break;
         while ((keysCurrent() & (KEY_UP | KEY_DOWN | KEY_A ))!=0);
         WAITVBL;WAITVBL;
     }
@@ -1617,7 +1705,7 @@ void MiniMenuShow(bool bClearScreen, u8 sel)
       BottomScreenOptions();
     }
 
-    DSPrint(8,7,6,                                           " CV MINI MENU  ");
+    DSPrint(8,7,6,                                           " DS MINI MENU  ");
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " RESET  GAME   ");  mini_menu_items++;
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " QUIT   GAME   ");  mini_menu_items++;
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " HIGH   SCORE  ");  mini_menu_items++;
@@ -2614,7 +2702,7 @@ void colecoDS_main(void)
 {
   u16 iTx,  iTy;
   u16 SaveNow = 0, LoadNow = 0;
-  u32 ucUN, ucDEUX;
+  u32 cvTouchPad, ucDEUX;
   static u32 lastUN = 0;
   static u8 dampenClick = 0;
   u8 meta_key = 0;
@@ -2742,217 +2830,228 @@ void colecoDS_main(void)
           ShowDebugZ80();
       }
 
-      // -----------------------------------------------------------
-      // This is where we accumualte the keys pressed... up to 12!
-      // -----------------------------------------------------------
-      kbd_keys_pressed = 0;
-      memset(kbd_keys, 0x00, sizeof(kbd_keys));
-      kbd_key = 0;
+      cvTouchPad  = 0;    // Assume no CV touchpad (buttons 0-9,*,#) press until proven otherwise.
         
-      // ------------------------------------------
-      // Handle any screen touch events
-      // ------------------------------------------
-      ucUN  = 0;
-      if  (keysCurrent() & KEY_TOUCH)
-      {
-          // ----------------------------------------------------------------------------------
-          // Just a bit of touch debounce so ensure key is pressed for a fraction of a second.
-          // ----------------------------------------------------------------------------------
-          if (++touch_debounce > 1)
-          {
-            touchPosition touch;
-            touchRead(&touch);
-            iTx = touch.px;
-            iTy = touch.py;
-
-            if (myGlobalConfig.debugger == 3)
-            {
-                meta_key = handle_debugger_overlay(iTx, iTy);
-            }
-            // ------------------------------------------------------------
-            // Test the touchscreen for various full keyboard handlers... 
-            // ------------------------------------------------------------
-            else if (myConfig.overlay == 9) // ADAM Keyboard
-            {
-                meta_key = handle_adam_keyboard_press(iTx, iTy);
-            }
-            else if (myConfig.overlay == 10) // MSX Keyboard
-            {
-                meta_key = handle_msx_keyboard_press(iTx, iTy);
-            }
-            else if (myConfig.overlay == 11) // Memotech MTX Keyboard
-            {
-                meta_key = handle_mtx_keyboard_press(iTx, iTy);
-            }
-            else if (myConfig.overlay == 12) // Creativision Keyboard
-            {
-                meta_key = handle_cvision_keyboard_press(iTx, iTy);
-            }
-            else if (myConfig.overlay == 13) // Simplified Alpha Keyboard
-            {
-                meta_key = handle_alpha_keyboard_press(iTx, iTy);
-            }
-            else if (myConfig.overlay == 14) // Tatung Einstein Keyboard
-            {
-                meta_key = handle_einstein_keyboard_press(iTx, iTy);
-            }
-            else if (myConfig.overlay == 15) // SVI Keyboard
-            {
-                meta_key = handle_svi_keyboard_press(iTx, iTy);
-            }
-            else if (myConfig.overlay == 16) // SC-3000 Keyboard
-            {
-                meta_key = handle_sc3000_keyboard_press(iTx, iTy);
-            }        
-            else if (myConfig.overlay == 17) // SORD M5 Keyboard
-            {
-                meta_key = handle_sordm5_keyboard_press(iTx, iTy);
-            }        
-            else    // Normal 12 button virtual keypad
-            {
-                meta_key = handle_normal_virtual_keypad(iTx, iTy);
-
-                ucUN = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
-                ucUN = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: ucUN);
-                ucUN = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: ucUN);
-
-                ucUN = ( ((iTx>=137) && (iTy>=73) && (iTx<=171) && (iTy<=110)) ? 0x0D: ucUN);
-                ucUN = ( ((iTx>=171) && (iTy>=73) && (iTx<=210) && (iTy<=110)) ? 0x0C: ucUN);
-                ucUN = ( ((iTx>=210) && (iTy>=73) && (iTx<=248) && (iTy<=110)) ? 0x01: ucUN);
-
-                ucUN = ( ((iTx>=137) && (iTy>=111) && (iTx<=171) && (iTy<=147)) ? 0x0A: ucUN);
-                ucUN = ( ((iTx>=171) && (iTy>=111) && (iTx<=210) && (iTy<=147)) ? 0x0E: ucUN);
-                ucUN = ( ((iTx>=210) && (iTy>=111) && (iTx<=248) && (iTy<=147)) ? 0x04: ucUN);
-
-                ucUN = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: ucUN);
-                ucUN = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: ucUN);
-                ucUN = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: ucUN);
-            }
-
-            if (kbd_key != 0)
-            {
-                kbd_keys[kbd_keys_pressed++] = kbd_key;
-            }
-
-            // If the special menu key indicates we should show the choice menu, do so here...
-            if (meta_key == MENU_CHOICE_MENU)
-            {
-                meta_key = MiniMenu();
-            }
-
-            // -------------------------------------------------------------------
-            // If one of the special meta keys was picked, we handle that here...
-            // -------------------------------------------------------------------
-            switch (meta_key)
-            {
-                case MENU_CHOICE_RESET_GAME:
-                    SoundPause();
-                    // Ask for verification
-                    if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES)
-                    {
-                        ResetColecovision();
-                    }
-                    BottomScreenKeypad();
-                    SoundUnPause();
-                    break;
-
-                case MENU_CHOICE_END_GAME:
-                      SoundPause();
-                      //  Ask for verification
-                      if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES)
-                      {
-                          memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
-                          return;
-                      }
-                      BottomScreenKeypad();
-                      DisplayStatusLine(true);
-                      SoundUnPause();
-                    break;
-
-                case MENU_CHOICE_HI_SCORE:
-                    SoundPause();
-                    highscore_display(file_crc);
-                    DisplayStatusLine(true);
-                    SoundUnPause();
-                    break;
-
-                case MENU_CHOICE_SAVE_GAME:
-                    if  (!SaveNow)
-                    {
-                        SoundPause();
-                        if (IsFullKeyboard())
-                        {
-                            if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES)
-                            {
-                              SaveNow = 1;
-                              colecoSaveState();
-                            }
-                        }
-                        else
-                        {
-                            SaveNow = 1;
-                            colecoSaveState();
-                        }
-                        BottomScreenKeypad();
-                        SoundUnPause();
-                    }
-                    break;
-
-                case MENU_CHOICE_LOAD_GAME:
-                    if  (!LoadNow)
-                    {
-                        SoundPause();
-                        if (IsFullKeyboard())
-                        {
-                            if (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES)
-                            {
-                              LoadNow = 1;
-                              colecoLoadState();
-                            }
-                        }
-                        else
-                        {
-                            LoadNow = 1;
-                            colecoLoadState();
-                        }
-                        BottomScreenKeypad();
-                        SoundUnPause();
-                    }
-                    break;
-
-                case MENU_CHOICE_CASSETTE:
-                    CassetteMenu();
-                    break;
-
-                default:
-                    SaveNow = 0;
-                    LoadNow = 0;
-            }
-
-            // ---------------------------------------------------------------------
-            // If we are mapping the touch-screen keypad to P2, we shift these up.
-            // ---------------------------------------------------------------------
-            if (myConfig.touchPad) ucUN = ucUN << 16;
-
-            if (++dampenClick > 0)  // Make sure the key is pressed for an appreciable amount of time...
-            {
-                if (((ucUN != 0) || (kbd_key != 0)) && (lastUN == 0))
-                {
-                    if (!adam_mode)
-                    {
-                        if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback... ADAM handers do this for us
-                    }
-                }
-                lastUN = (ucUN ? ucUN:kbd_key);
-            }
-          }
-      } //  SCR_TOUCH
+      // ---------------------------------------------------------------------------------
+      // Hold the key press for a brief instant... some machines take longer than others 
+      // (eg MSX needs to see the keypress for many tens of milliseconds)... This allows
+      // us to 'hold' the keypress in memory for several frames which is good enough.
+      // ---------------------------------------------------------------------------------
+      if (key_debounce > 0) key_debounce--;
       else
       {
-        touch_debounce = 0;
-        SaveNow=LoadNow = 0;
-        lastUN = 0;  dampenClick = 0;
-        last_kbd_key = 0;
+          // -----------------------------------------------------------
+          // This is where we accumualte the keys pressed... up to 12!
+          // -----------------------------------------------------------
+          kbd_keys_pressed = 0;
+          memset(kbd_keys, 0x00, sizeof(kbd_keys));
+          kbd_key = 0;
+
+          // ------------------------------------------
+          // Handle any screen touch events
+          // ------------------------------------------
+          if  (keysCurrent() & KEY_TOUCH)
+          {
+              // ------------------------------------------------------------------------------------------------
+              // Just a tiny bit of touch debounce so ensure touch screen is pressed for a fraction of a second.
+              // ------------------------------------------------------------------------------------------------
+              if (++touch_debounce > 1)
+              {
+                touchPosition touch;
+                touchRead(&touch);
+                iTx = touch.px;
+                iTy = touch.py;
+
+                if (myGlobalConfig.debugger == 3)
+                {
+                    meta_key = handle_debugger_overlay(iTx, iTy);
+                }
+                // ------------------------------------------------------------
+                // Test the touchscreen for various full keyboard handlers... 
+                // ------------------------------------------------------------
+                else if (myConfig.overlay == 9) // ADAM Keyboard
+                {
+                    meta_key = handle_adam_keyboard_press(iTx, iTy);
+                }
+                else if (myConfig.overlay == 10) // MSX Keyboard
+                {
+                    meta_key = handle_msx_keyboard_press(iTx, iTy);
+                }
+                else if (myConfig.overlay == 11) // Memotech MTX Keyboard
+                {
+                    meta_key = handle_mtx_keyboard_press(iTx, iTy);
+                }
+                else if (myConfig.overlay == 12) // Creativision Keyboard
+                {
+                    meta_key = handle_cvision_keyboard_press(iTx, iTy);
+                }
+                else if (myConfig.overlay == 13) // Simplified Alpha Keyboard
+                {
+                    meta_key = handle_alpha_keyboard_press(iTx, iTy);
+                }
+                else if (myConfig.overlay == 14) // Tatung Einstein Keyboard
+                {
+                    meta_key = handle_einstein_keyboard_press(iTx, iTy);
+                }
+                else if (myConfig.overlay == 15) // SVI Keyboard
+                {
+                    meta_key = handle_svi_keyboard_press(iTx, iTy);
+                }
+                else if (myConfig.overlay == 16) // SC-3000 Keyboard
+                {
+                    meta_key = handle_sc3000_keyboard_press(iTx, iTy);
+                }        
+                else if (myConfig.overlay == 17) // SORD M5 Keyboard
+                {
+                    meta_key = handle_sordm5_keyboard_press(iTx, iTy);
+                }        
+                else    // Normal 12 button virtual keypad
+                {
+                    meta_key = handle_normal_virtual_keypad(iTx, iTy);
+
+                    cvTouchPad = ( ((iTx>=137) && (iTy>=38) && (iTx<=171) && (iTy<=72)) ? 0x02: 0x00);
+                    cvTouchPad = ( ((iTx>=171) && (iTy>=38) && (iTx<=210) && (iTy<=72)) ? 0x08: cvTouchPad);
+                    cvTouchPad = ( ((iTx>=210) && (iTy>=38) && (iTx<=248) && (iTy<=72)) ? 0x03: cvTouchPad);
+
+                    cvTouchPad = ( ((iTx>=137) && (iTy>=73) && (iTx<=171) && (iTy<=110)) ? 0x0D: cvTouchPad);
+                    cvTouchPad = ( ((iTx>=171) && (iTy>=73) && (iTx<=210) && (iTy<=110)) ? 0x0C: cvTouchPad);
+                    cvTouchPad = ( ((iTx>=210) && (iTy>=73) && (iTx<=248) && (iTy<=110)) ? 0x01: cvTouchPad);
+
+                    cvTouchPad = ( ((iTx>=137) && (iTy>=111) && (iTx<=171) && (iTy<=147)) ? 0x0A: cvTouchPad);
+                    cvTouchPad = ( ((iTx>=171) && (iTy>=111) && (iTx<=210) && (iTy<=147)) ? 0x0E: cvTouchPad);
+                    cvTouchPad = ( ((iTx>=210) && (iTy>=111) && (iTx<=248) && (iTy<=147)) ? 0x04: cvTouchPad);
+
+                    cvTouchPad = ( ((iTx>=137) && (iTy>=148) && (iTx<=171) && (iTy<=186)) ? 0x06: cvTouchPad);
+                    cvTouchPad = ( ((iTx>=171) && (iTy>=148) && (iTx<=210) && (iTy<=186)) ? 0x05: cvTouchPad);
+                    cvTouchPad = ( ((iTx>=210) && (iTy>=148) && (iTx<=248) && (iTy<=186)) ? 0x09: cvTouchPad);
+                }
+
+                if (kbd_key != 0)
+                {
+                    kbd_keys[kbd_keys_pressed++] = kbd_key;
+                    key_debounce = 2;
+                }
+
+                // If the special menu key indicates we should show the choice menu, do so here...
+                if (meta_key == MENU_CHOICE_MENU)
+                {
+                    meta_key = MiniMenu();
+                }
+
+                // -------------------------------------------------------------------
+                // If one of the special meta keys was picked, we handle that here...
+                // -------------------------------------------------------------------
+                switch (meta_key)
+                {
+                    case MENU_CHOICE_RESET_GAME:
+                        SoundPause();
+                        // Ask for verification
+                        if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES)
+                        {
+                            ResetColecovision();
+                        }
+                        BottomScreenKeypad();
+                        SoundUnPause();
+                        break;
+
+                    case MENU_CHOICE_END_GAME:
+                          SoundPause();
+                          //  Ask for verification
+                          if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES)
+                          {
+                              memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
+                              return;
+                          }
+                          BottomScreenKeypad();
+                          DisplayStatusLine(true);
+                          SoundUnPause();
+                        break;
+
+                    case MENU_CHOICE_HI_SCORE:
+                        SoundPause();
+                        highscore_display(file_crc);
+                        DisplayStatusLine(true);
+                        SoundUnPause();
+                        break;
+
+                    case MENU_CHOICE_SAVE_GAME:
+                        if  (!SaveNow)
+                        {
+                            SoundPause();
+                            if (IsFullKeyboard())
+                            {
+                                if  (showMessage("DO YOU REALLY WANT TO","SAVE GAME STATE ?") == ID_SHM_YES)
+                                {
+                                  SaveNow = 1;
+                                  colecoSaveState();
+                                }
+                            }
+                            else
+                            {
+                                SaveNow = 1;
+                                colecoSaveState();
+                            }
+                            BottomScreenKeypad();
+                            SoundUnPause();
+                        }
+                        break;
+
+                    case MENU_CHOICE_LOAD_GAME:
+                        if  (!LoadNow)
+                        {
+                            SoundPause();
+                            if (IsFullKeyboard())
+                            {
+                                if (showMessage("DO YOU REALLY WANT TO","LOAD GAME STATE ?") == ID_SHM_YES)
+                                {
+                                  LoadNow = 1;
+                                  colecoLoadState();
+                                }
+                            }
+                            else
+                            {
+                                LoadNow = 1;
+                                colecoLoadState();
+                            }
+                            BottomScreenKeypad();
+                            SoundUnPause();
+                        }
+                        break;
+
+                    case MENU_CHOICE_CASSETTE:
+                        CassetteMenu();
+                        break;
+
+                    default:
+                        SaveNow = 0;
+                        LoadNow = 0;
+                }
+
+                // ---------------------------------------------------------------------
+                // If we are mapping the touch-screen keypad to P2, we shift these up.
+                // ---------------------------------------------------------------------
+                if (myConfig.touchPad) cvTouchPad = cvTouchPad << 16;
+
+                if (++dampenClick > 0)  // Make sure the key is pressed for an appreciable amount of time...
+                {
+                    if (((cvTouchPad != 0) || (kbd_key != 0)) && (lastUN == 0))
+                    {
+                        if (!adam_mode)
+                        {
+                            if (!myConfig.keyMute) mmEffect(SFX_KEYCLICK);  // Play short key click for feedback... ADAM handers do this for us
+                        }
+                    }
+                    lastUN = (cvTouchPad ? cvTouchPad:kbd_key);
+                }
+              }
+          } //  SCR_TOUCH
+          else
+          {
+            touch_debounce = 0;
+            SaveNow=LoadNow = 0;
+            lastUN = 0;  dampenClick = 0;
+            last_kbd_key = 0;
+          }
       }
 
       // ---------------------------------------------------
@@ -3019,11 +3118,7 @@ void colecoDS_main(void)
 
                   if (memotech_magrom_present)
                   {
-                      BufferKey('R');
-                      BufferKey('O');
-                      BufferKey('M');
-                      BufferKey(' ');
-                      BufferKey('7');
+                      BufferKeys("ROM 7");
                       BufferKey(KBD_KEY_RET);
                   }
                   else
@@ -3033,17 +3128,12 @@ void colecoDS_main(void)
                       {
                           RAM_Memory[0xFA7A] = 0x00;
 
-                          BufferKey('N');
-                          BufferKey('E');
-                          BufferKey('W');
+                          BufferKeys("NEW");
                           BufferKey(KBD_KEY_RET);
                           BufferKey(255);
                       }
 
-                      BufferKey('L');
-                      BufferKey('O');
-                      BufferKey('A');
-                      BufferKey('D');
+                      BufferKeys("LOAD");
                       BufferKey(KBD_KEY_SHIFT);
                       BufferKey('2');
                       BufferKey(KBD_KEY_SHIFT);
@@ -3060,30 +3150,18 @@ void colecoDS_main(void)
               {
                   if (nds_key & KEY_START)
                   {
-                      BufferKey('C');
-                      BufferKey('L');
-                      BufferKey('O');
-                      BufferKey('A');
-                      BufferKey('D');
+                      BufferKeys("CLOAD");
                       BufferKey(KBD_KEY_RET);
                       BufferKey(255);
-                      BufferKey('R');
-                      BufferKey('U');
-                      BufferKey('N');
+                      BufferKeys("RUN");
                       BufferKey(KBD_KEY_RET);
                   }
                   else
                   {
-                      BufferKey('B');
-                      BufferKey('L');
-                      BufferKey('O');
-                      BufferKey('A');
-                      BufferKey('D');
+                      BufferKeys("BLOAD");
                       BufferKey(KBD_KEY_SHIFT);
                       BufferKey(msx_japanese_matrix ? '2': KBD_KEY_QUOTE);
-                      BufferKey('C');
-                      BufferKey('A');
-                      BufferKey('S');
+                      BufferKeys("CAS");
                       if (msx_mode && !msx_japanese_matrix) BufferKey(KBD_KEY_SHIFT);
                       BufferKey(msx_japanese_matrix ? KBD_KEY_QUOTE : ':');
                       BufferKey(KBD_KEY_SHIFT);
@@ -3153,7 +3231,7 @@ void colecoDS_main(void)
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_WILDCARD)  kbd_key = (adam_mode ? ADAM_KEY_WILDCARD : KBD_KEY_WILDCARD);
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STORE)     kbd_key = (adam_mode ? ADAM_KEY_STORE : KBD_KEY_STORE);
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_PRINT)     kbd_key = (adam_mode ? ADAM_KEY_PRINT : KBD_KEY_PRINT);
-                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STOP)      kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_STOP);
+                          else if (keyCoresp[myConfig.keymap[i]] == META_KBD_STOP_BRK)  kbd_key = (adam_mode ? ADAM_KEY_CLEAR : KBD_KEY_STOP);
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F1)        kbd_key = (adam_mode ? ADAM_KEY_F1 : KBD_KEY_F1);
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F2)        kbd_key = (adam_mode ? ADAM_KEY_F2 : KBD_KEY_F2);
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F3)        kbd_key = (adam_mode ? ADAM_KEY_F3 : KBD_KEY_F3);
@@ -3194,7 +3272,7 @@ void colecoDS_main(void)
       // ---------------------------------------------------------
       // Accumulate all bits above into the Joystick State var...
       // ---------------------------------------------------------
-      JoyState = ucUN | ucDEUX;
+      JoyState = cvTouchPad | ucDEUX;
         
       // If we are Sord M5 we need to check if this generates a keyboard interrupt
       if (sordm5_mode)
