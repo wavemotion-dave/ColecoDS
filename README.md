@@ -112,7 +112,7 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 * 58d86a2a	writer.rom (ADAM)
 ```
 
-For the MSX, we support 4 optional BIOS ROMs. To be honest, after quite a bit of searching online, I'm not quite sure what machine the ubiquitous msx.rom represents - it's some generic European machine and from doing binary compares, it appears to be extrememly similar to the Goldstar FC-200 or possibly the Casio MX-15 (11 bytes different in each). 
+For the MSX, we support 4 optional BIOS ROMs. To be honest, after quite a bit of searching online, I'm not quite sure what machine the ubiquitous msx.rom represents - it's some generic European machine and from doing binary compares, it appears to be extremely similar to the Goldstar FC-200 or possibly the Casio MX-15 (11 bytes different in each). 
 
 As such, starting with version 8.2, ColecoDS will support 4 additional optional MSX BIOS roms as follows (and you can select them in Configuration and set a global default if you like):
 
@@ -136,9 +136,9 @@ ADAM Compatibility :
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
 * Sometimes when loading an ADAM game the system doesn't run... just hit RESET and it will probably load.
 * By default, RAM is cleared when you reset the ADAM. In Game Config you can change this Memory Wipe to 'RANDOM' which may improve the ability to load some games.
-* If the game uses a CP/M disk, try chaning the Memory Wipe to 'ADAM CPM' which helps.
+* If the game uses a CP/M disk, try changing the Memory Wipe to 'ADAM CPM' which helps.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). It's not all ADAM keys but should be enough to play games.
-* The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only whenthe tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
+* The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only when the tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
 * If an ADAM game does not load on first try, just reset it. It usually loads on the second try. Go figure.
 
 MSX Compatibility :
@@ -149,13 +149,13 @@ Considering this is a Colecovision emulator, the MSX1 support and compatibility 
 * The auto-detection on KONAMI8, KONAMI-SCC and ASCII8/16 mappers is pretty good... but some games don't detect well - you should try various mappers if the "larger than 64K" game won't run.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
-* MSX2 games are not supported and will not run.
+* MSX2 games are not supported and will not run - the VDP is different enough. Try MSXDS for a full-featured DS/DSi emulator for the full range of MSX computers.
 
 MSX is not a single machine but a standard - there are lots of machines and lots of BIOS files. The one I did most of my testing is MSX.ROM with a CRC32 of 94ee12f3 - this is the one used by many other MSX emulators. ColecoDS also supports a number of other specific machines - see the BIOS section above for details on those roms.
 
 MSX1 cassettes are supported in .CAS format. You can use the START and SELECT buttons for the common bload or run commands (or use the Cassette menu for more choices).
 
-MSX1 disks are supported in .DSK format. The files must be raw sector dumps and the file must be exactly 360K (SS) or 720K (DS) in size to detect properly (typical of the .dsk images you find 'out there').
+MSX1 disks are supported in .DSK format. The files must be raw sector dumps and the file must be exactly 360K (SS) or 720K (DS) in size to detect properly (very typical of the .dsk images you find 'out there').  If a program writes to a disk, be sure to use the Cassette/Disk menu and save the disk back out to the SD card if you really want the changes to stick.
 
 The MSX memory is based on which MSX rom BIOS you are using:
 ```
@@ -226,7 +226,7 @@ Once the game is loaded into memory you will be sitting at the BASIC prompt. At 
 
 Spectravideo SVI Compatibility :
 -----------------------
-This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common cload or bload commands (or use the Cassette menu for more choices). Cartridges are supported (.rom) up to 64K. There are only about a half-dozen carts available for this sytsem (with most of the software being distributed on tapes).
+This emulator will support .cas files for the Spectravideo SV-328 (64K machine). You can use the START and SELECT buttons for the common cload or bload commands (or use the Cassette menu for more choices). Cartridges are supported (.rom) up to 64K. There are only about a half-dozen carts available for this system (with most of the software being distributed on tapes).
 
 Sega SG-1000 Compatibility :
 -----------------------
@@ -277,7 +277,7 @@ Two Tatung Einstein disk drives are supported. The default drive 0: is a standar
 
 The second drive 1: is a persistent RAM Disk that can be saved back to the SD card on your DS/DSi.  This comes pre-formatted (and you can re-initialize it using the DISK icon menu) with 190K of storage. To the emulator, it looks just like a standard second disk drive. You can copy often used programs and utilities to this disk - I use it to stash away a few flavors of XBAS so I've always got the right one on hand to play games.
 
-Both drives support read/write capabilities however, the writing will NOT auto-back those changes to your SD card. I might change that behavior in the future - but for now, any changes written to the emulated disks are transient until you go into the DISK icon menu and save them back to the SD card. I'm fairly confident that the disk write works fine - but until I get more testing hours from field-use, I don't want to inadvertantly screw up an original .dsk image and leave the onus on the user to save out the disk for now.
+Both drives support read/write capabilities however, the writing will NOT auto-back those changes to your SD card. I might change that behavior in the future - but for now, any changes written to the emulated disks are transient until you go into the DISK icon menu and save them back to the SD card. I'm fairly confident that the disk write works fine - but until I get more testing hours from field-use, I don't want to inadvertently screw up an original .dsk image and leave the onus on the user to save out the disk for now.
 
 Speaking of disk images, there are several places to find them... but I would recommend seeking out the 'Tatung Einstein Gamebase' which generally has disk images properly formatted and auto-booting for a more streamlined experience. Seek those out.
 
