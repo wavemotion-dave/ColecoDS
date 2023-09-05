@@ -161,7 +161,7 @@ The MSX memory is based on which MSX rom BIOS you are using:
 ```
 //---------------------------------------------------------------
 // National FS-1300 (JP), Panasonic CF-2700 (UK), 
-// Goldstar FC-200 (EU) or generic C-BIOS or MSX.ROM 64K Slot 3
+// Goldstar FC-200 (EU) or generic C-BIOS or MSX.ROM 64K Slot 3**
 //---------------------------------------------------------------
 // Memory          Slot 0       Slot 1      Slot 2      Slot 3
 // C000h~FFFFh      ---       Cartridge      ---       16K RAM
@@ -169,6 +169,8 @@ The MSX memory is based on which MSX rom BIOS you are using:
 // 4000h~7FFFh    Main-ROM    Cartridge      ---       16K RAM
 // 0000h~3FFFh    Main-ROM    Cartridge      ---       16K RAM
 //---------------------------------------------------------------
+** Note, the Panasonic CF-2700 normally has the RAM in slot 1
+but for the purposes of this emulation, it is moved to slot 3.
 
 //---------------------------------------------------------------
 // Yamaha CX5M with 32K of Memory in Slot 0
