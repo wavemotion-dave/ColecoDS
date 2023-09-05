@@ -64,6 +64,9 @@ void fdc_debug(u8 bWrite, u8 addr, u8 data)
 #endif    
 }
 
+// -------------------------------------------------------------------------------------------------------------------------
+// Read one track worth of sectors in proper sector order (0..N) and buffer that in our track buffer for easy read/write.
+// -------------------------------------------------------------------------------------------------------------------------
 void fdc_buffer_track(void)
 {
     u16 track_len = Geom.sectorSize*Geom.sectors;
@@ -77,6 +80,9 @@ void fdc_buffer_track(void)
     FDC.track_dirty[FDC.drive] = 0;
 }
 
+// ---------------------------------------------------------------------------------------------------
+// If any sector in our track buffer has changed, write all sectors back out to the main disk memory.
+// ---------------------------------------------------------------------------------------------------
 void fdc_flush_track(void)
 {
     if (FDC.track_dirty[FDC.drive])
@@ -133,192 +139,195 @@ void fdc_state_machine(void)
             fdc_busy_count = 0;     // Reset busy count
         } else return;
     }
-    
+
+    // If we are processing a command...
     if (FDC.status & 0x01)
-    switch(FDC.command & 0xF0)
     {
-        case 0x00: // Restore - same as Seek Track except track=0
-            FDC.data = 0x00;                            // Data also zeroed here
-            // No break
-        case 0x10: // Seek Track
-            FDC.track = FDC.data;                       // Settle on requested track
-            FDC.wait_for_read = 2;                      // No data to transfer
-            FDC.status |= (FDC.track ? 0x24 : 0x20); // Motor Spun Up / Heads Engaged... Check if Track zero
-            FDC.status &= ~0x01;                        // Not busy
-            break;
-            
-        case 0x20: // Step
-        case 0x30: // Step
-            if (FDC.status & 0x01)
-            {
-                debug1++;
-                if (FDC.stepDirection) // Outwards... towards track 0
+        switch(FDC.command & 0xF0)
+        {
+            case 0x00: // Restore - same as Seek Track except track=0
+                FDC.data = 0x00;                            // Data also zeroed here
+                // No break
+            case 0x10: // Seek Track
+                FDC.track = FDC.data;                       // Settle on requested track
+                FDC.wait_for_read = 2;                      // No data to transfer
+                FDC.status |= (FDC.track ? 0x24 : 0x20);    // Motor Spun Up / Heads Engaged... Check if Track zero
+                FDC.status &= ~0x01;                        // Not busy
+                break;
+
+            case 0x20: // Step
+            case 0x30: // Step
+                if (FDC.status & 0x01)
                 {
+                    debug1++;
+                    if (FDC.stepDirection) // Outwards... towards track 0
+                    {
+                        if (FDC.track > 0) 
+                        {
+                            FDC.track--; 
+                        }
+                    }
+                    else // Inwards
+                    {
+                        FDC.track++;
+                    }
+                    FDC.status |= (FDC.track ? 0x24 : 0x20);    // Motor Spun Up / Heads Engaged... Check if Track zero
+                    FDC.status &= ~0x01;                        // Not busy
+                }
+                break;
+
+            case 0x40: // Step in
+            case 0x50: // Step in
+                if (FDC.status & 0x01)
+                {
+                    FDC.stepDirection = 0; // Step inwards
+                    FDC.track++; 
+                    FDC.status |= (FDC.track ? 0x24 : 0x20);   // Motor Spun Up / Heads Engaged... Check if Track zero
+                    FDC.status &= ~0x01;                       // Not busy
+                }
+                break;
+
+            case 0x60: // Step out
+            case 0x70: // Step out
+                if (FDC.status & 0x01)
+                {
+                    FDC.stepDirection = 1;  // Step Outwards... towards track 0
                     if (FDC.track > 0) 
                     {
                         FDC.track--; 
                     }
+                    FDC.status |= (FDC.track ? 0x24 : 0x20);    // Motor Spun Up / Heads Engaged... Check if Track zero
+                    FDC.status &= ~0x01;                        // Not busy
                 }
-                else // Inwards
-                {
-                    FDC.track++;
-                }
-                FDC.status |= (FDC.track ? 0x24 : 0x20);    // Motor Spun Up / Heads Engaged... Check if Track zero
-                FDC.status &= ~0x01;                        // Not busy
-            }
-            break;
-            
-        case 0x40: // Step in
-        case 0x50: // Step in
-            if (FDC.status & 0x01)
-            {
-                FDC.stepDirection = 0; // Step inwards
-                FDC.track++; 
-                FDC.status |= (FDC.track ? 0x24 : 0x20);   // Motor Spun Up / Heads Engaged... Check if Track zero
-                FDC.status &= ~0x01;                        // Not busy
-            }
-            break;
-            
-        case 0x60: // Step out
-        case 0x70: // Step out
-            if (FDC.status & 0x01)
-            {
-                FDC.stepDirection = 1;  // Step Outwards... towards track 0
-                if (FDC.track > 0) 
-                {
-                    FDC.track--; 
-                }
-                FDC.status |= (FDC.track ? 0x24 : 0x20);    // Motor Spun Up / Heads Engaged... Check if Track zero
-                FDC.status &= ~0x01;                        // Not busy
-            }
-            break;
-            
-        case 0x80: // Read Sector (single)
-        case 0x90: // Read Sector (multiple)
-            if (FDC.wait_for_read == 0)
-            {
-                if (FDC.track_buffer_idx >= FDC.track_buffer_end) // Is there any more data to put out?
-                {
-                    FDC.status &= ~0x01;                // Done. No longer busy.
-                    FDC.wait_for_read=2;                // Don't fetch more FDC data
-                    FDC.sector_byte_counter = 0;        // And reset our counter
-                }
-                else
-                {
-                    FDC.status |= 0x03;                                  // Data Ready and no errors... still busy
-                    FDC.data = FDC.track_buffer[FDC.track_buffer_idx++]; // Read data from our track buffer
-                    FDC.wait_for_read = 1;                               // Wait for the CPU to fetch the data
-                    if (++FDC.sector_byte_counter >= Geom.sectorSize)    // Did we cross a sector boundary?
-                    {
-                        if (FDC.command & 0x10) FDC.sector++;       // Bump the sector number only if multiple sector command
-                        FDC.sector_byte_counter = 0;                // And reset our counter
-                    }
-                }
-            }
-            break;
-            
-        case 0xA0: // Write Sector (single)
-        case 0xB0: // Write Sector (multiple)
-            if (FDC.wait_for_write == 3)
-            {
-                FDC.status |= 0x03;         // We're good to accept data now
-                FDC.wait_for_write = 1;     // And start looking for data
-            }
-            else if (FDC.wait_for_write == 0)
-            {
-                FDC.track_dirty[FDC.drive] = 1;
-                if (FDC.drive == 0)  disk_unsaved_data = 1;
-                if (FDC.drive == 1)  ramdisk_unsaved_data = 1;
-                FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
-                if (FDC.track_buffer_idx >= FDC.track_buffer_end)
-                {
-                    FDC.status &= ~0x01;            // Done. No longer busy.
-                    FDC.wait_for_write=2;           // Don't write more FDC data
-                    FDC.sector_byte_counter = 0;    // And reset our counter
-                    fdc_flush_track();              // Write the buffer back out 
-                }
-                else
-                {
-                    FDC.status |= 0x03;                     // Data Ready and no errors... still busy
-                    FDC.wait_for_write = 1;                 // Wait for the CPU to give us more data
-                    if (++FDC.sector_byte_counter >= Geom.sectorSize)   // Did we cross a sector boundary?
-                    {
-                        if (FDC.command & 0x10) FDC.sector++;   // Bump the sector number only if multiple sector command
-                        FDC.sector_byte_counter = 0;            // And reset our counter
-                    }
-                }
-            }
-            break;
-            
-        case 0xF0: // Write Track
-            if (FDC.wait_for_write == 0)
-            {
-                FDC.wait_for_write = 1;                 // Wait for the CPU to give us more data
-                if (FDC.write_track_allowed < 4)
-                {
-                    FDC.status |= 0x03; // More data please!
+                break;
 
-                    if (FDC.write_track_allowed == 2)
+            case 0x80: // Read Sector (single)
+            case 0x90: // Read Sector (multiple)
+                if (FDC.wait_for_read == 0)
+                {
+                    if (FDC.track_buffer_idx >= FDC.track_buffer_end) // Is there any more data to put out?
                     {
-                        if (++FDC.write_track_byte_counter >= 78) // Allow runout gap of 78x of E5 which is enough....
-                        {
-                            FDC.status &= ~0x03;                  // Done, not busy, no more data needed.
-                            FDC.write_track_allowed = 4;          // And stop looking for more data
-                        }
-                    }
-                    else if (FDC.write_track_allowed == 1)
-                    {
-                        if (FDC.drive == 0)  disk_unsaved_data = 1;
-                        if (FDC.drive == 1)  ramdisk_unsaved_data = 1;
-                        FDC.track_dirty[FDC.drive] = 1;
-                        FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
-                        
-                        if (++FDC.sector_byte_counter >= Geom.sectorSize)   // Did we cross a sector boundary?
-                        {
-                            FDC.sector_byte_counter = 0;        // And reset our counter
-                            if (++FDC.sector == Geom.sectors)   // Bump the sector count
-                            {
-                                fdc_flush_track();              // Write the buffer back out 
-                                if (FDC.track < Geom.tracks) FDC.track++; else FDC.track=0;
-                                FDC.sector = Geom.startSector;
-                                FDC.write_track_allowed = 2;
-                            }
-                            else FDC.write_track_allowed = 0; // Look for 3x F5 followed by FB
-                            FDC.write_track_byte_counter=0;
-                        }
+                        FDC.status &= ~0x01;                // Done. No longer busy.
+                        FDC.wait_for_read=2;                // Don't fetch more FDC data
+                        FDC.sector_byte_counter = 0;        // And reset our counter
                     }
                     else
                     {
-                        // We're looking for the magic bytes... three F5 bytes followed by an FB to signify start of actual data
-                        if (FDC.data == 0xF5) FDC.write_track_byte_counter++;
-                        else
+                        FDC.status |= 0x03;                                  // Data Ready and no errors... still busy
+                        FDC.data = FDC.track_buffer[FDC.track_buffer_idx++]; // Read data from our track buffer
+                        FDC.wait_for_read = 1;                               // Wait for the CPU to fetch the data
+                        if (++FDC.sector_byte_counter >= Geom.sectorSize)    // Did we cross a sector boundary?
                         {
-                            if ((FDC.write_track_byte_counter==3) && (FDC.data == 0xFB))
-                            {
-                                FDC.write_track_allowed=1;
-                            }
-                            FDC.write_track_byte_counter=0;
+                            if (FDC.command & 0x10) FDC.sector++;       // Bump the sector number only if multiple sector command
+                            FDC.sector_byte_counter = 0;                // And reset our counter
                         }
                     }
                 }
-            }
-            break;
-            
-        case 0xC0: // Read Address
-            debug5++;
-            FDC.status &= ~0x01;                        // Not handled yet... just clear busy
-            break;
-        case 0xD0: // Force Interrupt
-            if (Geom.fdc_type == WD1770)
-                FDC.status = (FDC.track ? 0xA4:0xA0);   // Motor Spun Up, Not Busy and Maybe Track Zero
-            else
-                FDC.status = (FDC.track ? 0x24:0x20);   // Drive ready, Not Busy and Maybe Track Zero
-            break;
-        case 0xE0: // Read Track
-            debug5++;
-            FDC.status &= ~0x01;                        // Not handled yet... just clear busy
-            break;
-        default: debug5++;break;
+                break;
+
+            case 0xA0: // Write Sector (single)
+            case 0xB0: // Write Sector (multiple)
+                if (FDC.wait_for_write == 3)
+                {
+                    FDC.status |= 0x03;         // We're good to accept data now
+                    FDC.wait_for_write = 1;     // And start looking for data
+                }
+                else if (FDC.wait_for_write == 0)
+                {
+                    FDC.track_dirty[FDC.drive] = 1;
+                    if (FDC.drive == 0)  disk_unsaved_data = 1;
+                    if (FDC.drive == 1)  ramdisk_unsaved_data = 1;
+                    FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
+                    if (FDC.track_buffer_idx >= FDC.track_buffer_end)
+                    {
+                        FDC.status &= ~0x01;            // Done. No longer busy.
+                        FDC.wait_for_write=2;           // Don't write more FDC data
+                        FDC.sector_byte_counter = 0;    // And reset our counter
+                        fdc_flush_track();              // Write the buffer back out 
+                    }
+                    else
+                    {
+                        FDC.status |= 0x03;                     // Data Ready and no errors... still busy
+                        FDC.wait_for_write = 1;                 // Wait for the CPU to give us more data
+                        if (++FDC.sector_byte_counter >= Geom.sectorSize)   // Did we cross a sector boundary?
+                        {
+                            if (FDC.command & 0x10) FDC.sector++;   // Bump the sector number only if multiple sector command
+                            FDC.sector_byte_counter = 0;            // And reset our counter
+                        }
+                    }
+                }
+                break;
+
+            case 0xF0: // Write Track (format - this is very Einstein specific)
+                if (FDC.wait_for_write == 0)
+                {
+                    FDC.wait_for_write = 1;                 // Wait for the CPU to give us more data
+                    if (FDC.write_track_allowed < 4)
+                    {
+                        FDC.status |= 0x03; // More data please!
+
+                        if (FDC.write_track_allowed == 2)
+                        {
+                            if (++FDC.write_track_byte_counter >= 78) // Allow runout gap of 78x of E5 which is enough....
+                            {
+                                FDC.status &= ~0x03;                  // Done, not busy, no more data needed.
+                                FDC.write_track_allowed = 4;          // And stop looking for more data
+                            }
+                        }
+                        else if (FDC.write_track_allowed == 1)
+                        {
+                            if (FDC.drive == 0)  disk_unsaved_data = 1;
+                            if (FDC.drive == 1)  ramdisk_unsaved_data = 1;
+                            FDC.track_dirty[FDC.drive] = 1;
+                            FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
+
+                            if (++FDC.sector_byte_counter >= Geom.sectorSize)   // Did we cross a sector boundary?
+                            {
+                                FDC.sector_byte_counter = 0;        // And reset our counter
+                                if (++FDC.sector == Geom.sectors)   // Bump the sector count
+                                {
+                                    fdc_flush_track();              // Write the buffer back out 
+                                    if (FDC.track < Geom.tracks) FDC.track++; else FDC.track=0;
+                                    FDC.sector = Geom.startSector;
+                                    FDC.write_track_allowed = 2;
+                                }
+                                else FDC.write_track_allowed = 0; // Look for 3x F5 followed by FB
+                                FDC.write_track_byte_counter=0;
+                            }
+                        }
+                        else
+                        {
+                            // We're looking for the magic bytes... three F5 bytes followed by an FB to signify start of actual data
+                            if (FDC.data == 0xF5) FDC.write_track_byte_counter++;
+                            else
+                            {
+                                if ((FDC.write_track_byte_counter==3) && (FDC.data == 0xFB))
+                                {
+                                    FDC.write_track_allowed=1;
+                                }
+                                FDC.write_track_byte_counter=0;
+                            }
+                        }
+                    }
+                }
+                break;
+
+            case 0xC0: // Read Address
+                debug5++;
+                FDC.status &= ~0x01;                        // Not handled yet... just clear busy
+                break;
+            case 0xD0: // Force Interrupt
+                if (Geom.fdc_type == WD1770)
+                    FDC.status = (FDC.track ? 0xA4:0xA0);   // Motor Spun Up, Not Busy and Maybe Track Zero
+                else
+                    FDC.status = (FDC.track ? 0x24:0x20);   // Drive ready, Not Busy and Maybe Track Zero
+                break;
+            case 0xE0: // Read Track
+                debug5++;
+                FDC.status &= ~0x01;                        // Not handled yet... just clear busy
+                break;
+            default: debug5++;break;
+        }
     }
 }
 
@@ -328,7 +337,6 @@ void fdc_state_machine(void)
 //         1                 ------- Track --------
 //         2                 ------- Sector -------
 //         3                 ------- Data ---------
-//
 u8 fdc_read(u8 addr)
 {
     if (FDC.drive >= Geom.drives) return (Geom.fdc_type == WD1770 ? 0x00:0x80); // Make sure this is a valid drive
@@ -477,7 +485,7 @@ void fdc_write(u8 addr, u8 data)
                 debug6++;
                 // Not implemented yet... only for diagnostics use (nothing I've found uses this raw track read - not even xTal DOS)
             }
-            else if ((data&0xF0) == 0xF0) // Write Track
+            else if ((data&0xF0) == 0xF0) // Write Track (format)
             {
                 fdc_buffer_track();                                         // Get track into our buffer
                 FDC.sector = Geom.startSector;                              // We always start a track write at the first sector
