@@ -1310,11 +1310,11 @@ void CassetteInsert(char *filename)
 #define MENU_ACTION_REWIND          3   // Rewind the Cassette
 #define MENU_ACTION_CLOAD_RUN       4   // Issue CLOAD RUN
 #define MENU_ACTION_BLOAD_CAS       5   // Issue BLOAD CAS
-#define MENU_ACTION_RUN_CAS         6   // ISSUE RUN CAS
-#define MENU_ACTION_LOAD            7   // ISSUE LOAD
-#define MENU_ACTION_RUN             8   // ISSUE RUN
+#define MENU_ACTION_RUN_CAS         6   // Issue RUN CAS
+#define MENU_ACTION_LOAD            7   // Issue LOAD
+#define MENU_ACTION_RUN             8   // Issue RUN
 #define MENU_ACTION_RUN_EIN         20  // Load Einstein .COM FILE
-#define MENU_ACTION_RUN_MTX         21  // Load MTX .RUN FILE
+#define MENU_ACTION_RUN_MTX         21  // Load MTX .RUN or .COM FILE
 #define MENU_ACTION_SAVE_RAMDISK    22  // Save Einstein RAMDISK
 #define MENU_ACTION_INIT_RAMDISK    23  // Init Einstein RAMDISK
 
@@ -1349,16 +1349,34 @@ CassetteDiskMenu_t msx_digital_menu =
     "MSX CASSETTE/DISK MENU",
     5,
     {
-        {" SAVE CASSETTE    ",      MENU_ACTION_SAVE},
-        {" SWAP CASSETTE    ",      MENU_ACTION_SWAP},
+        {" SAVE   CASSETTE  ",      MENU_ACTION_SAVE},
+        {" SWAP   CASSETTE  ",      MENU_ACTION_SWAP},
         {" REWIND CASSETTE  ",      MENU_ACTION_REWIND},
         {" CLOAD  RUN       ",      MENU_ACTION_CLOAD_RUN},
         {" BLOAD 'CAS:',R   ",      MENU_ACTION_BLOAD_CAS},
         {" RUN   'CAS:'     ",      MENU_ACTION_RUN_CAS},
-        {" EXIT MENU        ",      MENU_ACTION_EXIT},
+        {" SAVE   DISK DATA ",      MENU_ACTION_SAVE},
+        {" EXIT   MENU      ",      MENU_ACTION_EXIT},
         {" NULL             ",      MENU_ACTION_END},
     },
 };
+
+CassetteDiskMenu_t svi_digital_menu =
+{
+    "SVI CASSETTE/DISK MENU",
+    5,
+    {
+        {" SAVE   CASSETTE  ",      MENU_ACTION_SAVE},
+        {" SWAP   CASSETTE  ",      MENU_ACTION_SWAP},
+        {" REWIND CASSETTE  ",      MENU_ACTION_REWIND},
+        {" CLOAD  RUN       ",      MENU_ACTION_CLOAD_RUN},
+        {" BLOAD 'CAS:',R   ",      MENU_ACTION_BLOAD_CAS},
+        {" RUN   'CAS:'     ",      MENU_ACTION_RUN_CAS},
+        {" EXIT   MENU      ",      MENU_ACTION_EXIT},
+        {" NULL             ",      MENU_ACTION_END},
+    },
+};
+
 
 CassetteDiskMenu_t einstein_disk_menu =
 {
@@ -1376,7 +1394,7 @@ CassetteDiskMenu_t einstein_disk_menu =
 };
 
 
-CassetteDiskMenu_t generic_cassette_menu =
+CassetteDiskMenu_t mtx_cassette_menu =
 {
     "CASSETTE MENU",
     5,
@@ -1387,10 +1405,25 @@ CassetteDiskMenu_t generic_cassette_menu =
         {" LOAD ''          ",      MENU_ACTION_LOAD},
         {" RUN              ",      MENU_ACTION_RUN},
         {" RUN MEMOTECH .RUN",      MENU_ACTION_RUN_MTX},
+        {" RUN MEMOTECH .COM",      MENU_ACTION_RUN_MTX},
         {" EXIT MENU        ",      MENU_ACTION_EXIT},
         {" NULL             ",      MENU_ACTION_END},
     },
 };
+
+CassetteDiskMenu_t generic_cassette_menu =
+{
+    "CASSETTE MENU",
+    5,
+    {
+        {" SAVE CASSETTE    ",      MENU_ACTION_SAVE},
+        {" SWAP CASSETTE    ",      MENU_ACTION_SWAP},
+        {" REWIND CASSETTE  ",      MENU_ACTION_REWIND},
+        {" EXIT MENU        ",      MENU_ACTION_EXIT},
+        {" NULL             ",      MENU_ACTION_END},
+    },
+};
+
 
 CassetteDiskMenu_t *menu = &generic_cassette_menu;
 
@@ -1416,7 +1449,9 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
                         menu = &generic_cassette_menu;
     if (adam_mode)      menu = &adam_ddp_menu;
     if (msx_mode)       menu = &msx_digital_menu;
+    if (svi_mode)       menu = &svi_digital_menu;
     if (einstein_mode)  menu = &einstein_disk_menu;
+    if (memotech_mode)  menu = &mtx_cassette_menu;
     
     // Display the menu title
     DSPrint(16-(strlen(menu->title)/2), menu->start_row, 6, menu->title);
@@ -2813,11 +2848,12 @@ void colecoDS_main(void)
                 timingFrames = 0;
             }
 
-            // --------------------------------------------
-            // Time 1 frame... 546 ticks of Timer2
-            // This is how we time frame-to frame
-            // to keep the game running at 60FPS
-            // --------------------------------------------
+            // ----------------------------------------------------------------------
+            // Time 1 frame... 546 (NTSC) or 646 (PAL) ticks of Timer2
+            // This is how we time frame-to frame to keep the game running at 60FPS
+            // We also allow running the game faster/slower than 100% so we use the
+            // GAME_SPEED_XXX[] array to handle that.
+            // ----------------------------------------------------------------------
             while(TIMER2_DATA < ((myConfig.isPAL ? GAME_SPEED_PAL[myConfig.gameSpeed]:GAME_SPEED_NTSC[myConfig.gameSpeed])*(timingFrames+1)))
             {
                 if (myGlobalConfig.showFPS == 2) break;   // If Full Speed, break out...

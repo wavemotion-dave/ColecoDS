@@ -33,8 +33,8 @@ u8 MaxSprites[2] __attribute__((section(".dtcm"))) = {32, 4};     // Normally th
 
 u16 *pVidFlipBuf __attribute__((section(".dtcm"))) = (u16*) (0x06000000);    // Video flipping buffer
 
-u8 XBuf_A[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer A
-u8 XBuf_B[256*256] ALIGN(32) = {0}; // Really it's only 256x192 - Ping Pong Buffer B
+u8 XBuf_A[256*192] ALIGN(32) = {0}; // TMS9918 screen is 256x192 - Ping Pong Buffer A
+u8 XBuf_B[256*192] ALIGN(32) = {0}; // TMS9918 screen is 256x192 - Ping Pong Buffer B
 u8 *XBuf __attribute__((section(".dtcm"))) = XBuf_A;
 
 // Look up table for colors - pre-generated and in VRAM for maximum speed!
