@@ -371,6 +371,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.7: 07-Sep-2023 by wavemotion-dave
+* Added .dsk support for MSX1 games (360K SS or 720K DS only).
+* Improved key debounce so that pressing on the virtual keyboard is much cleaner.
+* Minor memory optmization to free up some resources.
+
 V8.6: 31-Aug-2023 by wavemotion-dave
 * Added .dsk support for Tatung Einstein games!
 * Improved Tatung Einstein keyboard and joystick handling.
