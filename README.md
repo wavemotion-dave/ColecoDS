@@ -9,7 +9,7 @@ or else in /roms/bios or /data/bios
 
 Because the chips used in the Colecovision Hardware were so common in that era, other systems tended
 to be very close to the CV in terms of hardware. Often only the IO/Memory was different. As such,
-ColecoDS also allows cartridge and sometimes tapegames from "cousin" systems to be played - namely 
+ColecoDS also allows cartridge and sometimes tape/disk games from "cousin" systems to be played - namely 
 the Sord M5, the Memotech MTX, the SG-1000/3000, the Spectravision 3x8 SVI, Casio PV-2000, Hanimex 
 Pencil II, CreatiVision, the Tatung Einstein and the venerable MSX1.
 
