@@ -22,7 +22,7 @@ Features :
 * Sega SG-1000 game support (.sg roms)
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
-* MSX1 game support (.msx or .rom or.cas or .dsk) up to 1024K 
+* MSX1 game support (.msx or .rom or .cas or .dsk) up to 1024K 
 * Spectravideo SVI support (.cas or .rom) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
