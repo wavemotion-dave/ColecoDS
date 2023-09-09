@@ -2,6 +2,7 @@
 #define SFX_CLICKNOQUIT	1
 #define SFX_MUS_INTRO	2
 #define SFX_FLOPPY	3
+#define SFX_ADAM_DDP	4
 #define MSL_NSONGS	0
-#define MSL_NSAMPS	4
-#define MSL_BANKSIZE	4
+#define MSL_NSAMPS	5
+#define MSL_BANKSIZE	5

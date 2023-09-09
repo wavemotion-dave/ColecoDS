@@ -25,9 +25,6 @@
 FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
 FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
-extern byte adam_ram_hi;
-extern byte adam_ram_lo;
-
 byte HoldingBuf[4096];
 u8 io_busy= 0;
 word savedBUF = 0;
@@ -700,6 +697,13 @@ void ResetPCB(void)
   /* @@@ Reset tape and disk here */
   KBDStatus = RSP_STATUS;
   LastKey   = 0x00;
+    
+  memset(HoldingBuf, 0x00, sizeof(HoldingBuf));
+  io_busy  = 0;
+  savedBUF = 0;
+  savedLEN = 0;
+  last_command_read=false;
+  io_show_status=0;
 }
 
 /** ChangeTape() *********************************************/

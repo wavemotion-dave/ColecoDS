@@ -1553,7 +1553,9 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x8dac567c)                 myConfig.memWipe = 2;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
     if (file_crc == 0xae4d50e9)                 myConfig.memWipe = 2;  // zork i - the great underground empire (1981) (infocom).dsk
     
-    // For ADAM .dsk games, we want to see if this is a CP/M game and adjust the memwipe
+    // ---------------------------------------------------------------
+    // Check for CP/M games which want memory and full keyboard
+    // ---------------------------------------------------------------
     if (adam_mode)
     {
         for (int i=0; i<0x1000; i++)
@@ -1565,8 +1567,7 @@ void SetDefaultGameConfig(void)
                 break;
             }
         }
-    }
-    
+    }    
     // ---------------------------------------------------------------------------------------------
     // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
     // ---------------------------------------------------------------------------------------------
@@ -2305,6 +2306,20 @@ void ReadFileCRCAndConfig(void)
             }
             fclose(fp);
             if (svi_mode == 0) msx_mode = 2;        // if not SVI, assume MSX
+        }
+    }
+    
+    // -----------------------------------------------------------------------
+    // If Adam Mode, we need to see if the .ddp or .dsk is a CP/M game so 
+    // we must read in some of the file which is used by the config handler.
+    // -----------------------------------------------------------------------
+    if (adam_mode)
+    {
+        FILE *fp = fopen(gpFic[ucGameChoice].szName, "rb");
+        if (fp != NULL)
+        {
+            fread(ROM_Memory, 1, 0x1000, fp);
+            fclose(fp);
         }
     }
     
