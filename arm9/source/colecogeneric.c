@@ -1261,6 +1261,7 @@ void SetDefaultGlobalConfig(void)
     myGlobalConfig.emuText        = 1;    // Default is to show Emulator Text
     myGlobalConfig.msxCartOverlay = 1;    // Default is to show Keyboard for CART games
     myGlobalConfig.defSprites     = 0;    // Default is to show 32 sprites (real hardware is 4 per line)
+    myGlobalConfig.diskSfxMute    = 0;    // By default Disk/DDP loading sounds are enabled... 1=Mute
 }
 
 void SetDefaultGameConfig(void)
@@ -1772,6 +1773,7 @@ const struct options_t Option_Table[3][20] =
         {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"},                                                         &myGlobalConfig.defaultMSX,     7},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},
+        {"DISK / DDP",     {"SOUND ON", "SOUND OFF"},                                                                                                                                           &myGlobalConfig.diskSfxMute,    2},
         {"DEBUGGER",       {"OFF", "BAD OPS", "DEBUG", "FULL DEBUG"},                                                                                                                           &myGlobalConfig.debugger,       4},
         
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},

@@ -206,8 +206,9 @@ u8 IssueCtrlBreak    __attribute__((section(".dtcm"))) = 0;       // For the Tat
 u8 bStartSoundEngine = false;  // Set to true to unmute sound after 1 frame of rendering...
 int bg0, bg1, bg0b, bg1b;      // Some vars for NDS background screen handling
 volatile u16 vusCptVBL = 0;    // We use this as a basic timer for the Mario sprite... could be removed if another timer can be utilized
-u8 touch_debounce = 0;
-u8 key_debounce = 0;
+u8 touch_debounce = 0;         // A bit of touch-screen debounce
+u8 key_debounce = 0;           // A bit of key debounce
+u8 playingSFX = 0;             // To prevent sound effects like disk/tape loading from happening too frequently
 
 // The DS/DSi has 12 keys that can be mapped
 u16 NDS_keyMap[12] __attribute__((section(".dtcm"))) = {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_B, KEY_X, KEY_Y, KEY_R, KEY_L, KEY_START, KEY_SELECT};
@@ -700,6 +701,8 @@ void ResetColecovision(void)
   disk_unsaved_data = 0;                // No unsaved ADAM tape/disk data to start
 
   write_EE_counter=0;                   // Nothing to write for EEPROM yet
+    
+  playingSFX = 0;                       // No sound effects playing yet
 
   // -----------------------------------------------------------------------
   // By default, many of the machines use a simple flat 64K memory model
@@ -1098,7 +1101,7 @@ void DisplayStatusLine(bool bForce)
                 if (io_show_status == 4) {DSPrint(8,0,6, "DISK READ "); io_show_status = 3;}
                 if (io_show_status == 3)
                 {
-                    mmEffect(SFX_FLOPPY);
+                    if (!myGlobalConfig.diskSfxMute) mmEffect(SFX_FLOPPY);
                 }
                 io_show_status--;
             }
@@ -1143,15 +1146,18 @@ void DisplayStatusLine(bool bForce)
         {
             DSPrint(30,0,6, (io_show_status == 2 ? "WR":"RD"));
             io_show_status = 0;
-            static u8 playingSFX = 0;
             if (playingSFX)
             {
                 playingSFX--;
             }
             else
             {
-                if (!isAdamDDP()) mmEffect(SFX_FLOPPY); else mmEffect(SFX_ADAM_DDP);
-                playingSFX = 2;
+                // If global settings does not MUTE the sound effects...
+                if (!myGlobalConfig.diskSfxMute)
+                {
+                    if (!isAdamDDP()) mmEffect(SFX_FLOPPY); else mmEffect(SFX_ADAM_DDP);
+                    playingSFX = 2;
+                }
             }
         }
         else
@@ -1198,7 +1204,7 @@ void DisplayStatusLine(bool bForce)
             if (io_show_status == 4) {DSPrint(8,0,6, "DISK READ "); io_show_status = 3;}
             if (io_show_status == 3)
             {
-                mmEffect(SFX_FLOPPY);
+                if (!myGlobalConfig.diskSfxMute) mmEffect(SFX_FLOPPY);
             }
             io_show_status--;
         }
@@ -1915,8 +1921,9 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
     else if ((iTy >= 162) && (iTy < 192)) // Row 6 (SPACE BAR and icons row)
     {
         if      ((iTx >= 1)   && (iTx < 33))   {if (last_kbd_key != 255) adam_CapsLock = 1-adam_CapsLock; last_kbd_key=255;}
-        else if ((iTx >= 33)  && (iTx < 190))  kbd_key = ' ';
-        else if ((iTx >= 190) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
+        else if ((iTx >= 33)  && (iTx < 165))  kbd_key = ' ';
+        else if ((iTx >= 165) && (iTx < 195))  return MENU_CHOICE_SWAP_KBD;
+        else if ((iTx >= 195) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     else {kbd_key = 0; last_kbd_key = 0;}
@@ -2704,9 +2711,13 @@ u8 handle_normal_virtual_keypad(u16 iTx, u16 iTy)  // All other normal overlays 
     // For ADAM, the standard overlay has a CASSETTE icon to save data...
     if (adam_mode && (myConfig.overlay == 0))
     {
-        if ((iTy >= 9) && (iTy < 30) && (iTx >= 120) && (iTx <= 155))
+        if ((iTy >= 5) && (iTy < 33) && (iTx >= 95) && (iTx <= 130))
         {
             return MENU_CHOICE_CASSETTE;
+        }
+        else if ((iTy >= 5) && (iTy < 33) && (iTx > 130) && (iTx <= 170))
+        {
+            return MENU_CHOICE_SWAP_KBD;
         }
     }
 
@@ -3064,7 +3075,13 @@ void colecoDS_main(void)
                     case MENU_CHOICE_CASSETTE:
                         CassetteMenu();
                         break;
-
+                        
+                    case MENU_CHOICE_SWAP_KBD:
+                        if (myConfig.overlay == 0) myConfig.overlay = 9; else myConfig.overlay = 0;
+                        BottomScreenKeypad();
+                        WAITVBL;WAITVBL;WAITVBL;
+                        break;
+                        
                     default:
                         SaveNow = 0;
                         LoadNow = 0;
