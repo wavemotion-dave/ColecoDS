@@ -262,6 +262,9 @@ u8 colecoInit(char *szGame)
   extern u8 bForceMSXLoad;
   u8 RetFct,uBcl;
   u16 uVide;
+    
+  // We've got some debug data we can use for development... reset these.
+  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0; debug5 = 0; debug6 = 0;
 
   // ----------------------------------------------------------------------------------  
   // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory
@@ -350,7 +353,7 @@ u8 colecoInit(char *szGame)
       // Wipe RAM area from 0x8000 upwards after ROM is loaded...
       colecoWipeRAM();
   }
-  else if (adam_mode)  // Load Adam DDP
+  else if (adam_mode)  // Load Adam DDP or DSK
   {
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start

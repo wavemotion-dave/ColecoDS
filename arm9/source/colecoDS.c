@@ -476,6 +476,7 @@ void setupStream(void)
   mmLoadEffect(SFX_KEYCLICK);
   mmLoadEffect(SFX_MUS_INTRO);
   mmLoadEffect(SFX_FLOPPY);
+  mmLoadEffect(SFX_ADAM_DDP);
 
   //----------------------------------------------------------------
   //  open stream
@@ -667,7 +668,7 @@ void ResetStatusFlags(void)
 // the RESET button on the touch-screen...
 // --------------------------------------------------------------
 void ResetColecovision(void)
-{
+{    
   JoyMode=JOYMODE_JOYSTICK;             // Joystick mode key
   JoyState = 0x00000000;                // Nothing pressed to start
 
@@ -752,17 +753,10 @@ void ResetColecovision(void)
       colecoWipeRAM();                          // Wipe main RAM area
       svi_restore_bios();                       // Put the BIOS back in place and point to it
   }
-  else if (adam_mode)
-  {
-      colecoWipeRAM();                          // Wipe the RAM area
-      adam_128k_mode = 0;                       // Normal 64K ADAM to start
-      sgm_reset();                              // Make sure the SGM memory is not functional
-      SetupAdam(true);                          // Full reset of ADAMNet
-  }
   else if (pencil2_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      memcpy(RAM_Memory,Pencil2Bios,0x2000);
+      memcpy(RAM_Memory,Pencil2Bios,0x2000);    // Load the Pencil II BIOS into place
   }
   else if (einstein_mode)
   {
@@ -772,8 +766,15 @@ void ResetColecovision(void)
   else if (creativision_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
-      creativision_restore_bios();
+      creativision_restore_bios();              // Put the CreatiVision BIOS into place
       creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
+  }
+  else if (adam_mode)
+  {
+      colecoWipeRAM();                          // Wipe the RAM area
+      adam_128k_mode = 0;                       // Normal 64K ADAM to start
+      sgm_reset();                              // Make sure the SGM memory is not functional
+      SetupAdam(true);                          // Full reset of ADAMNet
   }
   else // Oh yeah... we're an actual Colecovision emulator! Almost forgot.
   {
@@ -811,9 +812,6 @@ void ResetColecovision(void)
   XBuf = XBuf_A;        // Set the initial screen ping-pong buffer to A
 
   ResetStatusFlags();   // Some static status flags for the UI mostly
-
-  // And we've got some debug data we can use for development... reset these.
-  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0; debug5 = 0; debug6 = 0;
 }
 
 //*********************************************************************************
@@ -1145,7 +1143,16 @@ void DisplayStatusLine(bool bForce)
         {
             DSPrint(30,0,6, (io_show_status == 2 ? "WR":"RD"));
             io_show_status = 0;
-            if (!isAdamDDP()) mmEffect(SFX_FLOPPY);
+            static u8 playingSFX = 0;
+            if (playingSFX)
+            {
+                playingSFX--;
+            }
+            else
+            {
+                if (!isAdamDDP()) mmEffect(SFX_FLOPPY); else mmEffect(SFX_ADAM_DDP);
+                playingSFX = 2;
+            }
         }
         else
             DSPrint(30,0,6, "  ");
@@ -2984,7 +2991,7 @@ void colecoDS_main(void)
                         // Ask for verification
                         if (showMessage("DO YOU REALLY WANT TO", "RESET THE CURRENT GAME ?") == ID_SHM_YES)
                         {
-                            ResetColecovision();
+                            ResetColecovision();                            
                         }
                         BottomScreenKeypad();
                         SoundUnPause();
