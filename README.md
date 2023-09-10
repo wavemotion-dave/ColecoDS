@@ -132,12 +132,12 @@ Name the BIOS ROMs above exactly as shown (if you find them online, they will ha
 
 ADAM Compatibility :
 -----------------------
-* The emulated ADAM is not completely bug-free but generally will run most tape images (.ddp) or disk images (.dsk).
+* The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).
+* A few third party games use a loader that has some small extra characters garbling the title screen. These are harmless and the main game shouldn't be affected.
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
-* Sometimes when loading an ADAM game the system doesn't run... just hit RESET and it will probably load.
-* By default, RAM is cleared when you reset the ADAM. In Game Config you can change this Memory Wipe to 'RANDOM' which may improve the ability to load some games.
-* If the game uses a CP/M disk, try changing the Memory Wipe to 'ADAM CPM' which helps.
-* You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). It's not all ADAM keys but should be enough to play games.
+* By default, RAM is cleared when you reset the ADAM unless the game detects as a CP/M program - in which case a special memory pattern is used to aid in compatibility.
+* In Game Config you can change how RAM is initilized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
+* You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only when the tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
 
 MSX Compatibility :
