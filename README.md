@@ -371,6 +371,30 @@ would personally try them:
 * Set Max Sprites to 4
 * Switch to the DrZ80 core in configuration. Not all games will work with this core - but it's a solid 10% faster.
 
+Compile Instructions :
+-----------------------
+devkitpro-pacman version 6.0.1-2
+gcc (Ubuntu 11.3.0-1ubuntu1~22.04) 11.3.0
+libnds 1.8.0
+I use Ubuntu and the Pacman repositories (devkitpro-pacman version 6.0.1-2).  I'm told it should also build under 
+Windows but I've never done it and don't know how.
+
+If you've got the nds libraries above setup correctly it should be a matter of typing:
+* _make clean_
+* _make_
+
+To build the emulator. The output of this is ColecoDS.nds with a version as set in the MAKEFILE.
+I use the following standard environment variables that are SET on Ubuntu:
+* DEVKITARM=/opt/devkitpro/devkitARM
+* DEVKITPPC=/opt/devkitpro/devkitPPC
+* DEVKITPRO=/opt/devkitpro
+
+To create the soundbank.bin and soundbank.h (sound effects) file in the data directory:
+
+mmutil -osoundbank.bin -hsoundbank.h -d *.wav
+
+And then move the soundbank.h file to the arm9/sources directory
+
 Versions :
 -----------------------
 V8.8: ??-Sep-2023 by wavemotion-dave
