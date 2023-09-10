@@ -688,7 +688,7 @@ void WritePCB(word A,byte V)
 void ResetPCB(void)
 {
   /* PCB/DCB not mapped yet */
-  memset(PCBTable,0,sizeof(PCBTable));
+  memset(PCBTable,0x00,sizeof(PCBTable));
 
   /* Set starting PCB address */
   PCBAddr = 0x0000;
@@ -697,6 +697,7 @@ void ResetPCB(void)
   /* @@@ Reset tape and disk here */
   KBDStatus = RSP_STATUS;
   LastKey   = 0x00;
+  DiskID    = 0;
     
   memset(HoldingBuf, 0x00, sizeof(HoldingBuf));
   io_busy  = 0;

@@ -183,145 +183,145 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
 
 const u32 cv_no_mirror_games[] =
 {
-  0xc575a831,   //	2010 - The Graphic Action Game.rom
-  0xfce3aa06,   //	Alcazar - The Forgotten Fortress.rom
-  0x4ffb4e8c,   //	Alphabet Zoo.rom
-  0x78a738af,   //	Amazing Bumpman.rom
-  0x275c800e,   //	Antarctic Adventure.rom
-  0x947437ec,   //	Aquattack.rom
-  0x6f88fcf0,   //	Artillery Duel.rom
-  0xd464e5e4,   //	BC's Quest for Tires II.rom
-  0x4359a3e5,   //	BC's Quest for Tires.rom
-  0x7a93c6e5,   //	Beamrider.rom
-  0xdf65fc87,   //	Blockade Runner.rom
-  0x9b547ba8,   //	Boulder Dash.rom
-  0x829c967d,   //	Brain Strainers.rom
-  0x00b37475,   //	Buck Rogers - Planet of Zoom.rom
-  0x9e1fab59,   //	Bump 'n' Jump.rom
-  0x91346341,   //	Burgertime.rom
-  0x6af19e75,   //	Cabbage Patch Kids - Adv's in the Park.rom
-  0x75b08d99,   //	Cabbage Patch Kids - Picture Show.rom
-  0x5aa22d66,   //	Campaign '84.rom
-  0x70f315c2,   //	Carnival.rom
-  0x17edbfd4,   //	Centipede.rom
-  0x030e0d48,   //	Choplifter!.rom
-  0x5eeb81de,   //	Chuck Norris Superkicks.rom
-  0x4e8b4c1d,   //	Congo Bongo.rom
-  0x39d4215b,   //	Cosmic Avenger.rom
-  0x7c2c7c41,   //	Cosmic Crisis.rom
-  0x890682b3,   //	Dam Busters, The.rom
-  0xbff86a98,   //	Dance Fantasy.rom
-  0x51fe49c8,   //	Decathlon.rom
-  0x6cf594e5,   //	Defender.rom
-  0x56c358a6,   //	Destructor.rom
-  0x3c77198c,   //	Donkey Kong [16K].rom
-  0x94c4cd4a,   //	Donkey Kong [24K].rom
-  0xfd11508d,   //	Donkey Kong Junior.rom
-  0xdcb8f9e8,   //	DragonFire.rom
-  0x109699e2,   //	Dr. Seuss Fix-Up the Mix-Up Puzzler.rom
-  0x4025ac94,   //	Dukes of Hazzard, The.rom
-  0x4cd4e185,   //	Evolution.rom
-  0xec9dfb07,   //	Facemaker.rom
-  0xb3b767ae,   //	Fathom.rom
-  0x2a49f507,   //	Flipper Slipper.rom
-  0x65bbbcb4,   //	Fortune Builder.rom
-  0x964db3bc,   //	Fraction Fever.rom
-  0x8615c6e8,   //	Frantic Freddy.rom
-  0x3cacddfb,   //	Frenzy.rom
-  0x4229ea5a,   //	Frogger II - Threeedeep!.rom
-  0x798002a2,   //	Frogger.rom
-  0xd0110137,   //	Front Line.rom
-  0x6a7a162a,   //	Galaxian.rom
-  0xfdb75be6,   //	Gateway to Apshai.rom
-  0xff46becc,   //	Gorf.rom
-  0x29fea563,   //	Gust Buster.rom
-  0x27cbf26d,   //	Gyruss.rom
-  0x987491ce,   //	Heist, The.rom
-  0x685ab9b5,   //	H.E.R.O..rom
-  0x2787516d,   //	Illusions.rom
-  0xcc43ebf7,   //	It's Only Rock 'n' Roll.rom
-  0xa3205f21,   //	James Bond 007.rom
-  0xa5511418,   //	Jukebox.rom
-  0x060c69e8,   //	Jumpman Junior.rom
-  0x58e886d2,   //	Jungle Hunt.rom
-  0x8c7b7803,   //	Ken Uston Blackjack-Poker.rom
-  0x69fc2966,   //	Keystone Kapers.rom
-  0x2c3097b8,   //	Lady Bug.rom
-  0x1641044f,   //	Learning with Leeper.rom
-  0x918f12c0,   //	Linking Logic.rom
-  0xd54c581b,   //	Logic Levels.rom
-  0x6a2d637b,   //	Looping.rom
-  0xbab520ea,   //	Memory Manor.rom
-  0x6a162c7d,   //	Meteoric Shower.rom
-  0xb24f10fd,   //	Miner 2049er.rom
-  0xd92b09c8,   //	Monkey Academy.rom
-  0xced0d16e,   //	Montezuma's Revenge.rom
-  0x8a303f5a,   //	Moonsweeper.rom
-  0x0f4d800a,   //	Motocross Racer.rom
-  0xc173bbec,   //	Mountain King.rom
-  0xde47c29f,   //	Mouse Trap.rom
-  0x461ab6ad,   //	Mr. Do!.rom
-  0x546f2c54,   //	Mr. Do!'s Castle.rom
-  0x4491a35b,   //	Nova Blast.rom
-  0xadd10242,   //	Oil's Well.rom
-  0x0a0511c7,   //	Omega Race.rom
-  0xef50e1c5,   //	One-on-One.rom
-  0x53b85e20,   //	Pepper II.rom
-  0x851a455f,   //	Pitfall II - Lost Caverns.rom
-  0xd4f180df,   //	Pitfall!.rom
-  0x81be4f55,   //	Pitstop.rom
-  0xa095454d,   //	Popeye.rom
-  0x532f61ba,   //	Q-bert.rom
-  0x79d90d26,   //	Q-Bert's QUBES.rom
-  0xeec81c42,   //	Quest for Quintana Roo.rom
-  0xfe897f9c,   //	River Raid.rom
-  0xcdb8d3cf,   //	Robin Hood.rom
-  0xaf49a0c3,   //	Rock 'n Bolt.rom
-  0x37f144d3,   //	Rocky - Super Action Boxing.rom
-  0xaf885d76,   //	Roc 'n Rope.rom
-  0x0364fb81,   //	Rolloverture.rom
-  0x3563286b,   //	Sammy Lightfoot.rom
-  0x0ec63a5c,   //	Sector Alpha.rom
-  0x4591f393,   //	Sewer Sam.rom
-  0xdf84ffb5,   //	Sir Lancelot.rom
-  0xb37d48bd,   //	Skiing.rom
-  0x53d2651c,   //	Slither.rom
-  0x8871e9fd,   //	Slurpy.rom
-  0x97c0382d,   //	Smurf Paint 'n' Play Workshop.rom
-  0x42850379,   //	Smurf Rescue in Gargamel's Castle.rom
-  0xdf8de30f,   //	Space Fury.rom
-  0x5bdf2997,   //	Space Panic.rom
-  0xa6401c46,   //	Spectron.rom
-  0x36478923,   //	Spy Hunter.rom
-  0xac92862d,   //	Squish'em Featuring Sam.rom
-  0x95824f1e,   //	Star Trek - Strategic Operations Sim.rom
-  0x0e75b3bf,   //	Star Wars - The Arcade Game.rom
-  0xd247a1c8,   //	Strike It!.rom
-  0xa417f25f,   //	Subroc.rom
-  0xb3bcf3f9,   //	Super Action Baseball.rom
-  0x62619dc0,   //	Super Action Football.rom
-  0xf84622d2,   //	Super Cobra.rom
-  0x84350129,   //	Super Cross Force.rom
-  0xaf6bbc7e,   //	Tank Wars.rom
-  0x8afd7db2,   //	Tapper.rom
-  0x7cd7a702,   //	Tarzan.rom
-  0xc8bc1950,   //	Telly Turtle.rom
-  0x1593f7df,   //	Threshold.rom
-  0xb3a1eacb,   //	Time Pilot.rom
-  0x1e14397e,   //	TOMARC The Barbarian.rom
-  0xc1d5a702,   //	Tournament Tennis.rom
-  0xbd6ab02a,   //	Turbo.rom
-  0x0408f58c,   //	Tutankham.rom
-  0xfdd52ca0,   //	Up'n Down.rom
-  0x8e5a4aa3,   //	Venture.rom
-  0x70142655,   //	Victory.rom
-  0xfd25adb3,   //	War Games.rom
-  0x261b7d56,   //	War Room.rom
-  0x29ec00c9,   //	Wing War.rom
-  0xb9ba2bb6,   //	Wizard of Id's Wizmath.rom
-  0xf7a29c01,   //	Word Feud.rom
-  0x8cb0891a,   //	Zaxxon.rom
-  0x6e523e50,   //	Zenji.rom
+  0xc575a831,   //  2010 - The Graphic Action Game.rom
+  0xfce3aa06,   //  Alcazar - The Forgotten Fortress.rom
+  0x4ffb4e8c,   //  Alphabet Zoo.rom
+  0x78a738af,   //  Amazing Bumpman.rom
+  0x275c800e,   //  Antarctic Adventure.rom
+  0x947437ec,   //  Aquattack.rom
+  0x6f88fcf0,   //  Artillery Duel.rom
+  0xd464e5e4,   //  BC's Quest for Tires II.rom
+  0x4359a3e5,   //  BC's Quest for Tires.rom
+  0x7a93c6e5,   //  Beamrider.rom
+  0xdf65fc87,   //  Blockade Runner.rom
+  0x9b547ba8,   //  Boulder Dash.rom
+  0x829c967d,   //  Brain Strainers.rom
+  0x00b37475,   //  Buck Rogers - Planet of Zoom.rom
+  0x9e1fab59,   //  Bump 'n' Jump.rom
+  0x91346341,   //  Burgertime.rom
+  0x6af19e75,   //  Cabbage Patch Kids - Adv's in the Park.rom
+  0x75b08d99,   //  Cabbage Patch Kids - Picture Show.rom
+  0x5aa22d66,   //  Campaign '84.rom
+  0x70f315c2,   //  Carnival.rom
+  0x17edbfd4,   //  Centipede.rom
+  0x030e0d48,   //  Choplifter!.rom
+  0x5eeb81de,   //  Chuck Norris Superkicks.rom
+  0x4e8b4c1d,   //  Congo Bongo.rom
+  0x39d4215b,   //  Cosmic Avenger.rom
+  0x7c2c7c41,   //  Cosmic Crisis.rom
+  0x890682b3,   //  Dam Busters, The.rom
+  0xbff86a98,   //  Dance Fantasy.rom
+  0x51fe49c8,   //  Decathlon.rom
+  0x6cf594e5,   //  Defender.rom
+  0x56c358a6,   //  Destructor.rom
+  0x3c77198c,   //  Donkey Kong [16K].rom
+  0x94c4cd4a,   //  Donkey Kong [24K].rom
+  0xfd11508d,   //  Donkey Kong Junior.rom
+  0xdcb8f9e8,   //  DragonFire.rom
+  0x109699e2,   //  Dr. Seuss Fix-Up the Mix-Up Puzzler.rom
+  0x4025ac94,   //  Dukes of Hazzard, The.rom
+  0x4cd4e185,   //  Evolution.rom
+  0xec9dfb07,   //  Facemaker.rom
+  0xb3b767ae,   //  Fathom.rom
+  0x2a49f507,   //  Flipper Slipper.rom
+  0x65bbbcb4,   //  Fortune Builder.rom
+  0x964db3bc,   //  Fraction Fever.rom
+  0x8615c6e8,   //  Frantic Freddy.rom
+  0x3cacddfb,   //  Frenzy.rom
+  0x4229ea5a,   //  Frogger II - Threeedeep!.rom
+  0x798002a2,   //  Frogger.rom
+  0xd0110137,   //  Front Line.rom
+  0x6a7a162a,   //  Galaxian.rom
+  0xfdb75be6,   //  Gateway to Apshai.rom
+  0xff46becc,   //  Gorf.rom
+  0x29fea563,   //  Gust Buster.rom
+  0x27cbf26d,   //  Gyruss.rom
+  0x987491ce,   //  Heist, The.rom
+  0x685ab9b5,   //  H.E.R.O..rom
+  0x2787516d,   //  Illusions.rom
+  0xcc43ebf7,   //  It's Only Rock 'n' Roll.rom
+  0xa3205f21,   //  James Bond 007.rom
+  0xa5511418,   //  Jukebox.rom
+  0x060c69e8,   //  Jumpman Junior.rom
+  0x58e886d2,   //  Jungle Hunt.rom
+  0x8c7b7803,   //  Ken Uston Blackjack-Poker.rom
+  0x69fc2966,   //  Keystone Kapers.rom
+  0x2c3097b8,   //  Lady Bug.rom
+  0x1641044f,   //  Learning with Leeper.rom
+  0x918f12c0,   //  Linking Logic.rom
+  0xd54c581b,   //  Logic Levels.rom
+  0x6a2d637b,   //  Looping.rom
+  0xbab520ea,   //  Memory Manor.rom
+  0x6a162c7d,   //  Meteoric Shower.rom
+  0xb24f10fd,   //  Miner 2049er.rom
+  0xd92b09c8,   //  Monkey Academy.rom
+  0xced0d16e,   //  Montezuma's Revenge.rom
+  0x8a303f5a,   //  Moonsweeper.rom
+  0x0f4d800a,   //  Motocross Racer.rom
+  0xc173bbec,   //  Mountain King.rom
+  0xde47c29f,   //  Mouse Trap.rom
+  0x461ab6ad,   //  Mr. Do!.rom
+  0x546f2c54,   //  Mr. Do!'s Castle.rom
+  0x4491a35b,   //  Nova Blast.rom
+  0xadd10242,   //  Oil's Well.rom
+  0x0a0511c7,   //  Omega Race.rom
+  0xef50e1c5,   //  One-on-One.rom
+  0x53b85e20,   //  Pepper II.rom
+  0x851a455f,   //  Pitfall II - Lost Caverns.rom
+  0xd4f180df,   //  Pitfall!.rom
+  0x81be4f55,   //  Pitstop.rom
+  0xa095454d,   //  Popeye.rom
+  0x532f61ba,   //  Q-bert.rom
+  0x79d90d26,   //  Q-Bert's QUBES.rom
+  0xeec81c42,   //  Quest for Quintana Roo.rom
+  0xfe897f9c,   //  River Raid.rom
+  0xcdb8d3cf,   //  Robin Hood.rom
+  0xaf49a0c3,   //  Rock 'n Bolt.rom
+  0x37f144d3,   //  Rocky - Super Action Boxing.rom
+  0xaf885d76,   //  Roc 'n Rope.rom
+  0x0364fb81,   //  Rolloverture.rom
+  0x3563286b,   //  Sammy Lightfoot.rom
+  0x0ec63a5c,   //  Sector Alpha.rom
+  0x4591f393,   //  Sewer Sam.rom
+  0xdf84ffb5,   //  Sir Lancelot.rom
+  0xb37d48bd,   //  Skiing.rom
+  0x53d2651c,   //  Slither.rom
+  0x8871e9fd,   //  Slurpy.rom
+  0x97c0382d,   //  Smurf Paint 'n' Play Workshop.rom
+  0x42850379,   //  Smurf Rescue in Gargamel's Castle.rom
+  0xdf8de30f,   //  Space Fury.rom
+  0x5bdf2997,   //  Space Panic.rom
+  0xa6401c46,   //  Spectron.rom
+  0x36478923,   //  Spy Hunter.rom
+  0xac92862d,   //  Squish'em Featuring Sam.rom
+  0x95824f1e,   //  Star Trek - Strategic Operations Sim.rom
+  0x0e75b3bf,   //  Star Wars - The Arcade Game.rom
+  0xd247a1c8,   //  Strike It!.rom
+  0xa417f25f,   //  Subroc.rom
+  0xb3bcf3f9,   //  Super Action Baseball.rom
+  0x62619dc0,   //  Super Action Football.rom
+  0xf84622d2,   //  Super Cobra.rom
+  0x84350129,   //  Super Cross Force.rom
+  0xaf6bbc7e,   //  Tank Wars.rom
+  0x8afd7db2,   //  Tapper.rom
+  0x7cd7a702,   //  Tarzan.rom
+  0xc8bc1950,   //  Telly Turtle.rom
+  0x1593f7df,   //  Threshold.rom
+  0xb3a1eacb,   //  Time Pilot.rom
+  0x1e14397e,   //  TOMARC The Barbarian.rom
+  0xc1d5a702,   //  Tournament Tennis.rom
+  0xbd6ab02a,   //  Turbo.rom
+  0x0408f58c,   //  Tutankham.rom
+  0xfdd52ca0,   //  Up'n Down.rom
+  0x8e5a4aa3,   //  Venture.rom
+  0x70142655,   //  Victory.rom
+  0xfd25adb3,   //  War Games.rom
+  0x261b7d56,   //  War Room.rom
+  0x29ec00c9,   //  Wing War.rom
+  0xb9ba2bb6,   //  Wizard of Id's Wizmath.rom
+  0xf7a29c01,   //  Word Feud.rom
+  0x8cb0891a,   //  Zaxxon.rom
+  0x6e523e50,   //  Zenji.rom
   0x3678ab6f,   //  Escape from the Mindmaster
   0xc2e7f0e0,   //  Super DK Junior
   0xef25af90,   //  Super DK
@@ -329,172 +329,172 @@ const u32 cv_no_mirror_games[] =
   0x1038e0a1,   //  Dig-Dug
   0x2ebf88c4,   //  Power Lords - Quest for Volcan
   0x1bed9c5b,   //  Fall Guy 
-  0xdb845695,  //	AE - Anti Environment Encounter (AE2012).rom
-  0x5ba1a6c8,  //	Amazing Snake (2001) (Serge-Eric Tremblay).rom
-  0xa66e5ed1,  //	Antarctic Adventure (1984) (Konami) (Prototype).rom
-  0xaf86d22c,  //	AntiISDA Warrior (2004) (Ventzislav Tzvetkov).rom
-  0xead5e824,  //	Arno Dash (2021).rom
-  0x71d9d422,  //	Bagman (2015) (CollectorVision).rom
-  0x223e7ddc,  //	Bank Panic (2011).rom
-  0xdddd1396,  //	Black Onyx (2013).rom
-  0xa399d4cd,  //	Bomb Jack.rom
-  0x924a7d57,  //	booming_boy_cv_sgm.rom
-  0x88d0a96f,  //	BTshort.rom
-  0xb278ebde,  //	Burn Rubber (2012).rom
-  0x53672097,  //	caos_begins_colecovision_sgm.rom
-  0x10e6e6de,  //	Caterpillar (2011).rom
-  0x4928b5f5,  //	Caverns of Titan.rom
-  0x045c54d6,  //	champion-pro-wrestling-2020.rom
-  0x55b36d53,  //	children_of_the_night_cv_sgm.rom
-  0xbe3ef785,  //	Circus Charlie (2011).rom
-  0x960f7086,  //	cold_blood_colecovision_sgm.rom
-  0x43933306,  //	Cosmo Challenge (1997) (Red Bullet Software).rom
-  0x03f9e365,  //	Cosmo Fighter 2 (1997) (Red Bullet Software).rom
-  0xb4b9301f,  //	Cosmo Fighter 3 (2002) (Red Bullet Software).rom
-  0xb248cd72,  //	C-SO (2018).rom
-  0x3c0bba92,  //	DacMan (2000) (NewColeco).rom
-  0x0246bdb1,  //	danger_tower_colecovision_sgm.rom
-  0x1b3a8639,  //	Deflektor Kollection (2005) (NewColeco).rom
-  0x2a9fcbfa,  //	Destructor Standard Controller Edition (2010).rom
-  0x5576dec3,  //	Diamond Dash 2 (2021).rom
-  0x77088cab,  //	digger_cv.rom
-  0x12ceee08,  //	dragons_lair_colecovision_sgm.rom
-  0x70d55091,  //	dungeonandtrolls.rom
-  0x8d1b3636,  //	Explosion (2003) (NewColeco).rom
-  0x48ff87cf,  //	Final Test Cartridge (19xx).col
-  0x5ac80811,  //	flapee-byrd-2014.rom
-  0x89875c52,  //	Flicky (2018).rom
-  0xfd69012b,  //	Flora and the Ghost Mirror (2013) (NewColeco).rom
-  0xf43b0b28,  //	Frantic (2008) (Scott Huggins).rom
-  0xcb941eb4,  //	Frog Feast (2007).rom
-  0x832586bf,  //	Frontline - Standard Controller Edition.rom
-  0xb3212318,  //	Frostbite (2017).rom
-  0x9f1045e6,  //	Galaga RevA.rom
-  0x9a02fba5,  //	GamePack I (2002) (NewColeco).rom
-  0xeab0ddd6,  //	GamePack II (2004) (NewColeco).rom
-  0x5b4ad168,  //	GamePack - Vic-20 (2003) (NewColeco).rom
-  0x652d533e,  //	gauntlet-2019.rom
-  0x312980d5,  //	GhostBlaster (2010) (NewColeco) (Rev. A NTSC).rom
-  0xfc935cdd,  //	ghostbusters-2018.rom
-  0x1e79958a,  //	Girls Garden (2010).rom
-  0x8acf1bcf,  //	Golgo 13 (2011) (Team PixelBoy).rom
-  0x01581fa8,  //	goonies_colecovision_sgm.rom
-  0xb2fb36a9,  //	GrailoftheGodbugfix2.rom
-  0x81413ff6,  //	Gulkave (2010) (Team Pixelboy).rom
-  0x27818d93,  //	Hang-On (2016) (CollectorVision) (SGM).rom
-  0x9b891703,  //	helifire.rom
-  0x87a49761,  //	heroes_arena_colecovision_sgm.rom
-  0x5a6c2d2f,  //	Insane Pickin' Sticks VIII (2010) (NewColeco).rom
-  0x69e3c673,  //	Jeepers Creepers - 30th Anniversary (2012) (NewColeco).rom
-  0xae7614c3,  //	j-e-t-p-a-c-2017.rom
-  0x62f325b3,  //	Joust (2014) (Team Pixelboy).rom
-  0xf403fe04,  //	Jump or Die (2006) (NewColeco).rom
-  0x5287998b,  //	Kaboom (2017) (Team Pixelboy).rom
-  0x819a06e5,  //	Kevtris (1996) (Kevin Horton).rom
-  0x9ce3b912,  //	king-balloon-2018.rom
-  0x0a2ac883,  //	kings_valley_colecovision_sgm.rom
-  0x278c5021,  //	klondike-solitaire-2021.rom
-  0x1523bfbf,  //	knight_lore_colecovision_sgm.rom
-  0x01cacd0d,  //	knightmare_colecovision_sgm.rom
-  0x344cb482,  //	Konami's Ping Pong (2011) (Team PixelBoy).rom
-  0xe8a91349,  //	kralizec_tetris_colecovision.rom
-  0xa078f273,  //	Kung-Fu Master - 2016 (CollectorVision).rom
-  0x6bc9a350,  //	Lock-n-Chase.rom
-  0xa2128f74,  //	Lode Runner (2002) (Steve Begin).rom
-  0xf4314bb1,  //	Magical Tree (2006).rom
-  0x6ed6a2e1,  //	mahjong-solitaire-2021.rom
-  0x2a1438c0,  //	Majikazo (2016).rom
-  0x00d30431,  //	Mappy (2015) (Team Pixelboy) (SGM).rom
-  0x11777b27,  //	mario-brothers-2009.rom
-  0x90007079,  //	Matt Patrol (1984) (Atarisoft) (Prototype).rom
-  0x44bfaf23,  //	Maze Maniac (2006) (Charles-Mathieu Boyer).rom
-  0x53da40bc,  //	mecha_8_colecovision_sgm.rom
-  0xb405591a,  //	mecha9_colecovision_sgm.rom
-  0x5cd9d34a,  //	minesweeper-2021.rom
-  0xdd730dbd,  //	missle-strike-2021.rom
-  0x4e0edb24,  //	Miss Space Fury (2001).rom
-  0xeb6be8ec,  //	Module Man (2013).rom
-  0x4514d3f0,  //	Moon Patrol - Ikrananka - Final - WIP.rom
-  0xac3cb427,  //	Moon Patrol Prototype.rom
-  0x9ab11795,  //	Mr Chin (2008).rom
-  0xd45475ac,  //	Multiverse (2019).rom
-  0x9c059a51,  //	Nim (2000) (NewColeco).rom
-  0x5fb0ed62,  //	Ninja Princess (2011).rom
-  0xc177bfd4,  //	operation_wolf_colecovision_sgm.rom
-  0x4aafdc07,  //	ozmawars.rom
-  0xa82c9593,  //	Pacar (2017).rom
-  0xf3ccacb3,  //	PAC_CV_101.ROM
-  0xf3ccacb3,  //	Pac-Man Collection (2008 Opcode).rom
-  0x18aced43,  //	pang.rom
-  0xb47377fd,  //	pegged-2021.rom
-  0x5a49b249,  //	pillars-2021.rom
-  0x519bfe40,  //	Pitfall II Arcade (2010 Team Pixelboy).rom
-  0x50998610,  //	pitman-2021.rom
-  0x0e25ebd7,  //	Pooyan (2009).rom
-  0xa59eaa2b,  //	Princess Quest (2012).rom
-  0xf7052b06,  //	Pyramid Warp Battleship Clapton-2-2009.rom
-  0xee530ad2,  //	qbiqs_cv_sgm.rom
-  0x6da37da8,  //	Quest for the Golden Chalice (2012) (Team PixelBoy).rom
-  0xfb5dd80d,  //	rallyx_colecovision_sgm.rom
-  0x7e090dfb,  //	Remember the Flag (2017).rom
-  0x2331b6f6,  //	reversi-and-diamond-dash-2004.rom
-  0xd8caac4c,  //	RipCord (2016) (CollectorVision).rom
-  0x570b9935,  //	Road Fighter (2007) (Opcode Games).rom
-  0x99e66988,  //	Rockcutter32Kv.rom
-  0xeaf7d6dc,  //	searchforthestolencrownjewels2.rom
-  0x594b1235,  //	searchforthestolencrownjewels3.rom
-  0xe339d9cc,  //	searchforthestolencrownjewels.rom
-  0xb753a8ca,  //	secret_of_the_moai_cv_sgm.rom
-  0x10e8dd09,  //	Shmup.rom
-  0x89c2b16f,  //	Shouganai.rom
-  0x2e4c28e2,  //	Side Trak (2012) (CollectorVision).rom
-  0x54d54968,  //	Sky Jaguar (1984) (Konami-Opcode).rom
-  0x92624cff,  //	Slither - Controller Hack (2010) (Daniel Bienvenu-NewColeco).rom
-  0x9e1bea35,  //	Space Caverns (2004) (Scott Huggins) (Prototype).rom
-  0x9badaa20,  //	Space Hunter (2005) (Guy Foster).rom
-  0xec76ee9e,  //	Space Invaders Collection (full).rom
-  0xaf9b178c,  //	Space Invasion (1998 John Dondzilla).rom
-  0xfe521268,  //	Space Trainer (2005) (NewColeco).rom
-  0xf7ed24e9,  //	Space_Venture_v3.1_(color).rom
-  0x75f84889,  //	spelunker_colecovision_sgm.rom
-  0xdeed811e,  //	spunky-s-super-car-2014.rom
-  0xea3aa29e,  //	star-fire-2021.rom
-  0xce3ff5c7,  //	Star Force (2011) (Patched).rom
-  0xf7f18e6f,  //	Star Fortress (1997) (John Dondzila).rom
-  0x08e7df91,  //	StarOcean.rom
-  0x3e7d0520,  //	Star Soldier (2016) (CollectorVision) (SGM).rom
-  0x153ac4ef,  //	Steamroller (1984) (Activision) (Prototype).rom
-  0x342c73ca,  //	stone_of_wisdom_colecovision_sgm.rom
-  0xf55f499e,  //	stray_cat_colecovision_sgm.rom
-  0xb5be3448,  //	sudoku_colecovision.rom
-  0xec76729e,  //	Super Action Soccer (2012) (Team PixelBoy).rom
-  0x260cdf98,  //	super_pac_man_colecovision_sgm.rom
-  0x1457c897,  //	Super Sonyk Arena v1.6 (Gameblabla).col
-  0xae209065,  //	Super Space Acer (2011).rom
-  0x81bfb02d,  //	Sydney Hunter and the Caverns of Death (2019) (CollectorVision).rom
-  0xb5c92637,  //	Sydney Hunter and The Sacred Tribe (2017) (CollectorVision).rom
-  0xd195e199,  //	Terra Attack (2007) (Scott Huggins).rom
-  0x09e3fdda,  //	thexder_colecovision_sgm.rom
-  0xa8b4b159,  //	Track and Field-2010.rom
-  0xaad0f224,  //	traffic_jam_colecovision_sgm.rom
-  0x6a0b954a,  //	Turbo Standard Controller Hack.rom
-  0xe7e07a70,  //	twinbee_colecovision_sgm.rom
-  0x28bdf665,  //	Txupinazo.rom
-  0xbc8320a0,  //	uridium-2019.rom
-  0xa7a8d25e,  //	Vanguard (2019) (CollectorVision).rom
-  0x530c586f,  //	vexed-2021.rom
-  0x4157b347,  //	Victory - Standard Controller Hack.rom
-  0x7f06e25c,  //	War (2014).rom
-  0xd642fb9e,  //	Waterville Rescue (2009).rom
-  0xd9207f30,  //	Wizard of Wor (SGM).rom
-  0x43505be0,  //	Wonder Boy (2012).rom
-  0x471240bb,  //	Yie Ar Kung-fu (2005).rom
-  0xe290a941,  //	Zanac (2015) (CollectorVision) (SGM).rom
-  0xa5a90f63,  //	zaxxon_super_game_colecovision_sgm.rom
-  0x44e6948c,  //	Zippy Race (2009).rom
-  0x8027dad7,  //	zombie_incident_cv_sgm.rom
-  0xc89d281d,  //	zombie-near-2012.rom
-  0xFFFFFFFF,   //	End of list
+  0xdb845695,  //   AE - Anti Environment Encounter (AE2012).rom
+  0x5ba1a6c8,  //   Amazing Snake (2001) (Serge-Eric Tremblay).rom
+  0xa66e5ed1,  //   Antarctic Adventure (1984) (Konami) (Prototype).rom
+  0xaf86d22c,  //   AntiISDA Warrior (2004) (Ventzislav Tzvetkov).rom
+  0xead5e824,  //   Arno Dash (2021).rom
+  0x71d9d422,  //   Bagman (2015) (CollectorVision).rom
+  0x223e7ddc,  //   Bank Panic (2011).rom
+  0xdddd1396,  //   Black Onyx (2013).rom
+  0xa399d4cd,  //   Bomb Jack.rom
+  0x924a7d57,  //   booming_boy_cv_sgm.rom
+  0x88d0a96f,  //   BTshort.rom
+  0xb278ebde,  //   Burn Rubber (2012).rom
+  0x53672097,  //   caos_begins_colecovision_sgm.rom
+  0x10e6e6de,  //   Caterpillar (2011).rom
+  0x4928b5f5,  //   Caverns of Titan.rom
+  0x045c54d6,  //   champion-pro-wrestling-2020.rom
+  0x55b36d53,  //   children_of_the_night_cv_sgm.rom
+  0xbe3ef785,  //   Circus Charlie (2011).rom
+  0x960f7086,  //   cold_blood_colecovision_sgm.rom
+  0x43933306,  //   Cosmo Challenge (1997) (Red Bullet Software).rom
+  0x03f9e365,  //   Cosmo Fighter 2 (1997) (Red Bullet Software).rom
+  0xb4b9301f,  //   Cosmo Fighter 3 (2002) (Red Bullet Software).rom
+  0xb248cd72,  //   C-SO (2018).rom
+  0x3c0bba92,  //   DacMan (2000) (NewColeco).rom
+  0x0246bdb1,  //   danger_tower_colecovision_sgm.rom
+  0x1b3a8639,  //   Deflektor Kollection (2005) (NewColeco).rom
+  0x2a9fcbfa,  //   Destructor Standard Controller Edition (2010).rom
+  0x5576dec3,  //   Diamond Dash 2 (2021).rom
+  0x77088cab,  //   digger_cv.rom
+  0x12ceee08,  //   dragons_lair_colecovision_sgm.rom
+  0x70d55091,  //   dungeonandtrolls.rom
+  0x8d1b3636,  //   Explosion (2003) (NewColeco).rom
+  0x48ff87cf,  //   Final Test Cartridge (19xx).col
+  0x5ac80811,  //   flapee-byrd-2014.rom
+  0x89875c52,  //   Flicky (2018).rom
+  0xfd69012b,  //   Flora and the Ghost Mirror (2013) (NewColeco).rom
+  0xf43b0b28,  //   Frantic (2008) (Scott Huggins).rom
+  0xcb941eb4,  //   Frog Feast (2007).rom
+  0x832586bf,  //   Frontline - Standard Controller Edition.rom
+  0xb3212318,  //   Frostbite (2017).rom
+  0x9f1045e6,  //   Galaga RevA.rom
+  0x9a02fba5,  //   GamePack I (2002) (NewColeco).rom
+  0xeab0ddd6,  //   GamePack II (2004) (NewColeco).rom
+  0x5b4ad168,  //   GamePack - Vic-20 (2003) (NewColeco).rom
+  0x652d533e,  //   gauntlet-2019.rom
+  0x312980d5,  //   GhostBlaster (2010) (NewColeco) (Rev. A NTSC).rom
+  0xfc935cdd,  //   ghostbusters-2018.rom
+  0x1e79958a,  //   Girls Garden (2010).rom
+  0x8acf1bcf,  //   Golgo 13 (2011) (Team PixelBoy).rom
+  0x01581fa8,  //   goonies_colecovision_sgm.rom
+  0xb2fb36a9,  //   GrailoftheGodbugfix2.rom
+  0x81413ff6,  //   Gulkave (2010) (Team Pixelboy).rom
+  0x27818d93,  //   Hang-On (2016) (CollectorVision) (SGM).rom
+  0x9b891703,  //   helifire.rom
+  0x87a49761,  //   heroes_arena_colecovision_sgm.rom
+  0x5a6c2d2f,  //   Insane Pickin' Sticks VIII (2010) (NewColeco).rom
+  0x69e3c673,  //   Jeepers Creepers - 30th Anniversary (2012) (NewColeco).rom
+  0xae7614c3,  //   j-e-t-p-a-c-2017.rom
+  0x62f325b3,  //   Joust (2014) (Team Pixelboy).rom
+  0xf403fe04,  //   Jump or Die (2006) (NewColeco).rom
+  0x5287998b,  //   Kaboom (2017) (Team Pixelboy).rom
+  0x819a06e5,  //   Kevtris (1996) (Kevin Horton).rom
+  0x9ce3b912,  //   king-balloon-2018.rom
+  0x0a2ac883,  //   kings_valley_colecovision_sgm.rom
+  0x278c5021,  //   klondike-solitaire-2021.rom
+  0x1523bfbf,  //   knight_lore_colecovision_sgm.rom
+  0x01cacd0d,  //   knightmare_colecovision_sgm.rom
+  0x344cb482,  //   Konami's Ping Pong (2011) (Team PixelBoy).rom
+  0xe8a91349,  //   kralizec_tetris_colecovision.rom
+  0xa078f273,  //   Kung-Fu Master - 2016 (CollectorVision).rom
+  0x6bc9a350,  //   Lock-n-Chase.rom
+  0xa2128f74,  //   Lode Runner (2002) (Steve Begin).rom
+  0xf4314bb1,  //   Magical Tree (2006).rom
+  0x6ed6a2e1,  //   mahjong-solitaire-2021.rom
+  0x2a1438c0,  //   Majikazo (2016).rom
+  0x00d30431,  //   Mappy (2015) (Team Pixelboy) (SGM).rom
+  0x11777b27,  //   mario-brothers-2009.rom
+  0x90007079,  //   Matt Patrol (1984) (Atarisoft) (Prototype).rom
+  0x44bfaf23,  //   Maze Maniac (2006) (Charles-Mathieu Boyer).rom
+  0x53da40bc,  //   mecha_8_colecovision_sgm.rom
+  0xb405591a,  //   mecha9_colecovision_sgm.rom
+  0x5cd9d34a,  //   minesweeper-2021.rom
+  0xdd730dbd,  //   missle-strike-2021.rom
+  0x4e0edb24,  //   Miss Space Fury (2001).rom
+  0xeb6be8ec,  //   Module Man (2013).rom
+  0x4514d3f0,  //   Moon Patrol - Ikrananka - Final - WIP.rom
+  0xac3cb427,  //   Moon Patrol Prototype.rom
+  0x9ab11795,  //   Mr Chin (2008).rom
+  0xd45475ac,  //   Multiverse (2019).rom
+  0x9c059a51,  //   Nim (2000) (NewColeco).rom
+  0x5fb0ed62,  //   Ninja Princess (2011).rom
+  0xc177bfd4,  //   operation_wolf_colecovision_sgm.rom
+  0x4aafdc07,  //   ozmawars.rom
+  0xa82c9593,  //   Pacar (2017).rom
+  0xf3ccacb3,  //   PAC_CV_101.ROM
+  0xf3ccacb3,  //   Pac-Man Collection (2008 Opcode).rom
+  0x18aced43,  //   pang.rom
+  0xb47377fd,  //   pegged-2021.rom
+  0x5a49b249,  //   pillars-2021.rom
+  0x519bfe40,  //   Pitfall II Arcade (2010 Team Pixelboy).rom
+  0x50998610,  //   pitman-2021.rom
+  0x0e25ebd7,  //   Pooyan (2009).rom
+  0xa59eaa2b,  //   Princess Quest (2012).rom
+  0xf7052b06,  //   Pyramid Warp Battleship Clapton-2-2009.rom
+  0xee530ad2,  //   qbiqs_cv_sgm.rom
+  0x6da37da8,  //   Quest for the Golden Chalice (2012) (Team PixelBoy).rom
+  0xfb5dd80d,  //   rallyx_colecovision_sgm.rom
+  0x7e090dfb,  //   Remember the Flag (2017).rom
+  0x2331b6f6,  //   reversi-and-diamond-dash-2004.rom
+  0xd8caac4c,  //   RipCord (2016) (CollectorVision).rom
+  0x570b9935,  //   Road Fighter (2007) (Opcode Games).rom
+  0x99e66988,  //   Rockcutter32Kv.rom
+  0xeaf7d6dc,  //   searchforthestolencrownjewels2.rom
+  0x594b1235,  //   searchforthestolencrownjewels3.rom
+  0xe339d9cc,  //   searchforthestolencrownjewels.rom
+  0xb753a8ca,  //   secret_of_the_moai_cv_sgm.rom
+  0x10e8dd09,  //   Shmup.rom
+  0x89c2b16f,  //   Shouganai.rom
+  0x2e4c28e2,  //   Side Trak (2012) (CollectorVision).rom
+  0x54d54968,  //   Sky Jaguar (1984) (Konami-Opcode).rom
+  0x92624cff,  //   Slither - Controller Hack (2010) (Daniel Bienvenu-NewColeco).rom
+  0x9e1bea35,  //   Space Caverns (2004) (Scott Huggins) (Prototype).rom
+  0x9badaa20,  //   Space Hunter (2005) (Guy Foster).rom
+  0xec76ee9e,  //   Space Invaders Collection (full).rom
+  0xaf9b178c,  //   Space Invasion (1998 John Dondzilla).rom
+  0xfe521268,  //   Space Trainer (2005) (NewColeco).rom
+  0xf7ed24e9,  //   Space_Venture_v3.1_(color).rom
+  0x75f84889,  //   spelunker_colecovision_sgm.rom
+  0xdeed811e,  //   spunky-s-super-car-2014.rom
+  0xea3aa29e,  //   star-fire-2021.rom
+  0xce3ff5c7,  //   Star Force (2011) (Patched).rom
+  0xf7f18e6f,  //   Star Fortress (1997) (John Dondzila).rom
+  0x08e7df91,  //   StarOcean.rom
+  0x3e7d0520,  //   Star Soldier (2016) (CollectorVision) (SGM).rom
+  0x153ac4ef,  //   Steamroller (1984) (Activision) (Prototype).rom
+  0x342c73ca,  //   stone_of_wisdom_colecovision_sgm.rom
+  0xf55f499e,  //   stray_cat_colecovision_sgm.rom
+  0xb5be3448,  //   sudoku_colecovision.rom
+  0xec76729e,  //   Super Action Soccer (2012) (Team PixelBoy).rom
+  0x260cdf98,  //   super_pac_man_colecovision_sgm.rom
+  0x1457c897,  //   Super Sonyk Arena v1.6 (Gameblabla).col
+  0xae209065,  //   Super Space Acer (2011).rom
+  0x81bfb02d,  //   Sydney Hunter and the Caverns of Death (2019) (CollectorVision).rom
+  0xb5c92637,  //   Sydney Hunter and The Sacred Tribe (2017) (CollectorVision).rom
+  0xd195e199,  //   Terra Attack (2007) (Scott Huggins).rom
+  0x09e3fdda,  //   thexder_colecovision_sgm.rom
+  0xa8b4b159,  //   Track and Field-2010.rom
+  0xaad0f224,  //   traffic_jam_colecovision_sgm.rom
+  0x6a0b954a,  //   Turbo Standard Controller Hack.rom
+  0xe7e07a70,  //   twinbee_colecovision_sgm.rom
+  0x28bdf665,  //   Txupinazo.rom
+  0xbc8320a0,  //   uridium-2019.rom
+  0xa7a8d25e,  //   Vanguard (2019) (CollectorVision).rom
+  0x530c586f,  //   vexed-2021.rom
+  0x4157b347,  //   Victory - Standard Controller Hack.rom
+  0x7f06e25c,  //   War (2014).rom
+  0xd642fb9e,  //   Waterville Rescue (2009).rom
+  0xd9207f30,  //   Wizard of Wor (SGM).rom
+  0x43505be0,  //   Wonder Boy (2012).rom
+  0x471240bb,  //   Yie Ar Kung-fu (2005).rom
+  0xe290a941,  //   Zanac (2015) (CollectorVision) (SGM).rom
+  0xa5a90f63,  //   zaxxon_super_game_colecovision_sgm.rom
+  0x44e6948c,  //   Zippy Race (2009).rom
+  0x8027dad7,  //   zombie_incident_cv_sgm.rom
+  0xc89d281d,  //   zombie-near-2012.rom
+  0xFFFFFFFF,   //  End of list
 };
 
 /*********************************************************************************
@@ -2106,7 +2106,7 @@ void DisplayFileName(void)
 //*****************************************************************************
 // Display colecoDSlus screen and change options "main menu"
 //*****************************************************************************
-void affInfoOptions(u32 uY) 
+void dispInfoOptions(u32 uY) 
 {
     DSPrint(2, 8,(uY== 8 ? 2 : 0),("         LOAD  GAME         "));
     DSPrint(2,10,(uY==10 ? 2 : 0),("         PLAY  GAME         "));
@@ -2130,7 +2130,7 @@ void NoGameSelected(u32 ucY)
     while (!(keysCurrent()  & (KEY_START | KEY_A)));
     while (keysCurrent()  & (KEY_START | KEY_A));
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-    affInfoOptions(ucY);
+    dispInfoOptions(ucY);
 }
 
 /*********************************************************************************
@@ -2358,7 +2358,7 @@ void colecoDSChangeOptions(void)
   // Lower Screen Background
   BottomScreenOptions();
 
-  affInfoOptions(ucY);
+  dispInfoOptions(ucY);
   
   if (ucGameChoice != -1) 
   { 
@@ -2368,10 +2368,10 @@ void colecoDSChangeOptions(void)
   while (!bOK) {
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
-        affInfoOptions(32);
+        dispInfoOptions(32);
         ucY = (ucY == 8 ? 18 : ucY -2);
         ucHaut=0x01;
-        affInfoOptions(ucY);
+        dispInfoOptions(ucY);
       }
       else {
         ucHaut++;
@@ -2383,10 +2383,10 @@ void colecoDSChangeOptions(void)
     }  
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
-        affInfoOptions(32);
+        dispInfoOptions(32);
         ucY = (ucY == 18 ? 8 : ucY +2);
         ucBas=0x01;
-        affInfoOptions(ucY);
+        dispInfoOptions(ucY);
       }
       else {
         ucBas++;
@@ -2409,12 +2409,12 @@ void colecoDSChangeOptions(void)
                 DisplayFileName();      // And put up the filename on the bottom screen
             }
             ucY = 10;
-            affInfoOptions(ucY);
+            dispInfoOptions(ucY);
             break;
           case 10 :     // PLAY GAME
             if (ucGameChoice != -1) 
             { 
-              bOK = 1;
+                bOK = 1;
             }
             else 
             {    
@@ -2426,7 +2426,7 @@ void colecoDSChangeOptions(void)
             { 
                 colecoDSChangeKeymap();
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-                affInfoOptions(ucY);
+                dispInfoOptions(ucY);
                 DisplayFileName();
             }
             else 
@@ -2439,7 +2439,7 @@ void colecoDSChangeOptions(void)
             { 
                 colecoDSGameOptions(false);
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-                affInfoOptions(ucY);
+                dispInfoOptions(ucY);
                 DisplayFileName();
             }
             else 
@@ -2451,7 +2451,7 @@ void colecoDSChangeOptions(void)
           case 16 :     // GLOBAL OPTIONS
             colecoDSGameOptions(true);
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-            affInfoOptions(ucY);
+            dispInfoOptions(ucY);
             DisplayFileName();
             break;
                 
