@@ -253,6 +253,7 @@ void ProcessBufferedKeys(void)
     if (buf_held) {kbd_keys[kbd_keys_pressed++] = buf_held; if (buf_shift) key_shift=1; if (buf_ctrl) key_ctrl=1;}
 }
 
+u8 zzz=1;
 
 /*********************************************************************************
  * Init coleco Engine for that game
@@ -355,12 +356,18 @@ u8 colecoInit(char *szGame)
   }
   else if (adam_mode)  // Load Adam DDP or DSK
   {
+      memset((u8*)0x6820000, 0x00, 0x20000);
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start
       adam_CapsLock = 0;
       disk_unsaved_data = 0;
       colecoWipeRAM();
-      RetFct = loadrom(szGame,RAM_Memory,0x10000);  
+      //TODO: Figure out why we need to load, unload and re-load to get all games to boot properly...
+      RetFct = loadrom(szGame,RAM_Memory,0x10000);
+      for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
+      for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
+      RetFct = loadrom(szGame,RAM_Memory,0x10000);
+      
   }
   else if (pencil2_mode)
   {
@@ -539,9 +546,9 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
   FILE* handle = fopen(path, "rb");  
   if (handle != NULL) 
   {
-    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));          // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
+    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
     
-    fseek(handle, 0, SEEK_END);                     // Figure out how big the file is
+    fseek(handle, 0, SEEK_END);                             // Figure out how big the file is
     int romSize = ftell(handle);
     sg1000_double_reset = false;
     
@@ -611,8 +618,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             {
                 ChangeDisk(0, path);
                 strcpy(lastAdamDataPath, path);
-            }
-            
+            }            
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {
