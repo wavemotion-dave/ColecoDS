@@ -191,7 +191,7 @@ extern void einstein_init_ramdisk(void);
 extern void einstein_load_ramdisk(void);
 extern void einstein_swap_disk(char *szFileName);
 
-extern u8 loadrom(const char *path,u8 * ptr, int nmemb);
+extern u8 loadrom(const char *path,u8 * ptr);
 
 extern u32 LoopZ80();
 extern void MegaCartBankSwitch(u8 bank);

@@ -207,7 +207,7 @@ void colecoWipeRAM(void)
 
 
 /*********************************************************************************
- * Keybaord Key Buffering Engine...
+ * Keyboard Key Buffering Engine...
  ********************************************************************************/
 u8 BufferedKeys[32];
 u8 BufferedKeysWriteIdx=0;
@@ -218,6 +218,7 @@ void BufferKey(u8 key)
     BufferedKeysWriteIdx = (BufferedKeysWriteIdx+1) % 32;
 }
 
+// Buffer a whole string worth of characters...
 void BufferKeys(char *str)
 {
     for (int i=0; i<strlen(str); i++)  BufferKey((u8)str[i]);
@@ -253,7 +254,6 @@ void ProcessBufferedKeys(void)
     if (buf_held) {kbd_keys[kbd_keys_pressed++] = buf_held; if (buf_shift) key_shift=1; if (buf_ctrl) key_ctrl=1;}
 }
 
-u8 zzz=1;
 
 /*********************************************************************************
  * Init coleco Engine for that game
@@ -312,7 +312,7 @@ u8 colecoInit(char *szGame)
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
       colecoWipeRAM();                              // Wipe RAM
-      RetFct = loadrom(szGame,RAM_Memory,0xC000);   // Load up to 48K
+      RetFct = loadrom(szGame,RAM_Memory);          // Load up to 48K
       sg1000_reset();                               // Reset the SG-1000
   }
   else if (sordm5_mode)  // Load Sord M5 cartridge
@@ -321,27 +321,27 @@ u8 colecoInit(char *szGame)
       if (file_crc == 0xb32c9e08)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
       if (file_crc == 0xa2edc01d)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
       colecoWipeRAM();
-      RetFct = loadrom(szGame,RAM_Memory+0x2000,0x5000);  // Load up to 20K
+      RetFct = loadrom(szGame,RAM_Memory+0x2000);      // Load up to 20K
   }
   else if (pv2000_mode)  // Casio PV-2000 cartridge loads at C000
   {
       colecoWipeRAM();
-      RetFct = loadrom(szGame,RAM_Memory+0xC000,0x4000);  // Load up to 16K
+      RetFct = loadrom(szGame,RAM_Memory+0xC000);      // Load up to 16K
   }
   else if (creativision_mode)  // Creativision loads cart up against 0xC000
   {
       colecoWipeRAM();
-      RetFct = loadrom(szGame,RAM_Memory+0xC000,0x4000);  // Load up to 16K
+      RetFct = loadrom(szGame,RAM_Memory+0xC000);      // Load up to 16K
   }
   else if (memotech_mode)  // Load Memotech MTX file
   {
       ctc_enabled = true;
-      RetFct = loadrom(szGame,RAM_Memory+0x4000,0xC000);  // Load up to 48K
+      RetFct = loadrom(szGame,RAM_Memory+0x4000);      // Load up to 48K
   }
   else if (msx_mode)  // Load MSX cartridge ... 
   {
       // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);  
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);  
       
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
@@ -349,7 +349,7 @@ u8 colecoInit(char *szGame)
   else if (svi_mode)  // Load SVI ROM ... 
   {
       // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);  
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);  
       
       // Wipe RAM area from 0x8000 upwards after ROM is loaded...
       colecoWipeRAM();
@@ -363,10 +363,10 @@ u8 colecoInit(char *szGame)
       disk_unsaved_data = 0;
       colecoWipeRAM();
       //TODO: Figure out why we need to load, unload and re-load to get all games to boot properly...
-      RetFct = loadrom(szGame,RAM_Memory,0x10000);
+      RetFct = loadrom(szGame,RAM_Memory);
       for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
       for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
-      RetFct = loadrom(szGame,RAM_Memory,0x10000);
+      RetFct = loadrom(szGame,RAM_Memory);
       
   }
   else if (pencil2_mode)
@@ -377,13 +377,13 @@ u8 colecoInit(char *szGame)
       // Wipe RAM to Random Values
       colecoWipeRAM();
 
-      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);    // Load up to 32K
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);    // Load up to 32K
   }
   else if (einstein_mode)  // Load Einstein COM file
   {
       ctc_enabled = true;
       colecoWipeRAM();
-      RetFct = loadrom(szGame,RAM_Memory+0x4000,0xC000);  // Load up to 48K
+      RetFct = loadrom(szGame,RAM_Memory+0x4000);  // Load up to 48K
   }
   else  // Load coleco cartridge
   {
@@ -398,7 +398,7 @@ u8 colecoInit(char *szGame)
       // Set upper 32K ROM area to 0xFF before load
       memset(RAM_Memory+0x8000, 0xFF, 0x8000);
 
-      RetFct = loadrom(szGame,RAM_Memory+0x8000,0x8000);
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);
       
       coleco_mode = true;
   }
@@ -535,9 +535,9 @@ void getfile_crc(const char *path)
 
 
 /** loadrom() ******************************************************************/
-/* Open a rom file from file system                                            */
+/* Open a rom file from file system and load it into the ROM_Memory[] buffer   */
 /*******************************************************************************/
-u8 loadrom(const char *path,u8 * ptr, int nmemb) 
+u8 loadrom(const char *path,u8 * ptr) 
 {
   u8 bOK = 0;
 
@@ -649,7 +649,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
             }
             else // Assume this is one of the rare SMS memory mapper SG-1000 games unless it's a Survivors Cart
             {
-                memcpy(ptr, ROM_Memory, 48*1024);     // Copy exactly 48K flat into our memory map... larger than this is the SMS mapper
+                memcpy(ptr, ROM_Memory, 48*1024);     // Copy exactly 48K flat into our memory map... larger than this is the SMS mapper handled directly below
                 if      (romSize <= 128*1024) sg1000_sms_mapper = 0x07;   // Up to 128K
                 else if (romSize <= 256*1024) sg1000_sms_mapper = 0x0F;   // Up to 256K
                 else if (romSize <= 512*1024) sg1000_sms_mapper = 0x1F;   // Up to 512K
@@ -662,7 +662,7 @@ u8 loadrom(const char *path,u8 * ptr, int nmemb)
         // ----------------------------------------------------------------------
         if (romSize <= (32*1024)) // Allow up to 32K limit on Coleco Roms
         {
-            memcpy(ptr, ROM_Memory, nmemb);
+            memcpy(ptr, ROM_Memory, romSize);
         }
         else    // No - must be Mega Cart (MC) Bankswitched!!  
         {
@@ -770,6 +770,10 @@ void SetupSGM(void)
 }
 
 
+// ------------------------------------------------------------------------------------------------
+// The Coleco Adam bios files are in three locations... the original ColecoBIOS, EOS and Writer
+// The game/program can enable or disable various bios locations - see SetupAdam() below.
+// ------------------------------------------------------------------------------------------------
 void adam_setup_bios(void)
 {
     memcpy(BIOS_Memory+0x0000, AdamWRITER, 0x8000);
@@ -1302,8 +1306,7 @@ ITCM_CODE u32 LoopZ80()
       }
       return 0;
   }
-  return 1;
-    
+  return 1;    
 }
 
 // End of file

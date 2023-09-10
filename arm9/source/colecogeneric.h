@@ -5,7 +5,7 @@
 #define MAX_ROM_LENGTH  160
 
 #define MAX_CONFIGS     1358
-#define CONFIG_VER      0x000E
+#define CONFIG_VER      0x000F
 
 #define COLROM          0x01
 #define DIRECT          0x02
