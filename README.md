@@ -311,12 +311,15 @@ For the MSX emulation, the colecovision keypad is mapped to some of the
 common keyboard keys -  enough to get most MSX1 cart games running...  
 In Game Options you can also override the '?' key to be any mappable MSX key. 
 For the few games that still require the MSX arrows to play - you can emulate 
-that via the D-PAD in Game Options. As of version 6.1 there is also a 
-custom overlay for "MSX Full" keyboard in both International and Japanese styles.
+that via the D-PAD in Game Options. You can also select a full-sized MSX keyboard
+in game options (or in global options to set a default for MSX machines).
 
 Keyboards :
 -----------------------
-A number of full keyboard overlays have been designed to bring more accuracy and enjoyment to the emulation. You can choose these on a per-game basis in Configuration.
+A number of full keyboard overlays have been designed to bring more accuracy and enjoyment to the emulation. You can choose these on a per-game basis in Game Options configuration. 
+If you choose 'Full Keyboard' you will get a keyboard that matches the style of the machine being emulated. Or you can choose 'Alpha Keyboard' for a simplified keyboard that is
+a little easier to type on with your fingers (keys are a little bigger than they would be for specialized full keyboards - useful for text adventures where specialized keys aren't
+usually needed).
 
 ![Adam Keyboard](images/adam.png) ![MSX Keyboard](images/msx1.png) ![CreatiVision Keyboard](images/creativision.png)
 
@@ -370,6 +373,11 @@ would personally try them:
 
 Versions :
 -----------------------
+V8.8: ??-Sep-2023 by wavemotion-dave
+* Major cleanup of the Coleco ADAM driver so that most games now load up perfectly first try and RESET handling is smooth and consistent.
+* For the ADAM, added toggle between full keyboard and the joystick/joypad so now you don't have to choose one layout or the other. 
+* Simplified keyboard handling. Now the user just picks 'Full Keyboard' and the emulator will figure out the best keyboard overlay to use based on the machine being emulated.
+
 V8.7: 07-Sep-2023 by wavemotion-dave
 * Added .dsk support for MSX1 games (360K SS or 720K DS only).
 * Improved key debounce so that pressing on the virtual keyboard is much cleaner.

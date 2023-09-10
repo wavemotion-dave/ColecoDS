@@ -1826,7 +1826,7 @@ u8 MiniMenu(void)
 // ------------------------------------------------------------------------
 // Return 1 if we are showing full keyboard... otherwise 0
 // ------------------------------------------------------------------------
-inline u8 IsFullKeyboard(void) {return ((myConfig.overlay >= 9) ? 1:0);}
+inline u8 IsFullKeyboard(void) {return ((myConfig.overlay == 1 || myConfig.overlay == 2) ? 1:0);}  // Full or Alpha keyboards report as 'full'
 
 u8 last_special_key = 0;
 u8 last_special_key_dampen = 0;
@@ -2923,43 +2923,26 @@ void colecoDS_main(void)
                 // ------------------------------------------------------------
                 // Test the touchscreen for various full keyboard handlers... 
                 // ------------------------------------------------------------
-                else if (myConfig.overlay == 9) // ADAM Keyboard
+                else if (myConfig.overlay == 1) // Full Keyboard Selected
                 {
-                    meta_key = handle_adam_keyboard_press(iTx, iTy);
+                    // ----------------------------------------------------------------
+                    // Pick the right keyboard layout based on the machine emulated...
+                    // ----------------------------------------------------------------
+                    if      (adam_mode)         meta_key = handle_adam_keyboard_press(iTx, iTy);
+                    else if (msx_mode)          meta_key = handle_msx_keyboard_press(iTx, iTy);
+                    else if (memotech_mode)     meta_key = handle_mtx_keyboard_press(iTx, iTy);
+                    else if (creativision_mode) meta_key = handle_cvision_keyboard_press(iTx, iTy);
+                    else if (einstein_mode)     meta_key = handle_einstein_keyboard_press(iTx, iTy);
+                    else if (svi_mode)          meta_key = handle_svi_keyboard_press(iTx, iTy);
+                    else if (sg1000_mode)       meta_key = handle_sc3000_keyboard_press(iTx, iTy);
+                    else if (sordm5_mode)       meta_key = handle_sordm5_keyboard_press(iTx, iTy);
+                    else                        meta_key = handle_alpha_keyboard_press(iTx, iTy);
                 }
-                else if (myConfig.overlay == 10) // MSX Keyboard
-                {
-                    meta_key = handle_msx_keyboard_press(iTx, iTy);
-                }
-                else if (myConfig.overlay == 11) // Memotech MTX Keyboard
-                {
-                    meta_key = handle_mtx_keyboard_press(iTx, iTy);
-                }
-                else if (myConfig.overlay == 12) // Creativision Keyboard
-                {
-                    meta_key = handle_cvision_keyboard_press(iTx, iTy);
-                }
-                else if (myConfig.overlay == 13) // Simplified Alpha Keyboard
+                else if (myConfig.overlay == 2) // Simplified Alpha Keyboard (can be used with any emulated machine)
                 {
                     meta_key = handle_alpha_keyboard_press(iTx, iTy);
-                }
-                else if (myConfig.overlay == 14) // Tatung Einstein Keyboard
-                {
-                    meta_key = handle_einstein_keyboard_press(iTx, iTy);
-                }
-                else if (myConfig.overlay == 15) // SVI Keyboard
-                {
-                    meta_key = handle_svi_keyboard_press(iTx, iTy);
-                }
-                else if (myConfig.overlay == 16) // SC-3000 Keyboard
-                {
-                    meta_key = handle_sc3000_keyboard_press(iTx, iTy);
-                }        
-                else if (myConfig.overlay == 17) // SORD M5 Keyboard
-                {
-                    meta_key = handle_sordm5_keyboard_press(iTx, iTy);
-                }        
-                else    // Normal 12 button virtual keypad
+                }                  
+                else    // Normal 12 button virtual keypad (might be custom overlay but the number pad is in the same location on each)
                 {
                     meta_key = handle_normal_virtual_keypad(iTx, iTy);
 
@@ -3077,7 +3060,7 @@ void colecoDS_main(void)
                         break;
                         
                     case MENU_CHOICE_SWAP_KBD:
-                        if (myConfig.overlay == 0) myConfig.overlay = 9; else myConfig.overlay = 0;
+                        if (myConfig.overlay == 0) myConfig.overlay = 1; else myConfig.overlay = 0;
                         BottomScreenKeypad();
                         WAITVBL;WAITVBL;WAITVBL;
                         break;
@@ -3433,113 +3416,92 @@ void BottomScreenKeypad(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) debug_ovlPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 1)  // Wargames
+    else if (myConfig.overlay == 1) // Full Keyboard (based on machine)
     {
-      //  Init bottom screen
-      decompress(wargamesTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(wargamesMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) wargamesPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 2)  // Mousetrap
-    {
-      //  Init bottom screen
-      decompress(mousetrapTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(mousetrapMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) mousetrapPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 3)  // Gateway to Apshai
-    {
-      //  Init bottom screen
-      decompress(gatewayTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(gatewayMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) gatewayPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 4)  // Spy Hunter
-    {
-      //  Init bottom screen
-      decompress(spyhunterTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(spyhunterMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) spyhunterPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 5)  // Fix Up the Mix Up
-    {
-      //  Init bottom screen
-      decompress(fixupmixupTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(fixupmixupMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) fixupmixupPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 6)  // Boulder Dash
-    {
-      //  Init bottom screen
-      decompress(boulderTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(boulderMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) boulderPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 7)  // Quest for Quinta Roo
-    {
-      //  Init bottom screen
-      decompress(questTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(questMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) questPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 8)  // 2010
-    {
-      //  Init bottom screen
-      decompress(hal2010Tiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(hal2010Map, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) hal2010Pal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 9)  // ADAM Keyboard
-    {
-      //  Init bottom screen
-      decompress(adam_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(adam_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 10)  //MSX/SVI Keyboard
-    {
-      //  Init bottom screen
-      if (msx_mode && msx_japanese_matrix)
-      {
-          decompress(msx_japanTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(msx_japanMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+        if (adam_mode)  // ADAM Keyboard
+        {
+          //  Init bottom screen
+          decompress(adam_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(adam_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) msx_japanPal,(void*) BG_PALETTE_SUB,256*2);
-      }
-      else
-      {
-          decompress(msx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(msx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) adam_fullPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else if (msx_mode)  //MSX Keyboard
+        {
+          //  Init bottom screen
+          if (msx_mode && msx_japanese_matrix)
+          {
+              decompress(msx_japanTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+              decompress(msx_japanMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+              dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+              dmaCopy((void*) msx_japanPal,(void*) BG_PALETTE_SUB,256*2);
+          }
+          else
+          {
+              decompress(msx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+              decompress(msx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+              dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+              dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
+          }
+        }
+        else if (memotech_mode) // Memotech MTX
+        {
+          //  Init bottom screen
+          decompress(mtx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(mtx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) msx_fullPal,(void*) BG_PALETTE_SUB,256*2);
-      }
+          dmaCopy((void*) mtx_fullPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else if (creativision_mode) // CreatiVision Keypad
+        {
+          //  Init bottom screen
+          decompress(cvision_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(cvision_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) cvision_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else if (einstein_mode) // Einstein Keyboard
+        {
+          //  Init bottom screen
+          decompress(einstein_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(einstein_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) einstein_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else if (svi_mode) // Spectravideo SVI
+        {
+          //  Init bottom screen
+          decompress(svi_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(svi_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) svi_fullPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else if (sg1000_mode) // SC-3000 Keyboard
+        {
+          //  Init bottom screen
+          decompress(sc3000_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(sc3000_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) sc3000_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else if (sordm5_mode) // Sord M5 Keyboard
+        {
+          //  Init bottom screen
+          decompress(m5_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(m5_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) m5_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else // No custom keyboard for this machine... just use simplified alpha keyboard...
+        {
+          //  Init bottom screen
+          decompress(alpha_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(alpha_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) alpha_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+        }
     }
-    else if (myConfig.overlay == 11) // Memotech MTX
-    {
-      //  Init bottom screen
-      decompress(mtx_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(mtx_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) mtx_fullPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 12) // CreatiVision Keypad
-    {
-      //  Init bottom screen
-      decompress(cvision_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(cvision_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) cvision_kbdPal,(void*) BG_PALETTE_SUB,256*2);
-    }
-    else if (myConfig.overlay == 13) // Alpha Simplified Keyboard
+    else if (myConfig.overlay == 2) // Alpha Simplified Keyboard
     {
       //  Init bottom screen
       decompress(alpha_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3547,39 +3509,71 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) alpha_kbdPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 14) // Einstein Keyboard
+    else if (myConfig.overlay == 3)  // Wargames
     {
       //  Init bottom screen
-      decompress(einstein_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(einstein_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      decompress(wargamesTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(wargamesMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) einstein_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+      dmaCopy((void*) wargamesPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 15) // Spectravideo SVI
+    else if (myConfig.overlay == 4)  // Mousetrap
     {
       //  Init bottom screen
-      decompress(svi_fullTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(svi_fullMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      decompress(mousetrapTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(mousetrapMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) svi_fullPal,(void*) BG_PALETTE_SUB,256*2);
+      dmaCopy((void*) mousetrapPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 16) // SC-3000 Keyboard
+    else if (myConfig.overlay == 5)  // Gateway to Apshai
     {
       //  Init bottom screen
-      decompress(sc3000_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(sc3000_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      decompress(gatewayTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(gatewayMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) sc3000_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+      dmaCopy((void*) gatewayPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 17) // Sord M5 Keyboard
+    else if (myConfig.overlay == 6)  // Spy Hunter
     {
       //  Init bottom screen
-      decompress(m5_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-      decompress(m5_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      decompress(spyhunterTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(spyhunterMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-      dmaCopy((void*) m5_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+      dmaCopy((void*) spyhunterPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else // Generic Overlay
+    else if (myConfig.overlay == 7)  // Fix Up the Mix Up
+    {
+      //  Init bottom screen
+      decompress(fixupmixupTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(fixupmixupMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) fixupmixupPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 8)  // Boulder Dash
+    {
+      //  Init bottom screen
+      decompress(boulderTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(boulderMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) boulderPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 9)  // Quest for Quinta Roo
+    {
+      //  Init bottom screen
+      decompress(questTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(questMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) questPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 10)  // 2010
+    {
+      //  Init bottom screen
+      decompress(hal2010Tiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(hal2010Map, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) hal2010Pal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else // Generic Overlay (overlay == 0)
     {
       if (msx_mode)
       {
