@@ -869,13 +869,19 @@ void Reset9918(void)
     ChrTab=ColTab=ChrGen=pVDPVidMem;    // VDP tables (screen)
     SprTab=SprGen=pVDPVidMem;           // VDP tables (sprites)
     VDPDlatch = 0;                      // VDP Data latch
-   
-    ChrGenM = 0x3FFF;                   // Full mask
+  
+    ChrTabM = 0x3FFF;                   // Full mask
     ColTabM = 0x3FFF;                   // Full mask
     ChrGenM = 0x3FFF;                   // Full mask
     SprTabM = 0x3FFF;                   // Full mask
     
     BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
+    
+    pVidFlipBuf = (u16*) (0x06000000);    // Video flipping buffer
+    
+    RefreshLine = RefreshLine0;
+
+    OH = IH = 0;
     
     // ------------------------------------------------------------
     // Determine if we are PAL vs NTSC and adjust line timing...
@@ -910,7 +916,7 @@ void Reset9918(void)
         vdp_int_source = INT_NMI;
     }
     my_config_clear_int = myConfig.clearInt;
-    
+   
     // ---------------------------------------------------------------
     // Our background/foreground color table makes computations FAST!
     // ---------------------------------------------------------------

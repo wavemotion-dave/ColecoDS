@@ -350,8 +350,8 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
 // ----------------------------------------------
 // Game speeds constants... first entry is 100%
 // ----------------------------------------------
-u16 GAME_SPEED_NTSC[] = {546, 497, 455, 420, 607 };
-u16 GAME_SPEED_PAL[]  = {656, 596, 547, 505, 729 };
+u16 GAME_SPEED_NTSC[] __attribute__((section(".dtcm"))) = {546, 497, 455, 420, 607 };
+u16 GAME_SPEED_PAL[]  __attribute__((section(".dtcm"))) = {656, 596, 547, 505, 729 };
 
 // --------------------------------------------------------------------------------
 // Spinners! X and Y taken together will actually replicate the roller controller.
@@ -1837,13 +1837,14 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
     if ((iTy >= 12) && (iTy < 42))        // Row 1 (top row with I-VI Smartkeys)
     {
         if      ((iTx >= 0)   && (iTx < 25))   kbd_key = ADAM_KEY_ESC;
-        else if ((iTx >= 25)  && (iTx < 59))   kbd_key = ADAM_KEY_F1;
-        else if ((iTx >= 59)  && (iTx < 88))   kbd_key = ADAM_KEY_F2;
-        else if ((iTx >= 88)  && (iTx < 117))  kbd_key = ADAM_KEY_F3;
-        else if ((iTx >= 117) && (iTx < 146))  kbd_key = ADAM_KEY_F4;
-        else if ((iTx >= 146) && (iTx < 176))  kbd_key = ADAM_KEY_F5;
-        else if ((iTx >= 176) && (iTx < 210))  kbd_key = ADAM_KEY_F6;
-        else if ((iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_BS;
+        else if ((iTx >= 25)  && (iTx < 53))   kbd_key = ADAM_KEY_F1;
+        else if ((iTx >= 53)  && (iTx < 81))   kbd_key = ADAM_KEY_F2;
+        else if ((iTx >= 81)  && (iTx < 108))  kbd_key = ADAM_KEY_F3;
+        else if ((iTx >= 108) && (iTx < 134))  kbd_key = ADAM_KEY_F4;
+        else if ((iTx >= 134) && (iTx < 161))  kbd_key = ADAM_KEY_F5;
+        else if ((iTx >= 161) && (iTx < 190))  kbd_key = ADAM_KEY_F6;
+        else if ((iTx >= 190) && (iTx < 213))  kbd_key = (key_shift ? ADAM_KEY_STORE:ADAM_KEY_MOVE);
+        else if ((iTx >= 213) && (iTx < 235))  kbd_key = ADAM_KEY_BS;
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_HOME;
     }
     else if ((iTy >= 42) && (iTy < 72))   // Row 2 (number row)
@@ -3631,7 +3632,7 @@ void colecoDSInitCPU(void)
   //  -----------------------------------------
   //  Init Main Memory and VDP Video Memory
   //  -----------------------------------------
-  memset(RAM_Memory, 0xFF, 0x10000);
+  memset(RAM_Memory, 0x00, 0x20000);
   memset(pVDPVidMem, 0x00, 0x4000);
 
   // -----------------------------------------------

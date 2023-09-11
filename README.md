@@ -139,6 +139,7 @@ ADAM Compatibility :
 * In Game Config you can change how RAM is initilized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only when the tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
+* Due to space constraints, the MOVE/COPY and STORE/GET keys are combined (showing MV/ST). Use the SHIFT key to select whether you get the MOVE or the STORE functionality. You can also map those to NDS keys if needed.
 
 MSX Compatibility :
 -----------------------
@@ -397,8 +398,8 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V8.8: ??-Sep-2023 by wavemotion-dave
-* Major cleanup of the Coleco ADAM driver so that most games now load up perfectly first try and RESET handling is smooth and consistent.
+V8.8: 11-Sep-2023 by wavemotion-dave
+* Major cleanup of the Coleco ADAM driver so that most games now load up first try and RESET handling is smooth and consistent.
 * For the ADAM, added toggle between full keyboard and the joystick/joypad so now you don't have to choose one layout or the other. 
 * Simplified keyboard handling. Now the user just picks 'Full Keyboard' and the emulator will figure out the best keyboard overlay to use based on the machine being emulated.
 
