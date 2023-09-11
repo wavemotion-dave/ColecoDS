@@ -776,6 +776,7 @@ void SetupSGM(void)
 // ------------------------------------------------------------------------------------------------
 void adam_setup_bios(void)
 {
+    memset(BIOS_Memory, 0xFF, 0x10000);
     memcpy(BIOS_Memory+0x0000, AdamWRITER, 0x8000);
     memcpy(BIOS_Memory+0x8000, AdamEOS,    0x2000);
     memcpy(BIOS_Memory+0xA000, ColecoBios, 0x2000);
@@ -818,7 +819,7 @@ void SetupAdam(bool bResetAdamNet)
         }
         else
         {
-            MemoryMap[3] = BIOS_Memory + 0x6000;    // Lst block of Adam WRITER
+            MemoryMap[3] = BIOS_Memory + 0x6000;    // Last block of Adam WRITER
         }
     }
     else if ((Port60 & 0x03) == 0x01)   // Onboard RAM
