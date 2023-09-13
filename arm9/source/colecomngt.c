@@ -183,6 +183,8 @@ void colecoWipeRAM(void)
       if (myConfig.memWipe == 1) pattern = 0x30;       // The 0x30 pattern tends to make most things start up properly... don't ask.
       if (myConfig.memWipe == 2) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
       for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? pattern : (rand() & 0xFF));
+      
+      RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
   }
   else if (einstein_mode)
   {
@@ -367,6 +369,8 @@ u8 colecoInit(char *szGame)
       for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
       for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
       RetFct = loadrom(szGame,RAM_Memory);
+      
+      RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
       
   }
   else if (pencil2_mode)

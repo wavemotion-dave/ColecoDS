@@ -859,6 +859,11 @@ void Reset9918(void)
 {
     memset(VDP,0x00,sizeof(VDP));       // Initialize VDP registers
     VDP[1] = 0x80;                      // Force 16K Video Memory
+    VDP[2] = 0x06;
+    VDP[3] = 0x80;
+    VDP[4] = 0x00;
+    VDP[5] = 0x36;
+    VDP[6] = 0x07;
     memset(pVDPVidMem, 0x00, 0x4000);   // Reset Video memory 
     VDPCtrlLatch=0;                     // VDP control latch (flip-flop)
     VDPStatus=0x00;                     // VDP status register
