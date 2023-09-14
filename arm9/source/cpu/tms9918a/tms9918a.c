@@ -858,12 +858,24 @@ byte Loop6502(void)
 void Reset9918(void) 
 {
     memset(VDP,0x00,sizeof(VDP));       // Initialize VDP registers
-    VDP[1] = 0x80;                      // Force 16K Video Memory
-    VDP[2] = 0x06;
-    VDP[3] = 0x80;
-    VDP[4] = 0x00;
-    VDP[5] = 0x36;
-    VDP[6] = 0x07;
+    
+    // --------------------------------------------------------------------------
+    // These default VDP registers are courtesy of ADAMem which seems to be one
+    // of the few ADAM emulators to not have glitches on title screens such
+    // as ADAM BOMB 2 and other third party loaders... After reading the
+    // TMS9918 data sheet, I can't see where these values are garunteed at
+    // power-up, but they work and I'll assume someone much smarter than me
+    // has figured it out on real hardare...
+    // --------------------------------------------------------------------------
+    VDP[0] = 0x00;                      // Control Bits I:  Graphics Mode 1 (M3... M1,M2 in VDP[1])
+    VDP[1] = 0x80;                      // Control Bits II: Force 16K Video Memory (M2,M3 zero)
+    VDP[2] = 0x06;                      // Default for pattern table base address
+    VDP[3] = 0x80;                      // Default for color table base address
+    VDP[4] = 0x00;                      // Default for pattern generator base address
+    VDP[5] = 0x36;                      // Default for sprite attribute table base address
+    VDP[6] = 0x07;                      // Default for sprite generator table base address
+    VDP[7] = 0x00;                      // FG color and BG color both 0x00 to start
+    
     memset(pVDPVidMem, 0x00, 0x4000);   // Reset Video memory 
     VDPCtrlLatch=0;                     // VDP control latch (flip-flop)
     VDPStatus=0x00;                     // VDP status register
