@@ -599,7 +599,7 @@ void SVI_HandleCassette(register Z80 *r)
     {
         r->AF.B.l |= C_FLAG;
     }
-    else {debug4 = r->PC.W-2;}
+    else {debug[0] = r->PC.W-2;}
 }
 
 // End of file

@@ -265,7 +265,7 @@ u8 colecoInit(char *szGame)
   u16 uVide;
     
   // We've got some debug data we can use for development... reset these.
-  debug1 = 0;  debug2 = 0; debug3 = 0;  debug4 = 0; debug5 = 0; debug6 = 0;
+  memset(debug, 0x00, sizeof(debug));
 
   // ----------------------------------------------------------------------------------  
   // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory

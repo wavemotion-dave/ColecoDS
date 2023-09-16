@@ -559,7 +559,7 @@ ITCM_CODE int ExecZ80(register int RunCycles)
 /** IntZ80() *************************************************/
 /** This function will generate interrupt of given vector.  **/
 /*************************************************************/
-void IntZ80(Z80 *R,word Vector)
+ITCM_CODE void IntZ80(Z80 *R,word Vector)
 {
   /* If HALTed, take CPU off HALT instruction */
   if(CPU.IFF&IFF_HALT) { CPU.PC.W++;CPU.IFF&=~IFF_HALT; }

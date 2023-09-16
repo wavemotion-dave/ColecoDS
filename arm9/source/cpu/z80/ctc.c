@@ -61,7 +61,7 @@ static u8 CTC_ProcessChannel(u8 chan)
 // M5 games use the CTC timers to generate sound/music as do
 // a few of the Einstein and Memotech games.
 // ----------------------------------------------------------------
-void CTC_Timer(u32 cpu_cycles)
+ITCM_CODE void CTC_Timer(u32 cpu_cycles)
 {    
     if (einstein_mode)
     {

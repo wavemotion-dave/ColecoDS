@@ -385,7 +385,7 @@ void ITCM_CODE RefreshSprites(register byte Y) {
 /** Refresh line Y (0..191) of SCREEN0, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void RefreshLine0(u8 Y) 
+ITCM_CODE void RefreshLine0(u8 Y) 
 {
   register byte *T,X,K,Offset;
   register byte *P,FC,BC;
@@ -551,7 +551,7 @@ void ITCM_CODE RefreshLine3(u8 uY) {
 u8 VDP_RegisterMasks[] __attribute__((section(".dtcm"))) = { 0x03, 0xfb, 0x0f, 0xff, 0x07, 0x7f, 0x07, 0xff };
 byte SprHeights[4] __attribute__((section(".dtcm"))) = { 8,16,16,32 };
 
-byte Write9918(u8 iReg, u8 value) 
+ITCM_CODE byte Write9918(u8 iReg, u8 value) 
 { 
   int newMode;
   int VRAMMask;
@@ -734,7 +734,7 @@ u16 tms_start_line __attribute__((section(".dtcm"))) = TMS9918_START_LINE;
 u16 tms_end_line   __attribute__((section(".dtcm"))) = TMS9918_END_LINE;
 u16 tms_cpu_line   __attribute__((section(".dtcm"))) = TMS9918_LINE;
 
-byte Loop9918(void) 
+ITCM_CODE byte Loop9918(void) 
 {
   extern void colecoUpdateScreen(void);
   register byte bIRQ = 0;  // No IRQ yet
@@ -801,7 +801,7 @@ byte Loop9918(void)
 /** Loop6502() **********************************************/
 /** The 6502 version of the above... slimmer and trimmer.  **/
 /************************************************************/
-byte Loop6502(void)
+ITCM_CODE byte Loop6502(void)
 {
   extern void creativision_input(void);
   extern void colecoUpdateScreen(void);

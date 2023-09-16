@@ -57,7 +57,7 @@ ITCM_CODE void MegaCartBankSwitch(u8 bank)
     }
 }
 
-u8 cpu_readmem16(u16 address)
+ITCM_CODE u8 cpu_readmem16(u16 address)
 {
     return *(MemoryMap[address>>13] + (address&0x1FFF));    
 }
