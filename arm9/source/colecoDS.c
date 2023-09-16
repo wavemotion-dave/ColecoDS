@@ -70,12 +70,7 @@
 #include "printf.h"
 
 extern Z80 CPU;
-u32 debug1=0;
-u32 debug2=0;
-u32 debug3=0;
-u32 debug4=0;
-u32 debug5=0;
-u32 debug6=0;
+u32 debug[10]={0};
 
 // -------------------------------------------------------------------------------------------
 // All emulated systems have ROM, RAM and possibly BIOS or SRAM. So we create generic buffers
@@ -940,23 +935,23 @@ void ShowDebugZ80(void)
         }
        
         idx++;
-        siprintf(tmp, "D1 %-9lu %04X", debug1, (u16)debug1); DSPrint(15,idx++,7, tmp);
-        siprintf(tmp, "D2 %-9lu %04X", debug2, (u16)debug2); DSPrint(15,idx++,7, tmp);
-        siprintf(tmp, "D3 %-9lu %04X", debug3, (u16)debug3); DSPrint(15,idx++,7, tmp);
-        siprintf(tmp, "D4 %-9lu %04X", debug4, (u16)debug4); DSPrint(15,idx++,7, tmp);
-        siprintf(tmp, "D5 %-9lu %04X", debug5, (u16)debug5); DSPrint(15,idx++,7, tmp);
-        siprintf(tmp, "D6 %-9lu %04X", debug6, (u16)debug6); DSPrint(15,idx++,7, tmp);
+        for (u8 i=0; i<7; i++)
+        {
+            siprintf(tmp, "D%d %-9lu %04X", i, debug[i], (u16)debug[i]); DSPrint(15,idx++,7, tmp);
+        }
     }
     else
     {
         idx = 1;
-        siprintf(tmp, "D1 %-8lu %04lX ", debug1, (debug1 < 0xFFFF ? debug1:0xFFFF)); DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "D2 %-8lu %04lX ", debug2, (debug2 < 0xFFFF ? debug2:0xFFFF)); DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "D3 %-8lu %04lX ", debug3, (debug3 < 0xFFFF ? debug3:0xFFFF)); DSPrint(0,idx++,7, tmp);
+        for (u8 i=0; i<3; i++)
+        {
+            siprintf(tmp, "D%d %-7lu %04lX ", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(0,idx++,7, tmp);
+        }
         idx = 1;
-        siprintf(tmp, "D4 %-7lu %04lX", debug4, (debug4 < 0xFFFF ? debug4:0xFFFF)); DSPrint(17,idx++,7, tmp);
-        siprintf(tmp, "D5 %-7lu %04lX", debug5, (debug5 < 0xFFFF ? debug5:0xFFFF)); DSPrint(17,idx++,7, tmp);
-        siprintf(tmp, "D6 %-7lu %04lX", debug6, (debug6 < 0xFFFF ? debug6:0xFFFF)); DSPrint(17,idx++,7, tmp);
+        for (u8 i=3; i<6; i++)
+        {
+            siprintf(tmp, "D%d %-7lu %04lX", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(17,idx++,7, tmp);
+        }
         if (einstein_mode || (msx_mode == 3))
         {
             siprintf(tmp, "FD.ST=%02X CM=%02X TR=%02X SI=%02X SE=%02X", FDC.status, FDC.command, FDC.track, FDC.side, FDC.sector); DSPrint(0,idx++,7, tmp);
@@ -1156,7 +1151,7 @@ void DisplayStatusLine(bool bForce)
                 if (!myGlobalConfig.diskSfxMute)
                 {
                     if (!isAdamDDP()) mmEffect(SFX_FLOPPY); else mmEffect(SFX_ADAM_DDP);
-                    playingSFX = 2;
+                    playingSFX = 1;
                 }
             }
         }

@@ -74,7 +74,6 @@ void fdc_buffer_track(void)
         memcpy(FDC.track_buffer, Geom.disk0 + (((Geom.sides * FDC.track) + FDC.side) * track_len), track_len+512); // Get the entire track into our buffer
     else
     {
-        debug6 += 9999;
         memcpy(FDC.track_buffer, Geom.disk1 + (((Geom.sides * FDC.track) + FDC.side) * track_len), track_len+512); // Get the entire track into our buffer
     }
     FDC.track_dirty[FDC.drive] = 0;
@@ -159,7 +158,6 @@ void fdc_state_machine(void)
             case 0x30: // Step
                 if (FDC.status & 0x01)
                 {
-                    debug1++;
                     if (FDC.stepDirection) // Outwards... towards track 0
                     {
                         if (FDC.track > 0) 
@@ -313,7 +311,6 @@ void fdc_state_machine(void)
                 break;
 
             case 0xC0: // Read Address
-                debug5++;
                 FDC.status &= ~0x01;                        // Not handled yet... just clear busy
                 break;
             case 0xD0: // Force Interrupt
@@ -323,10 +320,9 @@ void fdc_state_machine(void)
                     FDC.status = (FDC.track ? 0x24:0x20);   // Drive ready, Not Busy and Maybe Track Zero
                 break;
             case 0xE0: // Read Track
-                debug5++;
                 FDC.status &= ~0x01;                        // Not handled yet... just clear busy
                 break;
-            default: debug5++;break;
+            default: break;
         }
     }
 }
@@ -397,7 +393,7 @@ void fdc_write(u8 addr, u8 data)
             FDC.side  = (data & 0x10 ? 1:0);
             FDC.motor = (data & 0x20 ? 1:0);
             break;
-        default: debug5++; break;
+        default: break;
     }
     
     fdc_debug(1, addr, data);   // Debug the write routine
@@ -482,7 +478,6 @@ void fdc_write(u8 addr, u8 data)
             }            
             else if ((data&0xF0) == 0xE0) // Read Track
             {
-                debug6++;
                 // Not implemented yet... only for diagnostics use (nothing I've found uses this raw track read - not even xTal DOS)
             }
             else if ((data&0xF0) == 0xF0) // Write Track (format)
