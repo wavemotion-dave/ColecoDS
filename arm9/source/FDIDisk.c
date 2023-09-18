@@ -36,10 +36,11 @@
 
 static const struct { int Sides,Tracks,Sectors,SecSize; } Formats[] =
 {
-  { 2,80,16,256 }, /* Dummy format */
-  { 2,80,10,512 }, /* FMT_FDI    - Generic FDI image */
-  { 1,40,8,512 },  /* FMT_ADMDSK - Coleco Adam disk */
-  { 1,32,16,512 }, /* FMT_DDP    - Coleco Adam tape */
+  { 2,  80, 16, 256 }, /* Dummy format */
+  { 2,  80, 10, 512 }, /* FMT_FDI       - Generic FDI image */
+  { 1,  40, 8,  512 }, /* FMT_ADMDSK    - Coleco Adam disk 160K */
+  { 1,  32, 16, 512 }, /* FMT_DDP       - Coleco Adam tape 256K */
+  { 2,  40, 8,  512 }, /* FMT_ADMDSK320 - Coleco Adam disk 320K */
 };
 
 static const int SecSizes[] =
@@ -89,6 +90,8 @@ byte *NewFDI(FDIDisk *D,int Sides,int Tracks,int Sectors,int SecSize)
   /* Allocate memory */
   K = Sides*Tracks*Sectors*SecSize+sizeof(FDIDiskLabel);
   I = Sides*Tracks*(Sectors+1)*7+14;
+    
+  if ((I+K) > ((MAX_CART_SIZE/2)*1024)) return 0;   // Too big...
   
   // -----------------------------------------------------------
   // Re-use the huge ROM_Memory[] array as it has no other
@@ -97,7 +100,7 @@ byte *NewFDI(FDIDisk *D,int Sides,int Tracks,int Sectors,int SecSize)
   // -----------------------------------------------------------
   P = (byte*)ROM_Memory+((MAX_CART_SIZE/2)*1024);   // index halfway into the big buffer... leave the first 512K pristine
   memset(P,0x00,I+K);
-
+    
   /* Eject previous disk image */
   EjectFDI(D);
 
@@ -189,6 +192,7 @@ int LoadFDI(FDIDisk *D,const char *FileName,int Format)
   {
     case FMT_ADMDSK: /* If Coleco Adam .DSK format... */
     case FMT_DDP:    /* If Coleco Adam .DDP format... */
+    case FMT_ADMDSK320:
       /* Create a new disk image */
       P = FormatFDI(D,Format);
       if(!P) { fclose(F);return(0); }
@@ -276,6 +280,7 @@ int SaveFDI(FDIDisk *D,const char *FileName,int Format)
 
     case FMT_ADMDSK:
     case FMT_DDP:
+    case FMT_ADMDSK320:
       /* Check the number of tracks and sides */
       if((FDI_TRACKS(D->Data)!=Formats[Format].Tracks)||(FDI_SIDES(D->Data)!=Formats[Format].Sides))
       { fclose(F);unlink(FileName);return(0); }
@@ -317,6 +322,7 @@ byte *SeekFDI(FDIDisk *D,int Side,int Track,int SideID,int TrackID,int SectorID)
     case FMT_FDI:
     case FMT_ADMDSK:
     case FMT_DDP:
+    case FMT_ADMDSK320:
       /* Track directory */
       P = FDI_DIR(D->Data);
       /* Find current track entry */

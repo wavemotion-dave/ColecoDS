@@ -1427,7 +1427,7 @@ void SetDefaultGameConfig(void)
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
-    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;  // Colecovision Boulder Dash only works with the DrZ80 core
+    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;  // Colecovision Boulder Dash only works with the DrZ80 core. Unsure why...
     
     // --------------------------------------------------------
     // These ADAM games use the larger full keyboard

@@ -33,7 +33,7 @@ u8 msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8 msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
-extern u8 PCBTable[];
+extern u8 *PCBTable;
 extern u8 adam_ram_lo;
 extern u8 adam_ram_hi;
 extern u8 adam_ram_lo_exp;
@@ -67,32 +67,36 @@ ITCM_CODE u8 cpu_readmem16(u16 address)
 // -------------------------------------------------
 ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
 {
-  if (bMagicMegaCart) // Handle Megacart Hot Spots
-  {
-      if (address >= 0xFFC0)
+    // Everything in this block is accessing high-memory...
+    if (address & 0x8000)
+    {
+      if (bMagicMegaCart) // Handle Megacart Hot Spots
       {
-          MegaCartBankSwitch(address & romBankMask);
-      }
-  }    
-  else if (bActivisionPCB)
-  {
-      if (address==0xFF80)
+          if (address >= 0xFFC0)
+          {
+              MegaCartBankSwitch(address & romBankMask);
+          }
+      }    
+      else if (bActivisionPCB)
       {
-        /* Return EEPROM output bit */
-        return(Read24XX(&EEPROM));
+          if (address==0xFF80)
+          {
+            /* Return EEPROM output bit */
+            return(Read24XX(&EEPROM));
+          }
       }
-  }
-  else if ((adam_mode) && PCBTable[address]) ReadPCB(address);
-  else if (pv2000_mode) return cpu_readmem_pv2000(address);
-  else if (msx_mode && msx_sram_at_8000)
-  {
-      if ((address >= 0x8000) && (address <= 0xBFFF))
+      else if ((adam_mode) && PCBTable[address]) ReadPCB(address);
+      else if (msx_sram_at_8000) // Don't need to check msx_mode as this can only be true in that mode
       {
-          return SRAM_Memory[address&0x3FFF];
+          if (address <= 0xBFFF) // Between 0x8000 and 0xBFFF
+          {
+              return SRAM_Memory[address&0x3FFF];
+          }
       }
-  }
-
-  return *(MemoryMap[address>>13] + (address&0x1FFF));
+    }
+    
+    if (pv2000_mode) return cpu_readmem_pv2000(address);
+    return *(MemoryMap[address>>13] + (address&0x1FFF));
 }
 
 
@@ -229,7 +233,7 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
     }
     else if (bROMInSlot[2] && (address == 0x9000))
     {
-        if ((value&0x3F) == 0x3F) {msx_scc_enable=true; return;}       // SCC sound isn't supported - set a flag for now and just return and save the CPU cycles
+        if ((value&0x3F) == 0x3F) {msx_scc_enable=true; return;}       // SCC sound - set a flag so we process this special sound chip
 
         if (lastBlock[2] != block)
         {
@@ -305,7 +309,7 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
                     MemoryMap[4] = Slot1ROMPtr[4];
                     MemoryMap[5] = Slot1ROMPtr[5];
                 }
-                if (bROMInSlot[0]) 
+                if (bROMInSlot[0])
                 {
                     MemoryMap[0] = Slot1ROMPtr[0];
                     MemoryMap[1] = Slot1ROMPtr[1];
@@ -334,359 +338,374 @@ void activision_pcb_write(u16 address)
 // write is much less common than reads...   We handle the MSX
 // Konami 8K, SCC and ASCII 8K mappers directly here for max speed.
 // ------------------------------------------------------------------
-void cpu_writemem16 (u8 value,u16 address) 
+ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
 {
-    // --------------------------------------------------------------
-    // If the ADAM is enabled, we may be trying to write to AdamNet
-    // --------------------------------------------------------------
-    if (machine_mode & MODE_ADAM)
+    // machine_mode will be non-zero for anything except the ColecoVision (handled further below)
+    if (machine_mode)
     {
-        if ((address < 0x8000) && adam_ram_lo)        {RAM_Memory[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
-        else if ((address >= 0x8000) && adam_ram_hi)  {RAM_Memory[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+        // --------------------------------------------------------------
+        // If the ADAM is enabled, we may be trying to write to AdamNet
+        // --------------------------------------------------------------
+        if (machine_mode & MODE_ADAM)
+        {
+            if ((address < 0x8000) && adam_ram_lo)        {RAM_Memory[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
+            else if ((address >= 0x8000) && adam_ram_hi)  {RAM_Memory[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
 
-        if ((address < 0x8000) && adam_ram_lo_exp)        {RAM_Memory[0x10000 + address] = value;}
-        else if ((address >= 0x8000) && adam_ram_hi_exp)  {RAM_Memory[0x10000 + address] = value;}
-    }
-    else if (machine_mode & MODE_COLECO)
-    {
-        // -----------------------------------------------------------
-        // If the Super Game Module has been enabled, we have a much 
-        // wider range of RAM that can be written (and no mirroring)
-        // -----------------------------------------------------------
-        if (sgm_enable)
-        {
-            if ((address >= sgm_low_addr) && (address < 0x8000)) RAM_Memory[address]=value;
-        }    
-        else if((address>0x5FFF)&&(address<0x8000)) // Normal memory RAM write... with mirrors...
-        {
-            if (myConfig.mirrorRAM == COLECO_RAM_NORMAL_MIRROR)
-            {
-                address&=0x03FF;
-                RAM_Memory[0x6400+address]=RAM_Memory[0x6800+address]=RAM_Memory[0x7400+address]=RAM_Memory[0x7C00+address]=value;
-                RAM_Memory[0x6000+address]=RAM_Memory[0x6800+address]=RAM_Memory[0x7000+address]=RAM_Memory[0x7800+address]=value;
-            }
-            else RAM_Memory[address] = value;
+            if ((address < 0x8000) && adam_ram_lo_exp)        {RAM_Memory[0x10000 + address] = value;}
+            else if ((address >= 0x8000) && adam_ram_hi_exp)  {RAM_Memory[0x10000 + address] = value;}
         }
-        else if ((address >= 0xE000) && (address < 0xE800)) // Allow SRAM if cart doesn't extend this high...
+        // -------------------------------------------------------------
+        // If SG-1000 mode, we provide the Dhajee RAM expansion...
+        // We aren't doing a lot of error/bounds checking here - we 
+        // are going to assume well-behaved .sg ROMs as this is 
+        // primarily a Colecovision emu with partial SG-1000 support.
+        // -------------------------------------------------------------
+        else if (machine_mode & MODE_SG_1000)
         {
-            if (sRamAtE000_OK)
+            // -------------------------------------------------------
+            // A few SG-1000 games use the SMSmapper. 
+            // Most notably Loretta no Shouzou: Sherlock Holmes and 
+            // the SG-1000 port of Prince of Persia.
+            // $fffd 0 ($0000-$3fff)
+            // $fffe 1 ($4000-$7fff)
+            // $ffff 2 ($8000-$bfff)
+            // -------------------------------------------------------
+            if (sg1000_sms_mapper && (address >= 0xFFFD))
+            {
+                if      (address == 0xFFFD) memcpy(RAM_Memory+0x0000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
+                else if (address == 0xFFFE) memcpy(RAM_Memory+0x4000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
+                else if (address == 0xFFFF) memcpy(RAM_Memory+0x8000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
+            }
+
+            // Allow normal SG-1000, SC-3000 writes, plus allow for 8K RAM Expanders...
+            if ((address >= 0x8000) || (address >= 0x2000 && address < 0x4000))
+            {
+                RAM_Memory[address]=value;
+            }
+        }
+        // ----------------------------------------------------------------------------------------------------------
+        // For the MSX, we support a 64K main RAM machine plus some of the more common memory mappers...
+        // ----------------------------------------------------------------------------------------------------------
+        else if (machine_mode & MODE_MSX)
+        {
+            // -------------------------------------------------------
+            // First see if this is a write to a RAM enabled slot...
+            // -------------------------------------------------------
+            if (bRAMInSlot[0] && (address < 0x4000))
+            {
+                RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
+            }
+            else if (bRAMInSlot[1] && (address >= 0x4000) && (address <= 0x7FFF))
+            {
+                RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
+            }
+            else if ((bRAMInSlot[2] || msx_sram_at_8000) && (address >= 0x8000) && (address <= 0xBFFF))
+            {
+                if (msx_sram_at_8000) 
+                {
+                    SRAM_Memory[address&0x3FFF] = value;   // Write SRAM area
+                    write_EE_counter = 4;               // This will back the EE in 4 seconds of non-activity on the SRAM
+                }
+                else RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
+            }
+            else if ((bRAMInSlot[3] == 2) && (address >= 0xE000)) // A value of 2 here means this is an 8K machine
+            {
+                RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
+            }
+            else if ((bRAMInSlot[3] == 1) && (address >= 0xC000)) // A value of 1 here means we can write to the entire 16K page
+            {
+                RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
+            }
+            else    // Check for MSX Mappers Mappers
+            {
+                if (mapperMask)
+                {
+                    // -------------------------------------------------------------
+                    // Compute the block and offset of the new memory and we 
+                    // can map it into place... this is fast since we are just
+                    // moving pointers around and not trying to copy memory blocks.
+                    // -------------------------------------------------------------
+                    u32 block = (value & mapperMask);
+                    msx_offset = block * msx_block_size;
+                    u32 *src = (u32*)((u8*)ROM_Memory + msx_offset);
+
+                    // ---------------------------------------------------------------------------------
+                    // The Konami 8K Mapper without SCC:
+                    // 4000h-5FFFh - fixed ROM area (not swappable)
+                    // 6000h~7FFFh (mirror: E000h~FFFFh)    6000h (mirrors: 6001h~7FFFh)    1
+                    // 8000h~9FFFh (mirror: 0000h~1FFFh)    8000h (mirrors: 8001h~9FFFh)    Random
+                    // A000h~BFFFh (mirror: 2000h~3FFFh)    A000h (mirrors: A001h~BFFFh)    Random
+                    // ---------------------------------------------------------------------------------
+                    if (mapperType == KON8)
+                    {
+                        if (bROMInSlot[1] && (address == 0x4000))
+                        {
+                            if (lastBlock[0] != block)
+                            {
+                                Slot1ROMPtr[2] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[6] = (u8*)src;  // Mirror
+                                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+                                lastBlock[0] = block;
+                            }
+                        }
+                        else if (bROMInSlot[1] && (address == 0x6000))
+                        {
+                            if (lastBlock[1] != block)
+                            {
+                                Slot1ROMPtr[3] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[7] = (u8*)src;  // Mirror
+                                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                                lastBlock[1] = block;
+                            }
+                        }
+                        else if (bROMInSlot[2] && (address == 0x8000))
+                        {
+                            if (lastBlock[2] != block)
+                            {
+                                Slot1ROMPtr[4] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[0] = (u8*)src;  // Mirror                            
+                                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+                                lastBlock[2] = block;
+                            }
+                        }
+                        else if (bROMInSlot[2] && (address == 0xA000))
+                        {
+                            if (lastBlock[3] != block)
+                            {
+                                Slot1ROMPtr[5] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[1] = (u8*)src;  // Mirror       
+                                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                                lastBlock[3] = block;
+                            }
+                        }
+                    }
+                    else if (mapperType == ASC8)
+                    {
+                        // -------------------------------------------------------------------------
+                        // The ASCII 8K Mapper:
+                        // 4000h~5FFFh (mirror: C000h~DFFFh)    6000h (mirrors: 6001h~67FFh)    0
+                        // 6000h~7FFFh (mirror: E000h~FFFFh)    6800h (mirrors: 6801h~68FFh)    0
+                        // 8000h~9FFFh (mirror: 0000h~1FFFh)    7000h (mirrors: 7001h~77FFh)    0
+                        // A000h~BFFFh (mirror: 2000h~3FFFh)    7800h (mirrors: 7801h~7FFFh)    0     
+                        // -------------------------------------------------------------------------
+                        if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x6800))
+                        {
+                            if (lastBlock[0] != block)
+                            {
+                                Slot1ROMPtr[2] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[6] = (u8*)src;  // Mirror
+                                MemoryMap[2] = Slot1ROMPtr[2];
+                                if (bROMInSlot[3])
+                                {
+                                    MemoryMap[6] = Slot1ROMPtr[6];
+                                }
+                                lastBlock[0] = block;
+                            }
+                        }
+                        else if (bROMInSlot[1] && (address >= 0x6800)  && (address < 0x7000))
+                        {
+                            if (lastBlock[1] != block)
+                            {
+                                Slot1ROMPtr[3] = (u8*)src;  // Main ROM
+                                Slot1ROMPtr[7] = (u8*)src;  // Mirror
+                                MemoryMap[3] = Slot1ROMPtr[3];
+                                if (bROMInSlot[3])
+                                {
+                                    MemoryMap[7] = Slot1ROMPtr[7];
+                                }
+                                lastBlock[1] = block;
+                            }
+                        }
+                        else if (bROMInSlot[1] && (address >= 0x7000)  && (address < 0x7800))
+                        {
+                            if (lastBlock[2] != block)
+                            {
+                                if (msx_sram_enabled && (block == msx_sram_enabled))
+                                {
+                                    msx_sram_at_8000 = true;
+                                }
+                                else
+                                {
+                                    msx_sram_at_8000 = false;
+                                    Slot1ROMPtr[4] = (u8*)src;  // Main ROM
+                                    Slot1ROMPtr[0] = (u8*)src;  // Mirror    
+                                    if (bROMInSlot[2])
+                                    {
+                                        MemoryMap[4] = Slot1ROMPtr[4];
+                                    }
+                                    if (bROMInSlot[0])
+                                    {
+                                        MemoryMap[0] = Slot1ROMPtr[0];
+                                    }                            
+                                }
+                                lastBlock[2] = block;
+                            }
+                        }
+                        else if (bROMInSlot[1] && (address >= 0x7800) && (address < 0x8000))
+                        {
+                            if (lastBlock[3] != block)
+                            {
+                                if (msx_sram_enabled && (block == msx_sram_enabled))
+                                {
+                                    msx_sram_at_8000 = true;
+                                }
+                                else
+                                {
+                                    msx_sram_at_8000 = false;
+                                    Slot1ROMPtr[5] = (u8*)src;  // Main ROM
+                                    Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
+                                    if (bROMInSlot[2]) 
+                                    {
+                                        MemoryMap[5] = Slot1ROMPtr[5];
+                                    }
+                                    if (bROMInSlot[0])
+                                    {
+                                        MemoryMap[1] = Slot1ROMPtr[1];
+                                    }                            
+                                }
+                                lastBlock[3] = block;
+                            }
+                        }
+                    }
+                    else if (mapperType == SCC8)
+                    {
+                        if ((address & 0x0FFF) != 0)
+                        {
+                            // ----------------------------------------------------
+                            // Are we writing to the SCC chip memory mapped area?
+                            // ----------------------------------------------------
+                            if (msx_scc_enable && ((address & 0xFF00)==0x9800))
+                            {
+                                FakeSCC_WriteData(address, value);
+                            }
+                            return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes which are not yet supported
+                        }
+                        HandleKonamiSCC8(src, block, address, value);
+                    }
+                    else if (mapperType == ASC16)
+                    {
+                        HandleAscii16K(src, block, address);
+                    }
+                    else if (mapperType == ZEN8)
+                    {
+                        HandleZemina8K(src, block, address);
+                    }
+                    else if (mapperType == ZEN16)
+                    {
+                        HandleZemina16K(src, block, address);
+                    }                
+                    else if (mapperType == XBLAM)
+                    {
+                        if (address == 0x4045)
+                        {
+                            Slot1ROMPtr[4] = (u8*)src;          // Main ROM at 8000
+                            Slot1ROMPtr[5] = (u8*)src+0x2000;   // Main ROM at A000                  
+                            if (bROMInSlot[2]) 
+                            {
+                                MemoryMap[4] = Slot1ROMPtr[4];
+                                MemoryMap[5] = Slot1ROMPtr[5];
+                            }
+                        }
+                    }                
+                }
+            }
+        }
+        // ----------------------------------------------------------------------------------
+        // For the Sord M5, RAM is at 0x7000 and we emulate the 32K RAM Expander above that
+        // ----------------------------------------------------------------------------------
+        else if (machine_mode & MODE_SORDM5)
+        {
+            if (address >= 0x7000)
+            {
+                RAM_Memory[address]=value;  // Allow pretty much anything above the base ROM area
+            }
+        }
+        // ----------------------------------------------------------------------------------
+        // For the Casio PV-2000, we call into a special routine to handle memory writes.
+        // ----------------------------------------------------------------------------------
+        else if (machine_mode & MODE_PV2000)
+        {
+            cpu_writemem_pv2000(value, address);
+        }
+        // ----------------------------------------------------------------------------------
+        // For the Memotech MTX, we need to address through the MemoryMap[] pointers...
+        // ----------------------------------------------------------------------------------
+        else if (machine_mode & MODE_MEMOTECH)
+        {
+            if (address >= memotech_RAM_start)
+            {
+                *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
+            }
+        }
+        // -----------------------------------------------------------------------------------------
+        // For the Einstien, allow full range - even if BIOS is installed, we still can write RAM.
+        // -----------------------------------------------------------------------------------------
+        else if (machine_mode & MODE_EINSTEIN)
+        {
+            RAM_Memory[address] = value; 
+        }
+        // ----------------------------------------------------------------------------------
+        // For the Spectravideo SVI - we write into any area that is designated as RAM
+        // ----------------------------------------------------------------------------------
+        else if (machine_mode & MODE_SVI)
+        {
+            if ( ((address < 0x8000) && svi_RAM[0]) || ((address >= 0x8000) && svi_RAM[1]) )
+            {
+                RAM_Memory[address]=value;  // Allow pretty much anything above the base ROM area
+            }
+        }
+        // -------------------------------------------------------------------------------------------------------------------------
+        // For the Pencil II, we allow the full range. We should restrict it, but the two carts we have dumped are well behaved...
+        // -------------------------------------------------------------------------------------------------------------------------
+        else if (machine_mode & MODE_PENCIL2)
+        {
+            RAM_Memory[address] = value;
+        }
+    }
+    else // Colecovision Mode - optimized...
+    {
+        // --------------------------------------------------------------------
+        // There are a few "hotspots" in the upper memory we have to look for.
+        // --------------------------------------------------------------------
+        if (address & 0x8000)
+        {
+            // A few carts have EEPROM at E000 (mostly Lord of the Dungeon)
+            if (sRamAtE000_OK && (address >= 0xE000) && (address < 0xE800)) // Allow SRAM if cart doesn't extend this high...
             {
                 RAM_Memory[address+0x800]=value;
             }
-        }
-        /* Activision PCB Cartridges, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
-        else if (bActivisionPCB)
-        {
-            activision_pcb_write(address);
-        }
-        else if (address >= 0xFFC0)
-        {
-            MegaCartBankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
-        }        
-    }    
-    // -------------------------------------------------------------
-    // If SG-1000 mode, we provide the Dhajee RAM expansion...
-    // We aren't doing a lot of error/bounds checking here - we 
-    // are going to assume well-behaved .sg ROMs as this is 
-    // primarily a Colecovision emu with partial SG-1000 support.
-    // -------------------------------------------------------------
-    else if (machine_mode & MODE_SG_1000)
-    {
-        // -------------------------------------------------------
-        // A few SG-1000 games use the SMSmapper. 
-        // Most notably Loretta no Shouzou: Sherlock Holmes and 
-        // the SG-1000 port of Prince of Persia.
-        // $fffd 0 ($0000-$3fff)
-        // $fffe 1 ($4000-$7fff)
-        // $ffff 2 ($8000-$bfff)
-        // -------------------------------------------------------
-        if (sg1000_sms_mapper && (address >= 0xFFFD))
-        {
-            if      (address == 0xFFFD) memcpy(RAM_Memory+0x0000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
-            else if (address == 0xFFFE) memcpy(RAM_Memory+0x4000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
-            else if (address == 0xFFFF) memcpy(RAM_Memory+0x8000, ROM_Memory+((u32)(value&sg1000_sms_mapper)*16*1024), 0x4000);
-        }
-        
-        // Allow normal SG-1000, SC-3000 writes, plus allow for 8K RAM Expanders...
-        if ((address >= 0x8000) || (address >= 0x2000 && address < 0x4000))
-        {
-            RAM_Memory[address]=value;
-        }
-    }
-    // ----------------------------------------------------------------------------------
-    // For the Sord M5, RAM is at 0x7000 and we emulate the 32K RAM Expander above that
-    // ----------------------------------------------------------------------------------
-    else if (machine_mode & MODE_SORDM5)
-    {
-        if (address >= 0x7000)
-        {
-            RAM_Memory[address]=value;  // Allow pretty much anything above the base ROM area
-        }
-    }
-    // ----------------------------------------------------------------------------------
-    // For the Casio PV-2000, we call into a special routine to handle memory writes.
-    // ----------------------------------------------------------------------------------
-    else if (machine_mode & MODE_PV2000)
-    {
-        cpu_writemem_pv2000(value, address);
-    }
-    // ----------------------------------------------------------------------------------
-    // For the Memotech MTX, we need to address through the MemoryMap[] pointers...
-    // ----------------------------------------------------------------------------------
-    else if (machine_mode & MODE_MEMOTECH)
-    {
-        if (address >= memotech_RAM_start)
-        {
-            *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
-        }
-    }
-    // -----------------------------------------------------------------------------------------
-    // For the Einstien, allow full range - even if BIOS is installed, we still can write RAM.
-    // -----------------------------------------------------------------------------------------
-    else if (machine_mode & MODE_EINSTEIN)
-    {
-        RAM_Memory[address] = value; 
-    }
-    // ----------------------------------------------------------------------------------
-    // For the Spectravideo SVI - we write into any area that is designated as RAM
-    // ----------------------------------------------------------------------------------
-    else if (machine_mode & MODE_SVI)
-    {
-        if ( ((address < 0x8000) && svi_RAM[0]) || ((address >= 0x8000) && svi_RAM[1]) )
-        {
-            RAM_Memory[address]=value;  // Allow pretty much anything above the base ROM area
-        }
-    }
-    // ----------------------------------------------------------------------------------------------------------
-    // For the MSX, we support a 64K main RAM machine plus some of the more common memory mappers...
-    // ----------------------------------------------------------------------------------------------------------
-    else if (machine_mode & MODE_MSX)
-    {
-        // -------------------------------------------------------
-        // First see if this is a write to a RAM enabled slot...
-        // -------------------------------------------------------
-        if (bRAMInSlot[0] && (address < 0x4000))
-        {
-            RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
-        }
-        else if (bRAMInSlot[1] && (address >= 0x4000) && (address <= 0x7FFF))
-        {
-            RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
-        }
-        else if ((bRAMInSlot[2] || msx_sram_at_8000) && (address >= 0x8000) && (address <= 0xBFFF))
-        {
-            if (msx_sram_at_8000) 
+            /* "Activision" PCB boards, potentially containing EEPROM, use [1111 1111 10xx 0000] addresses for hotspot bankswitch */
+            else if (bActivisionPCB)
             {
-                SRAM_Memory[address&0x3FFF] = value;   // Write SRAM area
-                write_EE_counter = 4;               // This will back the EE in 4 seconds of non-activity on the SRAM
+                activision_pcb_write(address);
             }
-            else RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
-        }
-        else if ((bRAMInSlot[3] == 2) && (address >= 0xE000)) // A value of 2 here means this is an 8K machine
-        {
-            RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
-        }
-        else if ((bRAMInSlot[3] == 1) && (address >= 0xC000)) // A value of 1 here means we can write to the entire 16K page
-        {
-            RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
-        }
-        else    // Check for MSX Mappers Mappers
-        {
-            if (mapperMask)
+            else if (address >= 0xFFC0) // MC = Mega Cart support
             {
-                // -------------------------------------------------------------
-                // Compute the block and offset of the new memory and we 
-                // can map it into place... this is fast since we are just
-                // moving pointers around and not trying to copy memory blocks.
-                // -------------------------------------------------------------
-                u32 block = (value & mapperMask);
-                msx_offset = block * msx_block_size;
-                u32 *src = (u32*)((u8*)ROM_Memory + msx_offset);
-            
-                // ---------------------------------------------------------------------------------
-                // The Konami 8K Mapper without SCC:
-                // 4000h-5FFFh - fixed ROM area (not swappable)
-                // 6000h~7FFFh (mirror: E000h~FFFFh)    6000h (mirrors: 6001h~7FFFh)    1
-                // 8000h~9FFFh (mirror: 0000h~1FFFh)    8000h (mirrors: 8001h~9FFFh)    Random
-                // A000h~BFFFh (mirror: 2000h~3FFFh)    A000h (mirrors: A001h~BFFFh)    Random
-                // ---------------------------------------------------------------------------------
-                if (mapperType == KON8)
+                MegaCartBankSwitch(address & romBankMask);  // Handle Megacart Hot Spot writes (don't think anyone actually uses this but it's possible)
+            }
+            // Otherwise we shouldn't be writing in this region... ignore it.
+        }
+        else // Lower memory... normal RAM lives down here
+        {
+            // -----------------------------------------------------------
+            // If the Super Game Module has been enabled, we have a much 
+            // wider range of RAM that can be written (and no mirroring)
+            // -----------------------------------------------------------
+            if (sgm_enable)
+            {
+                if (address >= sgm_low_addr) RAM_Memory[address]=value;
+            }    
+            else if (address>0x5FFF) // Normal memory RAM write... with mirrors...
+            {
+                if (myConfig.mirrorRAM)
                 {
-                    if (bROMInSlot[1] && (address == 0x4000))
-                    {
-                        if (lastBlock[0] != block)
-                        {
-                            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[6] = (u8*)src;  // Mirror
-                            MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-                            lastBlock[0] = block;
-                        }
-                    }
-                    else if (bROMInSlot[1] && (address == 0x6000))
-                    {
-                        if (lastBlock[1] != block)
-                        {
-                            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[7] = (u8*)src;  // Mirror
-                            MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
-                            lastBlock[1] = block;
-                        }
-                    }
-                    else if (bROMInSlot[2] && (address == 0x8000))
-                    {
-                        if (lastBlock[2] != block)
-                        {
-                            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[0] = (u8*)src;  // Mirror                            
-                            MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                            lastBlock[2] = block;
-                        }
-                    }
-                    else if (bROMInSlot[2] && (address == 0xA000))
-                    {
-                        if (lastBlock[3] != block)
-                        {
-                            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[1] = (u8*)src;  // Mirror       
-                            MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
-                            lastBlock[3] = block;
-                        }
-                    }
+                    address&=0x03FF;
+                    RAM_Memory[0x6400|address]=RAM_Memory[0x6800|address]=RAM_Memory[0x7400|address]=RAM_Memory[0x7C00|address]=value;
+                    RAM_Memory[0x6000|address]=RAM_Memory[0x6800|address]=RAM_Memory[0x7000|address]=RAM_Memory[0x7800|address]=value;
                 }
-                else if (mapperType == ASC8)
-                {
-                    // -------------------------------------------------------------------------
-                    // The ASCII 8K Mapper:
-                    // 4000h~5FFFh (mirror: C000h~DFFFh)    6000h (mirrors: 6001h~67FFh)    0
-                    // 6000h~7FFFh (mirror: E000h~FFFFh)    6800h (mirrors: 6801h~68FFh)    0
-                    // 8000h~9FFFh (mirror: 0000h~1FFFh)    7000h (mirrors: 7001h~77FFh)    0
-                    // A000h~BFFFh (mirror: 2000h~3FFFh)    7800h (mirrors: 7801h~7FFFh)    0     
-                    // -------------------------------------------------------------------------
-                    if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x6800))
-                    {
-                        if (lastBlock[0] != block)
-                        {
-                            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[6] = (u8*)src;  // Mirror
-                            MemoryMap[2] = Slot1ROMPtr[2];
-                            if (bROMInSlot[3])
-                            {
-                                MemoryMap[6] = Slot1ROMPtr[6];
-                            }
-                            lastBlock[0] = block;
-                        }
-                    }
-                    else if (bROMInSlot[1] && (address >= 0x6800)  && (address < 0x7000))
-                    {
-                        if (lastBlock[1] != block)
-                        {
-                            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
-                            Slot1ROMPtr[7] = (u8*)src;  // Mirror
-                            MemoryMap[3] = Slot1ROMPtr[3];
-                            if (bROMInSlot[3])
-                            {
-                                MemoryMap[7] = Slot1ROMPtr[7];
-                            }
-                            lastBlock[1] = block;
-                        }
-                    }
-                    else if (bROMInSlot[1] && (address >= 0x7000)  && (address < 0x7800))
-                    {
-                        if (lastBlock[2] != block)
-                        {
-                            if (msx_sram_enabled && (block == msx_sram_enabled))
-                            {
-                                msx_sram_at_8000 = true;
-                            }
-                            else
-                            {
-                                msx_sram_at_8000 = false;
-                                Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[0] = (u8*)src;  // Mirror    
-                                if (bROMInSlot[2])
-                                {
-                                    MemoryMap[4] = Slot1ROMPtr[4];
-                                }
-                                if (bROMInSlot[0])
-                                {
-                                    MemoryMap[0] = Slot1ROMPtr[0];
-                                }                            
-                            }
-                            lastBlock[2] = block;
-                        }
-                    }
-                    else if (bROMInSlot[1] && (address >= 0x7800) && (address < 0x8000))
-                    {
-                        if (lastBlock[3] != block)
-                        {
-                            if (msx_sram_enabled && (block == msx_sram_enabled))
-                            {
-                                msx_sram_at_8000 = true;
-                            }
-                            else
-                            {
-                                msx_sram_at_8000 = false;
-                                Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
-                                if (bROMInSlot[2]) 
-                                {
-                                    MemoryMap[5] = Slot1ROMPtr[5];
-                                }
-                                if (bROMInSlot[0])
-                                {
-                                    MemoryMap[1] = Slot1ROMPtr[1];
-                                }                            
-                            }
-                            lastBlock[3] = block;
-                        }
-                    }
-                }
-                else if (mapperType == SCC8)
-                {
-                    if ((address & 0x0FFF) != 0)
-                    {
-                        // ----------------------------------------------------
-                        // Are we writing to the SCC chip memory mapped area?
-                        // ----------------------------------------------------
-                        if (msx_scc_enable && ((address & 0xFF00)==0x9800))
-                        {
-                            FakeSCC_WriteData(address, value);
-                        }
-                        return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes which are not yet supported
-                    }
-                    HandleKonamiSCC8(src, block, address, value);
-                }
-                else if (mapperType == ASC16)
-                {
-                    HandleAscii16K(src, block, address);
-                }
-                else if (mapperType == ZEN8)
-                {
-                    HandleZemina8K(src, block, address);
-                }
-                else if (mapperType == ZEN16)
-                {
-                    HandleZemina16K(src, block, address);
-                }                
-                else if (mapperType == XBLAM)
-                {
-                    if (address == 0x4045)
-                    {
-                        Slot1ROMPtr[4] = (u8*)src;          // Main ROM at 8000
-                        Slot1ROMPtr[5] = (u8*)src+0x2000;   // Main ROM at A000                  
-                        if (bROMInSlot[2]) 
-                        {
-                            MemoryMap[4] = Slot1ROMPtr[4];
-                            MemoryMap[5] = Slot1ROMPtr[5];
-                        }
-                    }
-                }                
+                else RAM_Memory[address] = value;
             }
         }
-    }
-    else if (machine_mode & MODE_PENCIL2)
-    {
-        RAM_Memory[address] = value;
     }
 }
 

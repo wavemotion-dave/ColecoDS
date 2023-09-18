@@ -145,7 +145,9 @@ static const byte CtrlKey[256] =
 
 extern byte Port60;
 
-byte PCBTable[0x10000];
+// Steal 64K at the back-end of the cart buffer... plenty of room here and
+// we don't want to allocate another 64K when we have plenty of space.
+byte *PCBTable = ROM_Memory+((MAX_CART_SIZE)*1024) - 0x10000;
 
 word PCBAddr;
 byte DiskID;
@@ -359,8 +361,6 @@ static void UpdatePRN(byte Dev,int V)
       N = GetDCBLen(Dev);
       (void)A;
       (void)N;
-      //for(J=0 ; J<N ; ++J, A=(A+1)&0xFFFF)
-        //Printer(RAM(A));
       break;
     default:
       SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
@@ -667,10 +667,10 @@ void WritePCB(word A,byte V)
       case CMD_PCB_WAIT:
         break;
       case CMD_PCB_RESET:
-        memset(PCBTable,0,sizeof(PCBTable));
+        memset(PCBTable,0,0x10000);
         break;
       default:
-        memset(PCBTable,0,sizeof(PCBTable));
+        memset(PCBTable,0,0x10000);
         break;
     }
   }
@@ -688,7 +688,7 @@ void WritePCB(word A,byte V)
 void ResetPCB(void)
 {
   /* PCB/DCB not mapped yet */
-  memset(PCBTable,0x00,sizeof(PCBTable));
+  memset(PCBTable,0x00,0x10000);
 
   /* Set starting PCB address */
   PCBAddr = 0x0000;
@@ -750,14 +750,14 @@ byte ChangeDisk(byte N,const char *FileName)
   if(!FileName) { EjectFDI(&Disks[N]);return(1); }
 
   /* If FileName not empty, try loading disk image */
-  if(*FileName && LoadFDI(&Disks[N],FileName,FMT_ADMDSK))
+  if(*FileName && LoadFDI(&Disks[N],FileName,(LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK)))
   {
     /* Done */
     return(1);
   }
 
-  /* If no existing file, create a new 160kB disk image */
-  P = FormatFDI(&Disks[N],FMT_ADMDSK);
+  /* If no existing file, create a new 160kB or 320kB disk image */
+  P = FormatFDI(&Disks[N],(LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
   return(!!P);
 }
 

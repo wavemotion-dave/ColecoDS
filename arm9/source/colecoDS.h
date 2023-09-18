@@ -249,7 +249,7 @@ extern u8 kbd_keys[12];
 extern char lastAdamDataPath[];
 extern u32 tape_pos, tape_len;
 
-#define MODE_COLECO         0x0001
+#define MODE_COLECO         0x0000  // No bits set! Fastest way to check the machine_mode
 #define MODE_ADAM           0x0002
 #define MODE_SG_1000        0x0004
 #define MODE_SORDM5         0x0008

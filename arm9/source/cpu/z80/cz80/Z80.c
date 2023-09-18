@@ -47,7 +47,6 @@ extern u8 *MemoryMap[8];
 // These defines and inline functions are to map maximum
 // speed/efficiency onto the memory system we have.
 // ------------------------------------------------------
-//extern byte pColecoMem[];
 extern void cpu_writemem16 (u8 value,u16 address);
 extern byte cpu_readmem16_banked (u16 address);
 extern byte cpu_readmem16 (u16 address);

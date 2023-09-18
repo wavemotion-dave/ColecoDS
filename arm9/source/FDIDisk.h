@@ -22,11 +22,12 @@ extern "C" {
 #define FDI_SAVE_PADDED    2  /* Padded data while saving    */
 #define FDI_SAVE_OK        3  /* Succeeded saving disk image */
 
-                           /* Supported disk image formats:  */
-#define FMT_AUTO   0       /* Determine format automatically */                   
-#define FMT_FDI    1       /* Generic FDI image              */ 
-#define FMT_ADMDSK 2       /* Coleco Adam disk               */  
-#define FMT_DDP    3       /* Coleco Adam tape               */  
+                              /* Supported disk image formats:  */
+#define FMT_AUTO           0  /* Determine format automatically */                   
+#define FMT_FDI            1  /* Generic FDI image              */ 
+#define FMT_ADMDSK         2  /* Coleco Adam disk 160K          */  
+#define FMT_DDP            3  /* Coleco Adam tape 256K          */  
+#define FMT_ADMDSK320      4  /* Coleco Adam disk 320K          */  
 
 #define SEEK_DELETED (0x40000000)
 
@@ -44,16 +45,15 @@ typedef unsigned char byte;
 typedef struct
 {
   byte Format;     /* Original disk format (FMT_*) */
-  int  Sides;      /* Sides per disk */
-  int  Tracks;     /* Tracks per side */
-  int  Sectors;    /* Sectors per track */
+  byte Sides;      /* Sides per disk */
+  byte Tracks;     /* Tracks per side */
+  byte Sectors;    /* Sectors per track */
   int  SecSize;    /* Bytes per sector */
 
   byte *Data;      /* Disk data */
   int  DataSize;   /* Disk data size */
 
   byte Header[6];  /* Current header, result of SeekFDI() */
-  byte Verbose;    /* 1: Print debugging messages */
 } FDIDisk;
     
     
