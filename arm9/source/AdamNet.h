@@ -98,7 +98,7 @@ typedef unsigned char byte;
 typedef unsigned short word;
 #endif
     
-extern u8 PCBTable[];
+extern u8 *PCBTable;
 extern u8 HoldingBuf[];
 extern u8  io_busy, KBDStatus, LastKey, DiskID;
 extern u16 savedBUF, savedLEN, PCBAddr;

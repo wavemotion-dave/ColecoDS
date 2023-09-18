@@ -18,7 +18,6 @@
 
 #include "colecoDS.h"
 #include "AdamNet.h"
-#include "FDIDisk.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
 #include "colecomngt.h"
@@ -1854,6 +1853,7 @@ void MSX_HandleCassette(register Z80 *r)
 // ---------------------------------------------------------
 void msx_reset(void)
 {
+    msx_sram_at_8000 = false;
     if (msx_mode)
     {
         tape_pos = 0;

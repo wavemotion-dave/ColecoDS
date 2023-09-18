@@ -88,7 +88,7 @@ u32 debug[10]={0};
 
 u8 ROM_Memory[MAX_CART_SIZE * 1024]   ALIGN(32) = {0};        // ROM Carts up to 1MB (that's pretty huge in the Z80 world!)
 u8 RAM_Memory[0x20000]                ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
-u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K)
+u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K as the BIOS  for various machines ends up in different spots)
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
 
 
@@ -188,7 +188,7 @@ u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 wh
 u8 creativision_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .cv ROM is loaded (Creativision)
 u8 coleco_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a Colecovision ROM is loaded
 
-u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0001;  // A faster way to know what type of machine we are
+u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0000;  // A faster way to know what type of machine we are. No bits set = COLECO_MODE
 
 u8 kbd_key           __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the ASCII key (e.g. 'A', 'B', '3', etc)
 u16 nds_key          __attribute__((section(".dtcm"))) = 0;       // 0 if no key pressed, othewise the NDS keys from keysCurrent() or similar
@@ -393,7 +393,7 @@ u16 mixbuf4[2048];      // into a single output so we render to mix buffers firs
 // we will fill exactly that many. If the sound is paused, we fill with 'mute' samples.
 // -------------------------------------------------------------------------------------------
 u16 last_sample = 0;
-mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
+ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 {
     if (soundEmuPause)  // If paused, just "mix" in mute sound chip... all channels are OFF
     {
@@ -1254,7 +1254,7 @@ void SaveAdamTapeOrDisk(void)
     if (isAdamDDP())
         SaveFDI(&Tapes[0], lastAdamDataPath, FMT_DDP);
     else
-        SaveFDI(&Disks[0], lastAdamDataPath, FMT_ADMDSK);
+        SaveFDI(&Disks[0], lastAdamDataPath, (LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
     DSPrint(12,0,6, "      ");
     DisplayStatusLine(true);
     disk_unsaved_data = 0;

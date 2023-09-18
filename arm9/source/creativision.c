@@ -224,7 +224,7 @@ u32 creativision_run(void)
 // equivilents. This is just a matter of setting (or, in this case, clearing) the
 // right bits in the keyboard map which will be reported back to the program via PIA.
 // -----------------------------------------------------------------------------------
-ITCM_CODE void creativision_input(void)
+void creativision_input(void)
 {
     extern u32 JoyState;
     extern u8 key_shift, key_ctrl;
