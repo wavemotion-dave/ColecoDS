@@ -336,7 +336,7 @@ On the DSi using this new mode renders those games really bright and visible.
 The DSi XL/LL has a slower refresh on the LCD and it more closely approximates the old tube TVs... 
 so blend mode is not needed for the XL/LL models.
 
-However! Using blend mode comes at at 20% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
+However! Using blend mode comes at at 10% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
 struggle a bit on more complicated games. 
 
 So my recommendation is as follows:
