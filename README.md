@@ -398,6 +398,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V8.9: 20-Sep-2023 by wavemotion-dave
+* Further cleanup of the ADAM driver to eliminate title-screen glitches and provide support for 320K disks.
+* Slight optmization across the board resulting in another frame or two of performance.
+* Memory optmization to reduce the footprint of the program - providing about 300K of free resources total.
+
 V8.8: 11-Sep-2023 by wavemotion-dave
 * Major cleanup of the Coleco ADAM driver so that most games now load up first try and RESET handling is smooth and consistent.
 * For the ADAM, added toggle between full keyboard and the joystick/joypad so now you don't have to choose one layout or the other. 

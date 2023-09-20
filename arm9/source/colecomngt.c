@@ -474,14 +474,16 @@ ITCM_CODE void colecoUpdateScreen(void)
       else
       {
           XBuf = XBuf_A;
-      }
-      u32 *p1 = (u32*)XBuf_A;
-      u32 *p2 = (u32*)XBuf_B;
-      u32 *destP = (u32*)pVidFlipBuf;
-        
-      for (u16 i=0; i<(256*192)/4; i++)
-      {
-          *destP++ = (*p1++ | *p2++);       // Simple OR blending of 2 frames...
+          
+          // Because we are OR-ing two frames together, we only need to blend every other frame...
+          u32 *p1 = (u32*)XBuf_A;
+          u32 *p2 = (u32*)XBuf_B;
+          u32 *destP = (u32*)pVidFlipBuf;
+
+          for (u16 i=0; i<(256*192)/4; i++)
+          {
+              *destP++ = (*p1++ | *p2++);       // Simple OR blending of 2 frames...
+          }
       }
     }
     else

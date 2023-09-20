@@ -77,7 +77,7 @@ u8 TMS9918A_palette[16*3] __attribute__((section(".dtcm")))  = {
   0x20,0x80,0x20,   0xC0,0x40,0xA0,   0xA0,0xA0,0xA0,   0xE0,0xE0,0xE0,
 };
 
-u8 pVDPVidMem[0x4000] ALIGN(32) ={0};                   // VDP video memory... TMS9918a has 16K of VRAM
+u8 pVDPVidMem[0x4000] ALIGN(32) ={0};                   // VDP video memory... TMS9918A has 16K of VRAM
 
 u16 CurLine     __attribute__((section(".dtcm")));      // Current scanline
 u8 VDP[16]      __attribute__((section(".dtcm")));      // VDP Registers
@@ -387,7 +387,7 @@ void ITCM_CODE RefreshSprites(register byte Y) {
 /*************************************************************/
 ITCM_CODE void RefreshLine0(u8 Y) 
 {
-  register byte *T,X,K,Offset;
+  register byte *T,K,Offset;
   register byte *P,FC,BC;
 
   P=XBuf+(Y<<8);
@@ -401,7 +401,7 @@ ITCM_CODE void RefreshLine0(u8 Y)
     T=ChrTab+(Y>>3)*40;
     Offset=Y&0x07;
 
-    for(X=0;X<40;X++)
+    for(int X=0;X<40;X++)
     {
       K=ChrGen[((int)*T<<3)+Offset];
       P[0]=K&0x80? FC:BC;
@@ -423,11 +423,10 @@ ITCM_CODE void RefreshLine0(u8 Y)
 /*************************************************************/
 void ITCM_CODE RefreshLine1(u8 uY) 
 {
-  register byte X,K=0,Offset,FC,BC;
+  register byte K=0,Offset,FC,BC;
   register u8 *T;
   register u32 *P;
   u8 lastT;
-  u32 *ptLut=0;
 
   P=(u32*) (XBuf+(uY<<8));
   u32 ptLow = 0; u32 ptHigh = 0;
@@ -441,7 +440,7 @@ void ITCM_CODE RefreshLine1(u8 uY)
 
     lastT = ~(*T);
       
-    for(X=0;X<32;X++) 
+    for(int X=0;X<32;X++) 
     {
       if (lastT != *T)
       {
@@ -450,7 +449,7 @@ void ITCM_CODE RefreshLine1(u8 uY)
           K=ChrGen[((int)lastT<<3)+Offset];
           FC=BC>>4;
           BC=BC&0x0F;
-          ptLut = (u32*) (lutTablehh[FC][BC]);
+          u32* ptLut = (u32*) (lutTablehh[FC][BC]);
           ptLow = *(ptLut + ((K>>4)));
           ptHigh= *(ptLut + ((K & 0xF)));
       }
@@ -469,10 +468,8 @@ void ITCM_CODE RefreshLine1(u8 uY)
 void ITCM_CODE RefreshLine2(u8 uY) {
   u32 *P;
   register byte FC,BC;
-  register byte X,K,*T;
-  u8 lastT;
+  register byte K,*T;
   u16 J,I;
-  u32 *ptLut;
 
   P=(u32*)(XBuf+(uY<<8));
 
@@ -484,9 +481,9 @@ void ITCM_CODE RefreshLine2(u8 uY) {
       
     J   = ((u16)((u16)uY&0xC0)<<5)+(uY&0x07);
     T   = ChrTab+((u16)((u16)uY&0xF8)<<2);
-    lastT = ~(*T);
+    u8 lastT = ~(*T);
 
-    for(X=0;X<32;X++)
+    for(int X=0;X<32;X++)
     {
       if (lastT != *T)
       {
@@ -496,7 +493,7 @@ void ITCM_CODE RefreshLine2(u8 uY) {
           FC   = (K>>4);
           BC   = K & 0x0F;
           K    = ChrGen[(J+I)&ChrGenM];
-          ptLut = (u32*)(lutTablehh[FC][BC]);
+          u32* ptLut = (u32*)(lutTablehh[FC][BC]);
           ptLow = *(ptLut + ((K>>4)));
           ptHigh = *(ptLut + ((K & 0xF)));
       } 
@@ -563,8 +560,6 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
   /* Enabling IRQs may cause an IRQ here */
   bIRQ  = (iReg==1) && ((VDP[1]^value)&value&TMS9918_REG1_IRQ) && (VDPStatus&TMS9918_STAT_VBLANK);
     
-  if (einstein_mode) bIRQ = 0;  // The Tatung Einstein does not generate interrupts on VSYNC
-
   /* VRAM can either be 4kB or 16kB - this checks if the bit has changed on this call which will force the logic in case 1 below */
   if (vdp_16k_mode_only) VRAMMask = 0x3FFF;    // For these machines, we only support 16K
   else VRAMMask = (iReg==1) && ( (VDP[1]^value) & TMS9918_REG1_RAM16K ) ? 0 : TMS9918_VRAMMask;  
@@ -664,9 +659,7 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
 /*************************************************************/
 ITCM_CODE byte RdData9918(void) 
 {
-  byte data;
-
-  data      = VDPDlatch;
+  byte data = VDPDlatch;
   VDPDlatch = pVDPVidMem[VAddr];
   VAddr     = (VAddr+1)&0x3FFF;
   VDPCtrlLatch = 0;
