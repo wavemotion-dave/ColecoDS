@@ -463,7 +463,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             
         case 0x08:  // VDP Area
             if ((Port & 1) == 0) WrData9918(Value);
-            else if (WrCtrl9918(Value)) CPU.IRequest=INT_NONE;
+            else WrCtrl9918(Value); // Einstein does not produce VDP interrupts
             break;
             
         case 0x10:  // PCI Area - Not implemented
