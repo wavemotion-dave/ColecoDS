@@ -139,7 +139,6 @@ Name the BIOS ROMs above exactly as shown (if you find them online, they will ha
 ADAM Compatibility :
 -----------------------
 * The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).  DDP files should be 256K in length. DSK files can be either 160K (SSDD) or 320K (DSDD).
-* A few third party games use a loader that has some small extra characters garbling the title screen. These are harmless and the main game shouldn't be affected.
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
 * By default, RAM is cleared when you reset the ADAM unless the game detects as a CP/M program - in which case a special memory pattern is used to aid in compatibility.
 * In Game Config you can change how RAM is initilized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
