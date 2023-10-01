@@ -1592,7 +1592,7 @@ void MSX_InitialMemoryLayout(u32 romSize)
             Slot1ROMPtr[6] = (u8*)ROM_Memory+0x8000;        // Segment 4 
             Slot1ROMPtr[7] = (u8*)ROM_Memory+0xA000;        // Segment 5
         }
-        else
+        else // Load the rom at AT0K
         {
             Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
             Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
@@ -1685,9 +1685,9 @@ void MSX_InitialMemoryLayout(u32 romSize)
         else if (romSize <= (512 * 1024))
         {
             if (mapperType == ASC16 || mapperType == ZEN16)
-                mapperMask = (romSize == (512 * 1024)) ? 0x1F:0x0F;
+                mapperMask = (romSize <= (256 * 1024)) ? 0x0F:0x1F;
             else
-                mapperMask = (romSize == (512 * 1024)) ? 0x3F:0x1F;
+                mapperMask = (romSize <= (256 * 1024)) ? 0x1F:0x3F;
         }        
         else // Must be 1024k... 
         {
