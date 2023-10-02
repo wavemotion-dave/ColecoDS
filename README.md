@@ -141,7 +141,7 @@ ADAM Compatibility :
 * The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).  DDP files should be 256K in length. DSK files can be either 160K (SSDD) or 320K (DSDD).
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
 * By default, RAM is cleared when you reset the ADAM unless the game detects as a CP/M program - in which case a special memory pattern is used to aid in compatibility.
-* In Game Config you can change how RAM is initilized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
+* In Game Config you can change how RAM is initialized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only when the tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
 * Due to space constraints, the MOVE/COPY and STORE/GET keys are combined (showing MV/ST). Use the SHIFT key to select whether you get the MOVE or the STORE functionality. You can also map those to NDS keys if needed.
@@ -364,7 +364,7 @@ A Tale of Two Cores :
 ColecoDS supports 2 different Z80 CPU cores. 
 DrZ80 is very fast but is not 100% accurate so some games don't run right.
 CZ80 is 10% slower but is much closer to 100% accurate and games generally run great.
-The CZ80 core i the default across the board - but you can change this (and save on a per-game basis) in GAME OPTIONS.
+The CZ80 core is the default across the board - but you can change this (and save on a per-game basis) in GAME OPTIONS.
 
 The Need For Speed :
 -----------------------
