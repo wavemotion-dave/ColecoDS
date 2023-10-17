@@ -568,7 +568,6 @@ u8 loadrom(const char *path,u8 * ptr)
         strcpy(lastAdamDataPath, path);
         romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
-        sg1000_mode = true;
         machine_mode = MODE_SG_1000;
         return bOK;
     }
