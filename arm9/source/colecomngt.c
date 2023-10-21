@@ -228,7 +228,7 @@ void BufferKeys(char *str)
 // Called every frame... so 1/50th or 1/60th of a second. We will virtually 'press' and 
 // hold the key for roughly a tenth of a second and be smart about shift keys...
 // ---------------------------------------------------------------------------------------
-void ProcessBufferedKeys(void)
+ITCM_CODE void ProcessBufferedKeys(void)
 {
     static u8 next_dampen_time = 5;
     static u8 dampen = 0;
@@ -1003,7 +1003,7 @@ unsigned char cpu_readport_pencil2(register unsigned short Port)
 /** Z80 emulation calls this function to read a byte from   **/
 /** a given I/O port.                                       **/
 /*************************************************************/
-unsigned char cpu_readport16(register unsigned short Port) 
+ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2))
   {
@@ -1058,7 +1058,7 @@ unsigned char cpu_readport16(register unsigned short Port)
 /** Z80 emulation calls this function to write a byte to a  **/
 /** given I/O port.                                         **/
 /*************************************************************/
-void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
+ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
   {
