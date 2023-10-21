@@ -71,7 +71,7 @@ unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
  *
  * Called from cpu on access to memory in the range $1000 - $1FFF
  */
-ITCM_CODE void PIA_Write(word addr, byte data)
+void PIA_Write(word addr, byte data)
 {
 
     switch (addr & 3) {

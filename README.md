@@ -403,6 +403,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V9.0: 21-Oct-2023 by wavemotion-dave
+* Fixed loading of SC-3000 Survivors Multi/Megacart roms.
+* Slight optmization to I/O read driver.
+* Minor cleanup as time permitted.
+
 V8.9: 20-Sep-2023 by wavemotion-dave
 * Further cleanup of the ADAM driver to eliminate title-screen glitches and provide support for 320K disks.
 * Slight optmization across the board resulting in another frame or two of performance.
