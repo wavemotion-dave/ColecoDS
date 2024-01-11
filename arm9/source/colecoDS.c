@@ -53,6 +53,7 @@
 #include "boulder.h"
 #include "quest.h"
 #include "hal2010.h"
+#include "shuttle.h"
 #include "cvision.h"
 #include "fdc.h"
 
@@ -3568,6 +3569,14 @@ void BottomScreenKeypad(void)
       decompress(hal2010Map, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) hal2010Pal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 11)  // Space Shuttle
+    {
+      //  Init bottom screen
+      decompress(shuttleTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(shuttleMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) shuttlePal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay (overlay == 0)
     {
