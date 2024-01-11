@@ -54,6 +54,7 @@
 #include "quest.h"
 #include "hal2010.h"
 #include "shuttle.h"
+#include "utopia.h"
 #include "cvision.h"
 #include "fdc.h"
 
@@ -3577,6 +3578,14 @@ void BottomScreenKeypad(void)
       decompress(shuttleMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) shuttlePal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 12)  // Utopia
+    {
+      //  Init bottom screen
+      decompress(utopiaTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(utopiaMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) utopiaPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay (overlay == 0)
     {
