@@ -1425,7 +1425,7 @@ void MSX_InitialMemoryLayout(u32 romSize)
             Slot1ROMPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 7
         }
     }
-    else if (romSize <= (16 * 1024))
+    else if (romSize <= (16 * 1024) && (myConfig.msxMapper != SCC8))
     {
         if (myConfig.msxMapper == AT4K)  // Load the 16K rom at 0x4000 without Mirrors
         {
@@ -1475,7 +1475,7 @@ void MSX_InitialMemoryLayout(u32 romSize)
             }
         }
     }
-    else if (romSize <= (32 * 1024))
+    else if (romSize <= (32 * 1024) && (myConfig.msxMapper != SCC8))
     {
         // ------------------------------------------------------------------------------------------------------
         // For 32K roms, we need more information to determine exactly where to load it... however
@@ -1543,7 +1543,7 @@ void MSX_InitialMemoryLayout(u32 romSize)
             }
         }
     }
-    else if (romSize == (48 * 1024))
+    else if (romSize == (48 * 1024) && (myConfig.msxMapper != SCC8))
     {
         if ((myConfig.msxMapper == KON8) || (myConfig.msxMapper == ZEN8))
         {
@@ -1616,7 +1616,7 @@ void MSX_InitialMemoryLayout(u32 romSize)
         Slot1ROMPtr[7] = (u8*)ROM_Memory+0xE000;        // Segment 7
         
     }
-    else if ((romSize >= (64 * 1024)) && (romSize <= (MAX_CART_SIZE * 1024)))   // We'll take anything between these two...
+    else if ((romSize >= (16 * 1024)) && (romSize <= (MAX_CART_SIZE * 1024)))   // We'll take anything between these two...
     {
         if (myConfig.msxMapper == GUESS)
         {
@@ -1678,9 +1678,9 @@ void MSX_InitialMemoryLayout(u32 romSize)
         if (romSize <= (128 * 1024))
         {
             if (mapperType == ASC16 || mapperType == ZEN16 || mapperType == XBLAM)
-                mapperMask = (romSize == (64 * 1024)) ? 0x03:0x07;
+                mapperMask = (romSize <= (64 * 1024)) ? 0x03:0x07;
             else
-                mapperMask = (romSize == (64 * 1024)) ? 0x07:0x0F;
+                mapperMask = (romSize <= (64 * 1024)) ? 0x07:0x0F;
         }
         else if (romSize <= (512 * 1024))
         {

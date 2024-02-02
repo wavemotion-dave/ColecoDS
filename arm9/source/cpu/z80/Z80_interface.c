@@ -579,7 +579,6 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                             // ----------------------------------------------------
                             if (msx_scc_enable && ((address & 0xFF00)==0x9800))
                             {
-                                //FakeSCC_WriteData(address, value);
                                  SCCWrite(value, address, &mySCC);
                             }
                             return;    // It has to be one of the mapped addresses below - this will also short-circuit any SCC writes which are not yet supported
