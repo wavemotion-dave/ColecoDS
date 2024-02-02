@@ -255,8 +255,7 @@ void colecoSaveState()
         if (msx_sram_enabled) if (uNbO) fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
         if (msx_scc_enable)
         {
-            if (uNbO) uNbO = fwrite(&sccABC, sizeof(sccABC),1, handle);
-            if (uNbO) uNbO = fwrite(&sccDE, sizeof(sccABC),1, handle);
+            if (uNbO) uNbO = fwrite(&mySCC, sizeof(mySCC),1, handle);
         }
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
@@ -515,8 +514,7 @@ void colecoLoadState()
                 if (msx_sram_enabled) if (uNbO) fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
                 if (msx_scc_enable)
                 {
-                    if (uNbO) uNbO = fread(&sccABC, sizeof(sccABC),1, handle);
-                    if (uNbO) uNbO = fread(&sccDE, sizeof(sccABC),1, handle);
+                    if (uNbO) uNbO = fread(&mySCC, sizeof(mySCC),1, handle);
                 }
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM

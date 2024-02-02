@@ -7,6 +7,7 @@
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/sn76496/SN76496.h"
 #include "cpu/sn76496/Fake_AY.h"
+#include "cpu/scc/SCC.h"
 
 #define IMAGE_VERIFY_FAIL 0X01
 #define IMAGE_VERIFY_PASS 0x02
@@ -47,8 +48,7 @@ extern u8 adam_128k_mode;
 
 extern SN76496 sncol;
 extern SN76496 aycol;
-extern SN76496 sccABC;
-extern SN76496 sccDE;
+extern SCC mySCC;
 
 extern u8 msx_scc_enable;
 extern u8 sg1000_sms_mapper;

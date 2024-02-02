@@ -404,7 +404,7 @@ void creativision_input(void)
 // $8000 - $BFFF: 16K ROM1 (we map RAM here if not used by ROM)
 // $C000 - $FFFF: 16K ROM0 (CV BIOS is the 2K from $F800 to $FFFF and the CSL BIOS uses all 16K)
 // ========================================================================================
-ITCM_CODE void Wr6502(register word Addr,register byte Value)
+void Wr6502(register word Addr,register byte Value)
 {
     switch (Addr & 0xF000)
     {
