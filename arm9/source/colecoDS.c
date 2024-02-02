@@ -557,7 +557,15 @@ void dsInstallSoundEmuFIFO(void)
   // The SCC sound chip is just for a few select Konami MSX1 games 
   // -----------------------------------------------------------------
   SCCReset(&mySCC);
-  SCCMixer(8, mixbuf2, &mySCC);     // Do an initial mix conversion to clear the output
+  
+  SCCWrite(0x00, 0x988A, &mySCC);
+  SCCWrite(0x00, 0x988B, &mySCC);
+  SCCWrite(0x00, 0x988C, &mySCC);
+  SCCWrite(0x00, 0x988D, &mySCC);
+  SCCWrite(0x00, 0x988E, &mySCC);
+  SCCWrite(0x00, 0x988F, &mySCC);
+  
+  SCCMixer(16, mixbuf2, &mySCC);     // Do an initial mix conversion to clear the output
 
   setupStream();    // Setup maxmod stream...
 
