@@ -49,6 +49,7 @@ extern u8 adam_128k_mode;
 extern SN76496 sncol;
 extern SN76496 aycol;
 extern SCC mySCC;
+extern AY38910 myAY;
 
 extern u8 msx_scc_enable;
 extern u8 sg1000_sms_mapper;

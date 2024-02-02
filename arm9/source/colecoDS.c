@@ -412,15 +412,17 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
           if (msx_scc_enable)   // If SCC is enabled, we need to mix the AY with the SCC chips
           {
               ay76496Mixer(len*4, mixbuf1, &aycol);
-              SCCMixer(len*2, mixbuf2, &mySCC);
+              SCCMixer(len*4, mixbuf2, &mySCC);
               
               s16 *p = (s16*)dest;
+              int j=0;
               for (int i=0; i<len*2; i++)
               {
                   // ------------------------------------------------------------------------
                   // We normalize the samples and mix them carefully to minimize clipping...
                   // ------------------------------------------------------------------------
-                  s32 combined = (mixbuf1[i]) + (mixbuf2[i]) + 32768;
+                  s32 combined = (mixbuf1[i]) + ((mixbuf2[j] + mixbuf2[j+1])/2) + 32768;
+                  j+=2;
                   if (combined >  32767) combined = 32767;
                   *p++ = (s16)combined;
               }
