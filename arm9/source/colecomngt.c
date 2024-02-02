@@ -1172,12 +1172,6 @@ ITCM_CODE u32 LoopZ80()
           if (++envelope_counter > envelope_period) FakeAY_Loop();
       }
       
-      // If the MSX is trying to use the SCC sound chip, call into that loop here...
-      if (msx_scc_enable)
-      {
-          FakeSCC_Loop();
-      }
-
       // ------------------------------------------------------------------
       // Before we execute Z80 or Loop the 9918 (both of which can cause 
       // NMI interrupt to occur), we check and adjust the spinners which 

@@ -6,9 +6,6 @@ extern void FakeAY_WriteData(u8 Value);
 extern u8 ay_reg_idx;
 extern u8 ay_reg[];
 
-extern void FakeSCC_WriteData(u16 address, u8 value);
-void FakeSCC_Loop(void);
-    
 extern u16 envelope_period;
 extern u16 envelope_counter;
 extern u16 noise_period;
