@@ -63,7 +63,7 @@ Thanks to Alekmaul who provided the
 baseline code to work with and to lobo
 for the menu graphical design.
 
-Thanks to Flubba for the SN76496 sound core.
+Thanks to Flubba for the SN76496 and SCC sound cores.
 
 Thanks to the C-BIOS team for the open 
 source MSX BIOS (see cbios.txt)
