@@ -302,7 +302,7 @@ void cpu_writeport_m5(register unsigned short Port,register unsigned char Value)
         if ((Port & 1) == 0) WrData9918(Value);
         else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;    // Sord M5 must get vector from the Z80-CTC. Only the CZ80 core works with this.
     }
-    else if (Port < 0x30) sn76496W(Value, &sncol);
+    else if (Port < 0x30) sn76496W(Value, &mySN);
 }
 
 // ---------------------------------------------------------

@@ -22,7 +22,7 @@ Features :
 * Sega SG-1000 game support (.sg roms)
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
-* MSX1 game support (.msx or .rom or .cas or .dsk) up to 1024K 
+* MSX1 game support (.msx or .rom or .cas or .dsk) up to 1024K including SCC emulation
 * Spectravideo SVI support (.cas or .rom) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
@@ -99,7 +99,6 @@ Known Issues and Limitations:
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
-* MSX Konami SCC sound chip is partially emulated but is not perfectly accurate (Gradius 2/3, Parodius, Salamander, etc. will have music but the pitch won't be perfect - good enough!).
 
 BIOS Files :
 -----------------------
@@ -152,9 +151,10 @@ Considering this is a Colecovision emulator, the MSX1 support and compatibility 
 * A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options. If you have an MSX.ROM bios, it will use it by default.
 * Most 64K games use the ASC16 memory mapper - so you can try that one... but a few (e.g. Mutants from the Deep) are linear mapped from 0-64K and you will need to pick LINEAR64 in Game Options. 
 * The auto-detection on KONAMI8, KONAMI-SCC and ASCII8/16 mappers is pretty good... but some games don't detect well - you should try various mappers if the "larger than 64K" game won't run.
+* SCC is emulated for the games that use that advanced Konami sound chip.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
-* MSX2 games are not supported and will not run - the VDP is different enough. Try MSXDS for a full-featured DS/DSi emulator for the full range of MSX computers.
+* MSX2 games are not supported and will not run - the VDP alone is different enough. Try MSXDS for a full-featured DS/DSi emulator for the full range of MSX computers.
 
 MSX is not a single machine but a standard - there are lots of machines and lots of BIOS files. The one I did most of my testing is MSX.ROM with a CRC32 of 94ee12f3 - this is the one used by many other MSX emulators. ColecoDS also supports a number of other specific machines - see the BIOS section above for details on those roms.
 
@@ -403,6 +403,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V9.1: 03-Feb-2024 by wavemotion-dave
+* Ported the SCC Konami sound driver from FluBBa to make the MSX1 games using that chip sound great.
+* New overlays for Colecovision Space Shuttle and Utopia.
+* Lots of small tweaks and minor cleanups since the last release.
+
 V9.0: 21-Oct-2023 by wavemotion-dave
 * Fixed loading of SC-3000 Survivors Multi/Megacart roms.
 * Slight optmization to I/O read driver.

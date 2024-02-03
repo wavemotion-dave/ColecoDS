@@ -47,6 +47,8 @@ u8 msx_sram_enabled     __attribute__((section(".dtcm"))) = 0;
 
 u16 msx_block_size      __attribute__((section(".dtcm"))) = 0x2000; // Either 8K or 16K based on Mapper Type
 
+SCC mySCC;           // Declare new SCC module for Konami MSX games that use it
+
 // --------------------------------------------------------------------------
 // These aren't used very often so we don't need them in fast .dtcm memory
 // --------------------------------------------------------------------------

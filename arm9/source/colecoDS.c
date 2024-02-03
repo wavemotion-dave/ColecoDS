@@ -144,16 +144,6 @@ u8 key_code  __attribute__((section(".dtcm"))) = false;
 u8 key_graph __attribute__((section(".dtcm"))) = false;
 u8 key_dia   __attribute__((section(".dtcm"))) = false;
 
-// ------------------------------------------------------------------------------------------
-// Various sound chips in the system. We emulate the SN and AY sound chips but both of
-// these really still use the underlying SN76496 sound chip driver for siplicity and speed.
-// ------------------------------------------------------------------------------------------
-extern SN76496 sncol;       // The SN sound chip is the main Colecovision sound
-extern SN76496 aycol;       // The AY sound chip is for the Super Game Moudle
-extern SN76496 sccABC;      // The SCC sound chip for MSX games that suport it (5 channels so we use these 3 and "steal" two more from sncol which is otherwise unused on MSX
-extern SN76496 sccDE;       // The SCC sound chip for MSX games that suport it (5 channels so we use these 3 and "steal" two more from sncol which is otherwise unused on MSX
-       SCC mySCC;           // Declare new SCC module for Konami MSX games that use it
-
 // ---------------------------------------------------------------------------
 // Some timing and frame rate comutations to keep the emulation on pace...
 // ---------------------------------------------------------------------------
@@ -359,12 +349,15 @@ u8 spinX_right  __attribute__((section(".dtcm"))) = 0;
 u8 spinY_left   __attribute__((section(".dtcm"))) = 0;
 u8 spinY_right  __attribute__((section(".dtcm"))) = 0;
 
+static char tmp[34];    // For various siprintf() calls
+
 // ------------------------------------------------------------
 // Utility function to pause the sound...
 // ------------------------------------------------------------
 void SoundPause(void)
 {
     soundEmuPause = 1;
+    mmSetModuleVolume(0);
 }
 
 // ------------------------------------------------------------
@@ -373,6 +366,7 @@ void SoundPause(void)
 void SoundUnPause(void)
 {
     soundEmuPause = 0;
+    mmSetModuleVolume(1024);
 }
 
 // --------------------------------------------------------------------------------------------
@@ -383,7 +377,7 @@ void SoundUnPause(void)
 #define sample_rate  (27965)    // To match the driver in sn76496 - this is good enough quality for the DS
 #define buffer_size  (512+16)   // Enough buffer that we don't have to fill it too often
 
-mm_ds_system sys  __attribute__((section(".dtcm")));
+mm_ds_system sys   __attribute__((section(".dtcm")));
 mm_stream myStream __attribute__((section(".dtcm")));
 
 s16 mixbuf1[2048+64];      // When we have SN and AY sound we have to mix 3+3 channels
@@ -411,7 +405,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         {
           if (msx_scc_enable)   // If SCC is enabled, we need to mix the AY with the SCC chips
           {
-              ay76496Mixer(len*4, mixbuf1, &aycol);
+              ay76496Mixer(len*4, mixbuf1, &myAY);
               SCCMixer(len*4, mixbuf2, &mySCC);
               
               s16 *p = (s16*)dest;
@@ -430,14 +424,14 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
           }
           else  // Pretty simple... just AY
           {
-              ay76496Mixer(len*4, dest, &aycol);
+              ay76496Mixer(len*4, dest, &myAY);
               last_sample = ((s16*)dest)[len*2 - 1];
           }
         }
         else if (AY_Enable)  // If AY is enabled we mix the normal SN chip with the AY chip sound
         {
-            ay76496Mixer(len*4, mixbuf1, &aycol);
-            sn76496Mixer(len*4, mixbuf2, &sncol);
+            ay76496Mixer(len*4, mixbuf1, &myAY);
+            sn76496Mixer(len*4, mixbuf2, &mySN);
             s16 *p = (s16*)dest;
             for (int i=0; i<len*2; i++)
             {
@@ -452,7 +446,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         }
         else  // This is the 'normal' case of just Colecovision SN sound chip output
         {
-            sn76496Mixer(len*4, dest, &sncol);
+            sn76496Mixer(len*4, dest, &mySN);
             last_sample = ((s16*)dest)[len*2 - 1];
         }
     }
@@ -513,45 +507,46 @@ void dsInstallSoundEmuFIFO(void)
   //  ------------------------------------------------------------------
   //  The SN sound chip is for normal colecovision sound handling
   //  ------------------------------------------------------------------
-  sn76496Reset(1, &sncol);         // Reset the SN sound chip
+  sn76496Reset(1, &mySN);         // Reset the SN sound chip
 
-  sn76496W(0x80 | 0x00,&sncol);    // Write new Frequency for Channel A
-  sn76496W(0x00 | 0x00,&sncol);    // Write new Frequency for Channel A
-  sn76496W(0x90 | 0x0F,&sncol);    // Write new Volume for Channel A
+  sn76496W(0x80 | 0x00,&mySN);    // Write new Frequency for Channel A
+  sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel A
+  sn76496W(0x90 | 0x0F,&mySN);    // Write new Volume for Channel A
 
-  sn76496W(0xA0 | 0x00,&sncol);    // Write new Frequency for Channel B
-  sn76496W(0x00 | 0x00,&sncol);    // Write new Frequency for Channel B
-  sn76496W(0xB0 | 0x0F,&sncol);    // Write new Volume for Channel B
+  sn76496W(0xA0 | 0x00,&mySN);    // Write new Frequency for Channel B
+  sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel B
+  sn76496W(0xB0 | 0x0F,&mySN);    // Write new Volume for Channel B
 
-  sn76496W(0xC0 | 0x00,&sncol);    // Write new Frequency for Channel C
-  sn76496W(0x00 | 0x00,&sncol);    // Write new Frequency for Channel C
-  sn76496W(0xD0 | 0x0F,&sncol);    // Write new Volume for Channel C
+  sn76496W(0xC0 | 0x00,&mySN);    // Write new Frequency for Channel C
+  sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel C
+  sn76496W(0xD0 | 0x0F,&mySN);    // Write new Volume for Channel C
 
-  sn76496W(0xFF,  &sncol);         // Disable Noise Channel
+  sn76496W(0xFF,  &mySN);         // Disable Noise Channel
 
-  sn76496Mixer(8, mixbuf1, &sncol);  // Do an initial mix conversion to clear the output
-
+  sn76496Mixer(16, mixbuf1, &mySN);  // Do an initial mix conversion to clear the output
+  
+  last_sample = mixbuf1[7];
 
   //  ------------------------------------------------------------------
   //  The "fake AY" sound chip is for Super Game Module sound handling
   //  ------------------------------------------------------------------
-  ay76496Reset(2, &aycol);         // Reset the "AY" sound chip
+  ay76496Reset(2, &myAY);         // Reset the "AY" sound chip
 
-  ay76496W(0x80 | 0x00,&aycol);    // Write new Frequency for Channel A
-  ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel A
-  ay76496W(0x90 | 0x0F,&aycol);    // Write new Volume for Channel A
+  ay76496W(0x80 | 0x00,&myAY);    // Write new Frequency for Channel A
+  ay76496W(0x00 | 0x00,&myAY);    // Write new Frequency for Channel A
+  ay76496W(0x90 | 0x0F,&myAY);    // Write new Volume for Channel A
 
-  ay76496W(0xA0 | 0x00,&aycol);    // Write new Frequency for Channel B
-  ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel B
-  ay76496W(0xB0 | 0x0F,&aycol);    // Write new Volume for Channel B
+  ay76496W(0xA0 | 0x00,&myAY);    // Write new Frequency for Channel B
+  ay76496W(0x00 | 0x00,&myAY);    // Write new Frequency for Channel B
+  ay76496W(0xB0 | 0x0F,&myAY);    // Write new Volume for Channel B
 
-  ay76496W(0xC0 | 0x00,&aycol);    // Write new Frequency for Channel C
-  ay76496W(0x00 | 0x00,&aycol);    // Write new Frequency for Channel C
-  ay76496W(0xD0 | 0x0F,&aycol);    // Write new Volume for Channel C
+  ay76496W(0xC0 | 0x00,&myAY);    // Write new Frequency for Channel C
+  ay76496W(0x00 | 0x00,&myAY);    // Write new Frequency for Channel C
+  ay76496W(0xD0 | 0x0F,&myAY);    // Write new Volume for Channel C
 
-  ay76496W(0xFF,  &aycol);         // Disable Noise Channel
+  ay76496W(0xFF,  &myAY);         // Disable Noise Channel
 
-  sn76496Mixer(8, mixbuf2, &aycol); // Do an initial mix conversion to clear the output
+  sn76496Mixer(16, mixbuf2, &myAY); // Do an initial mix conversion to clear the output
 
   // -----------------------------------------------------------------
   // The SCC sound chip is just for a few select Konami MSX1 games 
@@ -566,7 +561,7 @@ void dsInstallSoundEmuFIFO(void)
   SCCWrite(0x00, 0x988F, &mySCC);
   
   SCCMixer(16, mixbuf2, &mySCC);     // Do an initial mix conversion to clear the output
-
+  
   setupStream();    // Setup maxmod stream...
 
   bStartSoundEngine = true; // Volume will 'unpause' after 1 frame in the main loop.
@@ -588,8 +583,6 @@ static u8 last_msx_mode = 0;
 static u8 last_msx_scc_enable = 0;
 static u8 last_svi_mode = 0;
 static u8 last_adam_mode = 0;
-static u8 last_scc_mode = 0;
-
 
 // --------------------------------------------------------------
 // When we reset the machine, there are many small utility flags
@@ -608,7 +601,6 @@ void ResetStatusFlags(void)
   last_msx_mode = 0;
   last_msx_scc_enable = 0;
   last_svi_mode = 0;
-  last_scc_mode = 0;
   last_adam_mode = 0;
 }
 
@@ -625,15 +617,15 @@ void ResetColecovision(void)
 
   sgm_reset();                          // Reset Super Game Module
 
-  sn76496Reset(1, &sncol);              // Reset the SN sound chip
-  sn76496W(0x90 | 0x0F  ,&sncol);       //  Write new Volume for Channel A (off)
-  sn76496W(0xB0 | 0x0F  ,&sncol);       //  Write new Volume for Channel B (off)
-  sn76496W(0xD0 | 0x0F  ,&sncol);       //  Write new Volume for Channel C (off)
+  sn76496Reset(1, &mySN);              // Reset the SN sound chip
+  sn76496W(0x90 | 0x0F  ,&mySN);       //  Write new Volume for Channel A (off)
+  sn76496W(0xB0 | 0x0F  ,&mySN);       //  Write new Volume for Channel B (off)
+  sn76496W(0xD0 | 0x0F  ,&mySN);       //  Write new Volume for Channel C (off)
 
-  ay76496Reset(2, &aycol);              // Reset the SN sound chip
-  ay76496W(0x90 | 0x0F  ,&aycol);       //  Write new Volume for Channel A (off)
-  ay76496W(0xB0 | 0x0F  ,&aycol);       //  Write new Volume for Channel B (off)
-  ay76496W(0xD0 | 0x0F  ,&aycol);       //  Write new Volume for Channel C (off)
+  ay76496Reset(2, &myAY);              // Reset the SN sound chip
+  ay76496W(0x90 | 0x0F  ,&myAY);       //  Write new Volume for Channel A (off)
+  ay76496W(0xB0 | 0x0F  ,&myAY);       //  Write new Volume for Channel B (off)
+  ay76496W(0xD0 | 0x0F  ,&myAY);       //  Write new Volume for Channel C (off)
 
   DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the Z80 CPU core
@@ -784,7 +776,6 @@ const char *VModeNames[] =
 
 void ShowDebugZ80(void)
 {
-    char tmp[33];
     u8 idx=1;
 
     if (myGlobalConfig.debugger == 3)
@@ -835,13 +826,13 @@ void ShowDebugZ80(void)
         }
         else
         {
-            siprintf(tmp, "SN0 %04X %04X %2d", sncol.ch0Frq, sncol.ch0Reg, sncol.ch0Att);
+            siprintf(tmp, "SN0 %04X %04X %2d", mySN.ch0Frq, mySN.ch0Reg, mySN.ch0Att);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "SN1 %04X %04X %2d", sncol.ch1Frq, sncol.ch1Reg, sncol.ch1Att);
+            siprintf(tmp, "SN1 %04X %04X %2d", mySN.ch1Frq, mySN.ch1Reg, mySN.ch1Att);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "SN2 %04X %04X %2d", sncol.ch2Frq, sncol.ch2Reg, sncol.ch2Att);
+            siprintf(tmp, "SN2 %04X %04X %2d", mySN.ch2Frq, mySN.ch2Reg, mySN.ch2Att);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "SN3 %04X %04X %2d", sncol.ch3Frq, sncol.ch3Reg, sncol.ch3Att);
+            siprintf(tmp, "SN3 %04X %04X %2d", mySN.ch3Frq, mySN.ch3Reg, mySN.ch3Att);
             DSPrint(0,idx++,7, tmp);
             idx++;
         }
@@ -982,7 +973,6 @@ void DisplayStatusLine(bool bForce)
         if ((memotech_mode == 2) && (last_tape_pos != tape_pos) && (!memotech_magrom_present))
         {
             last_tape_pos = tape_pos;
-            char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             DSPrint(9,0,6, tmp);
             last_pal_mode = 99;
@@ -997,17 +987,17 @@ void DisplayStatusLine(bool bForce)
     {
         if ((last_msx_mode != msx_mode) || bForce)
         {
-            char tmp[16];
             last_msx_mode = msx_mode;
+            int rom_size = (((LastROMSize/1024) <= 999) ? (LastROMSize/1024) : 999);
             switch (myConfig.msxBios)
             {
-                case 1: siprintf(tmp, "%-7s %3dK", msx_rom_str_short,  (int)(LastROMSize/1024));    break;     // MSX (64K machine... use variable name)
-                case 2: siprintf(tmp, "CX5M    %3dK",                  (int)(LastROMSize/1024));    break;     // Yamaha CX5M (32K mapped in slot 0)
-                case 3: siprintf(tmp, "HX-10   %3dK",                  (int)(LastROMSize/1024));    break;     // Toshiba HX-10 (64K mapped in slot 2)
-                case 4: siprintf(tmp, "HB-10   %3dK",                  (int)(LastROMSize/1024));    break;     // Sony HB-10 (16K mapped in slot 0)
-                case 5: siprintf(tmp, "FS-1300 %3dK",                  (int)(LastROMSize/1024));    break;     // National FS-1300 (64K mapped in slot 3)
-                case 6: siprintf(tmp, "PV-7    %3dK",                  (int)(LastROMSize/1024));    break;     // Casio PV-7 (just 8K at the top of slot 0)
-                default:siprintf(tmp, "MSX     %3dK",                  (int)(LastROMSize/1024));    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
+                case 1: siprintf(tmp, "%-7s %3dK", msx_rom_str_short,  rom_size);    break;     // MSX (64K machine... use variable name)
+                case 2: siprintf(tmp, "CX5M    %3dK",                  rom_size);    break;     // Yamaha CX5M (32K mapped in slot 0)
+                case 3: siprintf(tmp, "HX-10   %3dK",                  rom_size);    break;     // Toshiba HX-10 (64K mapped in slot 2)
+                case 4: siprintf(tmp, "HB-10   %3dK",                  rom_size);    break;     // Sony HB-10 (16K mapped in slot 0)
+                case 5: siprintf(tmp, "FS-1300 %3dK",                  rom_size);    break;     // National FS-1300 (64K mapped in slot 3)
+                case 6: siprintf(tmp, "PV-7    %3dK",                  rom_size);    break;     // Casio PV-7 (just 8K at the top of slot 0)
+                default:siprintf(tmp, "MSX     %3dK",                  rom_size);    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }            
             DSPrint(20,0,6, tmp);
             last_pal_mode = 99;
@@ -1015,13 +1005,12 @@ void DisplayStatusLine(bool bForce)
         if (last_msx_scc_enable != msx_scc_enable)
         {   
             // SCC and CAS are mutually exclusive so we can reuse the same area on screen...
-            DSPrint(9,0,6, "SCC");
+            DSPrint(9,0,6, (msx_scc_enable ? "SCC":"   "));
             last_msx_scc_enable = msx_scc_enable;
         }
         if ((last_tape_pos != tape_pos) && (msx_mode == 2))
         {
             last_tape_pos = tape_pos;
-            char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             DSPrint(9,0,6, tmp);
             last_pal_mode = 99;
@@ -1070,7 +1059,6 @@ void DisplayStatusLine(bool bForce)
         if ((last_tape_pos != tape_pos) && (svi_mode == 1))
         {
             last_tape_pos = tape_pos;
-            char tmp[15];
             siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             DSPrint(9,0,6, tmp);
         }
@@ -3585,6 +3573,8 @@ void BottomScreenKeypad(void)
     unsigned  short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*)  bgGetMapPtr(bg1b),32*24*2);
 
+    last_pal_mode = 99;
+    last_msx_scc_enable = 99;
     DisplayStatusLine(true);
 }
 

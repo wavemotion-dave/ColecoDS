@@ -46,9 +46,9 @@ extern u8 msx_slot_dirty[4];
 
 extern u8 adam_128k_mode;
 
-extern SN76496 sncol;
-extern SN76496 aycol;
-extern SCC mySCC;
+extern SN76496 mySN;
+extern SN76496 myAY;
+extern SCC     mySCC;
 
 extern u8 msx_scc_enable;
 extern u8 sg1000_sms_mapper;

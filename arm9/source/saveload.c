@@ -207,8 +207,8 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
 
     // Write PSG sound chips...
-    if (uNbO) uNbO = fwrite(&sncol, sizeof(sncol),1, handle); 
-    if (uNbO) uNbO = fwrite(&aycol, sizeof(aycol),1, handle);       
+    if (uNbO) uNbO = fwrite(&mySN, sizeof(mySN),1, handle); 
+    if (uNbO) uNbO = fwrite(&myAY, sizeof(myAY),1, handle);       
       
     // Write stuff for MSX, SordM5 and SG-1000
     if (uNbO) fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
@@ -469,8 +469,8 @@ void colecoLoadState()
             SprTab = pSvg + pVDPVidMem;
             
             // Load PSG Sound Stuff
-            if (uNbO) uNbO = fread(&sncol, sizeof(sncol),1, handle); 
-            if (uNbO) uNbO = fread(&aycol, sizeof(aycol),1, handle);
+            if (uNbO) uNbO = fread(&mySN, sizeof(mySN),1, handle); 
+            if (uNbO) uNbO = fread(&myAY, sizeof(myAY),1, handle);
             
             // Load stuff for MSX, SordM5 and SG-1000
             if (uNbO) fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
