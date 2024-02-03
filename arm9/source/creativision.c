@@ -35,7 +35,7 @@ extern u8 RAM_Memory[];
 extern u8 ROM_Memory[];
 extern u8 CreativisionBios[];
 extern byte Loop9918(void);
-extern SN76496 sncol;
+extern SN76496 mySN;
 extern u8 BufferedKeys[32];
 extern u8 BufferedKeysWriteIdx;
 extern u8 BufferedKeysReadIdx;
@@ -99,7 +99,7 @@ void PIA_Write(word addr, byte data)
                 pia1.PDR = data;
 
                 /* Output to SN76489 */
-                sn76496W(data, &sncol);
+                sn76496W(data, &mySN);
 
                 pia1.prev_cycles = total_cycles;
 

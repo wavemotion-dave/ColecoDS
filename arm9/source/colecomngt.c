@@ -109,10 +109,8 @@ u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global fil
 // -----------------------------------------------------------
 // The two master sound chips... both are mapped to SN sound.
 // -----------------------------------------------------------
-SN76496 sncol   __attribute__((section(".dtcm")));
-SN76496 aycol   __attribute__((section(".dtcm")));
-SN76496 sccABC  __attribute__((section(".dtcm")));
-SN76496 sccDE   __attribute__((section(".dtcm")));
+SN76496 mySN   __attribute__((section(".dtcm")));
+SN76496 myAY    __attribute__((section(".dtcm")));
 
 // ---------------------------------------------------------
 // Reset the Super Game Module vars... we reset back to 
@@ -1111,7 +1109,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       JoyMode=JOYMODE_KEYPAD;
       return;
     case 0xE0:  // The SN Sound port
-      sn76496W(Value, &sncol);
+      sn76496W(Value, &mySN);
       return;
     case 0xA0:  // The VDP graphics port
       if(!(Port&0x01)) WrData9918(Value);

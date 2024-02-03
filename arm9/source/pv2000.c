@@ -332,7 +332,7 @@ void cpu_writeport_pv2000(register unsigned short Port,register unsigned char Va
     {
         Port_PPI_CTRL = Value & 0x0F;
     }
-    if (Port == 0x40) sn76496W(Value, &sncol);
+    if (Port == 0x40) sn76496W(Value, &mySN);
 }
 
 

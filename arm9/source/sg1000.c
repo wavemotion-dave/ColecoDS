@@ -370,8 +370,8 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
     }
     else if ((Port >= 0x40) && (Port < 0x80))
     {
-        if (Port & 1) sn76496W(Value, &sncol);
-        else sn76496W(Value, &sncol);
+        if (Port & 1) sn76496W(Value, &mySN);
+        else sn76496W(Value, &mySN);
     }
     else if ((Port == 0xDC) || (Port == 0xC0)) Port_PPI_A = Value;
     else if ((Port == 0xDD) || (Port == 0xC1)) Port_PPI_B = Value;

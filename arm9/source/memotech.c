@@ -511,7 +511,7 @@ void cpu_writeport_memotech(register unsigned short Port,register unsigned char 
         else if (WrCtrl9918(Value)) CPU.IRequest=vdp_int_source;    // Memotech MTX must get vector from the Z80-CTC. Only the CZ80 core works with this.
     }
     else if (Port == 0x05) MTX_KBD_DRIVE = Value;
-    else if (Port == 0x06) sn76496W(Value, &sncol);
+    else if (Port == 0x06) sn76496W(Value, &mySN);
     else if (Port == 0xFB || Port == 0xFF) // MAGROM paging
     {
         if (memotech_RAM_start >= 0x8000)
