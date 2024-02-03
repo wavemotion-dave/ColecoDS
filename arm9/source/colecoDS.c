@@ -501,6 +501,9 @@ void setupStream(void)
 void dsInstallSoundEmuFIFO(void)
 {
   SoundPause();
+  
+  memset(mixbuf1, 0x00, sizeof(mixbuf1));
+  memset(mixbuf2, 0x00, sizeof(mixbuf2));
 
   //  ------------------------------------------------------------------
   //  The SN sound chip is for normal colecovision sound handling
@@ -521,7 +524,7 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496W(0xFF,  &mySN);         // Disable Noise Channel
 
-  sn76496Mixer(16, mixbuf1, &mySN);  // Do an initial mix conversion to clear the output
+  sn76496Mixer(8, mixbuf1, &mySN);  // Do an initial mix conversion to clear the output
   
   //  ------------------------------------------------------------------
   //  The "fake AY" sound chip is for Super Game Module sound handling
@@ -542,7 +545,7 @@ void dsInstallSoundEmuFIFO(void)
 
   ay76496W(0xFF,  &myAY);         // Disable Noise Channel
 
-  sn76496Mixer(16, mixbuf2, &myAY); // Do an initial mix conversion to clear the output
+  sn76496Mixer(8, mixbuf2, &myAY); // Do an initial mix conversion to clear the output
 
   // -----------------------------------------------------------------
   // The SCC sound chip is just for a few select Konami MSX1 games 
