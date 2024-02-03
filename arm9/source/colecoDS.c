@@ -349,7 +349,7 @@ u8 spinX_right  __attribute__((section(".dtcm"))) = 0;
 u8 spinY_left   __attribute__((section(".dtcm"))) = 0;
 u8 spinY_right  __attribute__((section(".dtcm"))) = 0;
 
-static char tmp[34];    // For various siprintf() calls
+static char tmp[64];    // For various siprintf() calls
 
 // ------------------------------------------------------------
 // Utility function to pause the sound...
@@ -357,7 +357,6 @@ static char tmp[34];    // For various siprintf() calls
 void SoundPause(void)
 {
     soundEmuPause = 1;
-    mmSetModuleVolume(0);
 }
 
 // ------------------------------------------------------------
@@ -366,7 +365,6 @@ void SoundPause(void)
 void SoundUnPause(void)
 {
     soundEmuPause = 0;
-    mmSetModuleVolume(1024);
 }
 
 // --------------------------------------------------------------------------------------------
@@ -461,7 +459,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
 void setupStream(void)
 {
   //----------------------------------------------------------------
-  //  initialize maxmod with our small 3-effect soundbank
+  //  initialize maxmod with our small 5-effect soundbank
   //----------------------------------------------------------------
   mmInitDefaultMem((mm_addr)soundbank_bin);
 
@@ -474,12 +472,12 @@ void setupStream(void)
   //----------------------------------------------------------------
   //  open stream
   //----------------------------------------------------------------
-  myStream.sampling_rate  = sample_rate;        // sampling rate =
-  myStream.buffer_length  = buffer_size;        // buffer length =
-  myStream.callback   = OurSoundMixer;          // set callback function
-  myStream.format     = MM_STREAM_16BIT_STEREO; // format = stereo  16-bit
-  myStream.timer      = MM_TIMER0;              // use hardware timer 0
-  myStream.manual     = false;                  // use automatic filling
+  myStream.sampling_rate  = sample_rate;            // sampling rate =
+  myStream.buffer_length  = buffer_size;            // buffer length =
+  myStream.callback       = OurSoundMixer;          // set callback function
+  myStream.format         = MM_STREAM_16BIT_STEREO; // format = stereo  16-bit
+  myStream.timer          = MM_TIMER0;              // use hardware timer 0
+  myStream.manual         = false;                  // use automatic filling
   mmStreamOpen(&myStream);
 
   //----------------------------------------------------------------
@@ -525,8 +523,6 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496Mixer(16, mixbuf1, &mySN);  // Do an initial mix conversion to clear the output
   
-  last_sample = mixbuf1[7];
-
   //  ------------------------------------------------------------------
   //  The "fake AY" sound chip is for Super Game Module sound handling
   //  ------------------------------------------------------------------
@@ -583,6 +579,7 @@ static u8 last_msx_mode = 0;
 static u8 last_msx_scc_enable = 0;
 static u8 last_svi_mode = 0;
 static u8 last_adam_mode = 0;
+static u8 last_pal_mode = 99;
 
 // --------------------------------------------------------------
 // When we reset the machine, there are many small utility flags
@@ -919,7 +916,6 @@ bool isAdamDDP(void)
 // AY sound chip support and MegaCart support.  Game players
 // probably don't care, but it's really helpful for devs.
 // ------------------------------------------------------------
-u8 last_pal_mode = 99;
 void DisplayStatusLine(bool bForce)
 {
     if (myGlobalConfig.emuText == 0) return;
