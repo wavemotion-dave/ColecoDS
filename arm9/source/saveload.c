@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -28,8 +28,6 @@
 #include "MTX_BIOS.h"
 #include "fdc.h"
 #include "printf.h"
-
-#define NORAM 0xFF
 
 #define COLECODS_SAVE_VER 0x0018        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 

@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -27,15 +27,13 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
-#define NORAM 0xFF
 
 // ------------------------------------------------
 // Adam RAM is 128K (64K Intrinsic, 64K Expanded)
 // ------------------------------------------------
 u8 adam_128k_mode      = 0;
 u8 sg1000_double_reset = false;
-
-extern u8 msx_scc_enable;
+char lastAdamDataPath[256] = {0};
 
 // -------------------------------------
 // Some IO Port and Memory Map vars...
@@ -55,7 +53,7 @@ u8 adam_ram_hi          __attribute__((section(".dtcm"))) = false;
 u8 adam_ram_lo_exp      __attribute__((section(".dtcm"))) = false;
 u8 adam_ram_hi_exp      __attribute__((section(".dtcm"))) = false;
 
-Z80 CPU __attribute__((section(".dtcm")));
+Z80 CPU __attribute__((section(".dtcm")));      // Put the entire CPU state into fast memory for speed!
 
 // --------------------------------------------------
 // Some special ports for the MSX machine emu
@@ -67,8 +65,6 @@ u8 Port_PPI_C __attribute__((section(".dtcm"))) = 0x00;
 u8 bIsComplicatedRAM __attribute__((section(".dtcm"))) = 0;   // Set to 1 if we have hotspots or other RAM needs
 
 u8 sg1000_sms_mapper __attribute__((section(".dtcm"))) = 0;   // Set to 1 if this is an SG-1000 game needing the SMS mapper
-
-char lastAdamDataPath[256];
 
 u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
@@ -109,7 +105,7 @@ u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global fil
 // -----------------------------------------------------------
 // The two master sound chips... both are mapped to SN sound.
 // -----------------------------------------------------------
-SN76496 mySN   __attribute__((section(".dtcm")));
+SN76496 mySN    __attribute__((section(".dtcm")));
 SN76496 myAY    __attribute__((section(".dtcm")));
 
 // ---------------------------------------------------------
@@ -689,10 +685,10 @@ u8 loadrom(const char *path,u8 * ptr)
                 memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
                 MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
                 
-                if      (romSize == (64  * 1024)) romBankMask = 0x03;
-                else if (romSize == (128 * 1024)) romBankMask = 0x07;
-                else if (romSize == (256 * 1024)) romBankMask = 0x0F;
-                else if (romSize == (512 * 1024)) romBankMask = 0x1F;
+                if      (romSize <= (64  * 1024)) romBankMask = 0x03;
+                else if (romSize <= (128 * 1024)) romBankMask = 0x07;
+                else if (romSize <= (256 * 1024)) romBankMask = 0x0F;
+                else if (romSize <= (512 * 1024)) romBankMask = 0x1F;
                 else                              romBankMask = 0x3F;    // Up to 1024KB... huge!
             }
         }
@@ -710,7 +706,7 @@ u8 loadrom(const char *path,u8 * ptr)
     // To speed up processing in the memory write functions, we accumulate 
     // the bits so we only have to fetch one machine_mode variable.
     // -----------------------------------------------------------------------
-    if (pencil2_mode)           machine_mode = MODE_PENCIL2;
+    if      (pencil2_mode)      machine_mode = MODE_PENCIL2;
     else if (msx_mode)          machine_mode = MODE_MSX;
     else if (svi_mode)          machine_mode = MODE_SVI;
     else if (einstein_mode)     machine_mode = MODE_EINSTEIN;

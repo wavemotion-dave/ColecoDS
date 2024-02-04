@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -617,15 +617,15 @@ void ResetColecovision(void)
 
   sgm_reset();                          // Reset Super Game Module
 
-  sn76496Reset(1, &mySN);              // Reset the SN sound chip
-  sn76496W(0x90 | 0x0F  ,&mySN);       //  Write new Volume for Channel A (off)
-  sn76496W(0xB0 | 0x0F  ,&mySN);       //  Write new Volume for Channel B (off)
-  sn76496W(0xD0 | 0x0F  ,&mySN);       //  Write new Volume for Channel C (off)
+  sn76496Reset(1, &mySN);               // Reset the SN sound chip
+  sn76496W(0x90 | 0x0F  ,&mySN);        //  Write new Volume for Channel A (off)
+  sn76496W(0xB0 | 0x0F  ,&mySN);        //  Write new Volume for Channel B (off)
+  sn76496W(0xD0 | 0x0F  ,&mySN);        //  Write new Volume for Channel C (off)
 
-  ay76496Reset(2, &myAY);              // Reset the SN sound chip
-  ay76496W(0x90 | 0x0F  ,&myAY);       //  Write new Volume for Channel A (off)
-  ay76496W(0xB0 | 0x0F  ,&myAY);       //  Write new Volume for Channel B (off)
-  ay76496W(0xD0 | 0x0F  ,&myAY);       //  Write new Volume for Channel C (off)
+  ay76496Reset(2, &myAY);               // Reset the SN sound chip
+  ay76496W(0x90 | 0x0F  ,&myAY);        //  Write new Volume for Channel A (off)
+  ay76496W(0xB0 | 0x0F  ,&myAY);        //  Write new Volume for Channel B (off)
+  ay76496W(0xD0 | 0x0F  ,&myAY);        //  Write new Volume for Channel C (off)
 
   DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the Z80 CPU core

@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -22,8 +22,6 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "printf.h"
-
-#define NORAM 0xFF
 
 // ------------------------------------------------------------------
 // Casio PV-2000 reset 
