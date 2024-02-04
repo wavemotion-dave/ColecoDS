@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -25,8 +25,6 @@
 #include "colecomngt.h"
 #include "colecogeneric.h"
 #include "printf.h"
-
-#define NORAM 0xFF
 
 // -----------------------------------------------------------------------------------------
 // Allocate the Floppy Drive Controller structure where we track the registers and the

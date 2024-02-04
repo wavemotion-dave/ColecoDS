@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2023 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -26,8 +26,6 @@
 #include "fdc.h"
 #include "printf.h"
 
-#define NORAM 0xFF
-
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
 // ---------------------------------------
@@ -47,7 +45,7 @@ u8 msx_sram_enabled     __attribute__((section(".dtcm"))) = 0;
 
 u16 msx_block_size      __attribute__((section(".dtcm"))) = 0x2000; // Either 8K or 16K based on Mapper Type
 
-SCC mySCC;           // Declare new SCC module for Konami MSX games that use it
+SCC mySCC               __attribute__((section(".dtcm")));          // Declare new SCC module for Konami MSX games that use it
 
 // --------------------------------------------------------------------------
 // These aren't used very often so we don't need them in fast .dtcm memory

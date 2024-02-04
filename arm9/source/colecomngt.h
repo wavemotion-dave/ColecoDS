@@ -12,6 +12,8 @@
 #define IMAGE_VERIFY_FAIL 0X01
 #define IMAGE_VERIFY_PASS 0x02
 
+#define NORAM             0xFF
+
 extern u8 mapperType;
 extern u8 mapperMask;
 
