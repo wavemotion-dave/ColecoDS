@@ -805,13 +805,13 @@ void ShowDebugZ80(void)
 
         if (AY_Enable)
         {
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[0], myAY.ayRegs[1], myAY.ayRegs[2], myAY.ayRegs[3]);
             DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[4], myAY.ayRegs[5], myAY.ayRegs[6], myAY.ayRegs[7]);
             DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[8], myAY.ayRegs[9], myAY.ayRegs[10], myAY.ayRegs[11]);
             DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[12], myAY.ayRegs[13], myAY.ayRegs[14], myAY.ayRegs[15]);
             DSPrint(0,idx++,7, tmp);
             idx++;
         }

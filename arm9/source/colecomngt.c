@@ -68,8 +68,6 @@ u8 sg1000_sms_mapper __attribute__((section(".dtcm"))) = 0;   // Set to 1 if thi
 
 u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
 u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
-u8 ay_reg_idx     __attribute__((section(".dtcm"))) = 0;
-u8 ay_reg[16]     __attribute__((section(".dtcm"))) = {0};
 u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 
 u8 Port53         __attribute__((section(".dtcm"))) = 0x00;
@@ -114,12 +112,6 @@ AY38910 myAY   __attribute__((section(".dtcm")));
 // ---------------------------------------------------------
 void sgm_reset(void)
 {
-    // Make sure Super Game Module registers for AY chip are clear...
-    memset(ay_reg, 0x00, 16);    // Clear the AY registers...
-    ay_reg[0x07] = 0xFF;         // Everything turned off to start...
-    ay_reg[0x0E] = 0xFF;         // These are "max attenuation" volumes
-    ay_reg[0x0F] = 0xFF;         // to keep the volume disabled
-   
     sgm_enable = false;          // Default to no SGM until enabled
     sgm_low_addr = 0x2000;       // And the first 8K is BIOS
     if (!msx_mode && !svi_mode && !einstein_mode)
