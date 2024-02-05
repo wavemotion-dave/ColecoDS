@@ -64,9 +64,6 @@
 #include "MTX_BIOS.h"
 #include "C24XX.h"
 #include "screenshot.h"
-
-#include "cpu/sn76496/SN76496.h"
-#include "cpu/sn76496/Fake_AY.h"
 #include "cpu/z80/Z80_interface.h"
 #include "cpu/scc/SCC.h"
 
@@ -378,8 +375,8 @@ void SoundUnPause(void)
 mm_ds_system sys   __attribute__((section(".dtcm")));
 mm_stream myStream __attribute__((section(".dtcm")));
 
-s16 mixbuf1[2048+64];      // When we have SN and AY sound we have to mix 3+3 channels
-s16 mixbuf2[2048+64];      // into a single output so we render to mix buffers first.
+s16 mixbuf1[4096+64];      // When we have SN and AY sound we have to mix 3+3 channels
+s16 mixbuf2[4096+64];      // into a single output so we render to mix buffers first.
 
 // -------------------------------------------------------------------------------------------
 // maxmod will call this routine when the buffer is half-empty and requests that
@@ -403,7 +400,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         {
           if (msx_scc_enable)   // If SCC is enabled, we need to mix the AY with the SCC chips
           {
-              ay76496Mixer(len*4, mixbuf1, &myAY);
+              ay38910Mixer(len*2, mixbuf1, &myAY);
               SCCMixer(len*4, mixbuf2, &mySCC);
               
               s16 *p = (s16*)dest;
@@ -422,14 +419,33 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
           }
           else  // Pretty simple... just AY
           {
-              ay76496Mixer(len*4, dest, &myAY);
-              last_sample = ((s16*)dest)[len*2 - 1];
+              if (myConfig.msxBeeper)
+              {
+                    ay38910Mixer(len*2, mixbuf1, &myAY);
+                    sn76496Mixer(len*2, mixbuf2, &mySN);
+                    s16 *p = (s16*)dest;
+                    for (int i=0; i<len*2; i++)
+                    {
+                        // ------------------------------------------------------------------------
+                        // We normalize the samples and mix them carefully to minimize clipping...
+                        // ------------------------------------------------------------------------
+                        s32 combined = (mixbuf1[i]) + (mixbuf2[i]) + 32768;
+                        if (combined >  32767) combined = 32767;
+                        *p++ = (s16)combined;
+                    }
+                    p--; last_sample = *p;
+              }
+              else
+              {
+                  ay38910Mixer(len*2, dest, &myAY);
+                  last_sample = ((s16*)dest)[len*2 - 1];
+              }
           }
         }
         else if (AY_Enable)  // If AY is enabled we mix the normal SN chip with the AY chip sound
         {
-            ay76496Mixer(len*4, mixbuf1, &myAY);
-            sn76496Mixer(len*4, mixbuf2, &mySN);
+            ay38910Mixer(len*2, mixbuf1, &myAY);
+            sn76496Mixer(len*2, mixbuf2, &mySN);
             s16 *p = (s16*)dest;
             for (int i=0; i<len*2; i++)
             {
@@ -444,7 +460,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         }
         else  // This is the 'normal' case of just Colecovision SN sound chip output
         {
-            sn76496Mixer(len*4, dest, &mySN);
+            sn76496Mixer(len*2, dest, &mySN);
             last_sample = ((s16*)dest)[len*2 - 1];
         }
     }
@@ -472,10 +488,10 @@ void setupStream(void)
   //----------------------------------------------------------------
   //  open stream
   //----------------------------------------------------------------
-  myStream.sampling_rate  = sample_rate;            // sampling rate =
-  myStream.buffer_length  = buffer_size;            // buffer length =
+  myStream.sampling_rate  = sample_rate;            // sampling rate = (27965)
+  myStream.buffer_length  = buffer_size;            // buffer length = (512+16)
   myStream.callback       = OurSoundMixer;          // set callback function
-  myStream.format         = MM_STREAM_16BIT_STEREO; // format = stereo  16-bit
+  myStream.format         = MM_STREAM_16BIT_STEREO;   // format = mono 16-bit
   myStream.timer          = MM_TIMER0;              // use hardware timer 0
   myStream.manual         = false;                  // use automatic filling
   mmStreamOpen(&myStream);
@@ -494,19 +510,13 @@ void setupStream(void)
   //----------------------------------------------------------------
 }
 
-
-// -----------------------------------------------------------------------
-// We setup the sound chips - disabling all volumes to start.
-// -----------------------------------------------------------------------
-void dsInstallSoundEmuFIFO(void)
+void sound_chip_reset()
 {
-  SoundPause();
-  
   memset(mixbuf1, 0x00, sizeof(mixbuf1));
   memset(mixbuf2, 0x00, sizeof(mixbuf2));
 
   //  ------------------------------------------------------------------
-  //  The SN sound chip is for normal colecovision sound handling
+  //  The SN sound chip is for normal Colecovision sound handling
   //  ------------------------------------------------------------------
   sn76496Reset(1, &mySN);         // Reset the SN sound chip
 
@@ -526,26 +536,13 @@ void dsInstallSoundEmuFIFO(void)
 
   sn76496Mixer(8, mixbuf1, &mySN);  // Do an initial mix conversion to clear the output
   
-  //  ------------------------------------------------------------------
-  //  The "fake AY" sound chip is for Super Game Module sound handling
-  //  ------------------------------------------------------------------
-  ay76496Reset(2, &myAY);         // Reset the "AY" sound chip
-
-  ay76496W(0x80 | 0x00,&myAY);    // Write new Frequency for Channel A
-  ay76496W(0x00 | 0x00,&myAY);    // Write new Frequency for Channel A
-  ay76496W(0x90 | 0x0F,&myAY);    // Write new Volume for Channel A
-
-  ay76496W(0xA0 | 0x00,&myAY);    // Write new Frequency for Channel B
-  ay76496W(0x00 | 0x00,&myAY);    // Write new Frequency for Channel B
-  ay76496W(0xB0 | 0x0F,&myAY);    // Write new Volume for Channel B
-
-  ay76496W(0xC0 | 0x00,&myAY);    // Write new Frequency for Channel C
-  ay76496W(0x00 | 0x00,&myAY);    // Write new Frequency for Channel C
-  ay76496W(0xD0 | 0x0F,&myAY);    // Write new Volume for Channel C
-
-  ay76496W(0xFF,  &myAY);         // Disable Noise Channel
-
-  sn76496Mixer(8, mixbuf2, &myAY); // Do an initial mix conversion to clear the output
+  //  --------------------------------------------------------------------
+  //  The AY sound chip is for Super Game Module and MSX sound handling
+  //  --------------------------------------------------------------------
+  ay38910Reset(&myAY);             // Reset the "AY" sound chip
+  ay38910IndexW(0x07, &myAY);      // Register 7 is ENABLE
+  ay38910DataW(0x3F, &myAY);       // All OFF (negative logic)
+  ay38910Mixer(8, mixbuf2, &myAY); // Do an initial mix conversion to clear the output
 
   // -----------------------------------------------------------------
   // The SCC sound chip is just for a few select Konami MSX1 games 
@@ -560,9 +557,16 @@ void dsInstallSoundEmuFIFO(void)
   SCCWrite(0x00, 0x988F, &mySCC);
   
   SCCMixer(16, mixbuf2, &mySCC);     // Do an initial mix conversion to clear the output
-  
-  setupStream();    // Setup maxmod stream...
+}
 
+// -----------------------------------------------------------------------
+// We setup the sound chips - disabling all volumes to start.
+// -----------------------------------------------------------------------
+void dsInstallSoundEmuFIFO(void)
+{
+  SoundPause();             // Pause any sound output  
+  sound_chip_reset();       // Reset the SN, AY and SCC chips 
+  setupStream();            // Setup maxmod stream...
   bStartSoundEngine = true; // Volume will 'unpause' after 1 frame in the main loop.
 }
 
@@ -617,16 +621,8 @@ void ResetColecovision(void)
 
   sgm_reset();                          // Reset Super Game Module
 
-  sn76496Reset(1, &mySN);               // Reset the SN sound chip
-  sn76496W(0x90 | 0x0F  ,&mySN);        //  Write new Volume for Channel A (off)
-  sn76496W(0xB0 | 0x0F  ,&mySN);        //  Write new Volume for Channel B (off)
-  sn76496W(0xD0 | 0x0F  ,&mySN);        //  Write new Volume for Channel C (off)
-
-  ay76496Reset(2, &myAY);               // Reset the SN sound chip
-  ay76496W(0x90 | 0x0F  ,&myAY);        //  Write new Volume for Channel A (off)
-  ay76496W(0xB0 | 0x0F  ,&myAY);        //  Write new Volume for Channel B (off)
-  ay76496W(0xD0 | 0x0F  ,&myAY);        //  Write new Volume for Channel C (off)
-
+  sound_chip_reset();                   // Reset the SN, AY and SCC chips
+  
   DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the Z80 CPU core
 
@@ -780,7 +776,6 @@ void ShowDebugZ80(void)
 
     if (myGlobalConfig.debugger == 3)
     {
-        extern u8 a_idx, b_idx, c_idx;
         extern u8 lastBank;
         extern u8 romBankMask;
         extern u8 Port20, Port53, Port60;
@@ -817,10 +812,6 @@ void ShowDebugZ80(void)
             sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
             DSPrint(0,idx++,7, tmp);
             sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
-            DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
-            DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
             DSPrint(0,idx++,7, tmp);
             idx++;
         }

@@ -79,7 +79,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 
           ay_reg[14] = ~joy1;
       }
-      return FakeAY_ReadData();
+      return ay38910DataR(&myAY);
   }
   else if (Port == 0x98)
   {
@@ -365,11 +365,13 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     else if (Port == 0x81) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }}
     else if (Port == 0x88)    // PSG Area
     {
-        FakeAY_WriteIndex(Value & 0x0F);
+        ay_reg_idx = Value & 0xF;
+        ay38910IndexW(Value, &myAY);
     }
     else if (Port == 0x8C)
     {
-        FakeAY_WriteData(Value);
+        ay_reg[ay_reg_idx] = Value;
+        ay38910DataW(Value, &myAY);
         if (ay_reg_idx == 15)
         {
             IOBYTE = ay_reg[ay_reg_idx] & 0xFF;

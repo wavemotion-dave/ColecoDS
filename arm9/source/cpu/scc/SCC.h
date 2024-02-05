@@ -44,10 +44,57 @@ typedef struct {
 	u16 ch4Addr;
 } SCC;
 
+/**
+ * Reset/initialize SCC chip.
+ * @param  *chip: The SCC chip.
+ */
 void SCCReset(SCC *chip);
-void SCCMixer(int len, void *dest, SCC *chip);
+
+/**
+ * Saves the state of the SN76496 chip to the destination.
+ * @param  *destination: Where to save the state.
+ * @param  *chip: The SN76496 chip to save.
+ * @return The size of the state.
+ */
+int SCCSaveState(void *destination, const SCC *chip);
+
+/**
+ * Loads the state of the SN76496 chip from the source.
+ * @param  *chip: The SN76496 chip to load a state into.
+ * @param  *source: Where to load the state from.
+ * @return The size of the state.
+ */
+int SCCLoadState(SCC *chip, const void *source);
+
+/**
+ * Gets the state size of a SN76496.
+ * @return The size of the state.
+ */
+int SCCGetStateSize(void);
+
+/**
+ * Runs the sound chip for count number of cycles shifted by "SCC_UPSHIFT",
+ * @param  count: Number of samples to generate.
+ * @param  *dest: Pointer to buffer where sound is rendered.
+ * @param  *chip: The SCC chip.
+ */
+void SCCMixer(int count, s16 *dest, SCC *chip);
+
+/**
+ * Write value to SCC chip.
+ * @param  value: value to write.
+ * @param  address: The address to write to.
+ * @param  *chip: The SCC chip.
+ */
 void SCCWrite(u8 value, u16 adress, SCC *chip);
-u8 SCCRead(u16 adress, SCC *chip);
+
+/**
+ * Write value to SCC chip.
+ * @param  address: The address to read from.
+ * @param  *chip: The SCC chip.
+ * @return The value of the address.
+ */
+u8 SCCRead(u16 address, SCC *chip);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -1,7 +1,16 @@
+;@
+;@  SN76496.i
+;@  SN76496/SN76489 sound chip emulator for arm32.
+;@
+;@  Created by Fredrik Ahlström on 2009-08-25.
+;@  Copyright © 2009-2024 Fredrik Ahlström. All rights reserved.
+;@
 ;@ ASM header for the SN76496 emulator
 ;@
 
-	snptr			.req r12
+#if !__ASSEMBLER__
+	#error This header file is only for use in assembly files!
+#endif
 
 							;@ SN76496.s
 	.struct 0
@@ -21,8 +30,9 @@
 
 	snAttChg:		.byte 0
 	snLastReg:		.byte 0
-	ggStereo:		.byte 0
-	snPadding:		.space 1
+	snPadding:		.space 2
+
+	calculatedVolumes:	.space 16*2
 
 	ch0Reg:			.short 0
 	ch0Att:			.short 0
@@ -33,9 +43,7 @@
 	ch3Reg:			.short 0
 	ch3Att:			.short 0
 
-	snPadding2:		.space 4*4
-	calculatedVolumes:	.space 16*2*2
-
+	noiseType:		.long 0
 	snSize:
 
 ;@----------------------------------------------------------------------------

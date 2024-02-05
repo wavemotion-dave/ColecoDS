@@ -75,12 +75,12 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       // -------------------------------------------
       // Only port 1 is used for the first Joystick
       // -------------------------------------------
-      if (ay_reg_idx == 14)
+      if (myAY.ayRegIndex == 14)
       {
           u8 joy1 = 0x00;
 
           // Only port 1... not port 2
-          if ((ay_reg[15] & 0x40) == 0)
+          if ((myAY.ayRegs[15] & 0x40) == 0)
           {
               if (myConfig.dpad == DPAD_NORMAL)
               {
@@ -104,9 +104,9 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
           }
 
-          ay_reg[14] = ~joy1;
+          myAY.ayPortAIn = ~joy1;
       }
-      return FakeAY_ReadData();
+      return ay38910DataR(&myAY);
   }
   else if (Port == 0xA8) return Port_PPI_A;
   else if (Port == 0xA9)
@@ -1164,8 +1164,8 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
 
     if      (Port == 0x98) WrData9918(Value);
     else if (Port == 0x99) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }}
-    else if (Port == 0xA0) {FakeAY_WriteIndex(Value & 0x0F);}   // PSG Area
-    else if (Port == 0xA1) FakeAY_WriteData(Value);
+    else if (Port == 0xA0) {ay38910IndexW(Value, &myAY);}   // PSG Area
+    else if (Port == 0xA1) {ay38910DataW(Value, &myAY);}
     else if (Port == 0xA8) // Slot system for MSX
     {
         if (Port_PPI_A != Value)
@@ -1710,6 +1710,57 @@ void MSX_InitialMemoryLayout(u32 romSize)
 /*********************************************************************************
  * A few ZX Speccy ports utilize the MSX beeper to "simulate" the sound...
  ********************************************************************************/
+
+// ------------------------------------------------------------------------------------
+// If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it), 
+// then we need to service it here. We basically track the frequency at which the
+// game has hit the beeper and approximate that by using AY Channel A to produce the 
+// tone.  This is crude and doesn't sound quite right... but good enough.
+// ------------------------------------------------------------------------------------
+void BeeperOFF(void)
+{
+    sn76496W(0x80 | 0x00,&mySN);    // Write new Frequency for Channel A
+    sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel A
+    sn76496W(0x90 | 0x0F,&mySN);    // Write new Volume for Channel A
+
+    sn76496W(0xA0 | 0x00,&mySN);    // Write new Frequency for Channel B
+    sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel B
+    sn76496W(0xB0 | 0x0F,&mySN);    // Write new Volume for Channel B
+
+    sn76496W(0xC0 | 0x00,&mySN);    // Write new Frequency for Channel C
+    sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel C
+    sn76496W(0xD0 | 0x0F,&mySN);    // Write new Volume for Channel C
+
+    sn76496W(0xFF,  &mySN);         // Disable Noise Channel
+}
+
+void BeeperON(u16 beeper_freq)
+{
+    if (beeper_freq > 0)
+    {
+        if (beeper_freq > 0x1FF) beeper_freq = 0x1FF;
+        beeper_freq = 0x3FF - beeper_freq;
+        
+        sn76496W(0x80 | (beeper_freq & 0xF), &mySN);
+        sn76496W(0x00 | ((beeper_freq >> 4) & 0x1F), &mySN);
+        sn76496W(0x97, &mySN); // Turn on sound at fixed "mid" volume 
+        
+        sn76496W(0xA0 | 0x00,&mySN);    // Write new Frequency for Channel B
+        sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel B
+        sn76496W(0xB0 | 0x0F,&mySN);    // Write new Volume for Channel B
+
+        sn76496W(0xC0 | 0x00,&mySN);    // Write new Frequency for Channel C
+        sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel C
+        sn76496W(0xD0 | 0x0F,&mySN);    // Write new Volume for Channel C
+
+        sn76496W(0xFF,  &mySN);         // Disable Noise Channel        
+    }
+    else 
+    {
+        BeeperOFF();
+    }
+}
+
 void MSX_HandleBeeper(void)
 {
     if (++msx_beeper_process & 1)
@@ -1722,8 +1773,6 @@ void MSX_HandleBeeper(void)
       } else {if (beeperWasOn) {BeeperOFF(); beeperWasOn=0;}}
     }
 }
-
-
 
 
 // ---------------------------------------------------------

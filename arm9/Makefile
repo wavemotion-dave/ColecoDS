@@ -15,7 +15,7 @@ include $(DEVKITARM)/ds_rules
 # all directories are relative to this makefile
 #---------------------------------------------------------------------------------
 BUILD		:=	build
-SOURCES		:=	source/cpu/z80 source/cpu/z80/drz80 source/cpu/z80/cz80 source/cpu/tms9918a source/cpu/sn76496 source/cpu/m6502 source/cpu/scc source 
+SOURCES		:=	source/cpu/z80 source/cpu/z80/drz80 source/cpu/z80/cz80 source/cpu/tms9918a source/cpu/sn76496 source/cpu/ay38910 source/cpu/m6502 source/cpu/scc source 
 INCLUDES	:=	include 
 DATA		:=	data
 GRAPHICS	:=	gfx
@@ -28,15 +28,13 @@ BACKGRD		:=  gfx_data
 #ARCH	:=	-mthumb -mthumb-interwork
 ARCH	:=
 
-CFLAGS	:= -Wall -Wno-strict-aliasing -O3 -march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math $(ARCH)
+CFLAGS	:= -Wall -Wno-strict-aliasing -O3 -march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math $(ARCH) -DSCCMULT=32 -DAY_UPSHIFT=2 -DSN_UPSHIFT=2
 
 CFLAGS	+=	$(INCLUDE) -DARM9
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
 
-ASFLAGS	:=	-g $(ARCH) -march=armv5te -mtune=arm946e-s
-ASFLAGS	:=	$(ARCH) -march=armv5te -mtune=arm946e-s
+ASFLAGS	:=	$(ARCH) -march=armv5te -mtune=arm946e-s -DSCCMULT=32 -DAY_UPSHIFT=2 -DSN_UPSHIFT=2
 
-#LDFLAGS	=	-specs=ds_arm9.specs -g $(ARCH) -mno-fpu -Wl,-Map,$(notdir $*.map)
 LDFLAGS	=	-specs=ds_arm9.specs $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 #---------------------------------------------------------------------------------
