@@ -1287,7 +1287,7 @@ void SetDefaultGameConfig(void)
     myConfig.memWipe     = 0;                           // Default to RANDOM memory
     myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY; // By default clear VDP interrupts automatically
     myConfig.cvEESize    = C24XX_24C256;                // Default CV EEPROM size is 32K
-    myConfig.ayEnvelope  = 0;                           // By default AY envelopes are enabled
+    myConfig.reserved1   = 0;                           // was AY envelopes which is no longer needed with proper AY driver so reuse this
     myConfig.mirrorRAM   = COLECO_RAM_NORMAL_MIRROR;    // By default use the normal Colecovision (and CreatiVision) memory mirrors
     myConfig.msxBeeper   = 0;                           // Assume no MSX beeper required - only a few games need this
     myConfig.cvisionLoad = 0;                           // Default to normal Legacy A/B load for CreatiVision games
@@ -1569,15 +1569,6 @@ void SetDefaultGameConfig(void)
             }
         }
     }    
-    // ---------------------------------------------------------------------------------------------
-    // And we don't have the AY envelope quite right so a few games don't want to reset the indexes
-    // ---------------------------------------------------------------------------------------------
-    if (file_crc == 0x90f5f414)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp
-    if (file_crc == 0x5e169d35)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
-    if (file_crc == 0xe66eaed9)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)
-    if (file_crc == 0x785fc789)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (alt)    
-    if (file_crc == 0xe50d6e60)                 myConfig.ayEnvelope = 1; // MSX Warp-and-Warp (cassette)    
-    if (file_crc == 0x73f37230)                 myConfig.ayEnvelope = 1; // MSX Killer Station
     
     // ----------------------------------------------------------------------------
     // For these machines, we default to clearing interrupts only on VDP read...
@@ -1769,7 +1760,6 @@ const struct options_t Option_Table[3][20] =
         {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
-        {"AY ENVELOPE",    {"NORMAL","NO RESET IDX"},                                                                                                                                           &myConfig.ayEnvelope, 2},
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
         {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
