@@ -188,14 +188,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == '0')           key1 = 0x01;
-                  if (kbd_key == '1')           key1 = 0x02;
-                  if (kbd_key == '2')           key1 = 0x04;
-                  if (kbd_key == '3')           key1 = 0x08;
-                  if (kbd_key == '4')           key1 = 0x10;
-                  if (kbd_key == '5')           key1 = 0x20;
-                  if (kbd_key == '6')           key1 = 0x40;
-                  if (kbd_key == '7')           key1 = 0x80;
+                  if (kbd_key == '0')           key1  |= 0x01;
+                  if (kbd_key == '1')           key1  |= 0x02;
+                  if (kbd_key == '2')           key1  |= 0x04;
+                  if (kbd_key == '3')           key1  |= 0x08;
+                  if (kbd_key == '4')           key1  |= 0x10;
+                  if (kbd_key == '5')           key1  |= 0x20;
+                  if (kbd_key == '6')           key1  |= 0x40;
+                  if (kbd_key == '7')           key1  |= 0x80;
               }
           }
           else if ((Port_PPI_C & 0x0F) == 1)  // Row 1
@@ -207,15 +207,15 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == '8')           key1 = 0x01;
-                  if (kbd_key == '9')           key1 = 0x02;
-                  if (kbd_key == '-')           key1 = 0x04;
-                  if (kbd_key == '=')           key1 = 0x08;
-                  if (kbd_key == '\\')          key1 = 0x10;
-                  if (kbd_key == '[')           key1 = 0x20;
-                  if (kbd_key == ']')           key1 = 0x40;
-                  if (kbd_key == ';')           key1 = 0x80;
-                  if (kbd_key == ':')           key1 = 0x80;
+                  if (kbd_key == '8')           key1 |= 0x01;
+                  if (kbd_key == '9')           key1 |= 0x02;
+                  if (kbd_key == '-')           key1 |= 0x04;
+                  if (kbd_key == '=')           key1 |= 0x08;
+                  if (kbd_key == '\\')          key1 |= 0x10;
+                  if (kbd_key == '[')           key1 |= 0x20;
+                  if (kbd_key == ']')           key1 |= 0x40;
+                  if (kbd_key == ';')           key1 |= 0x80;
+                  if (kbd_key == ':')           key1 |= 0x80;
               }
           }
           else if ((Port_PPI_C & 0x0F) == 2)  // Row 2
@@ -227,14 +227,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == KBD_KEY_QUOTE) key1 = 0x01;
-                  if (kbd_key == '`')           key1 = 0x02;
-                  if (kbd_key == ',')           key1 = 0x04;
-                  if (kbd_key == '.')           key1 = 0x08;
-                  if (kbd_key == '/')           key1 = 0x10;
-                  if (kbd_key == KBD_KEY_DEAD)  key1 = 0x20;
-                  if (kbd_key == 'A')           key1 = 0x40;
-                  if (kbd_key == 'B')           key1 = 0x80;
+                  if (kbd_key == KBD_KEY_QUOTE) key1 |= 0x01;
+                  if (kbd_key == '`')           key1 |= 0x02;
+                  if (kbd_key == ',')           key1 |= 0x04;
+                  if (kbd_key == '.')           key1 |= 0x08;
+                  if (kbd_key == '/')           key1 |= 0x10;
+                  if (kbd_key == KBD_KEY_DEAD)  key1 |= 0x20;
+                  if (kbd_key == 'A')           key1 |= 0x40;
+                  if (kbd_key == 'B')           key1 |= 0x80;
               }          
           }
           else if ((Port_PPI_C & 0x0F) == 3)  // Row 3
@@ -252,14 +252,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == 'C')           key1 = 0x01;
-                  if (kbd_key == 'D')           key1 = 0x02;
-                  if (kbd_key == 'E')           key1 = 0x04;
-                  if (kbd_key == 'F')           key1 = 0x08;
-                  if (kbd_key == 'G')           key1 = 0x10;
-                  if (kbd_key == 'H')           key1 = 0x20;
-                  if (kbd_key == 'I')           key1 = 0x40;
-                  if (kbd_key == 'J')           key1 = 0x80;
+                  if (kbd_key == 'C')           key1 |= 0x01;
+                  if (kbd_key == 'D')           key1 |= 0x02;
+                  if (kbd_key == 'E')           key1 |= 0x04;
+                  if (kbd_key == 'F')           key1 |= 0x08;
+                  if (kbd_key == 'G')           key1 |= 0x10;
+                  if (kbd_key == 'H')           key1 |= 0x20;
+                  if (kbd_key == 'I')           key1 |= 0x40;
+                  if (kbd_key == 'J')           key1 |= 0x80;
               }          
           }
           else if ((Port_PPI_C & 0x0F) == 4)  // Row 4
@@ -277,14 +277,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == 'K')           key1 = 0x01;
-                  if (kbd_key == 'L')           key1 = 0x02;
-                  if (kbd_key == 'M')           key1 = 0x04;
-                  if (kbd_key == 'N')           key1 = 0x08;
-                  if (kbd_key == 'O')           key1 = 0x10;
-                  if (kbd_key == 'P')           key1 = 0x20;
-                  if (kbd_key == 'Q')           key1 = 0x40;
-                  if (kbd_key == 'R')           key1 = 0x80;
+                  if (kbd_key == 'K')           key1 |= 0x01;
+                  if (kbd_key == 'L')           key1 |= 0x02;
+                  if (kbd_key == 'M')           key1 |= 0x04;
+                  if (kbd_key == 'N')           key1 |= 0x08;
+                  if (kbd_key == 'O')           key1 |= 0x10;
+                  if (kbd_key == 'P')           key1 |= 0x20;
+                  if (kbd_key == 'Q')           key1 |= 0x40;
+                  if (kbd_key == 'R')           key1 |= 0x80;
               }          
           }
           else if ((Port_PPI_C & 0x0F) == 5)  // Row 5
@@ -302,14 +302,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == 'S')           key1 = 0x01;
-                  if (kbd_key == 'T')           key1 = 0x02;
-                  if (kbd_key == 'U')           key1 = 0x04;
-                  if (kbd_key == 'V')           key1 = 0x08;
-                  if (kbd_key == 'W')           key1 = 0x10;
-                  if (kbd_key == 'X')           key1 = 0x20;
-                  if (kbd_key == 'Y')           key1 = 0x40;
-                  if (kbd_key == 'Z')           key1 = 0x80;
+                  if (kbd_key == 'S')           key1 |= 0x01;
+                  if (kbd_key == 'T')           key1 |= 0x02;
+                  if (kbd_key == 'U')           key1 |= 0x04;
+                  if (kbd_key == 'V')           key1 |= 0x08;
+                  if (kbd_key == 'W')           key1 |= 0x10;
+                  if (kbd_key == 'X')           key1 |= 0x20;
+                  if (kbd_key == 'Y')           key1 |= 0x40;
+                  if (kbd_key == 'Z')           key1 |= 0x80;
               }          
           }      
           else if ((Port_PPI_C & 0x0F) == 6) // Row 6
@@ -324,14 +324,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == KBD_KEY_SHIFT) key1 = 0x01;
-                  if (kbd_key == KBD_KEY_CTRL)  key1 = 0x02;
-                  if (kbd_key == KBD_KEY_GRAPH) key1 = 0x04;
-                  if (kbd_key == KBD_KEY_CAPS)  key1 = 0x08;
-                  if (kbd_key == KBD_KEY_CODE)  key1 = 0x10;
-                  if (kbd_key == KBD_KEY_F1)    key1 = 0x20;
-                  if (kbd_key == KBD_KEY_F2)    key1 = 0x40;
-                  if (kbd_key == KBD_KEY_F3)    key1 = 0x80;
+                  if (kbd_key == KBD_KEY_SHIFT) key1 |= 0x01;
+                  if (kbd_key == KBD_KEY_CTRL)  key1 |= 0x02;
+                  if (kbd_key == KBD_KEY_GRAPH) key1 |= 0x04;
+                  if (kbd_key == KBD_KEY_CAPS)  key1 |= 0x08;
+                  if (kbd_key == KBD_KEY_CODE)  key1 |= 0x10;
+                  if (kbd_key == KBD_KEY_F1)    key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_F2)    key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_F3)    key1 |= 0x80;
               }          
               if (key_shift)  key1 |= 0x01;  // SHIFT
               if (key_ctrl)   key1 |= 0x02;  // CTRL
@@ -350,14 +350,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
               }
               if (kbd_key)
               {
-                  if (kbd_key == KBD_KEY_F4)    key1 = 0x01;
-                  if (kbd_key == KBD_KEY_F5)    key1 = 0x02;
-                  if (kbd_key == KBD_KEY_ESC)   key1 = 0x04;
-                  if (kbd_key == KBD_KEY_TAB)   key1 = 0x08;
-                  if (kbd_key == KBD_KEY_STOP)  key1 = 0x10;
-                  if (kbd_key == KBD_KEY_BS)    key1 = 0x20;
-                  if (kbd_key == KBD_KEY_SEL)   key1 = 0x40;
-                  if (kbd_key == KBD_KEY_RET)   key1 = 0x80;
+                  if (kbd_key == KBD_KEY_F4)    key1 |= 0x01;
+                  if (kbd_key == KBD_KEY_F5)    key1 |= 0x02;
+                  if (kbd_key == KBD_KEY_ESC)   key1 |= 0x04;
+                  if (kbd_key == KBD_KEY_TAB)   key1 |= 0x08;
+                  if (kbd_key == KBD_KEY_STOP)  key1 |= 0x10;
+                  if (kbd_key == KBD_KEY_BS)    key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_SEL)   key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_RET)   key1 |= 0x80;
 
               }          
           }
@@ -367,14 +367,14 @@ unsigned char cpu_readport_msx(register unsigned short Port)
 
               if (kbd_key)
               {
-                  if (kbd_key == ' ')           key1 = 0x01;
-                  if (kbd_key == KBD_KEY_HOME)  key1 = 0x02;
-                  if (kbd_key == KBD_KEY_INS)   key1 = 0x04;
-                  if (kbd_key == KBD_KEY_DEL)   key1 = 0x08;
-                  if (kbd_key == KBD_KEY_LEFT)  key1 = 0x10;
-                  if (kbd_key == KBD_KEY_UP)    key1 = 0x20;
-                  if (kbd_key == KBD_KEY_DOWN)  key1 = 0x40;
-                  if (kbd_key == KBD_KEY_RIGHT) key1 = 0x80;
+                  if (kbd_key == ' ')           key1 |= 0x01;
+                  if (kbd_key == KBD_KEY_HOME)  key1 |= 0x02;
+                  if (kbd_key == KBD_KEY_INS)   key1 |= 0x04;
+                  if (kbd_key == KBD_KEY_DEL)   key1 |= 0x08;
+                  if (kbd_key == KBD_KEY_LEFT)  key1 |= 0x10;
+                  if (kbd_key == KBD_KEY_UP)    key1 |= 0x20;
+                  if (kbd_key == KBD_KEY_DOWN)  key1 |= 0x40;
+                  if (kbd_key == KBD_KEY_RIGHT) key1 |= 0x80;
               }          
           }
       }
