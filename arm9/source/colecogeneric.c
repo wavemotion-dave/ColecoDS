@@ -666,7 +666,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
   
   DSPrint(30,8,0,(NoDebGame>0 ? "<" : " "));
   DSPrint(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
-  siprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
+  sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
   DSPrint(2,6,0, szName);
   for (ucBcl=0;ucBcl<14; ucBcl++) {
     ucGame= ucBcl+NoDebGame;
@@ -676,13 +676,13 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
       strcpy(szName,gpFic[ucGame].szName);
       if (maxLen>28) szName[28]='\0';
       if (gpFic[ucGame].uType == DIRECT) {
-        siprintf(szName2, " %s]",szName);
+        sprintf(szName2, " %s]",szName);
         szName2[0]='[';
-        siprintf(szName,"%-28s",szName2);
+        sprintf(szName,"%-28s",szName2);
         DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
       }
       else {
-        siprintf(szName,"%-28s",strupr(szName));
+        sprintf(szName,"%-28s",strupr(szName));
         DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
       }
     }
@@ -1804,7 +1804,7 @@ u8 display_options_list(bool bFullDisplay)
     {
         while (true)
         {
-            siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][len].label, Option_Table[option_table][len].option[*(Option_Table[option_table][len].option_val)]);
+            sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][len].label, Option_Table[option_table][len].option[*(Option_Table[option_table][len].option_val)]);
             DSPrint(1,5+len, (len==0 ? 2:0), strBuf); len++;
             if (Option_Table[option_table][len].label == NULL) break;
         }
@@ -1849,25 +1849,25 @@ void colecoDSGameOptions(bool bIsGlobal)
             last_keys_pressed = keys_pressed;
             if (keysCurrent() & KEY_UP) // Previous option
             {
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 DSPrint(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted > 0) optionHighlighted--; else optionHighlighted=(idx-1);
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 DSPrint(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_DOWN) // Next option
             {
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 DSPrint(1,5+optionHighlighted,0, strBuf);
                 if (optionHighlighted < (idx-1)) optionHighlighted++;  else optionHighlighted=0;
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 DSPrint(1,5+optionHighlighted,2, strBuf);
             }
 
             if (keysCurrent() & KEY_RIGHT)  // Toggle option clockwise
             {
                 *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) + 1) % Option_Table[option_table][optionHighlighted].option_max;
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 DSPrint(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_LEFT)  // Toggle option counterclockwise
@@ -1876,7 +1876,7 @@ void colecoDSGameOptions(bool bIsGlobal)
                     *(Option_Table[option_table][optionHighlighted].option_val) = Option_Table[option_table][optionHighlighted].option_max -1;
                 else
                     *(Option_Table[option_table][optionHighlighted].option_val) = (*(Option_Table[option_table][optionHighlighted].option_val) - 1) % Option_Table[option_table][optionHighlighted].option_max;
-                siprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
+                sprintf(strBuf, " %-12s : %-14s", Option_Table[option_table][optionHighlighted].label, Option_Table[option_table][optionHighlighted].option[*(Option_Table[option_table][optionHighlighted].option_val)]);
                 DSPrint(1,5+optionHighlighted,2, strBuf);
             }
             if (keysCurrent() & KEY_START)  // Save Options
@@ -1922,29 +1922,29 @@ void DisplayKeymapName(u32 uY)
 {
   char szCha[34];
 
-  siprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
+  sprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
   DSPrint(1, 6,(uY==  6 ? 2 : 0),szCha);
-  siprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
+  sprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
   DSPrint(1, 7,(uY==  7 ? 2 : 0),szCha);
-  siprintf(szCha," PAD LEFT  : %-17s",szKeyName[myConfig.keymap[2]]);
+  sprintf(szCha," PAD LEFT  : %-17s",szKeyName[myConfig.keymap[2]]);
   DSPrint(1, 8,(uY==  8 ? 2 : 0),szCha);
-  siprintf(szCha," PAD RIGHT : %-17s",szKeyName[myConfig.keymap[3]]);
+  sprintf(szCha," PAD RIGHT : %-17s",szKeyName[myConfig.keymap[3]]);
   DSPrint(1, 9,(uY== 9 ? 2 : 0),szCha);
-  siprintf(szCha," KEY A     : %-17s",szKeyName[myConfig.keymap[4]]);
+  sprintf(szCha," KEY A     : %-17s",szKeyName[myConfig.keymap[4]]);
   DSPrint(1,10,(uY== 10 ? 2 : 0),szCha);
-  siprintf(szCha," KEY B     : %-17s",szKeyName[myConfig.keymap[5]]);
+  sprintf(szCha," KEY B     : %-17s",szKeyName[myConfig.keymap[5]]);
   DSPrint(1,11,(uY== 11 ? 2 : 0),szCha);
-  siprintf(szCha," KEY X     : %-17s",szKeyName[myConfig.keymap[6]]);
+  sprintf(szCha," KEY X     : %-17s",szKeyName[myConfig.keymap[6]]);
   DSPrint(1,12,(uY== 12 ? 2 : 0),szCha);
-  siprintf(szCha," KEY Y     : %-17s",szKeyName[myConfig.keymap[7]]);
+  sprintf(szCha," KEY Y     : %-17s",szKeyName[myConfig.keymap[7]]);
   DSPrint(1,13,(uY== 13 ? 2 : 0),szCha);
-  siprintf(szCha," KEY R     : %-17s",szKeyName[myConfig.keymap[8]]);
+  sprintf(szCha," KEY R     : %-17s",szKeyName[myConfig.keymap[8]]);
   DSPrint(1,14,(uY== 14 ? 2 : 0),szCha);
-  siprintf(szCha," KEY L     : %-17s",szKeyName[myConfig.keymap[9]]);
+  sprintf(szCha," KEY L     : %-17s",szKeyName[myConfig.keymap[9]]);
   DSPrint(1,15,(uY== 15 ? 2 : 0),szCha);
-  siprintf(szCha," START     : %-17s",szKeyName[myConfig.keymap[10]]);
+  sprintf(szCha," START     : %-17s",szKeyName[myConfig.keymap[10]]);
   DSPrint(1,16,(uY== 16 ? 2 : 0),szCha);
-  siprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
+  sprintf(szCha," SELECT    : %-17s",szKeyName[myConfig.keymap[11]]);
   DSPrint(1,17,(uY== 17 ? 2 : 0),szCha);
 }
 
@@ -2100,13 +2100,13 @@ void colecoDSChangeKeymap(void)
 // ----------------------------------------------------------------------------------
 void DisplayFileName(void)
 {
-    siprintf(szName,"%s",gpFic[ucGameChoice].szName);
+    sprintf(szName,"%s",gpFic[ucGameChoice].szName);
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
     DSPrint((16 - (strlen(szName)/2)),21,0,szName);
     if (strlen(gpFic[ucGameChoice].szName) >= 35)   // If there is more than a few characters left, show it on the 2nd line
     {
-        siprintf(szName,"%s",gpFic[ucGameChoice].szName+30);
+        sprintf(szName,"%s",gpFic[ucGameChoice].szName+30);
         for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
         if (strlen(szName)>30) szName[30]='\0';
         DSPrint((16 - (strlen(szName)/2)),22,0,szName);
@@ -2114,7 +2114,7 @@ void DisplayFileName(void)
 }
 
 //*****************************************************************************
-// Display colecoDSlus screen and change options "main menu"
+// Display colecoDS info screen and change options "main menu"
 //*****************************************************************************
 void dispInfoOptions(u32 uY) 
 {
@@ -2492,32 +2492,26 @@ void colecoDSChangeOptions(void)
 //*****************************************************************************
 // Displays a message on the screen
 //*****************************************************************************
-
 void DSPrint(int iX,int iY,int iScr,char *szMessage) {
-  u16 *pusEcran,*pusMap;
+  u16 *pusScreen,*pusMap;
   u16 usCharac;
-  char szTexte[128],*pTrTxt=szTexte;
+  char *pTrTxt=szMessage;
   
-  strcpy(szTexte,szMessage);
-  strupr(szTexte);
-  pusEcran=(u16*) (iScr != 1 ? bgGetMapPtr(bg1b) : bgGetMapPtr(bg1))+iX+(iY<<5);
+  pusScreen=(u16*) (iScr != 1 ? bgGetMapPtr(bg1b) : bgGetMapPtr(bg1))+iX+(iY<<5);
   pusMap=(u16*) (iScr != 1 ? (iScr == 6 ? bgGetMapPtr(bg0b)+24*32 : (iScr == 0 ? bgGetMapPtr(bg0b)+24*32 : bgGetMapPtr(bg0b)+26*32 )) : bgGetMapPtr(bg0)+51*32 );
     
   while((*pTrTxt)!='\0' )
   {
-    char ch = *pTrTxt;
-    if (ch >= 'a' && ch <= 'z') ch -= 32; // Faster than strcpy/strtoupper
-    usCharac=0x0000;
-    if ((ch) == '|')
-      usCharac=*(pusMap);
-    else if (((ch)<' ') || ((ch)>'_'))
-      usCharac=*(pusMap);
+    char ch = *pTrTxt++;
+    if (ch >= 'a' && ch <= 'z') ch -= 32;   // Faster than strcpy/strtoupper
+    
+    if (((ch)<' ') || ((ch)>'_'))
+      usCharac=*(pusMap);                   // Will render as a vertical bar
     else if((ch)<'@')
-      usCharac=*(pusMap+(ch)-' ');
+      usCharac=*(pusMap+(ch)-' ');          // Number from 0-9 or punctuation
     else
-      usCharac=*(pusMap+32+(ch)-'@');
-    *pusEcran++=usCharac;
-    pTrTxt++;
+      usCharac=*(pusMap+32+(ch)-'@');       // Character from A-Z
+    *pusScreen++=usCharac;
   }
 }
 

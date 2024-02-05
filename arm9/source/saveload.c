@@ -58,7 +58,7 @@ void colecoSaveState()
   DIR* dir = opendir("sav");
   if (dir) closedir(dir);  // Directory exists... close it out and move on.
   else mkdir("sav", 0777);   // Otherwise create the directory...
-  siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+  sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
 
   int len = strlen(szFile);
   if (szFile[len-3] == '.') // In case of .sg or .sc
@@ -320,7 +320,7 @@ void colecoLoadState()
     char szCh1[32];
 
     // Init filename = romname and .SAV in place of ROM
-    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
     int len = strlen(szFile);
     if (szFile[len-3] == '.') // In case of .sg or .sc
     {
@@ -600,7 +600,7 @@ void colecoSaveEEPROM(void)
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
 
     int len = strlen(szFile);
     szFile[len-3] = 'e';
@@ -623,7 +623,7 @@ void colecoLoadEEPROM(void)
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
 
     int len = strlen(szFile);
     szFile[len-3] = 'e';
@@ -651,7 +651,7 @@ void msxSaveEEPROM(void)
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
 
     int len = strlen(szFile);
     szFile[len-3] = 's';
@@ -675,7 +675,7 @@ void msxLoadEEPROM(void)
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    siprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
 
     int len = strlen(szFile);
     szFile[len-3] = 's';

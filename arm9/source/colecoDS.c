@@ -349,7 +349,7 @@ u8 spinX_right  __attribute__((section(".dtcm"))) = 0;
 u8 spinY_left   __attribute__((section(".dtcm"))) = 0;
 u8 spinY_right  __attribute__((section(".dtcm"))) = 0;
 
-static char tmp[64];    // For various siprintf() calls
+static char tmp[64];    // For various sprintf() calls
 
 // ------------------------------------------------------------
 // Utility function to pause the sound...
@@ -785,54 +785,54 @@ void ShowDebugZ80(void)
         extern u8 romBankMask;
         extern u8 Port20, Port53, Port60;
 
-        siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
+        sprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
+        sprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "VStat %02X Data=%02X", VDPStatus, VDPDlatch);
+        sprintf(tmp, "VStat %02X Data=%02X", VDPStatus, VDPDlatch);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "VAddr %04X", VAddr);
+        sprintf(tmp, "VAddr %04X", VAddr);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
+        sprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
         DSPrint(0,idx++,7, tmp);
         idx++;
-        siprintf(tmp, "Z80PC %04X", CPU.PC.W);
+        sprintf(tmp, "Z80PC %04X", CPU.PC.W);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "Z80SP %04X", CPU.SP.W);
+        sprintf(tmp, "Z80SP %04X", CPU.SP.W);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "Z80A  %04X", CPU.AF.W);
+        sprintf(tmp, "Z80A  %04X", CPU.AF.W);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "IRQ   %04X", CPU.IRequest);
+        sprintf(tmp, "IRQ   %04X", CPU.IRequest);
         DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "IREQ  %d", CPU.User);
+        sprintf(tmp, "IREQ  %d", CPU.User);
         DSPrint(0,idx++,7, tmp);
         idx++;
 
         if (AY_Enable)
         {
-            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[0], ay_reg[1], ay_reg[2], ay_reg[3]);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[4], ay_reg[5], ay_reg[6], ay_reg[7]);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[8], ay_reg[9], ay_reg[10], ay_reg[11]);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
+            sprintf(tmp, "AY[]  %02X %02X %02X %02X", ay_reg[12], ay_reg[13], ay_reg[14], ay_reg[15]);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
+            sprintf(tmp, "ENVL  %d", AY_EnvelopeOn);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
+            sprintf(tmp, "ABC   %-2d %-2d %-2d", a_idx, b_idx, c_idx);
             DSPrint(0,idx++,7, tmp);
             idx++;
         }
         else
         {
-            siprintf(tmp, "SN0 %04X %04X %2d", mySN.ch0Frq, mySN.ch0Reg, mySN.ch0Att);
+            sprintf(tmp, "SN0 %04X %04X %2d", mySN.ch0Frq, mySN.ch0Reg, mySN.ch0Att);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "SN1 %04X %04X %2d", mySN.ch1Frq, mySN.ch1Reg, mySN.ch1Att);
+            sprintf(tmp, "SN1 %04X %04X %2d", mySN.ch1Frq, mySN.ch1Reg, mySN.ch1Att);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "SN2 %04X %04X %2d", mySN.ch2Frq, mySN.ch2Reg, mySN.ch2Att);
+            sprintf(tmp, "SN2 %04X %04X %2d", mySN.ch2Frq, mySN.ch2Reg, mySN.ch2Att);
             DSPrint(0,idx++,7, tmp);
-            siprintf(tmp, "SN3 %04X %04X %2d", mySN.ch3Frq, mySN.ch3Reg, mySN.ch3Att);
+            sprintf(tmp, "SN3 %04X %04X %2d", mySN.ch3Frq, mySN.ch3Reg, mySN.ch3Att);
             DSPrint(0,idx++,7, tmp);
             idx++;
         }
@@ -840,48 +840,48 @@ void ShowDebugZ80(void)
         if (einstein_mode || (msx_mode == 3))
         {
             idx -= 7;
-            siprintf(tmp, "FDC.Sta %-3d %02X", FDC.status, FDC.status);
+            sprintf(tmp, "FDC.Sta %-3d %02X", FDC.status, FDC.status);
             DSPrint(18,idx++,7, tmp);
-            siprintf(tmp, "FDC.Cmd %-3d %02X", FDC.command, FDC.command);
+            sprintf(tmp, "FDC.Cmd %-3d %02X", FDC.command, FDC.command);
             DSPrint(18,idx++,7, tmp);
-            siprintf(tmp, "FDC.dat %-3d %02X", FDC.data, FDC.data);
+            sprintf(tmp, "FDC.dat %-3d %02X", FDC.data, FDC.data);
             DSPrint(18,idx++,7, tmp);
-            siprintf(tmp, "FDC.tra %-3d %02X", FDC.track, FDC.track);
+            sprintf(tmp, "FDC.tra %-3d %02X", FDC.track, FDC.track);
             DSPrint(18,idx++,7, tmp);
-            siprintf(tmp, "FDC.sec %-3d %02X", FDC.sector, FDC.sector);
+            sprintf(tmp, "FDC.sec %-3d %02X", FDC.sector, FDC.sector);
             DSPrint(18,idx++,7, tmp);
             idx++; 
             extern u32 halt_counter;
-            siprintf(tmp, "HALT %-12lu", halt_counter); 
+            sprintf(tmp, "HALT %-12lu", halt_counter); 
             DSPrint(18,idx++,7, tmp);
             idx--;
         }
 
-        siprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             DSPrint(0,idx++,7, tmp);
-        siprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
 
         idx = 1;
         if (einstein_mode || sordm5_mode || memotech_mode)
         {
             for (int chan=0; chan<4; chan++)
             {
-                siprintf(tmp, "C%d %02X %-4lu%-4lu", chan, CTC[chan].control, (u32)CTC[chan].constant, (u32)CTC[chan].counter); 
+                sprintf(tmp, "C%d %02X %-4lu%-4lu", chan, CTC[chan].control, (u32)CTC[chan].constant, (u32)CTC[chan].counter); 
                 DSPrint(18,idx++,7, tmp);
             }    
         }
         else
         {
-            siprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
-            siprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
-            siprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
+            sprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
+            sprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
+            sprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
         }
        
         idx++;
         for (u8 i=0; i<7; i++)
         {
-            siprintf(tmp, "D%d %-9lu %04X", i, debug[i], (u16)debug[i]); DSPrint(15,idx++,7, tmp);
+            sprintf(tmp, "D%d %-9lu %04X", i, debug[i], (u16)debug[i]); DSPrint(15,idx++,7, tmp);
         }
     }
     else
@@ -889,16 +889,16 @@ void ShowDebugZ80(void)
         idx = 1;
         for (u8 i=0; i<3; i++)
         {
-            siprintf(tmp, "D%d %-7lu %04lX ", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "D%d %-7lu %04lX ", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(0,idx++,7, tmp);
         }
         idx = 1;
         for (u8 i=3; i<6; i++)
         {
-            siprintf(tmp, "D%d %-7lu %04lX", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(17,idx++,7, tmp);
+            sprintf(tmp, "D%d %-7lu %04lX", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(17,idx++,7, tmp);
         }
         if (einstein_mode || (msx_mode == 3))
         {
-            siprintf(tmp, "FD.ST=%02X CM=%02X TR=%02X SI=%02X SE=%02X", FDC.status, FDC.command, FDC.track, FDC.side, FDC.sector); DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "FD.ST=%02X CM=%02X TR=%02X SI=%02X SE=%02X", FDC.status, FDC.command, FDC.track, FDC.side, FDC.sector); DSPrint(0,idx++,7, tmp);
         }
     }
     idx++;
@@ -972,7 +972,7 @@ void DisplayStatusLine(bool bForce)
         if ((memotech_mode == 2) && (last_tape_pos != tape_pos) && (!memotech_magrom_present))
         {
             last_tape_pos = tape_pos;
-            siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
+            sprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             DSPrint(9,0,6, tmp);
             last_pal_mode = 99;
         }
@@ -990,13 +990,13 @@ void DisplayStatusLine(bool bForce)
             int rom_size = (((LastROMSize/1024) <= 999) ? (LastROMSize/1024) : 999);
             switch (myConfig.msxBios)
             {
-                case 1: siprintf(tmp, "%-7s %3dK", msx_rom_str_short,  rom_size);    break;     // MSX (64K machine... use variable name)
-                case 2: siprintf(tmp, "CX5M    %3dK",                  rom_size);    break;     // Yamaha CX5M (32K mapped in slot 0)
-                case 3: siprintf(tmp, "HX-10   %3dK",                  rom_size);    break;     // Toshiba HX-10 (64K mapped in slot 2)
-                case 4: siprintf(tmp, "HB-10   %3dK",                  rom_size);    break;     // Sony HB-10 (16K mapped in slot 0)
-                case 5: siprintf(tmp, "FS-1300 %3dK",                  rom_size);    break;     // National FS-1300 (64K mapped in slot 3)
-                case 6: siprintf(tmp, "PV-7    %3dK",                  rom_size);    break;     // Casio PV-7 (just 8K at the top of slot 0)
-                default:siprintf(tmp, "MSX     %3dK",                  rom_size);    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
+                case 1: sprintf(tmp, "%-7s %3dK", msx_rom_str_short,  rom_size);    break;     // MSX (64K machine... use variable name)
+                case 2: sprintf(tmp, "CX5M    %3dK",                  rom_size);    break;     // Yamaha CX5M (32K mapped in slot 0)
+                case 3: sprintf(tmp, "HX-10   %3dK",                  rom_size);    break;     // Toshiba HX-10 (64K mapped in slot 2)
+                case 4: sprintf(tmp, "HB-10   %3dK",                  rom_size);    break;     // Sony HB-10 (16K mapped in slot 0)
+                case 5: sprintf(tmp, "FS-1300 %3dK",                  rom_size);    break;     // National FS-1300 (64K mapped in slot 3)
+                case 6: sprintf(tmp, "PV-7    %3dK",                  rom_size);    break;     // Casio PV-7 (just 8K at the top of slot 0)
+                default:sprintf(tmp, "MSX     %3dK",                  rom_size);    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }            
             DSPrint(20,0,6, tmp);
             last_pal_mode = 99;
@@ -1010,7 +1010,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_tape_pos != tape_pos) && (msx_mode == 2))
         {
             last_tape_pos = tape_pos;
-            siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
+            sprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             DSPrint(9,0,6, tmp);
             last_pal_mode = 99;
         }
@@ -1058,7 +1058,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_tape_pos != tape_pos) && (svi_mode == 1))
         {
             last_tape_pos = tape_pos;
-            siprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
+            sprintf(tmp, "CAS %d%%  ", (int)(100 * (int)tape_pos)/(int)tape_len);
             DSPrint(9,0,6, tmp);
         }
         if (last_pal_mode != myConfig.isPAL)
