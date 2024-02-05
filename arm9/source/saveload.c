@@ -46,38 +46,40 @@ struct RomOffset Offsets[8];
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
  ********************************************************************************/
-u8  spare[512] = {0x00};    // We keep some spare bytes so we can use them in the future without changing the structure
-extern char szFile[128];
+u8  spare[512] = {0x00};            // We keep some spare bytes so we can use them in the future without changing the structure
+
+static char szLoadFile[256];        // We build the filename out of the base filename and tack on .sav, .ee, etc.
+static char szCh1[32];
+
 void colecoSaveState() 
 {
   u32 uNbO;
   long pSvg;
-  char szCh1[32];
     
   // Init filename = romname and SAV in place of ROM
   DIR* dir = opendir("sav");
   if (dir) closedir(dir);  // Directory exists... close it out and move on.
   else mkdir("sav", 0777);   // Otherwise create the directory...
-  sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+  sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
 
-  int len = strlen(szFile);
-  if (szFile[len-3] == '.') // In case of .sg or .sc
+  int len = strlen(szLoadFile);
+  if (szLoadFile[len-3] == '.') // In case of .sg or .sc
   {
-      szFile[len-2] = 's';
-      szFile[len-1] = 'a';
-      szFile[len-0] = 'v';
-      szFile[len+1] = 0;
+      szLoadFile[len-2] = 's';
+      szLoadFile[len-1] = 'a';
+      szLoadFile[len-0] = 'v';
+      szLoadFile[len+1] = 0;
   }
   else
   {
-      szFile[len-3] = 's';
-      szFile[len-2] = 'a';
-      szFile[len-1] = 'v';
+      szLoadFile[len-3] = 's';
+      szLoadFile[len-2] = 'a';
+      szLoadFile[len-1] = 'v';
   }
   strcpy(szCh1,"SAVING...");
   DSPrint(6,0,0,szCh1);
   
-  FILE *handle = fopen(szFile, "wb+");  
+  FILE *handle = fopen(szLoadFile, "wb+");  
   if (handle != NULL) 
   {
     // Write Version
@@ -129,7 +131,7 @@ void colecoSaveState()
     }
     if (uNbO) uNbO = fwrite(Offsets, sizeof(Offsets),1, handle);     
       
-    // Write the Super Game Module and AY sound core 
+    // Write the Super Game Module stuff
     if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
       
@@ -195,7 +197,7 @@ void colecoSaveState()
     pSvg = SprTab-pVDPVidMem;
     if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
 
-    // Write PSG sound chips...
+    // Write PSG SN and AY sound chips...
     if (uNbO) uNbO = fwrite(&mySN, sizeof(mySN),1, handle); 
     if (uNbO) uNbO = fwrite(&myAY, sizeof(myAY),1, handle);       
       
@@ -279,6 +281,7 @@ void colecoSaveState()
     }
     else if (creativision_mode)
     {
+        // Write some creativision stuff...
         u16 cv_cpu_size=1;
         u8 *mem = creativision_get_cpu(&cv_cpu_size);
         if (uNbO) fwrite(mem, cv_cpu_size,1, handle);
@@ -307,26 +310,24 @@ void colecoLoadState()
 {
     u32 uNbO;
     long pSvg;
-    char szFile[128];
-    char szCh1[32];
 
     // Init filename = romname and .SAV in place of ROM
-    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
-    int len = strlen(szFile);
-    if (szFile[len-3] == '.') // In case of .sg or .sc
+    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
+    int len = strlen(szLoadFile);
+    if (szLoadFile[len-3] == '.') // In case of .sg or .sc
     {
-      szFile[len-2] = 's';
-      szFile[len-1] = 'a';
-      szFile[len-0] = 'v';
-      szFile[len+1] = 0;
+      szLoadFile[len-2] = 's';
+      szLoadFile[len-1] = 'a';
+      szLoadFile[len-0] = 'v';
+      szLoadFile[len+1] = 0;
     }
     else
     {
-      szFile[len-3] = 's';
-      szFile[len-2] = 'a';
-      szFile[len-1] = 'v';
+      szLoadFile[len-3] = 's';
+      szLoadFile[len-2] = 'a';
+      szLoadFile[len-1] = 'v';
     }
-    FILE* handle = fopen(szFile, "rb"); 
+    FILE* handle = fopen(szLoadFile, "rb"); 
     if (handle != NULL) 
     {    
          strcpy(szCh1,"LOADING...");
@@ -448,7 +449,7 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
             SprTab = pSvg + pVDPVidMem;
             
-            // Load PSG Sound Stuff
+            // Read PSG SN and AY sound chips...
             if (uNbO) uNbO = fread(&mySN, sizeof(mySN),1, handle); 
             if (uNbO) uNbO = fread(&myAY, sizeof(myAY),1, handle);
             
@@ -524,11 +525,12 @@ void colecoLoadState()
             }
             else if (bActivisionPCB)
             {
-                // Write the EEPROM and memory
+                // Read the EEPROM and memory
                 if (uNbO) fread(&EEPROM, sizeof(EEPROM),1, handle);      
             }
             else if (creativision_mode)
             {
+                // Read some Creativision stuff
                 u16 cv_cpu_size=1;
                 u8 *mem = creativision_get_cpu(&cv_cpu_size);
                 if (uNbO) fread(mem, cv_cpu_size,1, handle);
@@ -576,20 +578,18 @@ void colecoLoadState()
 
 void colecoSaveEEPROM(void) 
 {
-    char szFile[128];
-
     // Init filename = romname and EE in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
 
-    int len = strlen(szFile);
-    szFile[len-3] = 'e';
-    szFile[len-2] = 'e';
-    szFile[len-1] = 0;
+    int len = strlen(szLoadFile);
+    szLoadFile[len-3] = 'e';
+    szLoadFile[len-2] = 'e';
+    szLoadFile[len-1] = 0;
 
-    FILE *handle = fopen(szFile, "wb+");  
+    FILE *handle = fopen(szLoadFile, "wb+");  
     if (handle != NULL) 
     {
       fwrite(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
@@ -599,20 +599,18 @@ void colecoSaveEEPROM(void)
 
 void colecoLoadEEPROM(void)
 {
-    char szFile[128];
-
     // Init filename = romname and EE in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
 
-    int len = strlen(szFile);
-    szFile[len-3] = 'e';
-    szFile[len-2] = 'e';
-    szFile[len-1] = 0;
+    int len = strlen(szLoadFile);
+    szLoadFile[len-3] = 'e';
+    szLoadFile[len-2] = 'e';
+    szLoadFile[len-1] = 0;
 
-    FILE *handle = fopen(szFile, "rb+");
+    FILE *handle = fopen(szLoadFile, "rb+");
     if (handle != NULL) 
     {
       fread(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
@@ -627,21 +625,19 @@ void colecoLoadEEPROM(void)
 
 void msxSaveEEPROM(void)
 {
-    char szFile[128];
-
     // Init filename = romname and SRM (SRAM) in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
 
-    int len = strlen(szFile);
-    szFile[len-3] = 's';
-    szFile[len-2] = 'r';
-    szFile[len-1] = 'm';
-    szFile[len-0] = 0;
+    int len = strlen(szLoadFile);
+    szLoadFile[len-3] = 's';
+    szLoadFile[len-2] = 'r';
+    szLoadFile[len-1] = 'm';
+    szLoadFile[len-0] = 0;
 
-    FILE *handle = fopen(szFile, "wb+");  
+    FILE *handle = fopen(szLoadFile, "wb+");  
     if (handle != NULL) 
     {
       fwrite(SRAM_Memory, 0x4000, 1, handle);
@@ -651,21 +647,19 @@ void msxSaveEEPROM(void)
 
 void msxLoadEEPROM(void)
 {
-    char szFile[128];
-
     // Init filename = romname and SRM (SRAM) in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
 
-    int len = strlen(szFile);
-    szFile[len-3] = 's';
-    szFile[len-2] = 'r';
-    szFile[len-1] = 'm';
-    szFile[len-0] = 0;
+    int len = strlen(szLoadFile);
+    szLoadFile[len-3] = 's';
+    szLoadFile[len-2] = 'r';
+    szLoadFile[len-1] = 'm';
+    szLoadFile[len-0] = 0;
 
-    FILE *handle = fopen(szFile, "rb+");
+    FILE *handle = fopen(szLoadFile, "rb+");
     if (handle != NULL) 
     {
       fread(SRAM_Memory, 0x4000, 1, handle);

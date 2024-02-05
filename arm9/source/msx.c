@@ -1744,16 +1744,6 @@ void BeeperON(u16 beeper_freq)
         sn76496W(0x80 | (beeper_freq & 0xF), &mySN);
         sn76496W(0x00 | ((beeper_freq >> 4) & 0x1F), &mySN);
         sn76496W(0x97, &mySN); // Turn on sound at fixed "mid" volume 
-        
-        sn76496W(0xA0 | 0x00,&mySN);    // Write new Frequency for Channel B
-        sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel B
-        sn76496W(0xB0 | 0x0F,&mySN);    // Write new Volume for Channel B
-
-        sn76496W(0xC0 | 0x00,&mySN);    // Write new Frequency for Channel C
-        sn76496W(0x00 | 0x00,&mySN);    // Write new Frequency for Channel C
-        sn76496W(0xD0 | 0x0F,&mySN);    // Write new Volume for Channel C
-
-        sn76496W(0xFF,  &mySN);         // Disable Noise Channel        
     }
     else 
     {

@@ -805,15 +805,28 @@ void ShowDebugZ80(void)
 
         if (AY_Enable)
         {
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[0], myAY.ayRegs[1], myAY.ayRegs[2], myAY.ayRegs[3]);
+            sprintf(tmp, "AY[] %02X %02X %02X %02X", myAY.ayRegs[0], myAY.ayRegs[1], myAY.ayRegs[2], myAY.ayRegs[3]);
             DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[4], myAY.ayRegs[5], myAY.ayRegs[6], myAY.ayRegs[7]);
+            sprintf(tmp, "AY[] %02X %02X %02X %02X", myAY.ayRegs[4], myAY.ayRegs[5], myAY.ayRegs[6], myAY.ayRegs[7]);
             DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[8], myAY.ayRegs[9], myAY.ayRegs[10], myAY.ayRegs[11]);
+            sprintf(tmp, "AY[] %02X %02X %02X %02X", myAY.ayRegs[8], myAY.ayRegs[9], myAY.ayRegs[10], myAY.ayRegs[11]);
             DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "AY[]  %02X %02X %02X %02X", myAY.ayRegs[12], myAY.ayRegs[13], myAY.ayRegs[14], myAY.ayRegs[15]);
+            sprintf(tmp, "AY[] %02X %02X %02X %02X", myAY.ayRegs[12], myAY.ayRegs[13], myAY.ayRegs[14], myAY.ayRegs[15]);
             DSPrint(0,idx++,7, tmp);
-            idx++;
+            
+            if (!(einstein_mode || (msx_mode == 3))) // If Einstein or MSX, the FDC stuff will go here...
+            {
+                idx -= 4;
+                sprintf(tmp, "SN0 %04X %04X %1X", mySN.ch0Frq, mySN.ch0Reg, mySN.ch0Att);
+                DSPrint(17,idx++,7, tmp);
+                sprintf(tmp, "SN1 %04X %04X %1X", mySN.ch1Frq, mySN.ch1Reg, mySN.ch1Att);
+                DSPrint(17,idx++,7, tmp);
+                sprintf(tmp, "SN2 %04X %04X %1X", mySN.ch2Frq, mySN.ch2Reg, mySN.ch2Att);
+                DSPrint(17,idx++,7, tmp);
+                sprintf(tmp, "SN3 %04X %04X %1X", mySN.ch3Frq, mySN.ch3Reg, mySN.ch3Att);
+                DSPrint(17,idx++,7, tmp);
+            }
+            idx++;            
         }
         else
         {
@@ -828,20 +841,19 @@ void ShowDebugZ80(void)
             idx++;
         }
 
-        if (einstein_mode || (msx_mode == 3))
+        if (einstein_mode || (msx_mode == 3)) // Put out some Floppy Drive Controller stuff...
         {
-            idx -= 7;
-            sprintf(tmp, "FDC.Sta %-3d %02X", FDC.status, FDC.status);
-            DSPrint(18,idx++,7, tmp);
-            sprintf(tmp, "FDC.Cmd %-3d %02X", FDC.command, FDC.command);
-            DSPrint(18,idx++,7, tmp);
-            sprintf(tmp, "FDC.dat %-3d %02X", FDC.data, FDC.data);
-            DSPrint(18,idx++,7, tmp);
-            sprintf(tmp, "FDC.tra %-3d %02X", FDC.track, FDC.track);
-            DSPrint(18,idx++,7, tmp);
-            sprintf(tmp, "FDC.sec %-3d %02X", FDC.sector, FDC.sector);
-            DSPrint(18,idx++,7, tmp);
-            idx++; 
+            idx -= 6;
+            sprintf(tmp, " FDC.Sta %-3d %02X", FDC.status, FDC.status);
+            DSPrint(17,idx++,7, tmp);
+            sprintf(tmp, " FDC.Cmd %-3d %02X", FDC.command, FDC.command);
+            DSPrint(17,idx++,7, tmp);
+            sprintf(tmp, " FDC.dat %-3d %02X", FDC.data, FDC.data);
+            DSPrint(17,idx++,7, tmp);
+            sprintf(tmp, " FDC.tra %-3d %02X", FDC.track, FDC.track);
+            DSPrint(17,idx++,7, tmp);
+            sprintf(tmp, " FDC.sec %-3d %02X", FDC.sector, FDC.sector);
+            DSPrint(17,idx++,7, tmp);
             extern u32 halt_counter;
             sprintf(tmp, "HALT %-12lu", halt_counter); 
             DSPrint(18,idx++,7, tmp);
@@ -870,7 +882,7 @@ void ShowDebugZ80(void)
         }
        
         idx++;
-        for (u8 i=0; i<7; i++)
+        for (u8 i=0; i<= ((einstein_mode || (msx_mode == 3)) ? 4:6); i++)
         {
             sprintf(tmp, "D%d %-9lu %04X", i, debug[i], (u16)debug[i]); DSPrint(15,idx++,7, tmp);
         }
@@ -978,7 +990,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_msx_mode != msx_mode) || bForce)
         {
             last_msx_mode = msx_mode;
-            int rom_size = (((LastROMSize/1024) <= 999) ? (LastROMSize/1024) : 999);
+            int rom_size = (((LastROMSize/1024) <= 999) ? (LastROMSize/1024) : 999); // Good enough - 1MB will show as 999K 
             switch (myConfig.msxBios)
             {
                 case 1: sprintf(tmp, "%-7s %3dK", msx_rom_str_short,  rom_size);    break;     // MSX (64K machine... use variable name)
