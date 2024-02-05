@@ -130,9 +130,7 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(Offsets, sizeof(Offsets),1, handle);     
       
     // Write the Super Game Module and AY sound core 
-    if (uNbO) uNbO = fwrite(ay_reg, 16, 1, handle);      
     if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-    if (uNbO) uNbO = fwrite(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
     if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
       
     // A few frame counters
@@ -383,9 +381,7 @@ void colecoLoadState()
             }
             
             // Load the Super Game Module stuff
-            if (uNbO) uNbO = fread(ay_reg, 16, 1, handle);      
             if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-            if (uNbO) uNbO = fread(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
             if (uNbO) uNbO = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
             
             // A few frame counters

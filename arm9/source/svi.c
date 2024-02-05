@@ -50,10 +50,10 @@ unsigned char cpu_readport_svi(register unsigned short Port)
   else if (Port == 0x85) return RdCtrl9918();
   else if (Port == 0x90)  // PSG Read... might be joypad data
   {
-      // -------------------------------------------
-      // Only port 1 is used for the first Joystick
-      // -------------------------------------------
-      if (ay_reg_idx == 14)
+      // ------------------------------------------------
+      // Only port A is used for the Joystick directions
+      // ------------------------------------------------
+      if (myAY.ayRegIndex == 14)
       {
           u8 joy1 = 0x00;
 
@@ -77,7 +77,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
               if (JoyState & JST_RIGHT) joy1 |= (0x08 | 0x02);
           }
 
-          ay_reg[14] = ~joy1;
+          myAY.ayPortAIn = ~joy1;
       }
       return ay38910DataR(&myAY);
   }
@@ -365,16 +365,14 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     else if (Port == 0x81) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }}
     else if (Port == 0x88)    // PSG Area
     {
-        ay_reg_idx = Value & 0xF;
         ay38910IndexW(Value, &myAY);
     }
     else if (Port == 0x8C)
     {
-        ay_reg[ay_reg_idx] = Value;
         ay38910DataW(Value, &myAY);
-        if (ay_reg_idx == 15)
+        if (myAY.ayRegIndex == 15)
         {
-            IOBYTE = ay_reg[ay_reg_idx] & 0xFF;
+            IOBYTE = Value;
 
             if (lastIOBYTE != IOBYTE)
             {

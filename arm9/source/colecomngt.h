@@ -75,8 +75,6 @@ extern u8 adam_ram_hi_exp;
 
 extern u8 romBankMask;
 extern u8 sgm_enable;
-extern u8 ay_reg_idx;
-extern u8 ay_reg[16];
 extern u16 sgm_low_addr;
 
 extern u8 Port53;

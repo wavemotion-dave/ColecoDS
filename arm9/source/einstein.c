@@ -364,11 +364,11 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
         case 0x00:  // PSG Area
             if (Port & 0x06)    // Is this port 2-6?
             {
-                if (ay_reg_idx == 14) // Port A read is not connected
+                if (myAY.ayRegIndex == 14) // Port A read is not connected
                 {
                   return 0xFF;
                 }
-                else if (ay_reg_idx == 15) // Port B read is keyboard
+                else if (myAY.ayRegIndex == 15) // Port B read is keyboard
                 {
                   scan_keyboard();
                   return myKeyData;
@@ -377,7 +377,8 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
             }
             else
             {
-                memset(ay_reg, 0x00, 16);    // Clear the AY registers... Port 0 or 1
+                myAY.ayRegIndex = 0;
+                memset(myAY.ayRegs, 0x00, sizeof(myAY.ayRegs));    // Clear the AY registers... Port 0 or 1
                 fdc_reset(FALSE);            // Reset is passed along to the FDC
             }
             break;
@@ -438,14 +439,13 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             {
                 if (Port & 1)
                 {
-                    ay_reg[ay_reg_idx] = Value;
                     ay38910DataW(Value, &myAY);
-                    if (ay_reg_idx == 14) 
+                    if (myAY.ayRegIndex == 14) 
                     {
                         keyboard_w = Value;
                         scan_keyboard();
                     }
-                    else if (ay_reg_idx == 8)
+                    else if (myAY.ayRegIndex == 8)
                     {
                           extern u16 beeperFreq;
                           if (!Value) beeperFreq++;
@@ -453,14 +453,13 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
                 }
                 else 
                 {
-                    ay_reg_idx = Value & 0xF;
                     ay38910IndexW(Value, &myAY);
                 }
             } 
             else
             {
-                ay_reg_idx = 0;
-                memset(ay_reg, 0x00, 16);    // Clear the AY registers for port 0/1
+                myAY.ayRegIndex = 0;
+                memset(myAY.ayRegs, 0x00, sizeof(myAY.ayRegs));    // Clear the AY registers for port 0/1
                 fdc_reset(FALSE);            // Reset is passed along to the FDC
             }
             break;
@@ -860,7 +859,8 @@ void einstein_reset(void)
         keyboard_interrupt=0;
         key_int_mask = 0xFF;
         
-        memset(ay_reg, 0x00, 16);    // Clear the AY registers...
+        myAY.ayRegIndex = 0;
+        memset(myAY.ayRegs, 0x00, sizeof(myAY.ayRegs));    // Clear the AY registers...
         fdc_reset(TRUE);
         einstein_restore_bios();
         
