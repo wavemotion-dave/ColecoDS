@@ -6,10 +6,10 @@
 #include "cpu/z80/Z80_interface.h"
 #include "cpu/tms9918a/tms9918a.h"
 #include "cpu/sn76496/SN76496.h"
-#include "cpu/sn76496/Fake_AY.h"
+#include "cpu/ay38910/AY38910.h"
 #include "cpu/scc/SCC.h"
 
-#define NORAM             0xFF
+#define NORAM       0xFF
 
 extern u8 mapperType;
 extern u8 mapperMask;
@@ -46,7 +46,7 @@ extern u8 msx_slot_dirty[4];
 extern u8 adam_128k_mode;
 
 extern SN76496 mySN;
-extern SN76496 myAY;
+extern AY38910 myAY;
 extern SCC     mySCC;
 
 extern u8 msx_scc_enable;

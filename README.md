@@ -50,6 +50,9 @@ copyright notice is used and wavemotion-dave (Phoenix-Edition),
 Alekmaul (original port) and Marat Fayzullin (ColEM core) are 
 thanked profusely.
 
+The sound drivers (sn76496, ay38910 and Konami SCC) are libraries
+from FluBBa (Fredrik Ahlström) and those copyrights remain his.
+
 In addition, since the Z80 CPU and TMS9918 are borrowed from 
 ColEM, please contact Marat (https://fms.komkon.org/ColEm/)
 to make sure he's okay with what you're doing with the emulator

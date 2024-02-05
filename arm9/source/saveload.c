@@ -29,7 +29,7 @@
 #include "fdc.h"
 #include "printf.h"
 
-#define COLECODS_SAVE_VER 0x0018        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x0019        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 struct RomOffset
 {
@@ -134,13 +134,6 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
     if (uNbO) uNbO = fwrite(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
     if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-    if (uNbO) uNbO = fwrite(&AY_EnvelopeOn, sizeof(AY_EnvelopeOn), 1, handle); 
-    if (uNbO) uNbO = fwrite(&envelope_period, sizeof(envelope_period), 1, handle); 
-    if (uNbO) uNbO = fwrite(&envelope_counter, sizeof(envelope_counter), 1, handle); 
-    if (uNbO) uNbO = fwrite(&noise_period, sizeof(noise_period), 1, handle); 
-    if (uNbO) uNbO = fwrite(&a_idx, sizeof(a_idx), 1, handle); 
-    if (uNbO) uNbO = fwrite(&b_idx, sizeof(b_idx), 1, handle); 
-    if (uNbO) uNbO = fwrite(&c_idx, sizeof(c_idx), 1, handle); 
       
     // A few frame counters
     if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
@@ -394,13 +387,6 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
             if (uNbO) uNbO = fread(&ay_reg_idx, sizeof(ay_reg_idx), 1, handle); 
             if (uNbO) uNbO = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-            if (uNbO) uNbO = fread(&AY_EnvelopeOn, sizeof(AY_EnvelopeOn), 1, handle); 
-            if (uNbO) uNbO = fread(&envelope_period, sizeof(envelope_period), 1, handle); 
-            if (uNbO) uNbO = fread(&envelope_counter, sizeof(envelope_counter), 1, handle); 
-            if (uNbO) uNbO = fread(&noise_period, sizeof(noise_period), 1, handle); 
-            if (uNbO) uNbO = fread(&a_idx, sizeof(a_idx), 1, handle); 
-            if (uNbO) uNbO = fread(&b_idx, sizeof(b_idx), 1, handle); 
-            if (uNbO) uNbO = fread(&c_idx, sizeof(c_idx), 1, handle); 
             
             // A few frame counters
             if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 

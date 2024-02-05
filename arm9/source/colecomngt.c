@@ -106,7 +106,7 @@ u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global fil
 // The two master sound chips... both are mapped to SN sound.
 // -----------------------------------------------------------
 SN76496 mySN    __attribute__((section(".dtcm")));
-SN76496 myAY    __attribute__((section(".dtcm")));
+AY38910 myAY   __attribute__((section(".dtcm")));
 
 // ---------------------------------------------------------
 // Reset the Super Game Module vars... we reset back to 
@@ -1017,7 +1017,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
   // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
-      return FakeAY_ReadData();
+      return ay38910DataR(&myAY);
   } 
 
   switch(Port&0xE0) 
@@ -1079,7 +1079,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   else if (Port == 0x50)  
   {
       if ((Value & 0x0F) == 0x07) {AY_Enable = (AY_NeverEnable ? false:true);}
-      FakeAY_WriteIndex(Value & 0x0F);
+      ay38910IndexW(Value, &myAY);
       return;
   }
   // -----------------------------------------------
@@ -1087,7 +1087,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x51) 
   {
-    FakeAY_WriteData(Value);
+    ay38910DataW(Value, &myAY);
     return;
   }
   
@@ -1158,14 +1158,6 @@ ITCM_CODE u32 LoopZ80()
   }
   else
   {    
-      // Just in case there are AY audio envelopes... this is very rough timing.
-      if (AY_EnvelopeOn)
-      {
-          extern u16 envelope_counter;
-          extern u16 envelope_period;
-          if (++envelope_counter > envelope_period) FakeAY_Loop();
-      }
-      
       // ------------------------------------------------------------------
       // Before we execute Z80 or Loop the 9918 (both of which can cause 
       // NMI interrupt to occur), we check and adjust the spinners which 

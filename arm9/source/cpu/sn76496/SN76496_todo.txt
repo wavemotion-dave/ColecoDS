@@ -1,5 +1,4 @@
 SN76496 To do
 --------------
 
-	Set noise feedback as struct values?
-
+Do some reverse engineering to see how the frequency counter works.

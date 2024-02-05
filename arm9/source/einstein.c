@@ -373,7 +373,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
                   scan_keyboard();
                   return myKeyData;
                 }            
-                return FakeAY_ReadData();
+                return ay38910DataR(&myAY);
             }
             else
             {
@@ -438,7 +438,8 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
             {
                 if (Port & 1)
                 {
-                    FakeAY_WriteData(Value);
+                    ay_reg[ay_reg_idx] = Value;
+                    ay38910DataW(Value, &myAY);
                     if (ay_reg_idx == 14) 
                     {
                         keyboard_w = Value;
@@ -450,10 +451,15 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
                           if (!Value) beeperFreq++;
                     }                   
                 }
-                else FakeAY_WriteIndex(Value & 0x0F);
+                else 
+                {
+                    ay_reg_idx = Value & 0xF;
+                    ay38910IndexW(Value, &myAY);
+                }
             } 
             else
             {
+                ay_reg_idx = 0;
                 memset(ay_reg, 0x00, 16);    // Clear the AY registers for port 0/1
                 fdc_reset(FALSE);            // Reset is passed along to the FDC
             }
