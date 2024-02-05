@@ -96,7 +96,7 @@ Without Marat - this emulator simply wouldn't exist.
 
 Known Issues and Limitations:
 -----------------------
-* No more than 1024 files per directory - split ROM files up as needed.
+* No more than 1500 files per directory - split ROM files up as needed.
 * Path and filename to a ROM can't be longer than 160 characters. Keep them on the shorter side.
 * Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
@@ -140,7 +140,7 @@ Name the BIOS ROMs above exactly as shown (if you find them online, they will ha
 ADAM Compatibility :
 -----------------------
 * The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).  DDP files should be 256K in length. DSK files can be either 160K (SSDD) or 320K (DSDD).
-* The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game.
+* The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game or program.
 * By default, RAM is cleared when you reset the ADAM unless the game detects as a CP/M program - in which case a special memory pattern is used to aid in compatibility.
 * In Game Config you can change how RAM is initialized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
@@ -153,7 +153,7 @@ Considering this is a Colecovision emulator, the MSX1 support and compatibility 
 * A small number of games don't work with the open-source C-BIOS. In this case you would need a real msx.rom BIOS. You can set this up in Game Options. If you have an MSX.ROM bios, it will use it by default.
 * Most 64K games use the ASC16 memory mapper - so you can try that one... but a few (e.g. Mutants from the Deep) are linear mapped from 0-64K and you will need to pick LINEAR64 in Game Options. 
 * The auto-detection on KONAMI8, KONAMI-SCC and ASCII8/16 mappers is pretty good... but some games don't detect well - you should try various mappers if the "larger than 64K" game won't run.
-* SCC is emulated for the games that use that advanced Konami sound chip.
+* SCC is emulated for the games that use that advanced Konami sound chip. If your game is < 64K rom size, it may not auto-detect Konami SCC as the mapper type - but you can override this in the config.
 * Occasionally one ROM won't run but an alternate dump might. For example, the 384K version of R-Type is a bit of a mess for the emulator to handle, but someone made a clean 512K version that loads and runs great.
 * With a little diligence in trying different mapping/BIOS combinations, you should be able to achieve a 97% run rate on MSX1 games. 
 * MSX2 games are not supported and will not run - the VDP alone is different enough. Try MSXDS for a full-featured DS/DSi emulator for the full range of MSX computers.

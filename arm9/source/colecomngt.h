@@ -9,9 +9,6 @@
 #include "cpu/sn76496/Fake_AY.h"
 #include "cpu/scc/SCC.h"
 
-#define IMAGE_VERIFY_FAIL 0X01
-#define IMAGE_VERIFY_PASS 0x02
-
 #define NORAM             0xFF
 
 extern u8 mapperType;
@@ -75,8 +72,6 @@ extern u8 adam_ram_lo;
 extern u8 adam_ram_hi;
 extern u8 adam_ram_lo_exp;
 extern u8 adam_ram_hi_exp;
-
-extern u8 sgm_low_mem[8192];
 
 extern u8 romBankMask;
 extern u8 sgm_enable;
