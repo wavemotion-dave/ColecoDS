@@ -1,0 +1,39 @@
+AY-3-8910 revision history
+-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+V0.6.1 - 2024-02-03 (FluBBa)
+	Added defines for internal oversampling.
+	Fixed calling of mixer from C.
+	Small optimization to mixer.
+
+V0.6.0 - 2021-12-01 (FluBBa)
+	Rewrote envelope handling to actually work.
+
+V0.5.0 - 2021-11-28 (FluBBa)
+	Refactored all functions to work directly from C.
+	Fixed noise frequency.
+
+V0.4.0 - 2021-02-21 (FluBBa)
+	Rewrote mixer to not use self modifying code.
+	Instead use attenuation LUT.
+	Added load/save state functionality.
+
+V0.3.0 - 2021-02-16 (FluBBa)
+	Removed resetting of freq counter on freq writes.
+	Even better io-port handling.
+
+V0.2.1 - 2016-07-31 (FluBBa)
+	Changed to unified assembler style.
+
+V0.2.0 - 2015-05-05 (FluBBa)
+	Added better io-port handling.
+	Fixed envelope handling.
+	16-bit mixing.
+	Rewritten for GCC.
+
+V0.1.0 - 2006-03-31 (FluBBa)
+	First version released.
+
+V0.0.0 - 2006-03-07 (FluBBa)
+	Started coding.
