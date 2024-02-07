@@ -1071,7 +1071,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   else if (Port == 0x50)  
   {
       if ((Value & 0x0F) == 0x07) {AY_Enable = (AY_NeverEnable ? false:true);}
-      ay38910IndexW(Value, &myAY);
+      ay38910IndexW(Value&0xF, &myAY);
       return;
   }
   // -----------------------------------------------

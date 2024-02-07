@@ -50,9 +50,9 @@ unsigned char cpu_readport_svi(register unsigned short Port)
   else if (Port == 0x85) return RdCtrl9918();
   else if (Port == 0x90)  // PSG Read... might be joypad data
   {
-      // ------------------------------------------------
-      // Only port A is used for the Joystick directions
-      // ------------------------------------------------
+      // -------------------------------------------------------
+      // Port A is used for both P1 and P2 Joystick directions
+      // -------------------------------------------------------
       if (myAY.ayRegIndex == 14)
       {
           u8 joy1 = 0x00;
@@ -596,7 +596,7 @@ void SVI_HandleCassette(register Z80 *r)
     {
         r->AF.B.l |= C_FLAG;
     }
-    else {debug[0] = r->PC.W-2;}
+    else {debug[0] = r->PC.W-2;} // Debug breadcrumbs in case we get here...
 }
 
 // End of file

@@ -70,7 +70,7 @@
 #include "printf.h"
 
 extern Z80 CPU;
-u32 debug[10]={0};
+u32 debug[0x10]={0};
 
 // -------------------------------------------------------------------------------------------
 // All emulated systems have ROM, RAM and possibly BIOS or SRAM. So we create generic buffers
@@ -370,7 +370,7 @@ void SoundUnPause(void)
 // of FluBBa, we've swiched over to the maxmod sound core which performs much better.
 // --------------------------------------------------------------------------------------------
 #define sample_rate  (27965)    // To match the driver in sn76496 - this is good enough quality for the DS
-#define buffer_size  (512+16)   // Enough buffer that we don't have to fill it too often
+#define buffer_size  (512+12)     // Enough buffer that we don't have to fill it too often
 
 mm_ds_system sys   __attribute__((section(".dtcm")));
 mm_stream myStream __attribute__((section(".dtcm")));

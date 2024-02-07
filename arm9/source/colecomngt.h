@@ -13,6 +13,7 @@
 
 extern u8 mapperType;
 extern u8 mapperMask;
+extern u8 ay_regs[16];
 
 #define GUESS       0
 #define KON8        1
