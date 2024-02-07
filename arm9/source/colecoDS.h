@@ -17,7 +17,7 @@
 
 #define VERSIONCLDS "9.1"
 
-extern u32 debug[10];
+extern u32 debug[0x10];
 
 // These are the various special icons/menu operations
 #define MENU_CHOICE_NONE        0x00

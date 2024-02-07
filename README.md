@@ -408,6 +408,12 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V9.2: ??-???-2024 by wavemotion-dave
+* Ported the AY sound chip driver from FluBBa to improve MSX1, Einstein and Coleco SGM games.
+* Ported most recent SN sound chip driver from FluBBa.
+* Allow more than one keyboard press at a time for the MSX1 so keyboard-mapped keys work properly (i.e. UP and SPACE at the same time)
+* Cleanup across the board - save states optmized.
+
 V9.1: 03-Feb-2024 by wavemotion-dave
 * Ported the SCC Konami sound driver from FluBBa to make the MSX1 games using that chip sound great.
 * New overlays for Colecovision Space Shuttle and Utopia.

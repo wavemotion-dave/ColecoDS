@@ -137,6 +137,10 @@ ITCM_CODE void CTC_Timer(u32 cpu_cycles)
     }
 }
 
+
+// --------------------------------------------------------
+// Reset the CRC counter for a given channel
+// --------------------------------------------------------
 void CTC_ResetCounter(u8 chan)
 {
     // --------------------------------------------------------------
@@ -211,7 +215,9 @@ void CTC_Write(u8 chan, u8 data)
     }
 }
 
-
+// --------------------------------------------------------
+// Initialize the CTC and reset all channels
+// --------------------------------------------------------
 void CTC_Init(u8 vdp_chan)
 {
     ctc_to_vdp = vdp_chan;
@@ -229,6 +235,5 @@ void CTC_Init(u8 vdp_chan)
         CTC[chan].cpuClockRemainder = 0;
     }
 }
-
 
 // End of file

@@ -453,7 +453,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
                 }
                 else 
                 {
-                    ay38910IndexW(Value, &myAY);
+                    ay38910IndexW(Value&0xF, &myAY);
                 }
             } 
             else
