@@ -419,8 +419,9 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
           }
           else  // Pretty simple... just AY
           {
-              if (myConfig.msxBeeper)
+              if (myConfig.msxBeeper) 
               {
+                    // If the Beeper is active, we mix in the SN chip which is producing the key beeper tone
                     ay38910Mixer(len*2, mixbuf1, &myAY);
                     sn76496Mixer(len*2, mixbuf2, &mySN);
                     s16 *p = (s16*)dest;

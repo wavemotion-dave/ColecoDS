@@ -29,6 +29,7 @@
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
 // ---------------------------------------
+u8 bPatchFreqZero       __attribute__((section(".dtcm"))) = 0;
 u8 mapperType           __attribute__((section(".dtcm"))) = 0;
 u8 mapperMask           __attribute__((section(".dtcm"))) = 0;
 u8 bROMInSlot[4]        __attribute__((section(".dtcm"))) = {0,0,0,0};
@@ -1167,7 +1168,21 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     if      (Port == 0x98) WrData9918(Value);
     else if (Port == 0x99) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }}
     else if (Port == 0xA0) {ay38910IndexW(Value&0xF, &myAY);}   // PSG Area
-    else if (Port == 0xA1) {ay_regs[myAY.ayRegIndex] = Value; ay38910DataW(Value, &myAY);}
+    else if (Port == 0xA1) 
+    {
+        ay_regs[myAY.ayRegIndex] = Value;
+        if (bPatchFreqZero)
+        {
+            // --------------------------------------------------------------------------------------
+            // Games like boulderdash will set the tone frequency to the minimum and rely on the
+            // noise channel to produce sounds (e.g. of the man walking) but our AY sound driver
+            // will sometimes miss samples due to our shifted sample rate. To patch this, we
+            // drive the frequency down slightly so that the driver will always pick up the change.
+            // --------------------------------------------------------------------------------------
+            if ((myAY.ayRegIndex == 0) && !Value) Value = 3;  // Only channel 0 (Tone A)
+        }
+        ay38910DataW(Value, &myAY);
+    }
     else if (Port == 0xA8) // Slot system for MSX
     {
         if (Port_PPI_A != Value)
