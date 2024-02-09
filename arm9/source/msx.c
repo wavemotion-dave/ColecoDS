@@ -1342,6 +1342,7 @@ u8 MSX_GuessROMType(u32 size)
     if (file_crc == 0xa0fd57cf) type = ASC16;  // Hydlide 2 - Shrine of Darkness
     if (file_crc == 0x41c82156) type = ZEN8;   // Hydlide III (Zenmia)
     if (file_crc == 0xcb9eebfb) type = SCC8;   // Lex Flics (translated)
+    if (file_crc == 0xf5eb7cca) type = SCC8;   // Lazy Jones    
     if (file_crc == 0xd6c395f8) type = SCC8;   // Monster Hunter
     if (file_crc == 0x8183bae1) type = LIN64;  // Mutants from the Deep   
     if (file_crc == 0xa78fdb26) type = ASC8;   // No Back Down   
