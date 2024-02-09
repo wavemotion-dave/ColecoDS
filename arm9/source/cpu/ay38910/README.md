@@ -21,6 +21,7 @@ make the internal clock speed 4 times higher.
 * https://github.com/FluBBaOfWard/SonSonDS
 * https://github.com/FluBBaOfWard/SonSonGBA
 * https://github.com/FluBBaOfWard/YM2203
+* https://github.com/wavemotion-dave/ColecoDS
 
 ## Credits
 
