@@ -79,7 +79,11 @@ unsigned char cpu_readport_msx(register unsigned short Port)
       {
           u8 joy1 = 0x00;
 
-          // Only port 1... not port 2
+          // -------------------------------------------------------------
+          // Only port 1... not port 2. AY register 15 (PortB) bit 6 is 
+          // set to 0 for the port 1 joystick and that's the only one 
+          // this emulator will respond to...
+          // -------------------------------------------------------------
           if ((myAY.ayPortBOut & 0x40) == 0)
           {
               if (myConfig.dpad == DPAD_NORMAL)

@@ -1,4 +1,4 @@
-# AY38910 V0.6.1
+# AY38910 V0.6.5
 
 An AY-3-8910 / YM2149 sound chip emulator for ARM32.
 
@@ -10,6 +10,8 @@ Produces signed 16bit mono.
 You can define AY_UPSHIFT to a number, this is how many times the internal
 sampling is doubled. You can add "-DAY_UPSHIFT=2" to the "make" file to
 make the internal clock speed 4 times higher.
+You can also define AYFILTER to a value between 0 & 8 or so to filter out
+higher frequencies, default is 1.
 
 ## Projects that use this code
 

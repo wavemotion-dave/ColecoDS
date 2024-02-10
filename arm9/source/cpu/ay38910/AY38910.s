@@ -23,9 +23,14 @@
 	.equ WFEED3, 0x14000		;@ White Noise Feedback for AY-3-8930, according to MAME.
 
 #ifdef AY_UPSHIFT
-	#define SHFT AY_UPSHIFT
+	.equ USHIFT, AY_UPSHIFT
 #else
-	#define SHFT 0
+	.equ USHIFT, 0
+#endif
+#ifdef AYFILTER
+	.equ FSHIFT, AYFILTER+USHIFT
+#else
+	.equ FSHIFT, 1+USHIFT
 #endif
 
 #define AYNOISEADD 0x08000000
@@ -51,8 +56,8 @@
 ;@ r7  = noise generator.
 ;@ r8  = envelope freq
 ;@ r9  = envelope addr, envelope type, ch disable, ch state.
-;@ r10 = pointer to attenuation table.
-;@ r11 = mixer reg.
+;@ r10 = mixer reg.
+;@ r11 = pointer to attenuation table.
 ;@ r12 = ch state/scrap
 ;@ lr  = envelope volume
 ;@----------------------------------------------------------------------------
@@ -60,18 +65,16 @@ ay38910Mixer:				;@ r0=len, r1=dest, ayptr=r2=pointer to struct
 	.type   ay38910Mixer STT_FUNC
 ;@----------------------------------------------------------------------------
 #ifdef AY_UPSHIFT
-	mov r0,r0,lsl#AY_UPSHIFT
+	mov r0,r0,lsl#USHIFT
 #endif
 	stmfd sp!,{r4-r11,lr}
-	ldmia r2,{r3-r11}			;@ Load freq,addr,rng,env
-	tst r11,#0xff
+	ldmia r2,{r3-r12}			;@ Load freq,addr,rng,env
+	tst r12,#0xff
 	blne calculateVolumes
 ;@----------------------------------------------------------------------------
 mixLoop:
-#ifdef AY_UPSHIFT
-	mov r11,#0x8000
+	sub r10,r10,r10,lsr#FSHIFT-USHIFT
 innerMixLoop:
-#endif
 	adds r3,r3,#AYTONEADD
 	subcs r3,r3,r3,lsl#20
 	eorcs r9,r9,#0x0000001		;@ Channel A
@@ -98,12 +101,8 @@ innerMixLoop:
 	and r12,r12,r12,lsr#3		;@ Noise disable.
 	mov r12,r12,lsl#29
 	add lr,r2,r12,lsr#28
-#ifdef AY_UPSHIFT
 	ldrh lr,[lr,#ayCalculatedVolumes]
-	add r11,r11,lr
-#else
-	ldrh r11,[lr,#ayCalculatedVolumes]
-#endif
+	add r10,r10,lr
 
 	and lr,r9,r9,lsl#14			;@ Envelope Alternate (allready flipped from Hold)
 	eors lr,lr,r9,lsl#13		;@ Envelope Attack
@@ -111,24 +110,26 @@ innerMixLoop:
 	eorpl lr,lr,#0x78000000
 
 	ands r12,r12,r9,lsl#22		;@ Check if any channels use envelope
-	ldrne lr,[r10,lr,lsr#25]
-	addmi r11,r11,lr
+	ldrne lr,[r11,lr,lsr#25]
+	addmi r10,r10,lr
 	movs r12,r12,lsl#2
-	addcs r11,r11,lr
-	addmi r11,r11,lr
+	addcs r10,r10,lr
+	addmi r10,r10,lr
 
 #ifdef AY_UPSHIFT
 	sub r0,r0,#1
-	tst r0,#(1<<AY_UPSHIFT)-1
+	tst r0,#(1<<USHIFT)-1
 	bne innerMixLoop
 	cmp r0,#0
 #else
 	subs r0,r0,#1
 #endif
-	strhpl r11,[r1],#2
+	mov lr,r10,lsr#FSHIFT
+	eor lr,lr,#0x8000
+	strhpl lr,[r1],#2
 	bhi mixLoop
 
-	stmia r2,{r3-r9}			;@ Write back freq,addr,rng
+	stmia r2,{r3-r10}			;@ Write back freq,addr,rng
 	ldmfd sp!,{r4-r11,lr}
 	bx lr
 
@@ -138,8 +139,8 @@ innerMixLoop:
 #endif
 ;@----------------------------------------------------------------------------
 attenuation:				;@ each step * 0.70710678 (-3dB?)
-	.long 0x0000>>SHFT, 0x00AB>>SHFT, 0x00F1>>SHFT, 0x0155>>SHFT, 0x01E3>>SHFT, 0x02AB>>SHFT, 0x03C5>>SHFT, 0x0555>>SHFT
-	.long 0x078B>>SHFT, 0x0AAB>>SHFT, 0x0F16>>SHFT, 0x1555>>SHFT, 0x1E2B>>SHFT, 0x2AAB>>SHFT, 0x3C57>>SHFT, 0x5555>>SHFT
+	.long 0x0000, 0x00AB, 0x00F1, 0x0155, 0x01E3, 0x02AB, 0x03C5, 0x0555
+	.long 0x078B, 0x0AAB, 0x0F16, 0x1555, 0x1E2B, 0x2AAB, 0x3C57, 0x5555
 	.long 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 	.long 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
 ;@----------------------------------------------------------------------------
@@ -171,8 +172,6 @@ rLoop:
 	str r0,[r1,#ayPortAInFptr]
 	ldr r0,=portBInDummy
 	str r0,[r1,#ayPortBInFptr]
-	mov r0,#0x8000
-	strh r0,[r1,#ayCalculatedVolumes]
 
 	mov r0,#0xFF
 	strb r0,[r1,#ayPortAIn]
@@ -371,23 +370,22 @@ portBInDummy:
 	ldrb r0,[r0,#ayPortBIn]
 	bx lr
 ;@----------------------------------------------------------------------------
-calculateVolumes:			;@ r2 = ayptr, r10 = attenuation
-;@ r11 free to use
+calculateVolumes:			;@ r2 = ayptr, r11 = attenuation
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r0,r1,r3-r5,lr}
 
 	bic r9,r9,#0x0380			;@ Bits used to show which channels use the envelope.
 	ldrb r0,[r2,#ayRegs+0x8]
 	movs r3,r0,lsl#27
-	ldrne r3,[r10,r3,lsr#25]
+	ldrne r3,[r11,r3,lsr#25]
 	orrmi r9,r9,#0x0080
 	ldrb r0,[r2,#ayRegs+0x9]
 	movs r4,r0,lsl#27
-	ldrne r4,[r10,r4,lsr#25]
+	ldrne r4,[r11,r4,lsr#25]
 	orrmi r9,r9,#0x0100
 	ldrb r0,[r2,#ayRegs+0xA]
 	movs r5,r0,lsl#27
-	ldrne r5,[r10,r5,lsr#25]
+	ldrne r5,[r11,r5,lsr#25]
 	orrmi r9,r9,#0x0200
 
 	add r12,r2,#ayCalculatedVolumes
@@ -398,7 +396,6 @@ volLoop:
 	teq r1,r1,lsl#29
 	addcs r0,r0,r5
 	addmi r0,r0,r4
-	eor r0,r0,#0x8000
 	strh r0,[r12,r1]
 	subs r1,r1,#2
 	bne volLoop
