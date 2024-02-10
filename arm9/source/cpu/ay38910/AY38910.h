@@ -29,6 +29,7 @@ typedef struct {
 	u8 ayChDisable;
 	u8 ayEnvType;
 	u8 ayEnvAddr;
+	u32 ayOldSample;
 	u16 *ayEnvVolumePtr;
 
 	u8 ayAttChg;

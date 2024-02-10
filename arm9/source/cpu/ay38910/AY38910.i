@@ -27,6 +27,7 @@ ayChState:		.byte 0			;@ Which channels are high/low
 ayChDisable:	.byte 0
 ayEnvType:		.byte 0
 ayEnvAddr:		.byte 0
+ayOldSample:	.long 0
 ayEnvVolumePtr:	.long 0
 
 ayAttChg:		.byte 0
