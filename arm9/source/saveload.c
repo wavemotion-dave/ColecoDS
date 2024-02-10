@@ -200,7 +200,6 @@ void colecoSaveState()
     // Write PSG SN and AY sound chips...
     if (uNbO) uNbO = fwrite(&mySN, sizeof(mySN),1, handle);
     if (uNbO) uNbO = fwrite(&myAY, sizeof(myAY),1, handle);
-    if (uNbO) uNbO = fwrite(ay_regs, sizeof(ay_regs),1, handle);
       
     // Write stuff for MSX, SordM5 and SG-1000
     if (uNbO) fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
@@ -453,7 +452,6 @@ void colecoLoadState()
             // Read PSG SN and AY sound chips...
             if (uNbO) uNbO = fread(&mySN, sizeof(mySN),1, handle); 
             if (uNbO) uNbO = fread(&myAY, sizeof(myAY),1, handle);
-            if (uNbO) uNbO = fread(ay_regs, sizeof(ay_regs),1, handle);
             
             // Load stuff for MSX, SordM5 and SG-1000
             if (uNbO) fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);

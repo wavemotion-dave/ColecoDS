@@ -2,7 +2,8 @@ SN76496 revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
 
-V1.6.6 - 2024-01-31 (FluBBa)
+V1.6.6 - 2024-02-08 (FluBBa)
+	Added support for internal oversampling.
 	Fixed calling of all functions from C.
 	Small optimization to calculateVolume.
 
