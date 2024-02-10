@@ -29,7 +29,6 @@
 // ---------------------------------------
 // Some MSX Mapper / Slot Handling stuff
 // ---------------------------------------
-u8 bPatchFreqZero       __attribute__((section(".dtcm"))) = 0;
 u8 mapperType           __attribute__((section(".dtcm"))) = 0;
 u8 mapperMask           __attribute__((section(".dtcm"))) = 0;
 u8 bROMInSlot[4]        __attribute__((section(".dtcm"))) = {0,0,0,0};
@@ -58,8 +57,6 @@ u8  msx_japanese_matrix = 0;        // Default to International keyboard layout.
 
 static u8 header_MSX[8] = { 0x1f,0xa6,0xde,0xba,0xcc,0x13,0x7d,0x74 };
 
-u8 ay_regs[16] __attribute__((section(".dtcm"))) = {0};
-
 extern unsigned char fastdrom_cdx2[];
 
 // ------------------------------------------------------------------
@@ -83,7 +80,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           u8 joy1 = 0x00;
 
           // Only port 1... not port 2
-          if ((ay_regs[15] & 0x40) == 0)
+          if ((myAY.ayPortBOut & 0x40) == 0)
           {
               if (myConfig.dpad == DPAD_NORMAL)
               {
@@ -1168,21 +1165,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     if      (Port == 0x98) WrData9918(Value);
     else if (Port == 0x99) {if (WrCtrl9918(Value)) { CPU.IRequest=INT_RST38; cpuirequest=Z80_IRQ_INT; }}
     else if (Port == 0xA0) {ay38910IndexW(Value&0xF, &myAY);}   // PSG Area
-    else if (Port == 0xA1) 
-    {
-        ay_regs[myAY.ayRegIndex] = Value;
-        if (bPatchFreqZero)
-        {
-            // --------------------------------------------------------------------------------------
-            // Games like boulderdash will set the tone frequency to the minimum and rely on the
-            // noise channel to produce sounds (e.g. of the man walking) but our AY sound driver
-            // will sometimes miss samples due to our shifted sample rate. To patch this, we
-            // drive the frequency down slightly so that the driver will always pick up the change.
-            // --------------------------------------------------------------------------------------
-            if ((myAY.ayRegIndex == 0) && !Value) Value = 3;  // Only channel 0 (Tone A)
-        }
-        ay38910DataW(Value, &myAY);
-    }
+    else if (Port == 0xA1) {ay38910DataW(Value, &myAY);}
     else if (Port == 0xA8) // Slot system for MSX
     {
         if (Port_PPI_A != Value)
@@ -1910,8 +1893,6 @@ void MSX_HandleCassette(register Z80 *r)
 // ---------------------------------------------------------
 void msx_reset(void)
 {
-    memset(ay_regs, 0x00, sizeof(ay_regs));
-    
     msx_sram_at_8000 = false;
     if (msx_mode)
     {

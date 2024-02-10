@@ -2,7 +2,7 @@ AY-3-8910 revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
-V0.6.1 - 2024-02-07 (FluBBa)
+V0.6.1 - 2024-02-10 (FluBBa)
 	Added defines for internal oversampling.
 	Fixed calling of mixer from C.
 	Small optimization to mixer.

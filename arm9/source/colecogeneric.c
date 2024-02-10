@@ -1429,46 +1429,6 @@ void SetDefaultGameConfig(void)
     
     if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;  // Colecovision Boulder Dash only works with the DrZ80 core. Unsure why...
     
-    bPatchFreqZero = 0;
-    if (file_crc == 0x2c7c590b)                 bPatchFreqZero = 1;  // Boulder Dash (1985)(Databyte)[a][RUN'CAS-'].cas
-    if (file_crc == 0xa3c81ef6)                 bPatchFreqZero = 1;  // Boulder Dash (1985)(Databyte).dsk
-    if (file_crc == 0x2b1a44d9)                 bPatchFreqZero = 1;  // Boulder Dash (1985)(Databyte)[RUN'CAS-'].cas
-    if (file_crc == 0x178aa9a7)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [288].rom
-    if (file_crc == 0xc7da2a53)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [a2] [5548].rom
-    if (file_crc == 0x06d45bc2)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [a3] [5549].rom
-    if (file_crc == 0xb20c0c0b)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Conversion by Brazza] [8090].rom
-    if (file_crc == 0x85e72e34)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Hack - No One Boulder Dash vol. 1] [8152].rom
-    if (file_crc == 0x77c1dc45)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Hack - No One Boulder Dash vol. 20] [8155].rom
-    if (file_crc == 0x88a9d9a0)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Hack - No One Boulder Dash vol. 20 Rev 01] [8151].rom
-    if (file_crc == 0xffb09bef)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Hack - No One Boulder Dash vol. 2] [8150].rom
-    if (file_crc == 0x20af3e57)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Hack - No One Boulder Dash vol. 3] [8154].rom
-    if (file_crc == 0x69b66e5a)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Hack - No One Boulder Dash vol. 4] [8149].rom
-    if (file_crc == 0xd1efae53)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [Hack - No One Boulder Dash vol. 5] [8153].rom
-    if (file_crc == 0xb8a8b27b)                 bPatchFreqZero = 1;  // Boulder Dash 2 - First Star Software (1987) [MSX1 Only] [2757].rom
-    if (file_crc == 0xaa9e8259)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [287].rom
-    if (file_crc == 0x80dadbc8)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [5550].rom
-    if (file_crc == 0x6de08cd4)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Champion Edition-a2] [5552].rom
-    if (file_crc == 0xfca8acd1)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Champion Edition-a3] [5553].rom
-    if (file_crc == 0x98d1b9ff)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Champion Edition-a] [5551].rom
-    if (file_crc == 0x33129faf)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - Boulder Dash 11] [8157].rom
-    if (file_crc == 0xf3b061cd)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - Boulderdash 3] [8160].rom
-    if (file_crc == 0x3e70d11f)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - Boulderdash 3 - Debug] [8162].rom
-    if (file_crc == 0xc8c4bd16)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - Boulderdash 3 - MSX2 fix by Jipe] [8164].rom
-    if (file_crc == 0xb3bb5eec)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - Boulderdash 3 - MSX2 fix by Jipe and bug Fix] [8161].rom
-    if (file_crc == 0xb3bb5eec)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - Boulderdash 3 - MSX2 fix by Jipe and bug Fix] [8161].rom (2)
-    if (file_crc == 0x12613378)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - Boulderdash 3 - Patch by Brazza] [8163].rom
-    if (file_crc == 0x675889a2)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - No One Boulder Dash vol. 6 - MSX1 Only] [8158].rom
-    if (file_crc == 0x5c2c5579)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - No One Boulder Dash vol. 6 - MSX2 Fix] [8156].rom
-    if (file_crc == 0x02074e03)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [Hack - No One Boulder Dash vol. 6 - MSX2 Fix and Cave Fix] [8159].rom
-    if (file_crc == 0x42001f4f)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [MSX1 Only] [2756].rom
-    if (file_crc == 0xaa751b61)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [MSX1 Only] [286].rom
-    if (file_crc == 0x4721c690)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [MSX1 Only] [7828].rom
-    if (file_crc == 0xa3a56524)                 bPatchFreqZero = 1;  // Boulder Dash - First Star Software (1986) [MSX1 Only] [GoodMSX] [283].rom
-    if (file_crc == 0xa97ef439)                 bPatchFreqZero = 1;  // Boulder Dash II - Rockford's Revenge (First Star) (Databyte) [RUN'CAS-'] [_].cas
-    if (file_crc == 0x6d2441a2)                 bPatchFreqZero = 1;  // Boulder Dash II - Rockford's Riot (1986)(Databyte)[a][RUN'CAS-'].cas
-    if (file_crc == 0xf8ad6e11)                 bPatchFreqZero = 1;  // Boulder Dash II - Rockford's Riot (1986)(Databyte).dsk
-    if (file_crc == 0xb5bf54a3)                 bPatchFreqZero = 1;  // Boulder Dash II - Rockford's Riot (1986)(Databyte)[RUN'CAS-'].cas
-    
     // --------------------------------------------------------
     // These ADAM games use the larger full keyboard
     // --------------------------------------------------------

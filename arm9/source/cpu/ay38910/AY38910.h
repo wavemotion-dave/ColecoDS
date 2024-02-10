@@ -34,6 +34,7 @@ typedef struct {
 	u8 ayAttChg;
 	u8 ayRegIndex;
 	u8 ayPadding1[2];
+	s16 ayCalculatedVolumes[8];
 	u8 ayPortAOut;
 	u8 ayPortBOut;
 	u8 ayPortAIn;
@@ -43,7 +44,6 @@ typedef struct {
 	void *ayPortBInFptr;
 	void *ayPortAOutFptr;
 	void *ayPortBOutFptr;
-	s16 ayCalculatedVolumes[8];
 
 } AY38910;
 

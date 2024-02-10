@@ -62,6 +62,10 @@ sn76496Mixer:				;@ r0=len, r1=dest, r2=snptr
 	blne calculateVolumes
 ;@----------------------------------------------------------------------------
 mixLoop:
+#ifdef SN_UPSHIFT
+	mov lr,#0x80000000
+innerMixLoop:
+#endif
 	adds r3,r3,#SN_ADDITION
 	subcs r3,r3,r3,lsl#16
 	eorcs r7,r7,#0x02
@@ -82,10 +86,12 @@ mixLoop:
 	orrcs r7,r7,#0x10
 
 #ifdef SN_UPSHIFT
+	ldr r12,[r2,r7]
 	sub r0,r0,#1
 	tst r0,#(1<<SN_UPSHIFT)-1
-	bne mixLoop
-	ldrh lr,[r2,r7]
+	add lr,lr,r12
+	bne innerMixLoop
+	eor lr,lr,#0x00008000
 	cmp r0,#0
 #else
 	ldrh lr,[r2,r7]
@@ -237,7 +243,11 @@ volLoop:
 	teq r1,r1,lsl#28
 	addmi r0,r0,r5
 	addcs r0,r0,r6
+#ifdef SN_UPSHIFT
+	eor r0,lr,r0,lsr#2+SN_UPSHIFT
+#else
 	eor r0,lr,r0,lsr#2
+#endif
 	strh r0,[r12,r1]
 	subs r1,r1,#2
 	bne volLoop
