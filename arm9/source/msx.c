@@ -109,7 +109,6 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
 
           myAY.ayPortAIn = ~joy1;
-          return myAY.ayPortAIn;
       }
       return ay38910DataR(&myAY);
   }
