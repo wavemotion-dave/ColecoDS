@@ -66,9 +66,8 @@ Thanks to Alekmaul who provided the
 baseline code to work with and to lobo
 for the menu graphical design.
 
-Thanks to Flubba for the SN76496 and SCC sound cores. I've 
-made minor modifications to the cores to run with ColecoDS
-but you can seek out his latest and greatest at https://github.com/FluBBaOfWard
+Thanks to Flubba for the SN76496, AY38910 and SCC sound cores. 
+You can seek out his latest and greatest at https://github.com/FluBBaOfWard
 
 Thanks to the C-BIOS team for the open 
 source MSX BIOS (see cbios.txt)
