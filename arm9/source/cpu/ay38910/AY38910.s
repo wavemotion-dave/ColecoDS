@@ -116,13 +116,11 @@ innerMixLoop:
 	addcs r10,r10,lr
 	addmi r10,r10,lr
 
+	subs r0,r0,#1
 #ifdef AY_UPSHIFT
-	sub r0,r0,#1
 	tst r0,#(1<<USHIFT)-1
 	bne innerMixLoop
 	cmp r0,#0
-#else
-	subs r0,r0,#1
 #endif
 	mov lr,r10,lsr#FSHIFT
 	eor lr,lr,#0x8000
@@ -349,25 +347,25 @@ ay38910RegFW:
 	bx lr
 ;@----------------------------------------------------------------------------
 ay38910RegER:
-	ldrb r1,[r0,#ayRegs+7]		;@ ayChDisable
-	tst r1,#0x40
-	ldrbne r0,[r0,#ayPortAOut]
-	bxne lr
-	ldr pc,[r0,#ayPortAInFptr]
+	mov r2,r0
+	ldrb r1,[r2,#ayRegs+7]		;@ ayChDisable
+	ands r1,#0x40
+	ldrbne r0,[r2,#ayPortAOut]
+	ldr pc,[r2,#ayPortAInFptr]
 ;@-------------------------------
 portAInDummy:
-	ldrb r0,[r0,#ayPortAIn]
+	ldrb r0,[r2,#ayPortAIn]
 	bx lr
 ;@----------------------------------------------------------------------------
 ay38910RegFR:
-	ldrb r1,[r0,#ayRegs+7]		;@ ayChDisable
-	tst r1,#0x80
-	ldrbne r0,[r0,#ayPortBOut]
-	bxne lr
-	ldr pc,[r0,#ayPortBInFptr]
+	mov r2,r0
+	ldrb r1,[r2,#ayRegs+7]		;@ ayChDisable
+	ands r1,#0x80
+	ldrbne r0,[r2,#ayPortBOut]
+	ldr pc,[r2,#ayPortBInFptr]
 ;@-------------------------------
 portBInDummy:
-	ldrb r0,[r0,#ayPortBIn]
+	ldrb r0,[r2,#ayPortBIn]
 	bx lr
 ;@----------------------------------------------------------------------------
 calculateVolumes:			;@ r2 = ayptr, r11 = attenuation

@@ -2,10 +2,11 @@ AY-3-8910 revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 
-V0.6.5 - 2024-02-10 (FluBBa)
+V0.6.5 - 2024-02-11 (FluBBa)
 	Added support for internal downsampling.
 	Added support for internal filtering.
 	Fixed calling of mixer from C.
+	Fixed IO port handling.
 	Small optimization to mixer.
 
 V0.6.0 - 2021-12-01 (FluBBa)

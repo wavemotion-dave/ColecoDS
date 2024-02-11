@@ -7,6 +7,11 @@ An AY-3-8910 / YM2149 sound chip emulator for ARM32.
 First alloc chip struct, call reset then set in/out function pointers.
 Call AY38910Mixer with length, destination and chip struct.
 Produces signed 16bit mono.
+
+The "in function" can take 2 arguments, the first is a possible output value
+on the IO ports of the chip, the second argument is if the ports is in output
+mode. Something like "ioACallback(u8 val, u8 inout)", if "inout" is not zero
+val is the current value output by the chip.   
 You can define AY_UPSHIFT to a number, this is how many times the internal
 sampling is doubled. You can add "-DAY_UPSHIFT=2" to the "make" file to
 make the internal clock speed 4 times higher.
