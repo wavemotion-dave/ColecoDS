@@ -407,7 +407,7 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V9.2: ??-???-2024 by wavemotion-dave
+V9.2: 12-Feb-2024 by wavemotion-dave
 * Ported the AY sound chip driver from FluBBa to improve MSX1, Einstein and Coleco SGM games.
 * Ported most recent SN sound chip driver from FluBBa.
 * Allow more than one keyboard press at a time for the MSX1 so keyboard-mapped keys work properly (i.e. UP and SPACE at the same time)

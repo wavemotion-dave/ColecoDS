@@ -1218,7 +1218,7 @@ ITCM_CODE u32 LoopZ80()
       {
           // Execute 1 scanline worth of CPU instructions
           u32 cycles_to_process = tms_cpu_line + cycle_deficit;
-          cycle_deficit = ExecZ80(tms_cpu_line + cycle_deficit);
+          cycle_deficit = ExecZ80(cycles_to_process);
 
           // Refresh VDP 
           if(Loop9918()) 
