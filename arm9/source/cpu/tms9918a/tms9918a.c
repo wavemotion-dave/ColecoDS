@@ -1,6 +1,6 @@
 /******************************************************************************
 *  ColecoDS TMS9918A (video) file
-*  Ver 1.0
+*  Ver 1.1
 *
 ** File: tms9928a.c -- software implementation of the Texas Instruments
 **                     TMS9918A used by the Colecovision.
@@ -15,7 +15,11 @@
 **       code, you are advised to seek out the latest ColEM core online.
 **       We've added the VDP Control Latch reset on data read/write and
 **       on control reads - this was missing from the ColEM handlers. 
-*        We've also patched in a lutTablehh[] for very fast color handling.
+**       The Scanning of sprites for the 5th sprite is also overhauled
+**       as that was not accurate - the 5S flag should be set and latched
+**       and neither the sprite number nor the flag should be touched 
+**       until the status register is read.
+**       We've also patched in a lutTablehh[] for very fast color handling.
 **
 ******************************************************************************/
 #include <nds.h>
@@ -83,7 +87,7 @@ u16 CurLine     __attribute__((section(".dtcm")));      // Current scanline
 u8 VDP[16]      __attribute__((section(".dtcm")));      // VDP Registers
 u8 VDPStatus    __attribute__((section(".dtcm")));      // VDP Status
 u8 VDPDlatch    __attribute__((section(".dtcm")));      // VDP register D Latch
-u16 VAddr       __attribute__((section(".dtcm")));      // Storage for VIDRAM addresses
+u16 VAddr       __attribute__((section(".dtcm")));      // VDP Video Address
 u8 VDPCtrlLatch __attribute__((section(".dtcm")));      // VDP control latch key
 u8 *ChrGen      __attribute__((section(".dtcm")));      // VDP tables (screens)
 u8 *ChrTab      __attribute__((section(".dtcm")));      // VDP tables (screens)
@@ -99,6 +103,7 @@ u16 ChrTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 ColTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 ChrGenM     __attribute__((section(".dtcm"))) = 0x3FFF;
 u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
+
 
 /** RefreshBorder() ******************************************/
 /** This function is called from RefreshLine#() to refresh  **/
@@ -132,12 +137,13 @@ ITCM_CODE void RefreshBorder(byte Y)
 }
 
 
-/** CheckSprites() *******************************************/
-/** This function is periodically called to check for the   **/
-/** sprite collisions and 5th sprite, and set appropriate   **/
-/** bits in the VDP status register.                        **/
-/*************************************************************/
-byte ITCM_CODE CheckSprites(void) {
+/** CheckSprites() ***********************************************/
+/** This function is periodically called to check for sprite    **/
+/** collisions. The caller of this will set the flag as needed. **/
+/** Returning zero (0) means no collision. Otherwise collision. **/
+/*****************************************************************/
+byte ITCM_CODE CheckSprites(void) 
+{
   unsigned int I,J,LS,LD;
   byte *S,*D,*PS,*PD,*T;
   int DH,DV;
@@ -145,9 +151,15 @@ byte ITCM_CODE CheckSprites(void) {
   /* Find valid, displayed sprites */
   DV = TMS9918_Sprites16 ? -16:-8;
   for(I=J=0,S=SprTab;(I<32)&&(S[0]!=208);++I,S+=4)
-    if(((S[0]<191)||(S[0]>255+DV))&&((int)S[1]-(S[3]&0x80? 32:0)>DV))
-      J|=1<<I;
+  {
+    if(((S[0]<191)||(S[0]>255+DV))&&((int)S[1]-(S[3]&0x80? 32:0)>DV))  J|=1<<I;
+  }
 
+  // ------------------------------------------------------------------
+  // Run through all displayed sprites and see if there is any overlap. 
+  // This is a bit CPU intensive - we check vertical overlap first as
+  // it's a bit faster to see if these have any chance of collision.
+  // ------------------------------------------------------------------
   if(TMS9918_Sprites16)
   {
     for(S=SprTab;J;J>>=1,S+=4)
@@ -155,11 +167,11 @@ byte ITCM_CODE CheckSprites(void) {
         for(I=J>>1,D=S+4;I;I>>=1,D+=4)
           if(I&1)
           {
-            DV=(int)S[0]-(int)D[0];
+            DV=(int)S[0]-(int)D[0]; // Check if these sprites might coincide vertically
             if((DV<16)&&(DV>-16))
             {
               DH=(int)S[1]-(int)D[1]-(S[3]&0x80? 32:0)+(D[3]&0x80? 32:0);
-              if((DH<16)&&(DH>-16))
+              if((DH<16)&&(DH>-16)) // Check if these sprites might coincide horizontally
               {
                 PS=SprGen+((int)(S[2]&0xFC)<<3);
                 PD=SprGen+((int)(D[2]&0xFC)<<3);
@@ -211,62 +223,78 @@ byte ITCM_CODE CheckSprites(void) {
 /** Returns the first sprite to show or -1 if none shown.   **/
 /** Also updates 5th sprite fields in the status register.  **/
 /*************************************************************/
-int ITCM_CODE ScanSprites(register byte Y,unsigned int *Mask)
+int ITCM_CODE ScanSprites(byte Y, unsigned int *Mask)
 {
-  byte *AT;
-  u8 L,C1,C2;
-  s16 K;
-  unsigned int M;
-
-  /* No 5th sprite yet */
-  VDPStatus &= ~(TMS9918_STAT_5THNUM|TMS9918_STAT_5THSPR);
-
-  /* Must have MODE1+ and screen enabled */
-  if(!ScrMode || !TMS9918_ScreenON)
-  {
-    if(Mask) *Mask=0;
-    return(-1);
-  }
-
-  AT = SprTab;
-  C1 = MaxSprites[myConfig.maxSprites]+1;
-  C2 = 5;
-  M  = 0;
-
-  for(L=0;L<32;++L,AT+=4)
-  {
-    K=AT[0];             /* K = sprite Y coordinate */
-    if(K==208) break;    /* Iteration terminates if Y=208 */
-    if(K>256-IH) K-=256; /* Y coordinate may be negative */
-
-    /* Mark all valid sprites with 1s, break at MaxSprites */
-    if((Y>K)&&(Y<=K+OH))
+    byte *AT;
+    u8 sprite,C1,C2;
+    s16 K;
+    u32 M;
+    
+    /* Must have MODE1+ and screen enabled - otherwise no sprites rendered */
+    if(!ScrMode || !TMS9918_ScreenON)
     {
-      /* If we exceed four sprites per line, set 5th sprite flag */
-      if(!--C2) VDPStatus|=TMS9918_STAT_5THSPR|L;
+        *Mask = 0x00000000;
+        return(-1);
+    }    
 
-      /* If we exceed maximum number of sprites per line, stop here */
-      if(!--C1) break;
+    s16 fifth_sprite_num =-1;                   // Used to detect the 5th sprite on a line
+    AT = SprTab;                                // Pointer to the sprite table
+    C1 = MaxSprites[myConfig.maxSprites]+1;     // We either render 4 sprites (normal - this is how an 9918 would work) or 32 sprites (enhanded mode for emulation only)
+    C2 = 5;                                     // We always want to trap on the 5th sprite
+    M  = 0x00000000;                            // The sprite mask starts as zero and we accumualte sprite bits that will be rendered
 
-      /* Mark sprite as ready to draw */
-      M|=(1<<L);
+    // For each sprite
+    for(sprite=0;sprite<32;++sprite,AT+=4)
+    {
+        K=AT[0];             /* K = sprite Y coordinate */
+        if(K==208) break;    /* Iteration terminates if Y=208 */
+        if(K>256-IH) K-=256; /* Y coordinate may be negative */
+
+        /* Mark all valid sprites with 1s, break at MaxSprites */
+        if((Y>K)&&(Y<=K+OH))
+        {
+            /* If we exceed four sprites per line, set 5th sprite number */
+            if(!--C2) fifth_sprite_num = sprite;
+
+            /* If we exceed maximum number of sprites per line, stop here */
+            if(!--C1) break;
+
+            /* Mark sprite as ready to draw */
+            M |= (1<<sprite);
+        }
     }
-  }
 
-  /* Set last checked sprite number (5th sprite, or Y=208, or sprite #31) */
-  if(C2>0) VDPStatus |= L<32? L:31;
+    // ------------------------------------------------------------------------
+    // The if a 5th  sprite was found on this line, we check to see if we've
+    // already got a 5th sprite latched and if not, we will set this sprite as
+    // the fifth sprite. The 5th sprite flag will be cleared on status read.
+    // ------------------------------------------------------------------------
+    if ((VDPStatus & TMS9918_STAT_5THSPR) == 0) // If the 5S flag is not already latched
+    {
+        if (fifth_sprite_num != -1) // If we have a 5th sprite number detected
+        {
+            VDPStatus &= ~TMS9918_STAT_5THNUM;                      // Clear out any previous sprite number
+            VDPStatus |= (TMS9918_STAT_5THSPR | fifth_sprite_num);  // Set the 5th sprite flag and number
+        }
+        else // This is undocumented behavior but a real VDP will behave like this and Miner 2049er will rely on it
+        {
+            VDPStatus &= ~TMS9918_STAT_5THNUM;          // Clear out any previous sprite number
+            VDPStatus |= (sprite < 32) ? sprite:31;     // Set the 5th sprite number to the last visible sprite on this line or 31 if no sprites visible
+        }
+    }
 
-  /* Return first shown sprite and bit mask of shown sprites */
-  if(Mask) *Mask=M;
-  return(L-1);
+  /* Return last shown sprite and bit mask of shown sprites */
+  *Mask=M;
+  return(sprite-1);
 }
 
 
 /** RefreshSprites() *****************************************/
 /** This function is called from RefreshLine#() to refresh  **/
-/** sprites.                                                **/
+/** and draw sprites to a given pixel line.                 **/
 /*************************************************************/
-void ITCM_CODE RefreshSprites(register byte Y) {
+void ITCM_CODE RefreshSprites(register byte Y) 
+{
   register byte *PT,*AT;
   register byte *P,*T,C;
   register int L,K,N;
@@ -294,7 +322,6 @@ void ITCM_CODE RefreshSprites(register byte Y) {
         K=AT[0];                /* K = sprite Y coordinate */
         if(K>256-IH) K-=256;    /* Y coordinate may be negative */
 
-        //C  = VDP->XPal[C];
         P  = T+L;
         K  = Y-K-1;
         PT = SprGen
@@ -510,9 +537,10 @@ void ITCM_CODE RefreshLine2(u8 uY) {
 /** Refresh line Y (0..191) of SCREEN3, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE RefreshLine3(u8 uY) {
-  register byte X,K,Offset;
-  register byte *P,*T;
+ITCM_CODE void RefreshLine3(u8 uY) 
+{
+  byte X,K,Offset;
+  byte *P,*T;
   u8 lastT;
   P=XBuf+(uY<<8);
 
@@ -524,6 +552,7 @@ void ITCM_CODE RefreshLine3(u8 uY) {
     T=ChrTab+((int)(uY&0xF8)<<2);
     lastT = ~(*T);
     Offset=(uY&0x1C)>>2;
+    u32 dword1=0, dword2=0;
     for(X=0;X<32;X++) 
     {
       if (lastT != *T)
@@ -532,9 +561,17 @@ void ITCM_CODE RefreshLine3(u8 uY) {
           K=ChrGen[((int)lastT<<3)+Offset];
           ptLow = K>>4;
           ptHigh = K&0x0F;
+          P[0]=P[1]=P[2]=P[3]=ptLow;
+          P[4]=P[5]=P[6]=P[7]=ptHigh;
+          dword1 = *((u32*)(P+0));
+          dword2 = *((u32*)(P+4));
       }
-      P[0]=P[1]=P[2]=P[3]=ptLow;
-      P[4]=P[5]=P[6]=P[7]=ptHigh;
+      else
+      {
+          u32 *destPtr = (u32*)P;
+          *destPtr++ = dword1;
+          *destPtr   = dword2;          
+      }
       P+=8;T++;
     }
     RefreshSprites(uY);
@@ -699,10 +736,8 @@ ITCM_CODE byte WrCtrl9918(byte value)
 /*************************************************************/
 ITCM_CODE byte RdCtrl9918(void) 
 {
-  byte data;
-
-  data = VDPStatus;
-  VDPStatus &= (TMS9918_STAT_5THNUM | TMS9918_STAT_5THSPR); // Clears VBLANK
+  byte data = VDPStatus;
+  VDPStatus &= 0x1F; // Top bits are cleared on a read... 
   VDPCtrlLatch = 0;
     
   if (myConfig.clearInt == CPU_CLEAR_INT_ON_VDP_READ)
@@ -739,9 +774,23 @@ ITCM_CODE byte Loop9918(void)
   if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
   {
       if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
-          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for collisions
+          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for the 5th sprite flag
       else
           RefreshLine(CurLine - tms_start_line);
+          
+      // ---------------------------------------------------------------------
+      // Some programs require that we handle collisions more frequently
+      // than just end of line. So we check every 64 scanlines (or 128 if 
+      // we are the older DS-Lite/Phat). This is somewhat CPU intensive so
+      // we are careful how often we run it - especially on older hardware.
+      // ---------------------------------------------------------------------
+      if ((CurLine % (isDSiMode() ? 64:255)) == 0)
+      {
+          if(!(VDPStatus&TMS9918_STAT_OVRLAP)) // If not already in collision...
+          {
+            if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP; // Set the collision bit
+          }
+      }
   }
   /* If time for emulated VBlank... */
   else if (CurLine == tms_end_line)
@@ -833,7 +882,9 @@ ITCM_CODE byte Loop6502(void)
 
       /* Set Sprite Collision status flag */
       if(!(VDPStatus&TMS9918_STAT_OVRLAP))
+      {
         if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP;
+      }
       
       creativision_input();
   }
