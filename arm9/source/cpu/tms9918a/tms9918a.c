@@ -877,7 +877,7 @@ ITCM_CODE byte Loop6502(void)
   if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
   {
       if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
-          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for collisions
+          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for collisions (TODO: this only scans for 5th sprite... perhaps call CheckSprites() instead)
       else
          (SCR[ScrMode].Refresh)(CurLine - tms_start_line);
   }
