@@ -428,33 +428,15 @@ ITCM_CODE void RefreshLine0(u8 Y)
     T=ChrTab+(Y>>3)*40;
     Offset=Y&0x07;
 
-    u8 lastT = ~(*T);
-    
-    u16 word1=0, word2=0, word3=0;
     for(int X=0;X<40;X++)
     {
-      if (lastT != *T)
-      {
-          lastT=*T;
-          K=ChrGen[((int)*T<<3)+Offset];
-          P[0]=K&0x80? FC:BC;
-          P[1]=K&0x40? FC:BC;
-          P[2]=K&0x20? FC:BC;
-          P[3]=K&0x10? FC:BC;
-          P[4]=K&0x08? FC:BC;
-          P[5]=K&0x04? FC:BC;
-          // Save the data as we are likely to just repeat it...
-          word1 = *((u16*)(P+0));
-          word2 = *((u16*)(P+2));
-          word3 = *((u16*)(P+4));
-      }
-      else // No change so we can just blast repeat the 6 bytes (16-bits at at time). This occurs frequently and saves us time.
-      {
-          u16 *destPtr = (u16*)P;
-          *destPtr++ = word1;
-          *destPtr++ = word2;
-          *destPtr   = word3;
-      }
+      K=ChrGen[((int)*T<<3)+Offset];
+      P[0]=K&0x80? FC:BC;
+      P[1]=K&0x40? FC:BC;
+      P[2]=K&0x20? FC:BC;
+      P[3]=K&0x10? FC:BC;
+      P[4]=K&0x08? FC:BC;
+      P[5]=K&0x04? FC:BC;
       P+=6;T++;
     }
   }
