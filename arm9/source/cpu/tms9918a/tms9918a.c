@@ -111,29 +111,17 @@ u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 /*************************************************************/
 ITCM_CODE void RefreshBorder(byte Y)
 {
-    if (ScrMode == 0)
-    {
-      byte *P;
-      int J,N;
+    /* Screen buffer */
+    byte *P=XBuf;
 
-      /* Screen buffer */
-      P=XBuf;
-      J=256*Y;
+    /* Skip down to the right position vertically */
+    P+=256*Y;
+    
+    memset(P, BGColor, 8);
 
-      /* For the first line, refresh top border */
-      if(Y) P+=J;
-      else for(;J;J--) P++;
-
-      /* Calculate number of pixels */
-      N=16;
-
-      /* Refresh left border */
-      for(J=N;J;J--) P++;
-
-      /* Refresh right border */
-      P+=256-(N<<1);
-      for(J=N;J;J--) *P++=BGColor;
-    }
+    /* Refresh right border - this is the only one we really care about */
+    P+=256-8;
+    memset(P, BGColor, 8);
 }
 
 
@@ -431,6 +419,7 @@ ITCM_CODE void RefreshLine0(u8 Y)
     u8 lastT = ~(*T);
     
     u16 word1=0, word2=0, word3=0;
+    P += 8;
     for(int X=0;X<40;X++)
     {
       if (lastT != *T)
@@ -798,7 +787,7 @@ ITCM_CODE byte Loop9918(void)
           
       // ---------------------------------------------------------------------
       // Some programs require that we handle collisions more frequently
-      // than just end of line. So we check every 64 scanlines (or 128 if 
+      // than just end of line. So we check every 64 scanlines (or 255 if 
       // we are the older DS-Lite/Phat). This is somewhat CPU intensive so
       // we are careful how often we run it - especially on older hardware.
       // ---------------------------------------------------------------------
