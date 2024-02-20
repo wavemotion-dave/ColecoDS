@@ -2,25 +2,26 @@
 *  ColecoDS TMS9918A (video) file
 *  Ver 1.1
 *
-** File: tms9928a.c -- software implementation of the Texas Instruments
-**                     TMS9918A used by the Colecovision.
-**
-** All undocumented features as described in the following file
-** should be emulated.
-**
-** http://www.msxnet.org/tech/tms9918a.txt
-**
-** Note: much of this file is from the ColEM emulator core by Marat Fayzullin
-**       but heavily modified for specific NDS use. If you want to use this
-**       code, you are advised to seek out the latest ColEM core online.
-**       We've added the VDP Control Latch reset on data read/write and
-**       on control reads - this was missing from the ColEM handlers. 
-**       The Scanning of sprites for the 5th sprite is also overhauled
-**       as that was not accurate - the 5S flag should be set and latched
-**       and neither the sprite number nor the flag should be touched 
-**       until the status register is read.
-**       We've also patched in a lutTablehh[] for very fast color handling.
-**
+* File: tms9928a.c -- software implementation of the Texas Instruments TMS9918A.
+* 
+* Note: much of this file is from the ColEM emulator core by Marat Fayzullin
+*       but heavily modified for specific NDS use. If you want to use this
+*       code, you are advised to seek out the latest ColEM core online.
+* 
+*       I've added proper init of the VDP[] registers per findings on real
+*       hardware and the VDP Control Latch reset on data read/write and
+*       on control reads - this was missing from the original ColEM handlers. 
+*
+*       The Scanning of sprites for the 5th sprite is also overhauled
+*       as that was not accurate - the 5S flag should be set and latched
+*       and neither the sprite number nor the flag should be touched 
+*       until the status register is read.
+* 
+*       We've also patched in a lutTablehh[] for very fast color handling and
+*       check that the FG/BG colors have changed before going back through 
+*       a semi-CPU-expensive fetch into VDP memory. This gives us the much
+*       needed speed for the older DS hardware.
+*
 ******************************************************************************/
 #include <nds.h>
 #include <stdio.h>
@@ -107,19 +108,20 @@ u16 SprTabM     __attribute__((section(".dtcm"))) = 0x3FFF;
 
 /** RefreshBorder() ******************************************/
 /** This function is called from RefreshLine#() to refresh  **/
-/** the screen border.                                      **/
+/** the left and right screen borders for TEXT modes.       **/
 /*************************************************************/
 ITCM_CODE void RefreshBorder(byte Y)
 {
     /* Screen buffer */
     byte *P=XBuf;
 
-    /* Skip down to the right position vertically */
+    /* Skip down to the correct position vertically */
     P+=256*Y;
     
+    /* Refresh left border 8 pixels */
     memset(P, BGColor, 8);
 
-    /* Refresh right border - this is the only one we really care about */
+    /* Refresh right border 8 pixels */
     P+=256-8;
     memset(P, BGColor, 8);
 }
@@ -130,7 +132,7 @@ ITCM_CODE void RefreshBorder(byte Y)
 /** collisions. The caller of this will set the flag as needed. **/
 /** Returning zero (0) means no collision. Otherwise collision. **/
 /*****************************************************************/
-byte ITCM_CODE CheckSprites(void) 
+ITCM_CODE byte CheckSprites(void) 
 {
   unsigned int I,J,LS,LD;
   byte *S,*D,*PS,*PD,*T;
@@ -208,10 +210,10 @@ byte ITCM_CODE CheckSprites(void)
 
 /** ScanSprites() ********************************************/
 /** Compute bitmask of sprites shown in a given scanline.   **/
-/** Returns the first sprite to show or -1 if none shown.   **/
+/** Returns the last sprite to show or -1 if none shown.   **/
 /** Also updates 5th sprite fields in the status register.  **/
 /*************************************************************/
-int ITCM_CODE ScanSprites(byte Y, unsigned int *Mask)
+ITCM_CODE int ScanSprites(byte Y, unsigned int *Mask)
 {
     byte *AT;
     u8 sprite,C1,C2;
@@ -267,7 +269,7 @@ int ITCM_CODE ScanSprites(byte Y, unsigned int *Mask)
         else // This is undocumented behavior but a real VDP will behave like this and Miner 2049er will rely on it
         {
             VDPStatus &= ~TMS9918_STAT_5THNUM;          // Clear out any previous sprite number
-            VDPStatus |= (sprite < 32) ? sprite:31;     // Set the 5th sprite number to the last visible sprite on this line or 31 if no sprites visible
+            VDPStatus |= (sprite < 32) ? sprite:31;     // Set the 5th sprite number to the last scanned sprite on this line or 31 if no sprites on this line
         }
     }
 
@@ -281,7 +283,7 @@ int ITCM_CODE ScanSprites(byte Y, unsigned int *Mask)
 /** This function is called from RefreshLine#() to refresh  **/
 /** and draw sprites to a given pixel line.                 **/
 /*************************************************************/
-void ITCM_CODE RefreshSprites(register byte Y) 
+ITCM_CODE void RefreshSprites(register byte Y) 
 {
   register byte *PT,*AT;
   register byte *P,*T,C;
@@ -455,7 +457,7 @@ ITCM_CODE void RefreshLine0(u8 Y)
 /** Refresh line Y (0..191) of SCREEN1, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE RefreshLine1(u8 uY) 
+ITCM_CODE void RefreshLine1(u8 uY) 
 {
   register byte K=0,Offset,FC,BC;
   register u8 *T;
@@ -499,7 +501,7 @@ void ITCM_CODE RefreshLine1(u8 uY)
 /** Refresh line Y (0..191) of SCREEN2, including sprites   **/
 /** in this line.                                           **/
 /*************************************************************/
-void ITCM_CODE RefreshLine2(u8 uY) {
+ITCM_CODE void RefreshLine2(u8 uY) {
   u32 *P;
   register byte FC,BC;
   register byte K,*T;
@@ -780,8 +782,9 @@ ITCM_CODE byte Loop9918(void)
   /* If refreshing display area, call scanline handler */
   if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
   {
+      unsigned int tmp;
       if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
-          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for the 5th sprite flag
+          ScanSprites(CurLine - tms_start_line, &tmp);    // Skip rendering - but still scan sprites for the 5th sprite flag
       else
           RefreshLine(CurLine - tms_start_line);
           
@@ -865,8 +868,9 @@ ITCM_CODE byte Loop6502(void)
   /* If refreshing display area, call scanline handler */
   if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
   {
+      unsigned int tmp;
       if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
-          ScanSprites(CurLine - tms_start_line, 0);    // Skip rendering - but still scan sprites for collisions (TODO: this only scans for 5th sprite... perhaps call CheckSprites() instead)
+          ScanSprites(CurLine - tms_start_line, &tmp);    // Skip rendering - but still scan sprites for the 5th sprite flag
       else
          (SCR[ScrMode].Refresh)(CurLine - tms_start_line);
   }
