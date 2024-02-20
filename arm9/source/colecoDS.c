@@ -761,14 +761,14 @@ void ResetColecovision(void)
 //*********************************************************************************
 const char *VModeNames[] =
 {
-    "VDP0  ",
-    "VDP3  ",
-    "VDP2  ",
-    "VDP2+3",
-    "VDP1  ",
-    "VDP?5 ",
-    "VDP1+2",
-    "VDP?7 ",
+    "GRA1",
+    "GRA2",
+    "MULC",
+    "HBIT",
+    "TEXT",
+    "----",
+    "HBIT",
+    "----",
 };
 
 void ShowDebugZ80(void)
@@ -863,7 +863,7 @@ void ShowDebugZ80(void)
 
         sprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "VMode %02X %s", TMS9918_Mode, VModeNames[TMS9918_Mode]);             DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "VMode %02X %4s", TMS9918_Mode, VModeNames[TMS9918_Mode]);            DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
 
         idx = 1;
