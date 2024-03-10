@@ -407,8 +407,10 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V9.3: ??-???-???? by wavemotion-dave
-* Fixed TMS9918 VDP 5th Sprite Flag handling
+V9.3: 10-Mar-2024 by wavemotion-dave
+* Fixed TMS9918 VDP 5th Sprite Flag handling and slight optmization to the VDP driver.
+* Updated to latest SN76496 sound driver from FluBBa.
+* Other minor tweaks and cleanup as time permitted.
 
 V9.2: 12-Feb-2024 by wavemotion-dave
 * Ported the AY sound chip driver from FluBBa to improve MSX1, Einstein and Coleco SGM games.

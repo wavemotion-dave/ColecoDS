@@ -28,6 +28,13 @@
 	.equ WFEED_NCR,	0x4400		;@ White Noise Feedback
 
 #define SN_ADDITION 0x00400000
+#ifdef SN_UPSHIFT
+	.equ USHIFT, SN_UPSHIFT
+	.equ ZERO_VOL, 0x0000
+#else
+	.equ USHIFT, 0
+	.equ ZERO_VOL, 0x8000
+#endif
 
 	.syntax unified
 	.arm
@@ -48,22 +55,23 @@
 ;@ r7 = currentBits + offset to calculated volumes.
 ;@ r8 = Noise generator.
 ;@ r9 = Noise feedback.
+;@ r12 = scrap
 ;@ lr = Mixer reg.
 ;@----------------------------------------------------------------------------
 sn76496Mixer:				;@ r0=len, r1=dest, r2=snptr
 	.type   sn76496Mixer STT_FUNC
 ;@----------------------------------------------------------------------------
+#ifdef SN_UPSHIFT
+	mov r0,r0,lsl#USHIFT
+#endif
 	stmfd sp!,{r4-r9,lr}
 	ldmia r2,{r3-r9,lr}		;@ Load freq/addr0-3, currentBits, rng, noisefb, attChg
-#ifdef SN_UPSHIFT
-	mov r0,r0,lsl#SN_UPSHIFT
-#endif
 	tst lr,#0xff
 	blne calculateVolumes
 ;@----------------------------------------------------------------------------
 mixLoop:
 #ifdef SN_UPSHIFT
-	mov lr,#0x80000000
+	mov lr,#0x8000
 innerMixLoop:
 #endif
 	adds r3,r3,#SN_ADDITION
@@ -86,12 +94,11 @@ innerMixLoop:
 	orrcs r7,r7,#0x10
 
 #ifdef SN_UPSHIFT
-	ldr r12,[r2,r7]
+	ldrh r12,[r2,r7]
 	sub r0,r0,#1
-	tst r0,#(1<<SN_UPSHIFT)-1
+	tst r0,#(1<<USHIFT)-1
 	add lr,lr,r12
 	bne innerMixLoop
-	eor lr,lr,#0x00008000
 	cmp r0,#0
 #else
 	ldrh lr,[r2,r7]
@@ -130,7 +137,7 @@ rLoop:
 	str r3,[r1,#noiseType]
 	mov r2,#calculatedVolumes
 	str r2,[r1,#currentBits]
-	mov r0,#0x8000
+	mov r0,#ZERO_VOL
 	strh r0,[r1,r2]
 
 	bx lr
@@ -233,7 +240,7 @@ calculateVolumes:
 	ldr r5,[r1,r5,lsl#2]
 	ldr r6,[r1,r6,lsl#2]
 
-	mov lr,#0x8000
+	mov lr,#ZERO_VOL
 	add r12,r2,#calculatedVolumes
 	mov r1,#0x1E
 volLoop:
@@ -243,11 +250,7 @@ volLoop:
 	teq r1,r1,lsl#28
 	addmi r0,r0,r5
 	addcs r0,r0,r6
-#ifdef SN_UPSHIFT
-	eor r0,lr,r0,lsr#2+SN_UPSHIFT
-#else
-	eor r0,lr,r0,lsr#2
-#endif
+	eor r0,lr,r0,lsr#2+USHIFT
 	strh r0,[r12,r1]
 	subs r1,r1,#2
 	bne volLoop
