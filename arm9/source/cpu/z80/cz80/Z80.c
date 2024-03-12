@@ -65,8 +65,7 @@ INLINE byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A)
 #define S(Fl)        CPU.AF.B.l|=Fl
 #define R(Fl)        CPU.AF.B.l&=~(Fl)
 #define FLAGS(Rg,Fl) CPU.AF.B.l=Fl|ZSTable[Rg]
-//#define INCR(N)      CPU.R=((CPU.R+(N))&0x7F)|(CPU.R&0x80)
-#define INCR(N)      /* There are currently no games that need the R=Refresh RAM register */
+#define INCR(N)      CPU.R++       // Faster to just increment this odd 7-bit RAM Refresh counter here and mask off and OR the high bit back in when asked for in CodesED.h
 
 #define M_RLC(Rg)      \
   CPU.AF.B.l=Rg>>7;Rg=(Rg<<1)|CPU.AF.B.l;CPU.AF.B.l|=PZSTable[Rg]
@@ -485,6 +484,7 @@ void ResetZ80(Z80 *R)
   CPU.IY.W     = 0x0000;
   CPU.I        = 0x00;
   CPU.R        = 0x00;
+  CPU.R_HighBit= 0x00;
   CPU.IFF      = 0x00;
   CPU.ICount   = CPU.IPeriod = 0;
   CPU.IRequest = INT_NONE;

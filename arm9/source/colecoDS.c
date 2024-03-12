@@ -2936,7 +2936,7 @@ void colecoDS_main(void)
                           //  Ask for verification
                           if  (showMessage("DO YOU REALLY WANT TO","QUIT THE CURRENT GAME ?") == ID_SHM_YES)
                           {
-                              memset((u8*)0x6820000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
+                              memset((u8*)0x06000000, 0x00, 0x20000);    // Reset VRAM to 0x00 to clear any potential display garbage on way out
                               return;
                           }
                           BottomScreenKeypad();
