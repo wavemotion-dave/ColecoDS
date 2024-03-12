@@ -563,6 +563,7 @@ void einstein_load_com_file(void)
     keyboard_interrupt=0;
     CPU.IRequest=INT_NONE;
     CPU.IFF&=~(IFF_1|IFF_EI);
+    z80_rebasePC(0x100);
     CPU.PC.W = 0x100;
     JumpZ80(CPU.PC.W);
 }

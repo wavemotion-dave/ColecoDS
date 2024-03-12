@@ -96,13 +96,12 @@ case LD_A_I:
   break;
 
 case LD_A_R:
-  CPU.R = rand() % 128; // R is a refresh register which is not needed for emulation but a few games may use it as a pseudo-random number
-  CPU.AF.B.h=CPU.R;
+  CPU.AF.B.h=(CPU.R&0x7F) | CPU.R_HighBit;  // The R is a 7-bit refresh counter with a 'secret' flag at the high bit that a few odd games take advantage of
   CPU.AF.B.l=(CPU.AF.B.l&C_FLAG)|(CPU.IFF&IFF_2? P_FLAG:0)|ZSTable[CPU.AF.B.h];
   break;
 
 case LD_I_A:   CPU.I=CPU.AF.B.h;break;
-case LD_R_A:   CPU.R=CPU.AF.B.h;break;
+case LD_R_A:   CPU.R=CPU.AF.B.h;CPU.R_HighBit = (CPU.R & 0x80); break;
 
 case IM_0:     CPU.IFF&=~(IFF_IM1|IFF_IM2);break;
 case IM_1:     CPU.IFF=(CPU.IFF&~IFF_IM2)|IFF_IM1;break;

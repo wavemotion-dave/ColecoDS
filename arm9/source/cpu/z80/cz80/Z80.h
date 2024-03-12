@@ -96,8 +96,11 @@ typedef struct
   byte TrapBadOps;    /* Set to 1 to warn of illegal opcodes */
   word Trap;          /* Set Trap to address to trace from   */
   byte Trace;         /* Set Trace=1 to start tracing        */
-  unsigned int User;  /* Arbitrary user data (ID,RAM*,etc.)  */
+  byte R_HighBit;     /* Used to preserve the high bit for R */
+  byte Reserved;      /* Future use... */
+  word User;          /* Arbitrary user data (ID,RAM*,etc.)  */
 } Z80;
+
 
 /** ResetZ80() ***********************************************/
 /** This function can be used to reset the registers before **/
