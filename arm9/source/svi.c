@@ -370,8 +370,13 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
     else if (Port == 0x8C)
     {
         ay38910DataW(Value, &myAY);
-        if (myAY.ayRegIndex == 15)
+        if (myAY.ayRegIndex == 14)
         {
+            myAY.ayPortAIn = Value;
+        }
+        else if (myAY.ayRegIndex == 15)
+        {
+            myAY.ayPortBIn = Value;
             IOBYTE = Value;
 
             if (lastIOBYTE != IOBYTE)
