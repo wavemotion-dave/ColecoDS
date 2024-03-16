@@ -913,7 +913,7 @@ void ShowDebugZ80(void)
 // ----------------------------------------------------------------
 bool isAdamDDP(void)
 {
-    if ((strstr(lastAdamDataPath, ".ddp") != 0) || (strstr(lastAdamDataPath, ".DDP") != 0)) return true;
+    if ((strstr(lastDiskDataPath, ".ddp") != 0) || (strstr(lastDiskDataPath, ".DDP") != 0)) return true;
     return false;
 }
 
@@ -1196,9 +1196,9 @@ void SaveAdamTapeOrDisk(void)
 
     DSPrint(12,0,6, "SAVING");
     if (isAdamDDP())
-        SaveFDI(&Tapes[0], lastAdamDataPath, FMT_DDP);
+        SaveFDI(&Tapes[0], lastDiskDataPath, FMT_DDP);
     else
-        SaveFDI(&Disks[0], lastAdamDataPath, (LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
+        SaveFDI(&Disks[0], lastDiskDataPath, (LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
     DSPrint(12,0,6, "      ");
     DisplayStatusLine(true);
     disk_unsaved_data = 0;
@@ -1226,14 +1226,14 @@ void DigitalDataInsert(char *filename)
     // --------------------------------------------
     // And set it as the active ddp or dsk...
     // --------------------------------------------
-    strcpy(lastAdamDataPath, filename);
-    if (strstr(lastAdamDataPath, ".ddp") != 0)
+    strcpy(lastDiskDataPath, filename);
+    if (strstr(lastDiskDataPath, ".ddp") != 0)
     {
-        ChangeTape(0, lastAdamDataPath);
+        ChangeTape(0, lastDiskDataPath);
     }
     else
     {
-        ChangeDisk(0, lastAdamDataPath);
+        ChangeDisk(0, lastDiskDataPath);
     }
 }
 
@@ -4061,7 +4061,7 @@ int main(int argc, char **argv)
       //  We want to start in the directory where the file is being launched...
       if  (strchr(argv[1], '/') != NULL)
       {
-          char  path[128];
+          static char  path[128];
           strcpy(path,  argv[1]);
           char  *ptr = &path[strlen(path)-1];
           while (*ptr !=  '/') ptr--;

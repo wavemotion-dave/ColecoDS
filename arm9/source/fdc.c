@@ -511,7 +511,7 @@ void fdc_reset(u8 full_reset)
         memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
     }
     
-    FDC.status = (Geom.fdc_type == WD1770) ? 0x80:0x00;  // Drive ready, Motor off and not busy
+    FDC.status = (Geom.fdc_type == WD1770) ? 0x00:0x00;  // Drive not ready (WD1770), Motor off and not busy
     FDC.commandType = 1;                                 // We are back to Type I 
     FDC.wait_for_read = 2;                               // Not feteching any data
     FDC.wait_for_write = 2;                              // Not storing any data
