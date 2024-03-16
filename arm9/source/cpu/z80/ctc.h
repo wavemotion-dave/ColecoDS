@@ -33,8 +33,8 @@ typedef struct
     u8  intStatus;          // Some flags to let us know if the interrupt is pending or processed
     u8  vector;             // The Interrupt Vector word for this counter
     u8  intPending;         // In case we need it - can use as spare if needed
-    u16 cpuClocksPerCTC;    // This is set on a per machine basis. This represents the number of cpu clocks per CTC timer tick-down.
-    u16 cpuClockRemainder;  // And we use this to handle the cpu-to-CTC ticker
+    u32 cpuClocksPerCTC;    // This is set on a per machine basis. This represents the number of cpu clocks per CTC timer tick-down.
+    u32 cpuClockRemainder;  // And we use this to handle the cpu-to-CTC ticker
 } CTC_t;
 
 extern CTC_t CTC[CTC_CHAN_MAX];

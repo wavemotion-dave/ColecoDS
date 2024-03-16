@@ -433,7 +433,7 @@ ITCM_CODE void RefreshLine0(u8 Y)
     u8 lastT = ~(*T);
 
     memset(P, BGColor, 8);  // Fill the first 8 pixels with background color since the screen in TEXT mode is 240 pixels and needs the border filled
-    P += 8;                 // For this TEXT mode, we shift in 8 pixels to center the screen. RefreshBorder() will fix the first 8 pixels and last 8 pixels on a line.
+    P += 8;                 // For this TEXT mode, we shift in 8 pixels to center the screen. We memset the background color to the first and last 8 pixels of a line to blank them.
 
     for(int X=0;X<40;X++)
     {

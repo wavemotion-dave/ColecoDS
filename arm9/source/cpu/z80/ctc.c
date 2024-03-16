@@ -30,12 +30,10 @@
 // -----------------------------------------------------------
 u8 ctc_to_vdp = CTC_CHAN_MAX;   
 
-// By default, always process CTC for Sord M5. Mahjong doesn't work right with this so that game disables...
 // ----------------------------------------------------
 // This is our master CTC array for all four channels.
 // ----------------------------------------------------
 CTC_t CTC[CTC_CHAN_MAX] __attribute__((section(".dtcm")));
-
 
 // ----------------------------------------------------
 // Tick down the channel... see if we have timed out.
@@ -138,6 +136,8 @@ ITCM_CODE void CTC_Timer(u32 cpu_cycles)
 }
 
 
+const u16 einstein_ctc_chan2_factor[] = {100, 80, 90, 125, 150, 200, 250, 290, 350, 400};
+
 // --------------------------------------------------------
 // Reset the CRC counter for a given channel
 // --------------------------------------------------------
@@ -150,6 +150,7 @@ void CTC_ResetCounter(u8 chan)
     // estimates when we call CTC_Timer() every scanline.
     // --------------------------------------------------------------
     CTC[chan].counter = CTC[chan].constant;
+    
     if (memotech_mode)
     {
         CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 255:16;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
@@ -161,7 +162,11 @@ void CTC_ResetCounter(u8 chan)
         // In theory, it should be the same - but I've "sped" things up a bit here and it seems to run
         // much closer to more capable emulators. A bit of a fudge-factor but such is life!
         // ----------------------------------------------------------------------------------------------
+        
         CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 225:14;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
+        
+        // We allow some configurable flexibility in CHAN2 to help with games like JSW2 which runs far too fast for some reason...
+        if (chan >= CTC_CHAN2) CTC[chan].cpuClocksPerCTC = (u16)(((u32)CTC[chan].cpuClocksPerCTC * (u32)einstein_ctc_chan2_factor[myConfig.reserved2]) / (u32)100);
     }
     else // Sord M5
     {

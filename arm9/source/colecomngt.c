@@ -33,7 +33,7 @@
 // ------------------------------------------------
 u8 adam_128k_mode      = 0;
 u8 sg1000_double_reset = false;
-char lastAdamDataPath[256] = {0};
+char lastDiskDataPath[256] = {0};
 
 // -------------------------------------
 // Some IO Port and Memory Map vars...
@@ -551,7 +551,7 @@ u8 loadrom(const char *path,u8 * ptr)
         fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
         memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
         fclose(handle);
-        strcpy(lastAdamDataPath, path);
+        strcpy(lastDiskDataPath, path);
         romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
         machine_mode = MODE_SG_1000;
@@ -602,12 +602,12 @@ u8 loadrom(const char *path,u8 * ptr)
             if (isAdamDDP())
             {
                 ChangeTape(0, path);
-                strcpy(lastAdamDataPath, path);
+                strcpy(lastDiskDataPath, path);
             }
             else
             {
                 ChangeDisk(0, path);
-                strcpy(lastAdamDataPath, path);
+                strcpy(lastDiskDataPath, path);
             }            
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
@@ -618,16 +618,17 @@ u8 loadrom(const char *path,u8 * ptr)
         }
         else if (einstein_mode)
         {
-            strcpy(lastAdamDataPath, path);
+            strcpy(lastDiskDataPath, path);
             tape_len = romSize;  
             if (romSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
             {
-                memcpy(RAM_Memory+0x4000, ROM_Memory, romSize);   // only for Diagnostics ROM
+                extern u8 EinsteinBios2[];
+                memcpy(EinsteinBios2, ROM_Memory, romSize);   // only for Diagnostics ROM
             }
         }
         else if (creativision_mode)
         {
-            strcpy(lastAdamDataPath, path);
+            strcpy(lastDiskDataPath, path);
             creativision_loadrom(romSize);
         }
         else if (sg1000_mode)

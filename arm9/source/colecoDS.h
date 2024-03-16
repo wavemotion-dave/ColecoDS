@@ -15,7 +15,7 @@
 #include <string.h>
 #include "C24XX.h"
 
-#define VERSIONCLDS "9.3"
+#define VERSIONCLDS "9.4"
 
 extern u32 debug[0x10];
 
@@ -246,7 +246,7 @@ extern u16 machine_mode;
 extern u8 kbd_keys_pressed;
 extern u8 kbd_keys[12];
 
-extern char lastAdamDataPath[];
+extern char lastDiskDataPath[];
 extern u32 tape_pos, tape_len;
 
 #define MODE_COLECO         0x0000  // No bits set! Fastest way to check the machine_mode

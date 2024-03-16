@@ -29,11 +29,11 @@
 u16 einstein_ram_start __attribute__((section(".dtcm"))) = 0x8000;
 u16 keyboard_interrupt __attribute__((section(".dtcm"))) = 0;
 u16 joystick_interrupt __attribute__((section(".dtcm"))) = 0;
-u8 keyboard_w = 0x00;
+u8 keyboard_w   = 0x00;
 u8 key_int_mask = 0xFF;
 u8 joy_int_mask = 0xFF;
-u8 myKeyData = 0xFF;
-u8 adc_mux = 0x00;
+u8 myKeyData    = 0xFF;
+u8 adc_mux      = 0x00;
 u8 ramdisk_unsaved_data = 0;
 u32 ramdisk_len = 215296;
 
@@ -43,11 +43,14 @@ extern u8 EinsteinBios2[];
 #define KEYBOARD_VECTOR  0xF7
 #define JOYSTICK_VECTOR  0xFD
 
+static u8 last_drive_select = 0x00;
 
+// ---------------------------------------------------------------------------------------------
+// We support two disk drives - Drive 0 is the normal floppy that can be mounted with Einstein 
+// formatted .dsk files and Drive 1 is a RAMDisk that can be used to house common utilities.
+// ---------------------------------------------------------------------------------------------
 void einstein_drive_sel(u8 sel)
 {
-    static u8 last_drive_select = 0;
-    
     if      (sel & 0x01) fdc_setDrive(0);
     else if (sel & 0x02) fdc_setDrive(1);
     else                 fdc_setDrive(2); // Doesn't exist... IO will fail
@@ -269,7 +272,7 @@ u8 einstein_joystick_read(void)
 {
   u8 adc_port = 0x7F;   // Center Position
 
-  if ((adc_mux & 0x02)) // Player 2 Joystick
+  if ((adc_mux & 0x02)) // Player 2 Joystick (not connected)
   {
       if ((adc_mux & 5) == 4) 
       {
@@ -282,27 +285,31 @@ u8 einstein_joystick_read(void)
   }
   else              // Player 1 Joystick
   {
-      if (myConfig.dpad == DPAD_DIAGONALS)
+      u32 joy = JoyState;
+      if (myConfig.dpad == DPAD_DIAGONALS) // Useful for games like QOGO2
       {
-          if      (JoyState & JST_UP)    JoyState = (JST_UP    | JST_RIGHT);
-          else if (JoyState & JST_DOWN)  JoyState = (JST_DOWN  | JST_LEFT);
-          else if (JoyState & JST_LEFT)  JoyState = (JST_LEFT  | JST_UP);
-          else if (JoyState & JST_RIGHT) JoyState = (JST_RIGHT | JST_DOWN);
+          if      (JoyState & JST_UP)    joy = (JST_UP    | JST_RIGHT);
+          else if (JoyState & JST_DOWN)  joy = (JST_DOWN  | JST_LEFT);
+          else if (JoyState & JST_LEFT)  joy = (JST_LEFT  | JST_UP);
+          else if (JoyState & JST_RIGHT) joy = (JST_RIGHT | JST_DOWN);
       }
 
+      // -------------------------------------------------------------------
+      // On the Einstein, the Left/Right and Up/Down joystick are read on
+      // the ADC port given that Left/Right can't be pressed at the same
+      // time nor can Up/Down... so they represent the extremes of the ADC.
+      // -------------------------------------------------------------------
       if ((adc_mux & 5) == 4) 
       {
           adc_port = 0x7F;
-          if (JoyState & JST_RIGHT) adc_port = 0xFF;
-          if (JoyState & JST_LEFT)  adc_port = 0x00;
+          if (joy & JST_RIGHT) adc_port = 0xFF;
+          if (joy & JST_LEFT)  adc_port = 0x00;
       }
       else if ((adc_mux & 5) == 5) 
       {
           adc_port = 0x7F;
-          if (JoyState & JST_UP)      adc_port = 0xFF;
-          if (JoyState & JST_DOWN)    adc_port = 0x00;
-          if ((JoyState&0xF) == JST_PURPLE) adc_port = 0xFF;
-          if ((JoyState&0xF) == JST_BLUE)   adc_port = 0x00;
+          if (joy & JST_UP)      adc_port = 0xFF;
+          if (joy & JST_DOWN)    adc_port = 0x00;
       }
   }
 
@@ -324,7 +331,9 @@ u8 einstein_fire_read(void)
   // Fire buttons
   if (JoyState & JST_FIREL) key_port &= ~0x01;  // P1 Button 1
   if (JoyState & JST_FIRER) key_port &= ~0x02;  // P1 Button 2
-   
+
+  // These three special keys are fed back via the joystick interrupt 
+  // probably so there would be no key ghosting with the actual keyboard.
   if (key_graph) key_port &= ~0x20;  // GRAPH KEY
   if (key_ctrl)  key_port &= ~0x40;  // CTRL KEY
   if (key_shift) key_port &= ~0x80;  // SHIFT KEY
@@ -563,14 +572,15 @@ void einstein_load_com_file(void)
     keyboard_interrupt=0;
     CPU.IRequest=INT_NONE;
     CPU.IFF&=~(IFF_1|IFF_EI);
-    z80_rebasePC(0x100);
     CPU.PC.W = 0x100;
     JumpZ80(CPU.PC.W);
 }
 
 
 // -------------------------------------------------------------------------------------------------
-// This is used for CPC EXTENDED .dsk images which are the kind found for use with Tatung Einstein
+// This is used for CPC EXTENDED .dsk images which are the kind found for Tatung Einstein use.
+// ColecoDS only supports the standard 200K single sided, 40 track Einstein formatted disks
+// (actual size 215,296 bytes). Most of the disk images found in the wild will be in this format.
 // -------------------------------------------------------------------------------------------------
 struct SectorInfo_t
 {
@@ -629,6 +639,7 @@ void einstein_load_disk(void)
 
 // -----------------------------------------------------------------------------------------------------------
 // Our RAMDisk is a standard 200K floppy with no data - just a disk full of 0xE5 bytes ready to be loaded.
+// This is useful to keep a copy or two of various XBAS versions and maybe the COPY XTal DOS utility.
 // -----------------------------------------------------------------------------------------------------------
 unsigned char RAMDisk_Header[] = {
   0x45, 0x58, 0x54, 0x45, 0x4e, 0x44, 0x45, 0x44,
@@ -791,7 +802,7 @@ void einstein_save_disk(void)
         }
     }
     
-    FILE *fp = fopen(lastAdamDataPath, "wb");
+    FILE *fp = fopen(lastDiskDataPath, "wb");
     if (fp != NULL)
     {
         fwrite(ROM_Memory, 1, tape_len, fp);
@@ -832,21 +843,25 @@ void einstein_save_ramdisk(void)
     ramdisk_unsaved_data = 0;
 }
 
+// ---------------------------------------------------------------------------
+// We allow swapping of DISK0 - as the RAMDisk is always present as drive 1:
+// ---------------------------------------------------------------------------
 void einstein_swap_disk(char *szFileName)
 {
-    strcpy(lastAdamDataPath, szFileName);
+    strcpy(lastDiskDataPath, szFileName);
     FILE *fp = fopen(szFileName, "rb");
     if (fp != NULL)
     {
-        tape_len = fread(ROM_Memory, 1, (512*1024), fp);
+        tape_len = fread(ROM_Memory, (256*1024), 1, fp);
         fclose(fp);
-        einstein_load_disk();
-    } 
+        einstein_load_disk();           // Get disk into memory and decode the tracks/sectors
+        disk_unsaved_data = 0;
+    }
 }
 
-// ---------------------------------------------------------
-// The Einstein has CTC plus some memory handling stuff
-// ---------------------------------------------------------
+// -----------------------------------------------------------
+// The Einstein has CTC,  FDC plus some memory handling stuff
+// -----------------------------------------------------------
 void einstein_reset(void)
 {
     if (einstein_mode)
@@ -862,33 +877,37 @@ void einstein_reset(void)
         
         myAY.ayRegIndex = 0;
         memset(myAY.ayRegs, 0x00, sizeof(myAY.ayRegs));    // Clear the AY registers...
-        fdc_reset(TRUE);
-        einstein_restore_bios();
         
-        IssueCtrlBreak = 0;
+        fdc_reset(TRUE);            // Reset the Floppy Controller
+        einstein_restore_bios();    // And restore the Einstein BIOS 
+        
+        IssueCtrlBreak = 0;         // CTRL-Break is how the Einstein boots to floppy
         
         io_show_status = 0;
         
         if (einstein_mode == 2) 
         {
+            // Setup two (2) disk drives... one is a .dsk and the other is our RAMDisk.
             fdc_init(WD1770, 2, 1, 40, 10, 512, 0, ROM_Memory+(512*1024), ROM_Memory+(768*1024));
-            einstein_drive_sel(0x01);
-            fdc_setSide(0);
-            einstein_load_ramdisk(); // First put the RAM disk in place - we don't allow saving this one
-            einstein_load_disk();    // Assemble the sectors of this disk for easy manipulation
+            last_drive_select = 0x00; // Ensure we buffer the first track
+            einstein_drive_sel(0x01); // Default is the first drive
+            fdc_setSide(0);           // And side 0 of that disk
+            einstein_load_ramdisk();  // First put the RAM disk in place as the second drive
+            einstein_load_disk();     // Assemble the sectors of this disk for easy manipulation
         }
         disk_unsaved_data = 0;
+        ramdisk_unsaved_data = 0;
     }
 }
 
 
 
-/*********************************************************************************
- * A few ZX Speccy ports utilize the beeper to "simulate" the sound... For 
-   the Einstein, this appears to be a rapid hit (writes) on PSG register 8
-   and we handle that in the IO write routine above. Not great but it will 
-   render enough sounds to make the few speccy ports playable.
- ********************************************************************************/
+// ------------------------------------------------------------------------
+// A few ZX Speccy ports utilize the beeper to "simulate" the sound... 
+// For the Einstein, this appears to be a rapid hit (writes) on PSG 
+// register 8 and we handle that in the IO write routine above. Not great
+// but it will render enough sounds to make the few speccy ports playable.
+// ------------------------------------------------------------------------
 extern u16 beeperFreq;
 extern u8 msx_beeper_process;
 extern u8 beeperWasOn;

@@ -37,6 +37,7 @@ char szName[256];
 char szFile[256];
 u8 bForceMSXLoad = false;
 u32 file_size = 0;
+char strBuf[40];
 
 struct Config_t AllConfigs[MAX_CONFIGS];
 struct Config_t myConfig __attribute((aligned(4))) __attribute__((section(".dtcm")));
@@ -658,11 +659,11 @@ void showRandomPreviewSnaps(void) {
 /*********************************************************************************
  * Show The 14 games on the list to allow the user to choose a new game.
  ********************************************************************************/
+static char szName2[40];
 void dsDisplayFiles(u16 NoDebGame, u8 ucSel) 
 {
   u16 ucBcl,ucGame;
   u8 maxLen;
-  char szName2[40];
   
   DSPrint(30,8,0,(NoDebGame>0 ? "<" : " "));
   DSPrint(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
@@ -1763,6 +1764,7 @@ const struct options_t Option_Table[3][20] =
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
         {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
+        {"EINSTEIN CTC",   {"100%", "80%", "90%", "125%", "150%", "200%", "250%", "300%", "350%", "400%"},                                                                                      &myConfig.reserved2,  10},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Global Options
@@ -1786,8 +1788,7 @@ const struct options_t Option_Table[3][20] =
 // ------------------------------------------------------------------
 u8 display_options_list(bool bFullDisplay)
 {
-    char strBuf[35];
-    int len=0;
+    s16 len=0;
     
     DSPrint(1,21, 0, (char *)"                              ");
     if (bFullDisplay)
@@ -1821,7 +1822,6 @@ void colecoDSGameOptions(bool bIsGlobal)
     bool bDone=false;
     int keys_pressed;
     int last_keys_pressed = 999;
-    char strBuf[35];
 
     option_table = (bIsGlobal ? 2:0);
     
@@ -1908,10 +1908,9 @@ void colecoDSGameOptions(bool bIsGlobal)
 //*****************************************************************************
 // Change Keymap Options for the current game
 //*****************************************************************************
+char szCha[34];
 void DisplayKeymapName(u32 uY) 
 {
-  char szCha[34];
-
   sprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
   DSPrint(1, 6,(uY==  6 ? 2 : 0),szCha);
   sprintf(szCha," PAD DOWN  : %-17s",szKeyName[myConfig.keymap[1]]);
@@ -2296,7 +2295,7 @@ void ReadFileCRCAndConfig(void)
         fp = fopen(gpFic[ucGameChoice].szName, "rb");
         if (fp != NULL)
         {
-            char headerBytes[32];
+            static char headerBytes[32];
             fread(headerBytes, 32, 1, fp);
             for (u8 i=0; i<30; i++)
             {
