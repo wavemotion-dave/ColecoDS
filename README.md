@@ -292,7 +292,7 @@ Both drives support read/write capabilities however, the writing will NOT auto-b
 
 Speaking of disk images, there are several places to find them... but I would recommend seeking out the 'Tatung Einstein Gamebase' which generally has disk images properly formatted and auto-booting for a more streamlined experience. Seek those out.
 
-One game in particular doesn't run right without tweaks:  Jet Set Willy 2. The game will run far too fast. To correct this, go into Config Settings for this game and on page 2 of the configuration, set the Einstein CTC timer to +3 (SLOWER). Additionally, you might also set the target emulation speed to 110%. This is a bit of a hack but these two setting changes will run the game fairly close to the way MAME would run it. Save the configuration and re-load the game to play at the 'right' speed. I'm still looking into the root cause.
+One game in particular doesn't run right without tweaks:  Jet Set Willy 2. The game will run far too fast. To correct this, go into Config Settings for this game and on page 2 of the configuration, set the Einstein CTC timer to +5 (SLOWER). Additionally, you might also set the target emulation speed to 110%. This is a bit of a hack but these two setting changes will run the game fairly close to the way MAME would run it. Save the configuration and re-load the game to play at the 'right' speed. I'm still looking into the root cause.
 
 Lastly, in addition to the standard 8K einstein.rom BIOS file (required for Einstein emulation), you can optionally provide an einstein2.rom file that will load (up to 8K) into 0x4000. This is the extra ROM slot in a real Einstein and can be used to house diagnostics roms or things like flexi-dos. 
 
