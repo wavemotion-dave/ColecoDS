@@ -136,7 +136,7 @@ ITCM_CODE void CTC_Timer(u32 cpu_cycles)
 }
 
 
-const u16 einstein_ctc_chan2_factor[] = {100, 80, 90, 125, 150, 200, 250, 290, 350, 400};
+const u16 einstein_ctc_chan3_offset[] = {0, 1, 2, 3, 5, 10, 20, -1, -2, -3, -5, -10, -20};
 
 // --------------------------------------------------------
 // Reset the CRC counter for a given channel
@@ -150,6 +150,7 @@ void CTC_ResetCounter(u8 chan)
     // estimates when we call CTC_Timer() every scanline.
     // --------------------------------------------------------------
     CTC[chan].counter = CTC[chan].constant;
+    if (chan == CTC_CHAN3) CTC[chan].counter+=einstein_ctc_chan3_offset[myConfig.ein_ctc3]; // We allow some small fudge-factor tweaking of CTC3 for timing issues (JSW2 mostly)
     
     if (memotech_mode)
     {
@@ -163,10 +164,7 @@ void CTC_ResetCounter(u8 chan)
         // much closer to more capable emulators. A bit of a fudge-factor but such is life!
         // ----------------------------------------------------------------------------------------------
         
-        CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 225:14;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
-        
-        // We allow some configurable flexibility in CHAN2 to help with games like JSW2 which runs far too fast for some reason...
-        if (chan >= CTC_CHAN2) CTC[chan].cpuClocksPerCTC = (u16)(((u32)CTC[chan].cpuClocksPerCTC * (u32)einstein_ctc_chan2_factor[myConfig.reserved2]) / (u32)100);
+        CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 256:16;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
     }
     else // Sord M5
     {

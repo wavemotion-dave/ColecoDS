@@ -1294,7 +1294,7 @@ void SetDefaultGameConfig(void)
     myConfig.cvisionLoad = 0;                           // Default to normal Legacy A/B load for CreatiVision games
     myConfig.gameSpeed   = 0;                           // Default is 100% game speed
     myConfig.keyMute     = 0;                           // Default is no mute (key click heard)
-    myConfig.reserved2   = 0;
+    myConfig.ein_ctc3    = 0;                           // Default is normal CTC3 handling for Einstein (no fudge factor)
     myConfig.reserved3   = 0;    
     myConfig.reserved4   = 0;    
     myConfig.reserved5   = 0;    
@@ -1764,7 +1764,8 @@ const struct options_t Option_Table[3][20] =
         {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
         {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
-        {"EINSTEIN CTC",   {"100%", "80%", "90%", "125%", "150%", "200%", "250%", "300%", "350%", "400%"},                                                                                      &myConfig.reserved2,  10},
+        {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)", 
+                            "+20 (SLOWER)", "-1 (FASTER)", "-2 (FASTER)", "-3 (FASTER)", "-5 (FASTER)", "-10 (FASTER)", "-20 (FASTER)"},                                                        &myConfig.ein_ctc3,  13},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Global Options

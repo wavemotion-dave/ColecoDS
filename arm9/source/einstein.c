@@ -577,11 +577,17 @@ void einstein_load_com_file(void)
 }
 
 
-// -------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------
 // This is used for CPC EXTENDED .dsk images which are the kind found for Tatung Einstein use.
 // ColecoDS only supports the standard 200K single sided, 40 track Einstein formatted disks
 // (actual size 215,296 bytes). Most of the disk images found in the wild will be in this format.
-// -------------------------------------------------------------------------------------------------
+//
+// For Einstein disk images, we are breaking up the 1MB ROM_Memory into four (4) chunks as follows:
+//      ROM_Memory+0K    =  Loaded .dsk image in natural Einstein format
+//      ROM_Memory+256K  =  Loaded RAMDisk image in natural Einstein format
+//      ROM_Memory+512K  =  Loaded .dsk image converted to raw sector format for use with the FDC Controller
+//      ROM_Memory+768K  =  Loaded RAMDisk image converted to raw sector format for use with the FDC Controller
+// --------------------------------------------------------------------------------------------------------------
 struct SectorInfo_t
 {
     u8 track;
@@ -856,11 +862,13 @@ void einstein_swap_disk(char *szFileName)
         fclose(fp);
         einstein_load_disk();           // Get disk into memory and decode the tracks/sectors
         disk_unsaved_data = 0;
+        last_drive_select = 0x00;
+        einstein_drive_sel(FDC.drive);
     }
 }
 
 // -----------------------------------------------------------
-// The Einstein has CTC,  FDC plus some memory handling stuff
+// The Einstein has CTC, FDC plus some memory handling stuff
 // -----------------------------------------------------------
 void einstein_reset(void)
 {
