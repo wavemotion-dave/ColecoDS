@@ -163,8 +163,7 @@ void CTC_ResetCounter(u8 chan)
         // In theory, it should be the same - but I've "sped" things up a bit here and it seems to run
         // much closer to more capable emulators. A bit of a fudge-factor but such is life!
         // ----------------------------------------------------------------------------------------------
-        
-        CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 256:16;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
+        CTC[chan].cpuClocksPerCTC = (CTC[chan].control & CTC_PRESCALER_256) ? 225:14;    // Prescale of x256 means longer timers.. so it requires more CPU clocks per tick
     }
     else // Sord M5
     {
