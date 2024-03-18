@@ -412,6 +412,8 @@ Versions :
 V9.4: 16-Mar-2024 by wavemotion-dave
 * Tatung Einstein improvements - more games run more correctly.
 * Other minor tweaks and cleanup as time permitted.
+* 9.4b - Einstein RAMDISK now unified in /data/ directory (rather than have one for each directory of .dsk files)
+* 9.4b - Tweaks to the CTC timer engine for Einstein JSW2
 
 V9.3: 10-Mar-2024 by wavemotion-dave
 * Fixed TMS9918 VDP 5th Sprite Flag handling and slight optmization to the VDP driver.
