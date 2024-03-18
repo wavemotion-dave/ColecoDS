@@ -720,7 +720,7 @@ unsigned char RAMDisk_TrackInfo[] = {
 
 void einstein_init_ramdisk(void)
 {
-    FILE *fp = fopen("einstein.ramd", "wb+");
+    FILE *fp = fopen("/data/einstein.ramd", "wb+");
     fwrite(RAMDisk_Header, 1, sizeof(RAMDisk_Header), fp);
     for (u8 track=0; track<40; track++)
     {
@@ -756,11 +756,17 @@ void einstein_init_ramdisk(void)
 
 void einstein_load_ramdisk(void)
 {
-    FILE *fp = fopen("einstein.ramd", "rb");
-    if (fp == NULL)
+    FILE *fp = fopen("/data/einstein.ramd", "rb");
+    
+    if (fp == NULL) // See if there is one in the local directory
+    {
+        fp = fopen("einstein.ramd", "rb"); // This will get written back to /data/einstein.ramd
+    }
+    
+    if (fp == NULL) // If we didn't find one... we create a blank one
     {
         einstein_init_ramdisk();
-        fp = fopen("einstein.ramd", "rb");
+        fp = fopen("/data/einstein.ramd", "rb");
     }
     
     if (fp != NULL)
@@ -839,7 +845,7 @@ void einstein_save_ramdisk(void)
         }
     }
     
-    FILE *fp = fopen("einstein.ramd", "wb");
+    FILE *fp = fopen("/data/einstein.ramd", "wb");
     if (fp != NULL)
     {
         fwrite(ROM_Memory + (256*1024), 1, ramdisk_len, fp);
