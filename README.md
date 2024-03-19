@@ -282,11 +282,15 @@ cat  203.bin 1-or.bin 1-or.bin 202.bin > BASIC.pen
 
 Tatung Einstein Compatibility :
 -----------------------
-The base 64K machine is emulated. Both .dsk files and .COM files will play. For both, you would load the file and press the START button to boot them (for .com files, it will load the file at 0x100 and auto-run... for .dsk files the START button will emulate the CTRL-BREAK needed to boot the diskette). Out in the interwebs, you will mostly only find .dsk files and the .COM files can be extracted from them. The easiest way is to use either Charlie Robson's einSDein-vitamins or EDIP to extract .COM files from disk images. Or just stick to .dsk files which are a bit more authentic to the experience of using a Tatung Einstein.
+The 64K TC-01 machine is emulated. Both .dsk files and .COM files will play. For both, you would load the file and press the START button to boot them (for .com files, it will load the file at 0x100 and auto-run... for .dsk files the START button will emulate the CTRL-BREAK needed to boot the diskette). Out in the interwebs, you will mostly only find .dsk files and the .COM files can be extracted from them. The easiest way is to use either Charlie Robson's einSDein-vitamins or EDIP to extract .COM files from disk images. Or just stick to .dsk files which are a bit more authentic to the experience of using a Tatung Einstein.
 
-Two Tatung Einstein disk drives are supported. The default drive 0: is a standard single-sided, 40 track, 10 sector-per-track diskette with about 200K disk space available. This is the drive that will hold and load your .dsk file image when you run the emulation. 
+Two Tatung Einstein disk drives are supported. Both disk drives are standard single-sided, 40 track, 10 sector-per-track diskette with about 200K disk space available. 
 
-The second drive 1: is a persistent RAM Disk that can be saved back to the SD card on your DS/DSi.  This comes pre-formatted (and you can re-initialize it using the DISK icon menu) with 200K of storage. To the emulator, it looks just like a standard second disk drive. You can copy often used programs and utilities to this disk - I use it to stash away a few flavors of XBAS so I've always got the right one on hand to play games.
+Drive 0 is the main drive that will hold and load your .dsk file image when you run the emulation. 
+
+Drive 1 is the secondary drive and, by default, will house a persistant "RAM" Disk that works like any other disk but is stored in /data/einstein.ramd and is always loaded every time you start Einstein emulation.  This comes pre-formatted (and you can re-initialize it using the DISK icon menu) with 200K of storage. To the emulator, it looks just like a standard second disk and is useful to hold often used programs and utilities - I use it to stash away a few flavors of XBAS so I've always got the right one on hand to play games. It's convienent to alaways have common utilties and programs available.
+
+You can swap out either disk for another .dsk file as desired. 
 
 Both drives support read/write capabilities however, the writing will NOT auto-back those changes to your SD card. I might change that behavior in the future - but for now, any changes written to the emulated disks are transient until you go into the DISK icon menu and save them back to the SD card. I'm fairly confident that the disk write works fine - but until I get more testing hours from field-use, I don't want to inadvertently screw up an original .dsk image and leave the onus on the user to save out the disk for now.
 
