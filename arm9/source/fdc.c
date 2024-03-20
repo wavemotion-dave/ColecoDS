@@ -43,7 +43,7 @@
 struct FDC_t            FDC;
 struct FDC_GEOMETRY_t   Geom;
 
-extern u8 ramdisk_unsaved_data;
+extern u8 disk_unsaved_data[];
 static u16 fdc_busy_count = 0;
 
 void fdc_debug(u8 bWrite, u8 addr, u8 data)
@@ -231,8 +231,7 @@ void fdc_state_machine(void)
                 else if (FDC.wait_for_write == 0)
                 {
                     FDC.track_dirty[FDC.drive] = 1;
-                    if (FDC.drive == 0)  disk_unsaved_data = 1;
-                    if (FDC.drive == 1)  ramdisk_unsaved_data = 1;
+                    disk_unsaved_data[FDC.drive] = 1;
                     FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
                     if (FDC.track_buffer_idx >= FDC.track_buffer_end)
                     {
@@ -272,8 +271,7 @@ void fdc_state_machine(void)
                         }
                         else if (FDC.write_track_allowed == 1)
                         {
-                            if (FDC.drive == 0)  disk_unsaved_data = 1;
-                            if (FDC.drive == 1)  ramdisk_unsaved_data = 1;
+                            disk_unsaved_data[FDC.drive] = 1;
                             FDC.track_dirty[FDC.drive] = 1;
                             FDC.track_buffer[FDC.track_buffer_idx++] = FDC.data; // Store CPU byte into our FDC buffer
 
@@ -511,7 +509,7 @@ void fdc_reset(u8 full_reset)
         memset(&FDC, 0x00, sizeof(FDC));    // Clear all registers and the buffers
     }
     
-    FDC.status = (Geom.fdc_type == WD1770) ? 0x00:0x00;  // Drive not ready (WD1770), Motor off and not busy
+    FDC.status = (Geom.fdc_type == WD1770) ? 0x80:0x00;  // Drive ready, Motor off and not busy
     FDC.commandType = 1;                                 // We are back to Type I 
     FDC.wait_for_read = 2;                               // Not feteching any data
     FDC.wait_for_write = 2;                              // Not storing any data

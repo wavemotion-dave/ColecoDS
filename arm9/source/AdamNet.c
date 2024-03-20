@@ -428,7 +428,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
     case CMD_WRITE:
     case CMD_READ:
       io_show_status = (V==CMD_READ) ? 1:2;
-      if (io_show_status == 2) disk_unsaved_data = 1;
+      if (io_show_status == 2) disk_unsaved_data[0] = 1;
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
       io_busy = DELAY_IO;
@@ -530,7 +530,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
     case CMD_WRITE:
     case CMD_READ:
       io_show_status = (V==CMD_READ) ? 1:2;
-      if (io_show_status == 2) disk_unsaved_data = 1;
+      if (io_show_status == 2) disk_unsaved_data[0] = 1;
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
       io_busy = DELAY_IO;

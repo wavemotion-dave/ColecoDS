@@ -669,20 +669,23 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
   DSPrint(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
   sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
   DSPrint(2,6,0, szName);
-  for (ucBcl=0;ucBcl<14; ucBcl++) {
+  for (ucBcl=0;ucBcl<14; ucBcl++) 
+  {
     ucGame= ucBcl+NoDebGame;
     if (ucGame < countCV) 
     {
       maxLen=strlen(gpFic[ucGame].szName);
       strcpy(szName,gpFic[ucGame].szName);
       if (maxLen>28) szName[28]='\0';
-      if (gpFic[ucGame].uType == DIRECT) {
-        sprintf(szName2, " %s]",szName);
-        szName2[0]='[';
+      if (gpFic[ucGame].uType == DIRECT) 
+      {
+        szName[26] = 0; // Needs to be 2 chars shorter with brackets
+        sprintf(szName2, "[%s]",szName);
         sprintf(szName,"%-28s",szName2);
         DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
       }
-      else {
+      else 
+      {
         sprintf(szName,"%-28s",strupr(szName));
         DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
       }

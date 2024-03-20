@@ -127,7 +127,7 @@ C24XX EEPROM;
 // Some ADAM and Tape related vars...
 // ------------------------------------------
 u8 adam_CapsLock        = 0;
-u8 disk_unsaved_data    = 0;
+u8 disk_unsaved_data[2] = {0,0};
 u8 write_EE_counter     = 0;
 u32 last_tape_pos       = 9999;
 
@@ -635,7 +635,8 @@ void ResetColecovision(void)
   einstein_reset();                     // Reset the Tatung Einstein specific vars
 
   adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
-  disk_unsaved_data = 0;                // No unsaved ADAM tape/disk data to start
+  disk_unsaved_data[0] = 0;             // No unsaved ADAM tape/disk data to start
+  disk_unsaved_data[1] = 0;             // No unsaved ADAM tape/disk data to start
 
   write_EE_counter=0;                   // Nothing to write for EEPROM yet
     
@@ -1201,7 +1202,7 @@ void SaveAdamTapeOrDisk(void)
         SaveFDI(&Disks[0], lastDiskDataPath, (LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
     DSPrint(12,0,6, "      ");
     DisplayStatusLine(true);
-    disk_unsaved_data = 0;
+    disk_unsaved_data[0] = 0;
 }
 
 
@@ -1257,17 +1258,20 @@ void CassetteInsert(char *filename)
 
 #define MENU_ACTION_END             255 // Always the last sentinal value
 #define MENU_ACTION_EXIT            0   // Exit the menu
-#define MENU_ACTION_SAVE            1   // Save Disk or Cassette
-#define MENU_ACTION_SWAP            2   // Swap Disk or Cassette
-#define MENU_ACTION_REWIND          3   // Rewind the Cassette
-#define MENU_ACTION_CLOAD_RUN       4   // Issue CLOAD RUN
-#define MENU_ACTION_BLOAD_CAS       5   // Issue BLOAD CAS
-#define MENU_ACTION_RUN_CAS         6   // Issue RUN CAS
-#define MENU_ACTION_LOAD            7   // Issue LOAD
-#define MENU_ACTION_RUN             8   // Issue RUN
+#define MENU_ACTION_SAVE            1   // Save Disk or Cassette in primary drive
+#define MENU_ACTION_SWAP            2   // Swap Disk or Cassette in primary drive
+#define MENU_ACTION_SAVE1           3   // Save Disk or Cassette in secondary drive
+#define MENU_ACTION_SWAP1           4   // Swap Disk or Cassette in secondary drive
+#define MENU_ACTION_REWIND          5   // Rewind the Cassette
+#define MENU_ACTION_CLOAD_RUN       6   // Issue CLOAD RUN
+#define MENU_ACTION_BLOAD_CAS       7   // Issue BLOAD CAS
+#define MENU_ACTION_RUN_CAS         8   // Issue RUN CAS
+#define MENU_ACTION_LOAD            9   // Issue LOAD
+#define MENU_ACTION_RUN             10  // Issue RUN
+
 #define MENU_ACTION_RUN_EIN         20  // Load Einstein .COM FILE
 #define MENU_ACTION_RUN_MTX         21  // Load MTX .RUN or .COM FILE
-#define MENU_ACTION_SAVE_RAMDISK    22  // Save Einstein RAMDISK
+#define MENU_ACTION_INST_RAMDISK    22  // Install Einstein RAMDISK
 #define MENU_ACTION_INIT_RAMDISK    23  // Init Einstein RAMDISK
 
 typedef struct 
@@ -1335,10 +1339,12 @@ CassetteDiskMenu_t einstein_disk_menu =
     "EINSTEIN DISK MENU",
     5,
     {
-        {" SAVE DISK0        ",     MENU_ACTION_SAVE},
-        {" SWAP DISK0        ",     MENU_ACTION_SWAP},
-        {" SAVE RAMDISK      ",     MENU_ACTION_SAVE_RAMDISK},
-        {" INIT RAMDISK      ",     MENU_ACTION_INIT_RAMDISK},
+        {" SAVE    DISK0     ",     MENU_ACTION_SAVE},
+        {" SWAP    DISK0     ",     MENU_ACTION_SWAP},
+        {" SAVE    DISK1     ",     MENU_ACTION_SAVE1},
+        {" SWAP    DISK1     ",     MENU_ACTION_SWAP1},
+        {" RAMDISK DISK1     ",     MENU_ACTION_INST_RAMDISK},
+        {" RAMDISK CLEAR     ",     MENU_ACTION_INIT_RAMDISK},
         {" RUN  EINSTEIN .COM",     MENU_ACTION_RUN_EIN},
         {" EXIT MENU         ",     MENU_ACTION_EXIT},
         {" NULL              ",     MENU_ACTION_END},
@@ -1420,22 +1426,26 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     // --------------------------------------------------------------------
     if (adam_mode)
     {
-        if (disk_unsaved_data) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,     "DDP/DSK HAS UNSAVED DATA!");
+        if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  "DDP/DSK HAS UNSAVED DATA!");
     }
     else if (msx_mode)
     {
-        if (disk_unsaved_data) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,     "  DISK HAS UNSAVED DATA! ");
+        if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  "  DISK HAS UNSAVED DATA! ");
     }
     else if (einstein_mode)
     {
-        if (disk_unsaved_data)    DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
-        if (ramdisk_unsaved_data) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  "RAMDISK HAS UNSAVED DATA!");
+        if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
+        if (disk_unsaved_data[1]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " DISK1 HAS UNSAVED DATA! ");
+        snprintf(tmp, 31, "DSK0: %s", einstein_disk_path[0]); tmp[31] = 0;
+        DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
+        snprintf(tmp, 31, "DSK1: %s", einstein_disk_path[1]); tmp[31] = 0;
+        DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
     }
     
     // ----------------------------------------------------------------------------------------------
     // And near the bottom, display the file/rom/disk/cassette that is currently loaded into memory.
     // ----------------------------------------------------------------------------------------------
-    DisplayFileName();
+    if (!einstein_mode) DisplayFileName();
 }
 
 // ------------------------------------------------------------------------
@@ -1502,7 +1512,7 @@ void CassetteMenu(void)
                         else if (einstein_mode)
                         {
                             DSPrint(12,0,6, "SAVING");
-                            einstein_save_disk();
+                            einstein_save_disk(0);
                             WAITVBL;WAITVBL;
                             DSPrint(12,0,6, "      ");
                             bExitMenu = true;
@@ -1525,13 +1535,13 @@ void CassetteMenu(void)
                     CassetteMenuShow(true, menuSelection);
                     break;
                     
-                case MENU_ACTION_SAVE_RAMDISK:
+                case MENU_ACTION_SAVE1:
                     if (einstein_mode)
                     {
-                        if  (showMessage("DO YOU REALLY WANT TO","WRITE RAMDISK DATA?") == ID_SHM_YES)
+                        if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
                         {
                             DSPrint(10,0,6, "SAVING");
-                            einstein_save_ramdisk();
+                            einstein_save_disk(1);
                             WAITVBL;WAITVBL;
                             DSPrint(10,0,6, "      ");
                             bExitMenu = true;
@@ -1540,6 +1550,14 @@ void CassetteMenu(void)
                     }
                     break;
 
+                case MENU_ACTION_INST_RAMDISK:
+                    if (einstein_mode)
+                    {
+                        einstein_install_ramdisk();
+                        bExitMenu = true;
+                    }
+                    break;
+                    
                 case MENU_ACTION_INIT_RAMDISK:
                     if (einstein_mode)
                     {
@@ -1547,7 +1565,7 @@ void CassetteMenu(void)
                         {
                             DSPrint(10,0,6, "ERASING");
                             einstein_init_ramdisk();
-                            einstein_load_ramdisk();
+                            einstein_load_disk(1);
                             WAITVBL;WAITVBL;
                             DSPrint(10,0,6, "       ");
                             bExitMenu = true;
@@ -1566,11 +1584,28 @@ void CassetteMenu(void)
                         }
                         else if (einstein_mode)
                         {
-                            einstein_swap_disk(gpFic[ucGameChoice].szName);
+                            einstein_swap_disk(0, gpFic[ucGameChoice].szName);
                         }
                         else
                         {
                             CassetteInsert(gpFic[ucGameChoice].szName);
+                        }
+                        bExitMenu = true;
+                    }
+                    else
+                    {
+                        CassetteMenuShow(true, menuSelection);
+                    }
+                    break;
+
+                case MENU_ACTION_SWAP1:
+                    colecoDSLoadFile();
+                    if (ucGameChoice >= 0)
+                    {
+                        // Right now, only the Einstein has a 2nd disk drive... this may change as we will likely add Adam DDP2 and Disk2
+                        if (einstein_mode)
+                        {
+                            einstein_swap_disk(1, gpFic[ucGameChoice].szName);
                         }
                         bExitMenu = true;
                     }
