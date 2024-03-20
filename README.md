@@ -288,7 +288,7 @@ Two Tatung Einstein disk drives are supported. Both disk drives are standard sin
 
 Drive 0 is the main drive that will hold and load your .dsk file image when you run the emulation. 
 
-Drive 1 is the secondary drive and, by default, will house a persistant "RAM" Disk that works like any other disk but is stored in /data/einstein.ramd and is always loaded every time you start Einstein emulation.  This comes pre-formatted (and you can re-initialize it using the DISK icon menu) with 200K of storage. To the emulator, it looks just like a standard second disk and is useful to hold often used programs and utilities - I use it to stash away a few flavors of XBAS so I've always got the right one on hand to play games. It's convienent to alaways have common utilties and programs available.
+Drive 1 is the secondary drive and, by default, will house a persistent "RAM" Disk that works like any other disk but is stored in /data/einstein.ramd and is always loaded every time you start Einstein emulation.  This comes pre-formatted (and you can re-initialize it using the DISK icon menu) with 200K of storage. To the emulator, it looks just like a standard second disk and is useful to hold often used programs and utilities - I use it to stash away a few flavors of XBAS so I've always got the right one on hand to play games. It's convenient to always have common utilities and programs available.
 
 You can swap out either disk for another .dsk file as desired. 
 
@@ -351,7 +351,7 @@ On the DSi using this new mode renders those games really bright and visible.
 The DSi XL/LL has a slower refresh on the LCD and it more closely approximates the old tube TVs... 
 so blend mode is not needed for the XL/LL models.
 
-However! Using blend mode comes at at 10% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
+However! Using blend mode comes at an almost 10% CPU cost!! The DSi can handle it... the DS-LITE/PHAT might
 struggle a bit on more complicated games. 
 
 So my recommendation is as follows:
@@ -420,7 +420,7 @@ V9.4: 16-Mar-2024 by wavemotion-dave
 * 9.4b - Tweaks to the CTC timer engine for Einstein JSW2
 
 V9.3: 10-Mar-2024 by wavemotion-dave
-* Fixed TMS9918 VDP 5th Sprite Flag handling and slight optmization to the VDP driver.
+* Fixed TMS9918 VDP 5th Sprite Flag handling and slight optimization to the VDP driver.
 * Updated to latest SN76496 sound driver from FluBBa.
 * Other minor tweaks and cleanup as time permitted.
 * Version 9.3a with hotfix for SVI game loading fixed.
@@ -429,7 +429,7 @@ V9.2: 12-Feb-2024 by wavemotion-dave
 * Ported the AY sound chip driver from FluBBa to improve MSX1, Einstein and Coleco SGM games.
 * Ported most recent SN sound chip driver from FluBBa.
 * Allow more than one keyboard press at a time for the MSX1 so keyboard-mapped keys work properly (i.e. UP and SPACE at the same time)
-* Cleanup across the board - save states optmized.
+* Cleanup across the board - save states optimized.
 
 V9.1: 03-Feb-2024 by wavemotion-dave
 * Ported the SCC Konami sound driver from FluBBa to make the MSX1 games using that chip sound great.
@@ -438,13 +438,13 @@ V9.1: 03-Feb-2024 by wavemotion-dave
 
 V9.0: 21-Oct-2023 by wavemotion-dave
 * Fixed loading of SC-3000 Survivors Multi/Megacart roms.
-* Slight optmization to I/O read driver.
+* Slight optimization to I/O read driver.
 * Minor cleanup as time permitted.
 
 V8.9: 20-Sep-2023 by wavemotion-dave
 * Further cleanup of the ADAM driver to eliminate title-screen glitches and provide support for 320K disks.
-* Slight optmization across the board resulting in another frame or two of performance.
-* Memory optmization to reduce the footprint of the program - providing about 300K of free resources total.
+* Slight optimization across the board resulting in another frame or two of performance.
+* Memory optimization to reduce the footprint of the program - providing about 300K of free resources total.
 
 V8.8: 11-Sep-2023 by wavemotion-dave
 * Major cleanup of the Coleco ADAM driver so that most games now load up first try and RESET handling is smooth and consistent.
@@ -454,7 +454,7 @@ V8.8: 11-Sep-2023 by wavemotion-dave
 V8.7: 07-Sep-2023 by wavemotion-dave
 * Added .dsk support for MSX1 games (360K SS or 720K DS only).
 * Improved key debounce so that pressing on the virtual keyboard is much cleaner.
-* Minor memory optmization to free up some resources.
+* Minor memory optimization to free up some resources.
 
 V8.6: 31-Aug-2023 by wavemotion-dave
 * Added .dsk support for Tatung Einstein games!
