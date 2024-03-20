@@ -346,7 +346,7 @@ u8 colecoInit(char *szGame)
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start
       adam_CapsLock = 0;
-      disk_unsaved_data = 0;
+      disk_unsaved_data[0] = 0;
       colecoWipeRAM();
       //TODO: Figure out why we need to load, unload and re-load to get all games to boot properly...
       RetFct = loadrom(szGame,RAM_Memory);

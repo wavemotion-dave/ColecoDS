@@ -34,7 +34,6 @@ u8 key_int_mask = 0xFF;
 u8 joy_int_mask = 0xFF;
 u8 myKeyData    = 0xFF;
 u8 adc_mux      = 0x00;
-u8 ramdisk_unsaved_data = 0;
 u32 ramdisk_len = 215296;
 
 extern u8 EinsteinBios[];
@@ -44,6 +43,8 @@ extern u8 EinsteinBios2[];
 #define JOYSTICK_VECTOR  0xFD
 
 static u8 last_drive_select = 0x00;
+
+char einstein_disk_path[2][256] = {{0},{0}};
 
 // ---------------------------------------------------------------------------------------------
 // We support two disk drives - Drive 0 is the normal floppy that can be mounted with Einstein 
@@ -69,6 +70,9 @@ void einstein_drive_sel(u8 sel)
     }
 }
 
+// --------------------------------------------------------------------------------
+// Scan the Einstein Keyboard and report back any keys that have been pressed
+// --------------------------------------------------------------------------------
 void scan_keyboard(void)
 {
     if (kbd_key == 0)
@@ -268,6 +272,11 @@ void einstein_swap_memory(void)
     }
 }
 
+// ---------------------------------------------------------------------------------------
+// Read the Einstein Joystick. This is reported back on the ADC port as an analog signal
+// however it's really just a digital joystick that will report min/max ADC values
+// when the user presses UP/DOWN or LEFT/RIGHT.
+// ---------------------------------------------------------------------------------------
 u8 einstein_joystick_read(void)
 {
   u8 adc_port = 0x7F;   // Center Position
@@ -316,6 +325,10 @@ u8 einstein_joystick_read(void)
   return adc_port;    
 }
 
+// ---------------------------------------------------------------------------------------
+// The fire button readout is also the same port used to read the special keyboard 
+// keys such as GRAPH, CTRL and SHIFT.
+// ---------------------------------------------------------------------------------------
 u8 einstein_fire_read(void)
 {
   u8 key_port = 0xFF;
@@ -622,18 +635,40 @@ struct TrackInfo_t
 // in a somewhat unusual manner probably to help speed up access. But
 // we want tracks and sectors laid out sequentially.
 // ---------------------------------------------------------------------
-void einstein_load_disk(void)
+void einstein_load_disk(u8 disk)
 {
+    // -------------------------------------------------------------------------------------------
+    // First read in the raw .DSK file into memory so we can manipulate the tracks/sectors below
+    // -------------------------------------------------------------------------------------------
+    FILE *fp = fopen(einstein_disk_path[disk], "rb");
+    
+    if ((fp == NULL) && (disk==1)) // If we didn't find one and we are disk 1, we can use a blank RAMDISK
+    {
+        einstein_init_ramdisk();
+        fp = fopen(einstein_disk_path[disk], "rb");
+    }
+    
+    // --------------------------------------------------------------------
+    // We assemble disk 0 vs disk 1 in different parts of our ROM_Memory[]
+    // --------------------------------------------------------------------
+    int offset = disk ? 256:0;
+    
+    if (fp != NULL)
+    {
+        tape_len = fread(ROM_Memory + (offset*1024), 1, 256*1024, fp);    // Read file into memory
+        fclose(fp);
+    } else tape_len = 0;
+    
     u8 *trackInfoPtr = ROM_Memory + 0x100;
     for (int i=0; i<40; i++)    // 40 tracks
     {
-        trackInfoPtr = ROM_Memory + (0x100 + (i*(5120+0x100)));
+        trackInfoPtr = (ROM_Memory + (offset*1024)) + (0x100 + (i*(5120+0x100)));
         memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
         trackInfoPtr += 0x100;                                // Skip over the TrackInfo
 
         for (int j=0; j<10; j++) // 10 sectors per track
         {
-            u8 *dest = &ROM_Memory[(512*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
+            u8 *dest = &ROM_Memory[((512+offset)*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
             u8 *src  = trackInfoPtr + (j*512);
             for (int k=0; k<512; k++) // 512 bytes per sector
             {
@@ -641,7 +676,62 @@ void einstein_load_disk(void)
             }
         }
     }
-}   
+}
+
+void einstein_save_disk(u8 disk)
+{
+    // --------------------------------------------------------------------
+    // We assemble disk 0 vs disk 1 in different parts of our ROM_Memory[]
+    // --------------------------------------------------------------------
+    int offset = disk ? 256:0;
+    
+    u8 *trackInfoPtr = ROM_Memory + (offset * 1024) + 0x100;
+    for (int i=0; i<40; i++)    // 40 tracks
+    {
+        trackInfoPtr = (ROM_Memory + (offset * 1024)) + (0x100 + (i*(5120+0x100)));
+        memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
+        trackInfoPtr += 0x100;                                // Skip over the TrackInfo
+
+        for (int j=0; j<10; j++) // 10 sectors per track
+        {
+            u8 *src = &ROM_Memory[((512+offset)*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
+            u8 *dest  = trackInfoPtr + (j*512);
+            for (int k=0; k<512; k++) // 512 bytes per sector
+            {
+                *dest++ = *src++;
+            }
+        }
+    }
+    
+    FILE *fp = fopen(einstein_disk_path[disk], "wb");
+    if (fp != NULL)
+    {
+        fwrite(ROM_Memory + (offset * 1024), 1, tape_len, fp);
+        fclose(fp);
+    }
+    
+    disk_unsaved_data[disk] = 0;
+}
+
+// ---------------------------------------------------------------------------
+// We allow swapping of DISK0 - as the RAMDisk is always present as drive 1:
+// ---------------------------------------------------------------------------
+void einstein_swap_disk(u8 disk, char *szFileName)
+{
+    strcpy(einstein_disk_path[disk], szFileName);
+    
+    einstein_load_disk(disk);           // Get disk into memory and decode the tracks/sectors
+    disk_unsaved_data[disk] = 0;        // Fresh install of disk has no unsaved data
+    last_drive_select = 0x00;           // Force us to re-read the first track
+    einstein_drive_sel(FDC.drive);      // Read the track into memory
+}
+
+
+void einstein_install_ramdisk(void)
+{
+    strcpy(einstein_disk_path[1], "/data/einstein.ramd");
+    einstein_load_disk(1);
+}
 
 // -----------------------------------------------------------------------------------------------------------
 // Our RAMDisk is a standard 200K floppy with no data - just a disk full of 0xE5 bytes ready to be loaded.
@@ -717,7 +807,6 @@ unsigned char RAMDisk_TrackInfo[] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
 
-
 void einstein_init_ramdisk(void)
 {
     FILE *fp = fopen("/data/einstein.ramd", "wb+");
@@ -754,125 +843,6 @@ void einstein_init_ramdisk(void)
     fclose(fp);
 }
 
-void einstein_load_ramdisk(void)
-{
-    FILE *fp = fopen("/data/einstein.ramd", "rb");
-    
-    if (fp == NULL) // See if there is one in the local directory
-    {
-        fp = fopen("einstein.ramd", "rb"); // This will get written back to /data/einstein.ramd
-    }
-    
-    if (fp == NULL) // If we didn't find one... we create a blank one
-    {
-        einstein_init_ramdisk();
-        fp = fopen("/data/einstein.ramd", "rb");
-    }
-    
-    if (fp != NULL)
-    {
-        fread(ROM_Memory + (256*1024), 1, 256*1024, fp);    // Read file into memory
-        fclose(fp);
-        
-        u8 *trackInfoPtr = ROM_Memory + (256*1024) + 0x100;
-        for (int i=0; i<40; i++)    // 40 tracks
-        {
-            trackInfoPtr = ROM_Memory + (256*1024) + (0x100 + (i*(5120+0x100)));
-            memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
-            trackInfoPtr += 0x100;                                // Skip over the TrackInfo
-
-            for (int j=0; j<10; j++) // 10 sectors per track
-            {
-                u8 *dest = &ROM_Memory[(768*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
-                u8 *src  = trackInfoPtr + (j*512);
-                for (int k=0; k<512; k++) // 512 bytes per sector
-                {
-                    *dest++ = *src++;
-                }
-            }
-        }
-    }
-}
-
-void einstein_save_disk(void)
-{
-    u8 *trackInfoPtr = ROM_Memory + 0x100;
-    for (int i=0; i<40; i++)    // 40 tracks
-    {
-        trackInfoPtr = ROM_Memory + (0x100 + (i*(5120+0x100)));
-        memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
-        trackInfoPtr += 0x100;                                // Skip over the TrackInfo
-
-        for (int j=0; j<10; j++) // 10 sectors per track
-        {
-            u8 *src = &ROM_Memory[(512*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
-            u8 *dest  = trackInfoPtr + (j*512);
-            for (int k=0; k<512; k++) // 512 bytes per sector
-            {
-                *dest++ = *src++;
-            }
-        }
-    }
-    
-    FILE *fp = fopen(lastDiskDataPath, "wb");
-    if (fp != NULL)
-    {
-        fwrite(ROM_Memory, 1, tape_len, fp);
-        fclose(fp);
-    }
-    
-    disk_unsaved_data = 0;
-}
-
-
-void einstein_save_ramdisk(void)
-{
-    u8 *trackInfoPtr = ROM_Memory + (256*1024) + 0x100;
-    for (int i=0; i<40; i++)    // 40 tracks
-    {
-        trackInfoPtr = ROM_Memory + (256*1024) + (0x100 + (i*(5120+0x100)));
-        memcpy(&TrackInfo, trackInfoPtr, sizeof(TrackInfo));  // Get the Track Info into our buffer...
-        trackInfoPtr += 0x100;                                // Skip over the TrackInfo
-
-        for (int j=0; j<10; j++) // 10 sectors per track
-        {
-            u8 *src = &ROM_Memory[(768*1024) + (TrackInfo.SectorInfo[j].track * 5120) + (TrackInfo.SectorInfo[j].sectorID*512)];
-            u8 *dest  = trackInfoPtr + (j*512);
-            for (int k=0; k<512; k++) // 512 bytes per sector
-            {
-                *dest++ = *src++;
-            }
-        }
-    }
-    
-    FILE *fp = fopen("/data/einstein.ramd", "wb");
-    if (fp != NULL)
-    {
-        fwrite(ROM_Memory + (256*1024), 1, ramdisk_len, fp);
-        fclose(fp);
-    }
-    
-    ramdisk_unsaved_data = 0;
-}
-
-// ---------------------------------------------------------------------------
-// We allow swapping of DISK0 - as the RAMDisk is always present as drive 1:
-// ---------------------------------------------------------------------------
-void einstein_swap_disk(char *szFileName)
-{
-    strcpy(lastDiskDataPath, szFileName);
-    FILE *fp = fopen(szFileName, "rb");
-    if (fp != NULL)
-    {
-        tape_len = fread(ROM_Memory, (256*1024), 1, fp);
-        fclose(fp);
-        einstein_load_disk();           // Get disk into memory and decode the tracks/sectors
-        disk_unsaved_data = 0;
-        last_drive_select = 0x00;
-        einstein_drive_sel(FDC.drive);
-    }
-}
-
 // -----------------------------------------------------------
 // The Einstein has CTC, FDC plus some memory handling stuff
 // -----------------------------------------------------------
@@ -901,16 +871,23 @@ void einstein_reset(void)
         
         if (einstein_mode == 2) 
         {
-            // Setup two (2) disk drives... one is a .dsk and the other is our RAMDisk.
+            // The two disk drive paths so we can write-back changes
+            strcpy(einstein_disk_path[0], gpFic[ucGameChoice].szName);
+            
+            // --------------------------------------------------------
+            // Setup two (2) disk drives for the Einstein. By default, 
+            // our persistant RAMDISK will be the second drive.
+            // --------------------------------------------------------
             fdc_init(WD1770, 2, 1, 40, 10, 512, 0, ROM_Memory+(512*1024), ROM_Memory+(768*1024));
-            last_drive_select = 0x00; // Ensure we buffer the first track
-            einstein_drive_sel(0x01); // Default is the first drive
-            fdc_setSide(0);           // And side 0 of that disk
-            einstein_load_ramdisk();  // First put the RAM disk in place as the second drive
-            einstein_load_disk();     // Assemble the sectors of this disk for easy manipulation
+            
+            last_drive_select = 0x00;   // Ensure we buffer the first track
+            einstein_drive_sel(0x01);   // Default is the first drive
+            fdc_setSide(0);             // And side 0 of that disk
+            einstein_load_disk(0);      // Disk 0 : assemble the sectors of this disk for easy manipulation
+            einstein_install_ramdisk(); // Disk 1 : assemble the sectors of this disk for easy manipulation
         }
-        disk_unsaved_data = 0;
-        ramdisk_unsaved_data = 0;
+        disk_unsaved_data[0] = 0;
+        disk_unsaved_data[1] = 0;
     }
 }
 

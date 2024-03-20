@@ -180,11 +180,12 @@ extern void einstien_load_dsk_file(void);
 extern void einstein_restore_bios(void);
 extern void memotech_launch_run_file(void);
 extern void sordm5_check_keyboard_interrupt(void);
-extern void einstein_save_disk(void);
-extern void einstein_save_ramdisk(void);
+extern void einstein_save_disk(u8 disk);
+extern void einstein_load_disk(u8 disk);
+extern void einstein_swap_disk(u8 disk, char *szFileName);
 extern void einstein_init_ramdisk(void);
-extern void einstein_load_ramdisk(void);
-extern void einstein_swap_disk(char *szFileName);
+extern void einstein_install_ramdisk(void);
+extern char einstein_disk_path[2][256];
 
 extern u8 loadrom(const char *path,u8 * ptr);
 
