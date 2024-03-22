@@ -1138,6 +1138,8 @@ void DisplayStatusLine(bool bForce)
             DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
         
+        DSPrint(2,19,6, (ein_alpha_lock ? "@":" "));
+        
         if (io_show_status)
         {
             if (io_show_status == 5) {DSPrint(8,0,6, "DISK WRITE"); io_show_status = 3;}
@@ -2631,7 +2633,7 @@ u8 handle_alpha_keyboard_press(u16 iTx, u16 iTy)  // Generic and Simplified Alph
         else if ((iTx >= 148) && (iTx < 174))  kbd_key = 'J';
         else if ((iTx >= 174) && (iTx < 200))  kbd_key = 'K';
         else if ((iTx >= 200) && (iTx < 226))  kbd_key = 'L';
-        else if ((iTx >= 226) && (iTx < 255))  kbd_key = (adam_mode ? ADAM_KEY_BS : KBD_KEY_BS);
+        else if ((iTx >= 226) && (iTx < 255))  kbd_key = (adam_mode ? ADAM_KEY_BS : (einstein_mode ? KBD_KEY_INS : KBD_KEY_BS));
     }
     else if ((iTy >= 122) && (iTy < 159)) // Row 4 (ZXCV row)
     {

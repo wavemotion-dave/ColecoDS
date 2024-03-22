@@ -413,6 +413,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V9.5: ??-???-2024 by wavemotion-dave
+* Tatung Einstein now has two proper standard 200K disk drives.
+* Tatung Einstein full keybaord now uses LED indicators under the SHIFT/CTRL/GRAPH and ALPHA LOCK keys for a visual improvement.
+* Tatung Einstein properly handles the backspace key when using the Alpha-Numeric keyboard overlay.
+
 V9.4: 16-Mar-2024 by wavemotion-dave
 * Tatung Einstein improvements - more games run more correctly.
 * Other minor tweaks and cleanup as time permitted.
