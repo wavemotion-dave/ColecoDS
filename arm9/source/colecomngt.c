@@ -619,8 +619,8 @@ u8 loadrom(const char *path,u8 * ptr)
         else if (einstein_mode)
         {
             strcpy(lastDiskDataPath, path);
-            tape_len = romSize;  
-            if (romSize == 1626) // A bit of a hack... the size of the Diagnostic ROM
+            ein_disk_size[0] = romSize;     // Might be a .COM file but we just reuse the einstein disk size variable
+            if (romSize == 1626)            // A bit of a hack... the size of the Diagnostic ROM
             {
                 extern u8 EinsteinBios2[];
                 memcpy(EinsteinBios2, ROM_Memory, romSize);   // only for Diagnostics ROM

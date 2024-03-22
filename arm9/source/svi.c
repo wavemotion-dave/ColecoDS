@@ -601,7 +601,7 @@ void SVI_HandleCassette(register Z80 *r)
     {
         r->AF.B.l |= C_FLAG;
     }
-    else {debug[0] = r->PC.W-2;} // Debug breadcrumbs in case we get here...
+    else {debug[15] = r->PC.W-2;} // Debug breadcrumbs in case we get here...
 }
 
 // End of file

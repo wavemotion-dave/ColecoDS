@@ -29,12 +29,13 @@
 u16 einstein_ram_start __attribute__((section(".dtcm"))) = 0x8000;
 u16 keyboard_interrupt __attribute__((section(".dtcm"))) = 0;
 u16 joystick_interrupt __attribute__((section(".dtcm"))) = 0;
-u8 keyboard_w   = 0x00;
-u8 key_int_mask = 0xFF;
-u8 joy_int_mask = 0xFF;
-u8 myKeyData    = 0xFF;
-u8 adc_mux      = 0x00;
-u32 ramdisk_len = 215296;
+u8 keyboard_w        = 0x00;
+u8 key_int_mask      = 0xFF;
+u8 joy_int_mask      = 0xFF;
+u8 myKeyData         = 0xFF;
+u8 adc_mux           = 0x00;
+u32 ein_disk_size[2] = {0,0};
+u8 ein_alpha_lock    = 0x01;
 
 extern u8 EinsteinBios[];
 extern u8 EinsteinBios2[];
@@ -90,23 +91,28 @@ void scan_keyboard(void)
               if (--last_special_key_dampen == 0)
               {
                   last_special_key = 0;
-                  DSPrint(4,0,6, "    ");
+                  if (myConfig.overlay == 1) // Full Keyboard Selected
+                  {
+                      DSPrint(1,12,0, " ");     // Clear CTRL  indicator
+                      DSPrint(1,15,0, " ");     // Clear SHIFT indicator
+                      DSPrint(2,23,0, " ");     // Clear GRAPH indicator
+                  }
               }
           }
 
           if (last_special_key == KBD_KEY_SHIFT) 
           { 
-            DSPrint(4,0,6, "SHFT");
+            if (myConfig.overlay == 1) DSPrint(1,15,2, "\\");  // Display round dot under SHIFT
             key_shift = 1;
           }
           else if (last_special_key == KBD_KEY_CTRL)  
           {
-            DSPrint(4,0,6, "CTRL");
+            if (myConfig.overlay == 1) DSPrint(1,12,2, "@");  // Display round dot under CTRL
             key_ctrl = 1;
           }
           else if (last_special_key == KBD_KEY_GRAPH)  
           {
-            DSPrint(4,0,6, "GRPH");
+            if (myConfig.overlay == 1) DSPrint(2,23,0, "@");  // Display round dot under GRAPH
             key_graph = 1;
           }
 
@@ -127,7 +133,7 @@ void scan_keyboard(void)
           
           if (!(keyboard_w & 0x01))
           {
-              if (kbd_key == KBD_KEY_BREAK) myKeyData |= 0x01;  // Break
+              if (kbd_key == KBD_KEY_BREAK) myKeyData |= 0x01;
               if (kbd_key == KBD_KEY_F8)    myKeyData |= 0x04; 
               if (kbd_key == KBD_KEY_F7)    myKeyData |= 0x08;
               if (kbd_key == KBD_KEY_CAPS)  myKeyData |= 0x10;
@@ -221,6 +227,7 @@ void scan_keyboard(void)
           }
       }
     }
+    
     myKeyData = ~myKeyData;
 }
 
@@ -364,7 +371,7 @@ u8 einstein_fire_read(void)
 // 18h to 1Fh   - FDC (not emulated)
 // 20h          - /KBDINT_MSK
 // 21h          - /ADCINT_MSK
-// 22h          - /ALPHA
+// 22h          - /ALPHA (LED indicator)
 // 23h          - /DRSEL (Drive Select)
 // 24h          - /ROM (select ROM vs RAM)
 // 25h          - /FIREINT_MSK
@@ -420,6 +427,7 @@ unsigned char cpu_readport_einstein(register unsigned short Port)
             
         case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
             if      (Port == 0x20)  return einstein_fire_read();
+            else if (Port == 0x22)  {ein_alpha_lock ^= 1; return 0xFF;}
             else if (Port == 0x23)  return (1 << FDC.drive);
             else if (Port == 0x24)  {einstein_swap_memory(); return 0xFF;}
             else if (Port == 0x25)  return joy_int_mask;
@@ -501,7 +509,7 @@ void cpu_writeport_einstein(register unsigned short Port,register unsigned char 
         case 0x20:  // Key/Joy/ADC/ROM/RAM Select Area
             if      (Port == 0x20)  key_int_mask = Value;       // KEYBOARD INT MASK
             else if (Port == 0x21)  break;                      // ADC INT MASK (no game seems to use this so we don't implement)
-            else if (Port == 0x22)  break;                      // ALPHA LOCK
+            else if (Port == 0x22)  break;                      // ALPHA LOCK - nobody seems to write this
             else if (Port == 0x23)  einstein_drive_sel(Value);  // Drive Select
             else if (Port == 0x24)  einstein_swap_memory();     // ROM vs RAM bank port
             else if (Port == 0x25)  joy_int_mask = Value;       // JOYSTICK INT MASK
@@ -581,7 +589,7 @@ void einstein_load_com_file(void)
     MemoryMap[7] = RAM_Memory + 0xE000;
     
     // The Quickload will write the .COM file into memory at offset 0x100 and jump to it
-    memcpy(RAM_Memory+0x100, ROM_Memory, tape_len);
+    memcpy(RAM_Memory+0x100, ROM_Memory, ein_disk_size[0]);
     keyboard_interrupt=0;
     CPU.IRequest=INT_NONE;
     CPU.IFF&=~(IFF_1|IFF_EI);
@@ -655,9 +663,9 @@ void einstein_load_disk(u8 disk)
     
     if (fp != NULL)
     {
-        tape_len = fread(ROM_Memory + (offset*1024), 1, 256*1024, fp);    // Read file into memory
+        ein_disk_size[disk] = fread(ROM_Memory + (offset*1024), 1, 256*1024, fp);    // Read file into memory
         fclose(fp);
-    } else tape_len = 0;
+    } else ein_disk_size[disk] = 0;
     
     u8 *trackInfoPtr = ROM_Memory + 0x100;
     for (int i=0; i<40; i++)    // 40 tracks
@@ -706,7 +714,7 @@ void einstein_save_disk(u8 disk)
     FILE *fp = fopen(einstein_disk_path[disk], "wb");
     if (fp != NULL)
     {
-        fwrite(ROM_Memory + (offset * 1024), 1, tape_len, fp);
+        fwrite(ROM_Memory + (offset * 1024), 1, ein_disk_size[disk], fp);
         fclose(fp);
     }
     
@@ -863,13 +871,16 @@ void einstein_reset(void)
         memset(myAY.ayRegs, 0x00, sizeof(myAY.ayRegs));    // Clear the AY registers...
         
         fdc_reset(TRUE);            // Reset the Floppy Controller
-        einstein_restore_bios();    // And restore the Einstein BIOS 
+        
+        einstein_restore_bios();    // And restore the Einstein BIOS
         
         IssueCtrlBreak = 0;         // CTRL-Break is how the Einstein boots to floppy
         
-        io_show_status = 0;
+        io_show_status = 0;         // No disk activity to start
         
-        if (einstein_mode == 2) 
+        ein_alpha_lock = 0x01;      // CAPS lock is enabled by default
+        
+        if (einstein_mode == 2) // Are we loading a .dsk file (fairly common)
         {
             // The two disk drive paths so we can write-back changes
             strcpy(einstein_disk_path[0], gpFic[ucGameChoice].szName);

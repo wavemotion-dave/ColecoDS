@@ -56,6 +56,7 @@ extern u8 JoyMode;                      // Joystick / Paddle management
 extern u32 JoyState;                    // Joystick / Paddle management
 
 extern u8 IssueCtrlBreak;
+extern u8 ein_alpha_lock;
 
 extern u8 sRamAtE000_OK;
 extern u8 bMagicMegaCart;
@@ -110,6 +111,7 @@ extern u8 MTX_KBD_DRIVE;
 extern u8 lastIOBYTE;
 extern u32 tape_pos;
 extern u32 tape_len;
+extern u32 ein_disk_size[2];
 extern u8 key_shift_hold;
 
 extern u8 Port_PPI_A;
