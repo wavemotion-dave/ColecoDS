@@ -91,15 +91,21 @@ byte *NewFDI(FDIDisk *D,int Sides,int Tracks,int Sectors,int SecSize)
   K = Sides*Tracks*Sectors*SecSize+sizeof(FDIDiskLabel);
   I = Sides*Tracks*(Sectors+1)*7+14;
     
-  if ((I+K) > ((MAX_CART_SIZE/2)*1024)) return 0;   // Too big...
+  if ((I+K) > MAX_FDID_SIZE) return 0;   // Too big...
   
-  // -----------------------------------------------------------
-  // Re-use the huge ROM_Memory[] array as it has no other
+  // ----------------------------------------------------------
+  // Reuse the huge ROM_Memory[] array as it has no other
   // use at this point and it's more efficient than allocating
-  // another big chunk of memory off the heap!
-  // -----------------------------------------------------------
-  P = (byte*)ROM_Memory+((MAX_CART_SIZE/2)*1024);   // index halfway into the big buffer... leave the first 512K pristine
-  memset(P,0x00,I+K);
+  // another big chunk of memory off the heap!  We have space
+  // for two 320K Adam .DSK files (or .ddp files). The layout
+  // is this:
+  // ROM_Memory+0K   is for the read-in buffer from the SD card.
+  // ROM_Memory+330K is the converted FDID image for DISK0
+  // ROM_Memory+660K is the converted FDID image for DISK1
+  // ----------------------------------------------------------
+  int offset = ((D == &Disks[0]) ? MAX_FDID_SIZE : (2*MAX_FDID_SIZE));
+  P = (byte*)ROM_Memory+offset;   // index into the big buffer depending on whether we are DISK0 or DISK1
+  memset(P,0x00,I+K);             // Clear out the disk buffer - we'll assemble the FDID image below
     
   /* Eject previous disk image */
   EjectFDI(D);

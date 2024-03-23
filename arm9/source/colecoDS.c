@@ -912,9 +912,9 @@ void ShowDebugZ80(void)
 // ----------------------------------------------------------------
 // Check if we have an ADAM .ddp file (otherwise assume .dsk file)
 // ----------------------------------------------------------------
-bool isAdamDDP(void)
+bool isAdamDDP(u8 disk)
 {
-    if ((strstr(lastDiskDataPath, ".ddp") != 0) || (strstr(lastDiskDataPath, ".DDP") != 0)) return true;
+    if ((strstr(lastDiskDataPath[disk], ".ddp") != 0) || (strstr(lastDiskDataPath[disk], ".DDP") != 0)) return true;
     return false;
 }
 
@@ -1080,7 +1080,11 @@ void DisplayStatusLine(bool bForce)
             DSPrint(25,0,6, "ADAM");
         }
 
-        DSPrint(20,0,6, (adam_CapsLock ? "CAP":"   "));
+        // If we are showing the ADAM keyboard, indicate CAPS LOCK
+        if (myConfig.overlay == 1)
+        {
+            DSPrint(1,23,0, (adam_CapsLock ? "@":" "));
+        }
 
         if (io_show_status)
         {
@@ -1095,13 +1099,15 @@ void DisplayStatusLine(bool bForce)
                 // If global settings does not MUTE the sound effects...
                 if (!myGlobalConfig.diskSfxMute)
                 {
-                    if (!isAdamDDP()) mmEffect(SFX_FLOPPY); else mmEffect(SFX_ADAM_DDP);
+                    if (!isAdamDDP(0)) mmEffect(SFX_FLOPPY); else mmEffect(SFX_ADAM_DDP);
                     playingSFX = 1;
                 }
             }
         }
         else
+        {
             DSPrint(30,0,6, "  ");
+        }
     }
     else if (pencil2_mode)
     {
@@ -1193,25 +1199,25 @@ void DisplayStatusLine(bool bForce)
 // ------------------------------------------------------------------------
 // Save out the ADAM .ddp or .dsk file and show 'SAVING' on screen
 // ------------------------------------------------------------------------
-void SaveAdamTapeOrDisk(void)
+void SaveAdamTapeOrDisk(u8 disk)
 {
     if (io_show_status) return; // Don't save while io status
 
     DSPrint(12,0,6, "SAVING");
-    if (isAdamDDP())
-        SaveFDI(&Tapes[0], lastDiskDataPath, FMT_DDP);
+    if (isAdamDDP(disk))
+        SaveFDI(&Tapes[disk], lastDiskDataPath[disk], FMT_DDP);
     else
-        SaveFDI(&Disks[0], lastDiskDataPath, (LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
+        SaveFDI(&Disks[disk], lastDiskDataPath[disk], (LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
     DSPrint(12,0,6, "      ");
     DisplayStatusLine(true);
-    disk_unsaved_data[0] = 0;
+    disk_unsaved_data[disk] = 0;
 }
 
 
 // -----------------------------------------------------
 // Load a new Adam .ddp or .dsk file into main memory.
 // -----------------------------------------------------
-void DigitalDataInsert(char *filename)
+void DigitalDataInsert(u8 disk, char *filename)
 {
     FILE *fp;
 
@@ -1219,25 +1225,25 @@ void DigitalDataInsert(char *filename)
     // Read the .DDP or .DSK into the ROM_Memory[]
     // --------------------------------------------
     fp = fopen(filename, "rb");
-    fseek(fp, 0, SEEK_END);
-    LastROMSize = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
-    fread(ROM_Memory, tape_len, 1, fp);
-    fclose(fp);
-
-    // --------------------------------------------
-    // And set it as the active ddp or dsk...
-    // --------------------------------------------
-    strcpy(lastDiskDataPath, filename);
-    if (strstr(lastDiskDataPath, ".ddp") != 0)
+    if (fp)
     {
-        ChangeTape(0, lastDiskDataPath);
-    }
-    else
-    {
-        ChangeDisk(0, lastDiskDataPath);
-    }
+        memset(ROM_Memory, 0xFF, (320 * 1024));
+        LastROMSize = fread(ROM_Memory, 1, (320 * 1024), fp);    
+        fclose(fp);
+        
+        // --------------------------------------------
+        // And set it as the active ddp or dsk...
+        // --------------------------------------------
+        strcpy(lastDiskDataPath[disk], filename);
+        if ((strstr(lastDiskDataPath[disk], ".ddp") != 0) || (strstr(lastDiskDataPath[disk], ".DDP") != 0))
+        {
+            ChangeTape(disk, lastDiskDataPath[disk]);
+        }
+        else
+        {
+            ChangeDisk(disk, lastDiskDataPath[disk]);
+        }
+   } else LastROMSize = 0;
 }
 
 // ------------------------------------------------------------------------
@@ -1295,10 +1301,12 @@ CassetteDiskMenu_t adam_ddp_menu =
     "ADAM DIGITAL DATA MENU",
     5,
     {
-        {" SAVE DDP/DSK  ",         MENU_ACTION_SAVE},
-        {" SWAP DDP/DSK  ",         MENU_ACTION_SWAP},
-        {" EXIT MENU     ",         MENU_ACTION_EXIT},
-        {" NULL          ",         MENU_ACTION_END},
+        {" SAVE DDP/DSK 1 ",        MENU_ACTION_SAVE},
+        {" SWAP DDP/DSK 1 ",        MENU_ACTION_SWAP},
+        {" SAVE DDP/DSK 2 ",        MENU_ACTION_SAVE1},
+        {" SWAP DDP/DSK 2 ",        MENU_ACTION_SWAP1},
+        {" EXIT MENU      ",        MENU_ACTION_EXIT},
+        {" NULL           ",        MENU_ACTION_END},
     },
 };
 
@@ -1428,7 +1436,10 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     // --------------------------------------------------------------------
     if (adam_mode)
     {
-        if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  "DDP/DSK HAS UNSAVED DATA!");
+        if (disk_unsaved_data[0]) DSPrint(3, menu->start_row+5+cassette_menu_items, 0,  " DRIVE 1 HAS UNSAVED DATA! ");
+        if (disk_unsaved_data[1]) DSPrint(3, menu->start_row+6+cassette_menu_items, 0,  " DRIVE 2 HAS UNSAVED DATA! ");
+        snprintf(tmp, 31, "DRV1: %s", lastDiskDataPath[0]); tmp[31] = 0;  DSPrint(1, 21, 0, tmp);
+        snprintf(tmp, 31, "DRV2: %s", lastDiskDataPath[1]); tmp[31] = 0;  DSPrint(1, 22, 0, tmp);
     }
     else if (msx_mode)
     {
@@ -1438,16 +1449,14 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     {
         if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
         if (disk_unsaved_data[1]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " DISK1 HAS UNSAVED DATA! ");
-        snprintf(tmp, 31, "DSK0: %s", einstein_disk_path[0]); tmp[31] = 0;
-        DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
-        snprintf(tmp, 31, "DSK1: %s", einstein_disk_path[1]); tmp[31] = 0;
-        DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
+        snprintf(tmp, 31, "DSK0: %s", einstein_disk_path[0]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
+        snprintf(tmp, 31, "DSK1: %s", einstein_disk_path[1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
     }
     
     // ----------------------------------------------------------------------------------------------
     // And near the bottom, display the file/rom/disk/cassette that is currently loaded into memory.
     // ----------------------------------------------------------------------------------------------
-    if (!einstein_mode) DisplayFileName();
+    if (!einstein_mode && !adam_mode) DisplayFileName();
 }
 
 // ------------------------------------------------------------------------
@@ -1509,7 +1518,7 @@ void CassetteMenu(void)
                     {
                         if (adam_mode)
                         {
-                            SaveAdamTapeOrDisk();
+                            SaveAdamTapeOrDisk(0);
                         }
                         else if (einstein_mode)
                         {
@@ -1538,7 +1547,11 @@ void CassetteMenu(void)
                     break;
                     
                 case MENU_ACTION_SAVE1:
-                    if (einstein_mode)
+                    if (adam_mode)
+                    {
+                        SaveAdamTapeOrDisk(1);
+                    }
+                    else if (einstein_mode)
                     {
                         if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
                         {
@@ -1582,7 +1595,7 @@ void CassetteMenu(void)
                     {
                         if (adam_mode)
                         {
-                            DigitalDataInsert(gpFic[ucGameChoice].szName);
+                            DigitalDataInsert(0, gpFic[ucGameChoice].szName);
                         }
                         else if (einstein_mode)
                         {
@@ -1604,8 +1617,12 @@ void CassetteMenu(void)
                     colecoDSLoadFile();
                     if (ucGameChoice >= 0)
                     {
-                        // Right now, only the Einstein has a 2nd disk drive... this may change as we will likely add Adam DDP2 and Disk2
-                        if (einstein_mode)
+                        // ADAM and Einstein both support two drives... the MSX at 720K only supports one
+                        if (adam_mode)
+                        {
+                            DigitalDataInsert(1, gpFic[ucGameChoice].szName);
+                        }
+                        else if (einstein_mode)
                         {
                             einstein_swap_disk(1, gpFic[ucGameChoice].szName);
                         }

@@ -245,7 +245,7 @@ extern u16 machine_mode;
 extern u8 kbd_keys_pressed;
 extern u8 kbd_keys[12];
 
-extern char lastDiskDataPath[];
+extern char lastDiskDataPath[2][256];
 extern u32 tape_pos, tape_len;
 
 #define MODE_COLECO         0x0000  // No bits set! Fastest way to check the machine_mode
@@ -293,6 +293,6 @@ extern void colecoLoadEEPROM(void);
 extern void ResetColecovision(void);
 extern u32  creativision_run(void);
 extern void msx_patch_bios(void);
-extern bool isAdamDDP(void);
+extern bool isAdamDDP(u8 disk);
 
 #endif

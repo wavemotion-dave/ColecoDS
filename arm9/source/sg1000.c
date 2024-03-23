@@ -350,7 +350,7 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
         }
         else
         {
-            FILE* handle = fopen(lastDiskDataPath, "rb");
+            FILE* handle = fopen(lastDiskDataPath[0], "rb");
             if (handle != NULL) 
             {
                 fseek(handle, (0x8000 * (u32)game_no), SEEK_SET);   // Seek to the 32K chunk we want to read in
