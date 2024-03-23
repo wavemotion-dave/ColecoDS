@@ -166,7 +166,7 @@ void colecoWipeRAM(void)
   {
       // ADAM has special handling...
       u8 pattern = 0x00;                               // Default to all-clear
-      if (myConfig.memWipe == 1) pattern = 0x30;       // The 0x30 pattern tends to make most things start up properly... don't ask.
+      if (myConfig.memWipe == 1) pattern = 0x02;       // The 0x02 pattern tends to make most things start up properly... don't ask.
       if (myConfig.memWipe == 2) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
       for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? pattern : (rand() & 0xFF));
   }
@@ -342,12 +342,11 @@ u8 colecoInit(char *szGame)
   }
   else if (adam_mode)  // Load Adam DDP or DSK
   {
-      memset((u8*)0x6820000, 0x00, 0x20000);
+      memset((u8*)0x6820000, 0x00, 0x20000);    // The 128K ADAM RAM is wiped clean
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start
       adam_CapsLock = 0;
       disk_unsaved_data[0] = 0;
-      colecoWipeRAM();
       
       // Clear existing drives of any disks/tapes and load the new game up      
       for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
