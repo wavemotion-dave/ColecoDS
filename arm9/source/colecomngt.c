@@ -33,7 +33,7 @@
 // ------------------------------------------------
 u8 adam_128k_mode      = 0;
 u8 sg1000_double_reset = false;
-char lastDiskDataPath[256] = {0};
+char lastDiskDataPath[2][256] = {0};
 
 // -------------------------------------
 // Some IO Port and Memory Map vars...
@@ -89,12 +89,12 @@ u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick 
 // We provide 5 "Sensitivity" settings for the X/Y spinner
 // ---------------------------------------------------------------
 // Hand Tweaked Speeds:      Norm   Fast   Fastest  Slow   Slowest
-u16 SPINNER_SPEED[] __attribute__((section(".dtcm"))) = {120,   75,    50,      200,   300};    
+u16 SPINNER_SPEED[] __attribute__((section(".dtcm"))) = {120,   75,    50,      200,   300};
 
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
 // ------------------------------------------------------------
-u8 bMagicMegaCart __attribute__((section(".dtcm"))) = 0;      // Mega Carts support > 32K 
+u8 bMagicMegaCart __attribute__((section(".dtcm"))) = 0;      // Mega Carts support > 32K
 u8 bActivisionPCB __attribute__((section(".dtcm"))) = 0;      // Activision PCB is 64K with EEPROM
 u8 sRamAtE000_OK  __attribute__((section(".dtcm"))) = 0;      // Lord of the Dungeon is the only game that needs this
 
@@ -107,7 +107,7 @@ SN76496 mySN    __attribute__((section(".dtcm")));
 AY38910 myAY   __attribute__((section(".dtcm")));
 
 // ---------------------------------------------------------
-// Reset the Super Game Module vars... we reset back to 
+// Reset the Super Game Module vars... we reset back to
 // SGM disabled and no AY sound chip use
 // ---------------------------------------------------------
 void sgm_reset(void)
@@ -120,10 +120,10 @@ void sgm_reset(void)
     }
     AY_EnvelopeOn = false;       // No Envelope mode yet
     bFirstSGMEnable = true;      // First time SGM enable we clear ram
-    
+
     Port53 = 0x00;               // Init the SGM Port 53
     Port60 = (adam_mode?0x00:0x0F);// And the Adam/Memory Port 60
-    Port20 = 0x00;               // Adam Net 
+    Port20 = 0x00;               // Adam Net
 }
 
 
@@ -211,7 +211,7 @@ void BufferKeys(char *str)
 }
 
 // ---------------------------------------------------------------------------------------
-// Called every frame... so 1/50th or 1/60th of a second. We will virtually 'press' and 
+// Called every frame... so 1/50th or 1/60th of a second. We will virtually 'press' and
 // hold the key for roughly a tenth of a second and be smart about shift keys...
 // ---------------------------------------------------------------------------------------
 ITCM_CODE void ProcessBufferedKeys(void)
@@ -222,7 +222,7 @@ ITCM_CODE void ProcessBufferedKeys(void)
     static u8 buf_shift = 0;
     static u8 buf_ctrl = 0;
     if (creativision_mode) return;  // Special handling in creativision.c
-    
+
     if (++dampen >= next_dampen_time) // Roughly 50ms... experimentally good enough for all systems.
     {
         if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
@@ -244,26 +244,26 @@ ITCM_CODE void ProcessBufferedKeys(void)
 /*********************************************************************************
  * Init coleco Engine for that game
  ********************************************************************************/
-u8 colecoInit(char *szGame) 
+u8 colecoInit(char *szGame)
 {
   extern u8 bForceMSXLoad;
   u8 RetFct,uBcl;
   u16 uVide;
-    
+
   // We've got some debug data we can use for development... reset these.
   memset(debug, 0x00, sizeof(debug));
 
-  // ----------------------------------------------------------------------------------  
+  // ----------------------------------------------------------------------------------
   // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory
-  // ----------------------------------------------------------------------------------  
+  // ----------------------------------------------------------------------------------
   memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
-  
+
   if (bForceMSXLoad) msx_mode = 1;
   if (msx_mode)      AY_Enable=true;
   if (svi_mode)      AY_Enable=true;
   if (einstein_mode) AY_Enable=true;
   if (msx_mode) BottomScreenKeypad();  // Could Need to ensure the MSX layout is shown
-    
+
   // -----------------------------------------------------------------
   // Change graphic mode to initiate emulation.
   // Here we can claim back 128K of VRAM which is otherwise unused
@@ -273,28 +273,28 @@ u8 colecoInit(char *szGame)
   vramSetBankA(VRAM_A_MAIN_BG_0x06000000);      // This is our top emulation screen (where the game is played)
   vramSetBankB(VRAM_B_LCD);                     // 128K of Video Memory mapped at 0x6820000
   REG_BG3CNT = BG_BMP8_256x256;
-  REG_BG3PA = (1<<8); 
+  REG_BG3PA = (1<<8);
   REG_BG3PB = 0;
   REG_BG3PC = 0;
   REG_BG3PD = (1<<8);
   REG_BG3X = 0;
   REG_BG3Y = 0;
-    
+
   // Unload any ADAM related stuff
   for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
   for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
 
   // Init the page flipping buffer...
-  for (uBcl=0;uBcl<192;uBcl++) 
+  for (uBcl=0;uBcl<192;uBcl++)
   {
      uVide=(uBcl/12);
      dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
   }
-    
+
   write_EE_counter=0;
   spinner_enabled = false;
   ctc_enabled = false;
-    
+
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
       colecoWipeRAM();                              // Wipe RAM
@@ -324,19 +324,19 @@ u8 colecoInit(char *szGame)
       ctc_enabled = true;
       RetFct = loadrom(szGame,RAM_Memory+0x4000);      // Load up to 48K
   }
-  else if (msx_mode)  // Load MSX cartridge ... 
+  else if (msx_mode)  // Load MSX cartridge ...
   {
       // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-      RetFct = loadrom(szGame,RAM_Memory+0x8000);  
-      
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);
+
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
   }
-  else if (svi_mode)  // Load SVI ROM ... 
+  else if (svi_mode)  // Load SVI ROM ...
   {
       // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-      RetFct = loadrom(szGame,RAM_Memory+0x8000);  
-      
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);
+
       // Wipe RAM area from 0x8000 upwards after ROM is loaded...
       colecoWipeRAM();
   }
@@ -348,14 +348,13 @@ u8 colecoInit(char *szGame)
       adam_CapsLock = 0;
       disk_unsaved_data[0] = 0;
       colecoWipeRAM();
-      //TODO: Figure out why we need to load, unload and re-load to get all games to boot properly...
-      RetFct = loadrom(szGame,RAM_Memory);
+      
+      // Clear existing drives of any disks/tapes and load the new game up      
       for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
       for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
       RetFct = loadrom(szGame,RAM_Memory);
-      
+
       RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
-      
   }
   else if (pencil2_mode)
   {
@@ -376,7 +375,7 @@ u8 colecoInit(char *szGame)
   else  // Load coleco cartridge
   {
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
-      
+
       // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
       memset(RAM_Memory+0x2000, 0xFF, 0x4000);
 
@@ -387,16 +386,16 @@ u8 colecoInit(char *szGame)
       memset(RAM_Memory+0x8000, 0xFF, 0x8000);
 
       RetFct = loadrom(szGame,RAM_Memory+0x8000);
-      
+
       coleco_mode = true;
   }
-    
-  if (RetFct) 
+
+  if (RetFct)
   {
     // Perform a standard system RESET
     ResetColecovision();
   }
-    
+
   // Return with result
   return (RetFct);
 }
@@ -404,7 +403,7 @@ u8 colecoInit(char *szGame)
 /*********************************************************************************
  * Run the emul
  ********************************************************************************/
-void colecoRun(void) 
+void colecoRun(void)
 {
   DrZ80_Reset();                        // Reset the DrZ80 CPU core
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
@@ -414,10 +413,10 @@ void colecoRun(void)
 /*********************************************************************************
  * Set coleco Palette
  ********************************************************************************/
-void colecoSetPal(void) 
+void colecoSetPal(void)
 {
   u8 uBcl,r,g,b;
-  
+
   // -----------------------------------------------------------------------
   // The Colecovision has a 16 color pallette... we set that up here.
   // We always use the standard NTSC color palette which is fine for now
@@ -441,16 +440,16 @@ void colecoSetPal(void)
  * reduce visual tearing and other artifacts. It's not strictly necessary
  * and that does slow down the loop a bit... but DSi can handle it.
  ********************************************************************************/
-ITCM_CODE void colecoUpdateScreen(void) 
+ITCM_CODE void colecoUpdateScreen(void)
 {
-    // ------------------------------------------------------------   
-    // If we are in 'blendMode' we will OR the last two frames. 
-    // This helps on some games where things are just 1 pixel 
+    // ------------------------------------------------------------
+    // If we are in 'blendMode' we will OR the last two frames.
+    // This helps on some games where things are just 1 pixel
     // wide and the non XL/LL DSi will just not hold onto the
-    // image long enough to render it properly for the eye to 
+    // image long enough to render it properly for the eye to
     // pick up. This takes CPU speed, however, and will not be
     // supported for older DS-LITE/PHAT units with slower CPU.
-    // ------------------------------------------------------------   
+    // ------------------------------------------------------------
     if (myConfig.frameBlend)
     {
       if (XBuf == XBuf_A)
@@ -460,7 +459,7 @@ ITCM_CODE void colecoUpdateScreen(void)
       else
       {
           XBuf = XBuf_A;
-          
+
           // Because we are OR-ing two frames together, we only need to blend every other frame...
           u32 *p1 = (u32*)XBuf_A;
           u32 *p2 = (u32*)XBuf_B;
@@ -489,11 +488,11 @@ ITCM_CODE void colecoUpdateScreen(void)
 void getfile_crc(const char *path)
 {
     file_crc = getFileCrc(path);        // The CRC is used as a unique ID to save out High Scores and Configuration...
-    
+
     // -----------------------------------------------------------------
-    // Only Lord of the Dungeon allows SRAM writting in this area... 
+    // Only Lord of the Dungeon allows SRAM writting in this area...
     // -----------------------------------------------------------------
-    sRamAtE000_OK = 0;  
+    sRamAtE000_OK = 0;
     if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      // 32K version of Lord of the Dungeon
     if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      // 24K version of Lord of the Dungeon
 
@@ -504,19 +503,19 @@ void getfile_crc(const char *path)
     SGM_NeverEnable = false;                            // And allow SGM by default unless Super DK or Super DK-Jr (directly below)
     if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
     if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
-    
+
     // ------------------------------------------------------------------------------
     // And a handful of games require SRAM which is a special case-by-case basis...
     // ------------------------------------------------------------------------------
     msx_sram_enabled = 0;
-    if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN) 
+    if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
     if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
     if (file_crc == 0xa0fd57cf) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
     if (file_crc == 0xd640deaf) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (EN)
-    if (file_crc == 0x119b7ba8) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (JP)    
+    if (file_crc == 0x119b7ba8) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (JP)
     if (file_crc == 0x27fd8f9a) msx_sram_enabled = 0x10;       // MSX Deep Dungeon I (JP)
     if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (EN)
-    if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)    
+    if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)
     if (file_crc == 0x96b7faca) msx_sram_enabled = 0x10;       // MSX Harry Fox Special (JP)
     if (file_crc == 0xb8fc19a4) msx_sram_enabled = 0x20;       // MSX Cosmic Soldier 2 - Psychic War
     if (file_crc == 0x4ead5098) msx_sram_enabled = 0x20;       // MSX Ghengis Khan
@@ -527,43 +526,43 @@ void getfile_crc(const char *path)
 /** loadrom() ******************************************************************/
 /* Open a rom file from file system and load it into the ROM_Memory[] buffer   */
 /*******************************************************************************/
-u8 loadrom(const char *path,u8 * ptr) 
+u8 loadrom(const char *path,u8 * ptr)
 {
   u8 bOK = 0;
 
   DSPrint(0,0,6, "LOADING...");
-    
-  FILE* handle = fopen(path, "rb");  
-  if (handle != NULL) 
+
+  FILE* handle = fopen(path, "rb");
+  if (handle != NULL)
   {
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
-    
+
     fseek(handle, 0, SEEK_END);                             // Figure out how big the file is
     int romSize = ftell(handle);
     sg1000_double_reset = false;
-    
+
     // ----------------------------------------------------------------------
     // Look for the Survivors .sc Multicart  (2MB!) or .sc MegaCart (4MB!)
     // ----------------------------------------------------------------------
-    if (sg1000_mode && ((romSize == (2048 * 1024)) || (romSize == (4096 * 1024))))   
+    if (sg1000_mode && ((romSize == (2048 * 1024)) || (romSize == (4096 * 1024))))
     {
         fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
         fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
         memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
         fclose(handle);
-        strcpy(lastDiskDataPath, path);
+        strcpy(lastDiskDataPath[0], path);
         romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
         machine_mode = MODE_SG_1000;
         return bOK;
     }
-    else        
+    else
     if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB - that's pretty huge...
     {
         fseek(handle, 0, SEEK_SET);
-        fread((void*) ROM_Memory, romSize, 1, handle); 
+        fread((void*) ROM_Memory, romSize, 1, handle);
         fclose(handle);
-        
+
         if (file_crc == 0x68c85890) // M5 Up Up Balloon needs a patch to add 0x00 at the front
         {
             for (u16 i=romSize; i>0; i--)
@@ -573,7 +572,7 @@ u8 loadrom(const char *path,u8 * ptr)
             ROM_Memory[0] = 0x00;    // Add 0x00 to the first byte which is the patch
             romSize++;               // Make sure the size is now correct
         }
-        
+
         romBankMask = 0x00;         // No bank mask until proven otherwise
         bMagicMegaCart = false;     // No Mega Cart to start
         mapperMask = 0x00;          // No MSX mapper mask
@@ -597,18 +596,28 @@ u8 loadrom(const char *path,u8 * ptr)
             Port60 = 0x00;               // Adam Memory default
             Port20 = 0x00;               // Adam Net default
             adam_128k_mode = 0;          // Normal 64K ADAM to start
-            SetupAdam(false);
+            LastROMSize = romSize;       // So we know how big the original .dsk was
+            SetupAdam(false);            // And make sure the ADAM is ready
+
+            strcpy(lastDiskDataPath[0], path);  // Load up Drive 1 to start
+            strcpy(lastDiskDataPath[1], "");    // Nothing loaded in DRIVE 2 yet
+
+            // ------------------------------------------
             // The .ddp or .dsk is now in ROM_Memory[]
-            if (isAdamDDP())
+            // We need to convert this to an FDID image
+            // for use with the core emulation.
+            // ------------------------------------------
+            if (isAdamDDP(0))
             {
+                // We always insert the first .ddp chosen as TAPE0
                 ChangeTape(0, path);
-                strcpy(lastDiskDataPath, path);
             }
             else
             {
+                // We always insert the first .dsk chosen as DISK0
+                strcpy(lastDiskDataPath[0], path);
                 ChangeDisk(0, path);
-                strcpy(lastDiskDataPath, path);
-            }            
+            }
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {
@@ -618,7 +627,7 @@ u8 loadrom(const char *path,u8 * ptr)
         }
         else if (einstein_mode)
         {
-            strcpy(lastDiskDataPath, path);
+            strcpy(lastDiskDataPath[0], path);
             ein_disk_size[0] = romSize;     // Might be a .COM file but we just reuse the einstein disk size variable
             if (romSize == 1626)            // A bit of a hack... the size of the Diagnostic ROM
             {
@@ -628,7 +637,7 @@ u8 loadrom(const char *path,u8 * ptr)
         }
         else if (creativision_mode)
         {
-            strcpy(lastDiskDataPath, path);
+            strcpy(lastDiskDataPath[0], path);
             creativision_loadrom(romSize);
         }
         else if (sg1000_mode)
@@ -655,10 +664,10 @@ u8 loadrom(const char *path,u8 * ptr)
         {
             memcpy(ptr, ROM_Memory, romSize);
         }
-        else    // No - must be Mega Cart (MC) Bankswitched!!  
+        else    // No - must be Mega Cart (MC) Bankswitched!!
         {
             // --------------------------------------------------------------
-            // Mega Carts have a special byte pattern in the upper block... 
+            // Mega Carts have a special byte pattern in the upper block...
             // but we need to distinguish between 64k Activision PCB and
             // possible 64K Megacart (theoretically MC should be 128K+ but
             // there are examples of 64K MegaCarts). This code does that...
@@ -677,7 +686,7 @@ u8 loadrom(const char *path,u8 * ptr)
                 bMagicMegaCart = 1;
                 memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
                 MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
-                
+
                 if      (romSize <= (64  * 1024)) romBankMask = 0x03;
                 else if (romSize <= (128 * 1024)) romBankMask = 0x07;
                 else if (romSize <= (256 * 1024)) romBankMask = 0x0F;
@@ -688,15 +697,15 @@ u8 loadrom(const char *path,u8 * ptr)
         bOK = 1;
     }
     else fclose(handle);
-      
-    // -------------------------------------------------------------------------  
-    // For some combinations, we have hotspots or other memory stuff that 
+
+    // -------------------------------------------------------------------------
+    // For some combinations, we have hotspots or other memory stuff that
     // needs to be more complicated than simply returning RAM_Memory[].
-    // -------------------------------------------------------------------------  
+    // -------------------------------------------------------------------------
     bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || adam_mode || msx_sram_enabled || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
 
     // -----------------------------------------------------------------------
-    // To speed up processing in the memory write functions, we accumulate 
+    // To speed up processing in the memory write functions, we accumulate
     // the bits so we only have to fetch one machine_mode variable.
     // -----------------------------------------------------------------------
     if      (pencil2_mode)      machine_mode = MODE_PENCIL2;
@@ -715,16 +724,16 @@ u8 loadrom(const char *path,u8 * ptr)
 }
 
 // --------------------------------------------------------------------------
-// Based on writes to Port53 and Port60 we configure the SGM handling of 
+// Based on writes to Port53 and Port60 we configure the SGM handling of
 // memory... this includes 24K vs 32K of RAM (the latter is BIOS disabled).
 // --------------------------------------------------------------------------
 void SetupSGM(void)
 {
     if (SGM_NeverEnable) return;        // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
     if (adam_mode) return;
-    
+
     sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
-    
+
     // ----------------------------------------------------------------
     // The first time we enable the SGM expansion RAM, we clear it out
     // ----------------------------------------------------------------
@@ -733,15 +742,15 @@ void SetupSGM(void)
         memset(RAM_Memory+0x2000, 0x00, 0x6000);
         bFirstSGMEnable = false;
     }
-    
+
     // ------------------------------------------------------
-    // And Port 60 will tell us if we want to swap out the 
+    // And Port 60 will tell us if we want to swap out the
     // lower 8K bios for more RAM (total of 32K RAM for SGM)
     // Since this can swap back and forth (not sure if any
     // game really does this), we need to preserve that 8K
     // when we switch back and forth...
     // ------------------------------------------------------
-    if (Port60 & 0x02)  
+    if (Port60 & 0x02)
     {
       if (sgm_low_addr != 0x2000)
       {
@@ -749,13 +758,13 @@ void SetupSGM(void)
           MemoryMap[0] = BIOS_Memory + 0x0000;
       }
     }
-    else 
+    else
     {
       sgm_enable = true;    // Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
       if (sgm_low_addr != 0x0000)
       {
           MemoryMap[0] = RAM_Memory + 0x0000;
-          sgm_low_addr = 0x0000; 
+          sgm_low_addr = 0x0000;
       }
     }
 }
@@ -772,7 +781,7 @@ void adam_setup_bios(void)
     memcpy(BIOS_Memory+0x8000, AdamEOS,    0x2000);
     memcpy(BIOS_Memory+0xA000, ColecoBios, 0x2000);
 }
-    
+
 // ================================================================================================
 // Setup Adam based on Port60 (Adam Memory) and Port20 (AdamNet)
 // Most of this hinges around Port60:
@@ -781,19 +790,19 @@ void adam_setup_bios(void)
 //       01 = Onboard RAM (lower 32K)
 //       10 = Expansion RAM.  Bank switch chosen by port 0x42
 //       11 = OS-7 and 24K RAM (ColecoVision mode)
-// 
+//
 // xxxx NNxx  : Upper address space code.
 //       00 = Onboard RAM (upper 32K)
 //       01 = Expansion ROM (those extra ROM sockets)
 //       10 = Expansion RAM.  Bank switch chosen by port 0x42
 //       11 = Cartridge ROM (ColecoVision mode).
-// 
+//
 // And Port20: bit 1 (0x02) to determine if EOS.ROM is present on top of WRITER.ROM
 // ================================================================================================
 void SetupAdam(bool bResetAdamNet)
 {
     if (!adam_mode) return;
-    
+
     // ----------------------------------
     // Configure lower 32K of memory
     // ----------------------------------
@@ -804,7 +813,7 @@ void SetupAdam(bool bResetAdamNet)
         MemoryMap[0] = BIOS_Memory + 0x0000;
         MemoryMap[1] = BIOS_Memory + 0x2000;
         MemoryMap[2] = BIOS_Memory + 0x4000;
-        if (Port20 & 0x02) 
+        if (Port20 & 0x02)
         {
             MemoryMap[3] = BIOS_Memory + 0x8000;    // EOS
         }
@@ -870,7 +879,7 @@ void SetupAdam(bool bResetAdamNet)
         adam_ram_hi = false;
         adam_ram_hi_exp = false;
     }
-    
+
     // Check if we are to Reset the AdamNet
     if (bResetAdamNet)  ResetPCB();
 }
@@ -880,10 +889,10 @@ unsigned char cpu_readport_pencil2(register unsigned short Port)
     u8 key = 0x00;
     // PencilII ports are 8-bit
     Port &= 0x00FF;
-    
+
     if ((Port & 0xE0) == 0xE0)
     {
-        switch(Port) 
+        switch(Port)
         {
             case 0xE0: // Joystick/Keypad Data
               Port = (Port&0x02) ? (JoyState>>16):JoyState;
@@ -963,7 +972,7 @@ unsigned char cpu_readport_pencil2(register unsigned short Port)
     }
     else
     {
-        switch(Port & 0xE0) 
+        switch(Port & 0xE0)
         {
             case 0x20:
               return Port20 & 0x0F;
@@ -983,46 +992,46 @@ unsigned char cpu_readport_pencil2(register unsigned short Port)
     }
 
     // No such port
-    return(NORAM);    
+    return(NORAM);
 }
 
 /** InZ80() **************************************************/
 /** Z80 emulation calls this function to read a byte from   **/
 /** a given I/O port.                                       **/
 /*************************************************************/
-ITCM_CODE unsigned char cpu_readport16(register unsigned short Port) 
+ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2))
   {
       if (machine_mode & MODE_MSX)      {return cpu_readport_msx(Port);}
-      if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}    
-      if (machine_mode & MODE_SORDM5)   {return cpu_readport_m5(Port);}    
-      if (machine_mode & MODE_PV2000)   {return cpu_readport_pv2000(Port);}    
-      if (machine_mode & MODE_MEMOTECH) {return cpu_readport_memotech(Port);}    
+      if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}
+      if (machine_mode & MODE_SORDM5)   {return cpu_readport_m5(Port);}
+      if (machine_mode & MODE_PV2000)   {return cpu_readport_pv2000(Port);}
+      if (machine_mode & MODE_MEMOTECH) {return cpu_readport_memotech(Port);}
       if (machine_mode & MODE_SVI)      {return cpu_readport_svi(Port);}
       if (machine_mode & MODE_EINSTEIN) {return cpu_readport_einstein(Port);}
       if (machine_mode & MODE_PENCIL2)  {return cpu_readport_pencil2(Port);}
   }
-    
+
   // Colecovision ports are 8-bit
-  Port &= 0x00FF; 
-  
+  Port &= 0x00FF;
+
   // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
       return ay38910DataR(&myAY);
-  } 
+  }
 
-  switch(Port&0xE0) 
+  switch(Port&0xE0)
   {
     case 0x20:
       return Port20 & 0x0F;
       break;
-          
+
     case 0x40: // Printer Status - not used
       return(0xFF);
       break;
-   
+
     case 0x60:  // Adam/Memory Port
       return Port60;
       break;
@@ -1045,7 +1054,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 /** Z80 emulation calls this function to write a byte to a  **/
 /** given I/O port.                                         **/
 /*************************************************************/
-ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value) 
+ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
   {
@@ -1057,7 +1066,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value);      return;}
       if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
   }
-    
+
   // Colecovision ports are 8-bit
   Port &= 0x00FF;
 
@@ -1065,11 +1074,11 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // Port 53 is used for the Super Game Module to enable SGM mode...
   // -----------------------------------------------------------------
   if (Port == 0x53 && !adam_mode) {Port53 = Value; SetupSGM(); return;}
-    
+
   // -----------------------------------------------
   // Port 50 is the AY sound chip register index...
   // -----------------------------------------------
-  else if (Port == 0x50)  
+  else if (Port == 0x50)
   {
       if ((Value & 0x0F) == 0x07) {AY_Enable = (AY_NeverEnable ? false:true);}
       ay38910IndexW(Value&0xF, &myAY);
@@ -1078,23 +1087,23 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   // Port 51 is the AY Sound chip register write...
   // -----------------------------------------------
-  else if (Port == 0x51) 
+  else if (Port == 0x51)
   {
     ay38910DataW(Value, &myAY);
     return;
   }
-  
+
   // ---------------------------------------------------------------------------
   // Now handle the rest of the CV ports - this handles the mirroring of
   // port writes - for example, a write to port 0x7F will hit 0x60 Memory Port
   // ---------------------------------------------------------------------------
   bool resetAdamNet = false;
-  switch(Port&0xE0) 
+  switch(Port&0xE0)
   {
     case 0x80:  // Set Joystick Read Mode
       JoyMode=JOYMODE_JOYSTICK;
       return;
-    case 0xC0:  // Set Keypad Read Mode 
+    case 0xC0:  // Set Keypad Read Mode
       JoyMode=JOYMODE_KEYPAD;
       return;
     case 0xE0:  // The SN Sound port
@@ -1115,13 +1124,13 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       resetAdamNet = false;
       Port60 = Value;
       if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
-      return;   
+      return;
   }
 }
 
 
 // -------------------------------------------------------------------------
-// For arious machines, we have patched the BIOS so that we trap calls 
+// For arious machines, we have patched the BIOS so that we trap calls
 // to various I/O routines: namely cassette access. We handle that here.
 // -------------------------------------------------------------------------
 void PatchZ80(register Z80 *r)
@@ -1137,23 +1146,23 @@ void PatchZ80(register Z80 *r)
 /** Z80 code for the loaded ROM. It runs code refreshing the **/
 /** VDP and checking for interrupt requests.                 **/
 /**************************************************************/
-ITCM_CODE u32 LoopZ80() 
+ITCM_CODE u32 LoopZ80()
 {
   static u16 spinnerDampen = 0;
   cpuirequest=0;
-    
+
   // ----------------------------------------------------------------------------
   // Special system as it runs an m6502 CPU core and is different than the Z80
   // ----------------------------------------------------------------------------
   if (creativision_mode)
   {
-      creativision_run();     
+      creativision_run();
   }
   else
-  {    
+  {
       // ------------------------------------------------------------------
-      // Before we execute Z80 or Loop the 9918 (both of which can cause 
-      // NMI interrupt to occur), we check and adjust the spinners which 
+      // Before we execute Z80 or Loop the 9918 (both of which can cause
+      // NMI interrupt to occur), we check and adjust the spinners which
       // can generate a lower priority interrupt to the running Z80 code.
       // ------------------------------------------------------------------
       if (spinner_enabled)
@@ -1162,14 +1171,14 @@ ITCM_CODE u32 LoopZ80()
           {
               if (spinX_left)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xFFFFCFFF;
                   JoyState   |= 0x00003000;
               }
               else if (spinX_right)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xFFFFCFFF;
                   JoyState   |= 0x00001000;
@@ -1177,26 +1186,26 @@ ITCM_CODE u32 LoopZ80()
 
               if (spinY_left)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xCFFFFFFF;
                   JoyState   |= 0x30000000;
               }
               else if (spinY_right)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt    
+                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xCFFFFFFF;
                   JoyState   |= 0x10000000;
               }
           }
       }
-      
+
       // ---------------------------------------------------------------
       // We current support two different Z80 cores... the DrZ80 is
       // (relatively) blazingly fast on the DS ARM processor but
       // the compatibilty isn't 100%. The CZ80 core is slower but
-      // has higher compatibilty. For now, the default core is 
+      // has higher compatibilty. For now, the default core is
       // DrZ80 for the DS-LITE/PHAT and CZ80 for the DSi and above.
       // The DSi has enough processing power to utilize this slower
       // but more accurate core. The user can switch cores as they like.
@@ -1206,7 +1215,7 @@ ITCM_CODE u32 LoopZ80()
           // Execute 1 scanline worth of CPU instructions
           cycle_deficit = DrZ80_execute(tms_cpu_line + cycle_deficit);
 
-          // Refresh VDP 
+          // Refresh VDP
           if(Loop9918()) cpuirequest = ((machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SVI)) ? Z80_IRQ_INT : Z80_NMI_INT);
 
           // Generate interrupt if called for
@@ -1221,24 +1230,24 @@ ITCM_CODE u32 LoopZ80()
           u32 cycles_to_process = tms_cpu_line + cycle_deficit;
           cycle_deficit = ExecZ80(cycles_to_process);
 
-          // Refresh VDP 
-          if(Loop9918()) 
+          // Refresh VDP
+          if(Loop9918())
           {
               CPU.IRequest = vdp_int_source;    // Use the proper VDP interrupt souce (set in TMS9918 init)
           }
           else if (ctc_enabled)
           {
               // -------------------------------------------------------------------------
-              // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer 
+              // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer
               // circuit that needs attention - this isnt timing accurate but it's good
               // enough to allow those timers to trigger and the games to be played.
               // -------------------------------------------------------------------------
               if (CPU.IRequest == INT_NONE)
               {
-                  CTC_Timer(cycles_to_process);    
+                  CTC_Timer(cycles_to_process);
               }
               if (CPU.IRequest == INT_NONE)
-              {              
+              {
                   if (einstein_mode)  // For Einstein, check if the keyboard is generating an interrupt...
                   {
                       einstein_handle_interrupts();
@@ -1254,11 +1263,11 @@ ITCM_CODE u32 LoopZ80()
           }
 
           // Generate an interrupt if called for...
-          if(CPU.IRequest!=INT_NONE) 
+          if(CPU.IRequest!=INT_NONE)
           {
               IntZ80(&CPU, CPU.IRequest);
               CPU.User++;   // Track Interrupt Requests
-              if (pv2000_mode) 
+              if (pv2000_mode)
               {
                   extern void pv2000_check_kbd(void);
                   pv2000_check_kbd();
@@ -1267,14 +1276,14 @@ ITCM_CODE u32 LoopZ80()
 
       }
   }
-    
-  // Drop out unless end of screen is reached 
+
+  // Drop out unless end of screen is reached
   if (CurLine == tms_end_line)
   {
       // ------------------------------------------------------------------------------------
-      // If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it), 
+      // If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it),
       // then we need to service it here. We basically track the frequency at which the
-      // game has hit the beeper and approximate that by using AY Channel A to produce the 
+      // game has hit the beeper and approximate that by using AY Channel A to produce the
       // tone.  This is crude and doesn't sound quite right... but good enough.
       // ------------------------------------------------------------------------------------
       if (myConfig.msxBeeper)
@@ -1284,7 +1293,7 @@ ITCM_CODE u32 LoopZ80()
       }
       return 0;
   }
-  return 1;    
+  return 1;
 }
 
 // End of file

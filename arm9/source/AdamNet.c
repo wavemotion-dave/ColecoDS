@@ -748,16 +748,16 @@ byte ChangeDisk(byte N,const char *FileName)
 
   /* Eject disk if requested */
   if(!FileName) { EjectFDI(&Disks[N]);return(1); }
-
+  
   /* If FileName not empty, try loading disk image */
-  if(*FileName && LoadFDI(&Disks[N],FileName,(LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK)))
+  if(*FileName && LoadFDI(&Disks[N],FileName,(LastROMSize > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK))) // Should be 160 but we allow 2K overdump before we switch to 320K
   {
     /* Done */
     return(1);
   }
 
   /* If no existing file, create a new 160kB or 320kB disk image */
-  P = FormatFDI(&Disks[N],(LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
+  P = FormatFDI(&Disks[N],(LastROMSize > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK));  // Should be 160 but we allow 2K overdump before we switch to 320K
   return(!!P);
 }
 
