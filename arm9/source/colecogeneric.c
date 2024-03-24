@@ -1420,6 +1420,7 @@ void SetDefaultGameConfig(void)
     if (msx_mode == 3)                          myConfig.overlay = 1;  // MSX with .dsk defaults to full keyboard
     if (msx_mode == 2)                          myConfig.msxBios = myGlobalConfig.defaultMSX;  // If loading cassette, must have real MSX bios
     if (adam_mode)                              myConfig.memWipe = 1;  // Adam defaults to clearing memory to a specific pattern.
+    if (adam_mode)                              myConfig.mirrorRAM = 0;// Adam does not mirror RAM as a Colecovision would
     if (msx_mode && (file_size >= (64*1024)))   myConfig.vertSync= 0;  // For bankswiched MSX games, disable VSync to gain speed
     if (memotech_mode)                          myConfig.overlay = 1;  // Memotech MTX default to full keyboard
     if (einstein_mode)                          myConfig.overlay = 1;  // Tatung Einstein defaults to full keyboard

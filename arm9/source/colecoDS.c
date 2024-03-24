@@ -1577,13 +1577,13 @@ void CassetteMenu(void)
                     break;
                     
                 case MENU_ACTION_SAVE1:
-                    if (adam_mode)
+                    if (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
                     {
-                        SaveAdamTape();
-                    }
-                    else if (einstein_mode)
-                    {
-                        if  (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
+                        if (adam_mode)
+                        {
+                            SaveAdamTape();
+                        }
+                        else if (einstein_mode)
                         {
                             DSPrint(10,0,6, "SAVING");
                             einstein_save_disk(1);
@@ -1591,8 +1591,8 @@ void CassetteMenu(void)
                             DSPrint(10,0,6, "      ");
                             bExitMenu = true;
                         }
-                        CassetteMenuShow(true, menuSelection);
                     }
+                    CassetteMenuShow(true, menuSelection);
                     break;
 
                 case MENU_ACTION_INST_RAMDISK:
