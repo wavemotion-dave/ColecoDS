@@ -635,8 +635,8 @@ void ResetColecovision(void)
   einstein_reset();                     // Reset the Tatung Einstein specific vars
 
   adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
-  disk_unsaved_data[0] = 0;             // No unsaved ADAM tape/disk data to start
-  disk_unsaved_data[1] = 0;             // No unsaved ADAM tape/disk data to start
+  disk_unsaved_data[0] = 0;             // No unsaved tape/disk data to start
+  disk_unsaved_data[1] = 0;             // No unsaved tape/disk data to start
 
   write_EE_counter=0;                   // Nothing to write for EEPROM yet
     
@@ -910,12 +910,11 @@ void ShowDebugZ80(void)
 }
 
 // ----------------------------------------------------------------
-// Check if we have an ADAM .ddp file (otherwise assume .dsk file)
+// Check if we have a tape or disk in the appopriate drive bay
 // ----------------------------------------------------------------
-bool isAdamDDP(u8 disk)
+bool isBayLoaded(u8 drive_bay)
 {
-    if ((strstr(lastDiskDataPath[disk], ".ddp") != 0) || (strstr(lastDiskDataPath[disk], ".DDP") != 0)) return true;
-    return false;
+    return (lastDiskDataPath[drive_bay][0] == 0x00 ? false:true);
 }
 
 
@@ -1099,7 +1098,7 @@ void DisplayStatusLine(bool bForce)
                 // If global settings does not MUTE the sound effects...
                 if (!myGlobalConfig.diskSfxMute)
                 {
-                    if (isAdamDDP(1)) mmEffect(SFX_ADAM_DDP); else mmEffect(SFX_FLOPPY);
+                    if (isBayLoaded(BAY_TAPE)) mmEffect(SFX_ADAM_DDP); else mmEffect(SFX_FLOPPY);
                     playingSFX = 1;
                 }
             }
@@ -1203,13 +1202,13 @@ void SaveAdamDisk(void)
 {
     if (io_show_status) return; // Don't save while io status
 
-    if (!isAdamDDP(0))  // If we have a DISK loaded
+    if (isBayLoaded(BAY_DISK))  // If we have a DISK loaded
     {
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Disks[0], lastDiskDataPath[0], (LastROMSize == (320*1024) ? FMT_ADMDSK320:FMT_ADMDSK));
+        SaveFDI(&Disks[0], lastDiskDataPath[BAY_DISK], (LastROMSize > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
-        disk_unsaved_data[0] = 0;
+        disk_unsaved_data[BAY_DISK] = 0;
     }
 }
 
@@ -1218,13 +1217,13 @@ void SaveAdamTape(void)
 {
     if (io_show_status) return; // Don't save while io status
 
-    if (isAdamDDP(1))  // If we have a TAPE loaded
+    if (isBayLoaded(BAY_TAPE))  // If we have a TAPE loaded
     {
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Tapes[0], lastDiskDataPath[1], FMT_DDP);
+        SaveFDI(&Tapes[0], lastDiskDataPath[BAY_TAPE], FMT_DDP);
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
-        disk_unsaved_data[1] = 0;
+        disk_unsaved_data[BAY_TAPE] = 0;
     }
 }
 
@@ -1249,8 +1248,8 @@ void DigitalInsertDisk(char *filename)
         // --------------------------------------------
         // And set it as the .dsk for this DISK drive
         // --------------------------------------------
-        strcpy(lastDiskDataPath[0], filename);
-        ChangeDisk(0, lastDiskDataPath[0]);
+        strcpy(lastDiskDataPath[BAY_DISK], filename);
+        ChangeDisk(0, lastDiskDataPath[BAY_DISK]);
    } else LastROMSize = 0;
 }
 
@@ -1271,8 +1270,8 @@ void DigitalInsertTape(char *filename)
         // --------------------------------------------
         // And set it as the .ddp for this TAPE drive
         // --------------------------------------------
-        strcpy(lastDiskDataPath[1], filename);
-        ChangeTape(0, lastDiskDataPath[1]);
+        strcpy(lastDiskDataPath[BAY_TAPE], filename);
+        ChangeTape(0, lastDiskDataPath[BAY_TAPE]);
    } else LastROMSize = 0;
 }
 
@@ -1467,10 +1466,10 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     // --------------------------------------------------------------------
     if (adam_mode)
     {
-        if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK HAS UNSAVED DATA! ");
-        if (disk_unsaved_data[1]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " TAPE HAS UNSAVED DATA! ");
-        snprintf(tmp, 31, "DISK: %s", lastDiskDataPath[0]); tmp[31] = 0;  DSPrint(1, 21, 0, tmp);
-        snprintf(tmp, 31, "TAPE: %s", lastDiskDataPath[1]); tmp[31] = 0;  DSPrint(1, 22, 0, tmp);
+        if (disk_unsaved_data[BAY_DISK]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK HAS UNSAVED DATA! ");
+        if (disk_unsaved_data[BAY_TAPE]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " TAPE HAS UNSAVED DATA! ");
+        snprintf(tmp, 31, "DISK: %s", lastDiskDataPath[BAY_DISK]); tmp[31] = 0;  DSPrint(1, 21, 0, tmp);
+        snprintf(tmp, 31, "TAPE: %s", lastDiskDataPath[BAY_TAPE]); tmp[31] = 0;  DSPrint(1, 22, 0, tmp);
     }
     else if (msx_mode)
     {

@@ -87,6 +87,8 @@ extern "C" {
 #define CON_OK       0xFE
 #define CON_EXIT     0xFF
 
+#define BAY_DISK     0
+#define BAY_TAPE     1
     
 #ifndef BYTE_TYPE_DEFINED
 #define BYTE_TYPE_DEFINED
