@@ -396,9 +396,26 @@ void AdamCheckFlushCache(void)
     } else check_flush_idx = 0;
 }
 
+static void ReadStatusDCB(byte Dev)
+{
+    if (io_busy)
+    {
+      SetDCB(Dev,DCB_CMD_STAT,0x00);
+      
+      if (--io_busy == 0 && read_cache_available)
+      {
+          AdamFlushCache();
+      }
+    }
+    else
+    {
+      SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
+    }
+}
+
 static void UpdateDSK(byte N,byte Dev,int V)
 {
-  static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // Skew = 5
+  static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // The ADAM uses a sector Skew = 5
   int I,J,K,LEN,SEC;
   word BUF;
   byte *Data;
@@ -409,19 +426,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
   /* If reading DCB status, stop here */
   if(V<0)
   {
-      if (io_busy)
-      {
-          SetDCB(Dev,DCB_CMD_STAT,0x00);
-          
-          if (--io_busy == 0 && read_cache_available)
-          {
-              AdamFlushCache();
-          }
-      }
-      else
-      {
-         SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
-      }
+      ReadStatusDCB(Dev);
       return;
   }
 
@@ -443,7 +448,6 @@ static void UpdateDSK(byte N,byte Dev,int V)
     case CMD_WRITE:
     case CMD_READ:
       io_show_status = (V==CMD_READ) ? 1:2;
-      if (io_show_status == 2) disk_unsaved_data[N] = 1;
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
       io_busy = (V==CMD_READ ? DELAY_IO_READ : DELAY_IO_WRITE);
@@ -494,6 +498,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
           {
               Data[J] = RAM_Memory[BUF];
           }
+          disk_unsaved_data[BAY_DISK] = 1;
         }
         /* If disk access failed, stop here */
         if(J<K)
@@ -517,19 +522,8 @@ static void UpdateTAP(byte N,byte Dev,int V)
   /* If reading DCB status, stop here */
   if(V<0)
   {
-      if (io_busy)
-      {
-          SetDCB(Dev,DCB_CMD_STAT,0x00);
-          if (--io_busy == 0 && read_cache_available)
-          {
-              AdamFlushCache();
-          }
-      }
-      else
-      {
-        SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
-      }
-    return;
+      ReadStatusDCB(Dev);
+      return;
   }
 
   /* Reset errors, report missing tapes */
@@ -550,7 +544,6 @@ static void UpdateTAP(byte N,byte Dev,int V)
     case CMD_WRITE:
     case CMD_READ:
       io_show_status = (V==CMD_READ) ? 1:2;
-      if (io_show_status == 2) disk_unsaved_data[N] = 1;
       
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
@@ -595,7 +588,11 @@ static void UpdateTAP(byte N,byte Dev,int V)
         }
         else
         {
-          for(J=0;J<K;++J,++BUF) Data[J] = RAM(BUF);
+          for(J=0;J<K;++J,++BUF) 
+          {
+              Data[J] = RAM(BUF);
+          }
+          disk_unsaved_data[BAY_TAPE] = 1;
         }
         /* If disk access failed, stop here */
         if(J<K)

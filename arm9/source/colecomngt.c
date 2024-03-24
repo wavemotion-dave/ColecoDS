@@ -345,8 +345,9 @@ u8 colecoInit(char *szGame)
       memset((u8*)0x6820000, 0x00, 0x20000);    // The 128K ADAM RAM is wiped clean
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start
-      adam_CapsLock = 0;
-      disk_unsaved_data[0] = 0;
+      adam_CapsLock = 0;                 // CAPS Lock disabled to start
+      disk_unsaved_data[BAY_DISK] = 0;   // No unsaved DISK data to start
+      disk_unsaved_data[BAY_TAPE] = 0;   // No unsaved TAPE data to start
       
       // Clear existing drives of any disks/tapes and load the new game up      
       for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
@@ -598,8 +599,8 @@ u8 loadrom(const char *path,u8 * ptr)
             LastROMSize = romSize;       // So we know how big the original .dsk was
             SetupAdam(false);            // And make sure the ADAM is ready
 
-            strcpy(lastDiskDataPath[0], "");    // Nothing loaded in the DISK drive yet
-            strcpy(lastDiskDataPath[1], "");    // Nothing loaded in the TAPE drive yet
+            strcpy(lastDiskDataPath[BAY_DISK], "");    // Nothing loaded in the DISK drive yet
+            strcpy(lastDiskDataPath[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
 
             // ------------------------------------------
             // The .ddp or .dsk is now in ROM_Memory[]
@@ -609,13 +610,13 @@ u8 loadrom(const char *path,u8 * ptr)
             if ((strcasecmp(strrchr(path, '.'), ".ddp") == 0))  // Is this a TAPE image (.ddp)?
             {
                 // Insert the tape into the virtual TAPE drive
-                strcpy(lastDiskDataPath[1], path);
+                strcpy(lastDiskDataPath[BAY_TAPE], path);
                 ChangeTape(0, path);
             }
             else // Must be a .dsk file
             {
                 // Insert the disk into the virtual DISK drive
-                strcpy(lastDiskDataPath[0], path);
+                strcpy(lastDiskDataPath[BAY_DISK], path);
                 ChangeDisk(0, path);
             }
         }
