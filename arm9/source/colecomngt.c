@@ -598,22 +598,23 @@ u8 loadrom(const char *path,u8 * ptr)
             LastROMSize = romSize;       // So we know how big the original .dsk was
             SetupAdam(false);            // And make sure the ADAM is ready
 
-            strcpy(lastDiskDataPath[0], path);  // Load up Drive 1 to start
-            strcpy(lastDiskDataPath[1], "");    // Nothing loaded in DRIVE 2 yet
+            strcpy(lastDiskDataPath[0], "");    // Nothing loaded in the DISK drive yet
+            strcpy(lastDiskDataPath[1], "");    // Nothing loaded in the TAPE drive yet
 
             // ------------------------------------------
             // The .ddp or .dsk is now in ROM_Memory[]
             // We need to convert this to an FDID image
             // for use with the core emulation.
             // ------------------------------------------
-            if (isAdamDDP(0))
+            if ((strcasecmp(strrchr(path, '.'), ".ddp") == 0))  // Is this a TAPE image (.ddp)?
             {
-                // We always insert the first .ddp chosen as TAPE0
+                // Insert the tape into the virtual TAPE drive
+                strcpy(lastDiskDataPath[1], path);
                 ChangeTape(0, path);
             }
-            else
+            else // Must be a .dsk file
             {
-                // We always insert the first .dsk chosen as DISK0
+                // Insert the disk into the virtual DISK drive
                 strcpy(lastDiskDataPath[0], path);
                 ChangeDisk(0, path);
             }
@@ -1228,7 +1229,7 @@ ITCM_CODE u32 LoopZ80()
           // Execute 1 scanline worth of CPU instructions
           u32 cycles_to_process = tms_cpu_line + cycle_deficit;
           cycle_deficit = ExecZ80(cycles_to_process);
-
+          
           // Refresh VDP
           if(Loop9918())
           {
@@ -1272,7 +1273,6 @@ ITCM_CODE u32 LoopZ80()
                   pv2000_check_kbd();
               }
           }
-
       }
   }
 
@@ -1289,6 +1289,10 @@ ITCM_CODE u32 LoopZ80()
       {
           if (msx_mode) MSX_HandleBeeper();
           else if (einstein_mode) einstein_HandleBeeper();
+      }
+      else if (adam_mode)
+      {
+          AdamCheckFlushCache();    // Make sure the DSK is up to date
       }
       return 0;
   }

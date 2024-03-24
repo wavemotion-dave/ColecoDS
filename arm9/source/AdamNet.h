@@ -103,7 +103,6 @@ extern u8 HoldingBuf[];
 extern u8  io_busy, KBDStatus, LastKey, DiskID;
 extern u16 savedBUF, savedLEN, PCBAddr;
 
-
 /** ReadPCB() ************************************************/
 /** Read value from a given PCB or DCB address.             **/
 /*************************************************************/
@@ -128,7 +127,7 @@ byte ChangeTape(byte N,const char *FileName);
 byte ChangeDisk(byte N,const char *FileName);
 
 void AdamCheckFlushCache(void);
-    
+   
 #ifdef __cplusplus
 }
 #endif

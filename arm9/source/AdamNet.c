@@ -26,13 +26,15 @@ FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
 FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
 byte HoldingBuf[4096];
-u8 io_busy= 0;
-word savedBUF = 0;
-word savedLEN = 0;
-byte last_command_read=false;
-byte io_show_status=0;
+u8 io_busy                  = 0;
+word savedBUF               = 0;
+word savedLEN               = 0;
+byte read_cache_available   = false;
+byte io_show_status         = 0;
+byte fast_flush             = 0;
 
-#define DELAY_IO    10
+#define DELAY_IO_READ       10
+#define DELAY_IO_WRITE      255
 
 /** RAM Access Macro *****************************************/
 #define RAM(A)         (RAM_Memory[A])
@@ -145,7 +147,7 @@ static const byte CtrlKey[256] =
 
 extern byte Port60;
 
-// Steal 64K at the back-end of the cart buffer... plenty of room here and
+// Steal 64K at the back-end of the cart buffer... we have room here and
 // we don't want to allocate another 64K when we have plenty of space.
 byte *PCBTable = ROM_Memory+((MAX_CART_SIZE)*1024) - 0x10000;
 
@@ -231,6 +233,7 @@ static int IsPCB(word A)
 {
   /* Quick check for PCB presence */
   if(!PCBTable[A]) return(0);
+  
   /* Check if PCB is mapped in */
   if((A<0x2000) && ((Port60&0x03)!=1)) return(0);
   if((A<0x8000) && ((Port60&0x03)!=1) && ((Port60&0x03)!=3)) return(0);
@@ -368,19 +371,34 @@ static void UpdatePRN(byte Dev,int V)
   }
 }
 
-static void AdamFlushCache(void)
+void AdamFlushCache(void)
 {
   for (word i=0; i<savedLEN; i++)
   {
       // Copy data from holding buffer...
-      RAM_Memory[savedBUF] = HoldingBuf[i];
-      savedBUF++;
+      RAM_Memory[savedBUF++] = HoldingBuf[i];
   }
+  read_cache_available = false;
+}
+
+void AdamCheckFlushCache(void)
+{
+    static u8 check_flush_idx=0;
+
+    if (read_cache_available) 
+    {
+      if (++check_flush_idx > (fast_flush ? 0:30)) // Half Second at 60fps
+      {
+        AdamFlushCache(); 
+        io_busy=0;
+        check_flush_idx=0;
+      }
+    } else check_flush_idx = 0;
 }
 
 static void UpdateDSK(byte N,byte Dev,int V)
 {
-  static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 };
+  static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // Skew = 5
   int I,J,K,LEN,SEC;
   word BUF;
   byte *Data;
@@ -393,12 +411,10 @@ static void UpdateDSK(byte N,byte Dev,int V)
   {
       if (io_busy)
       {
-          io_busy--;
           SetDCB(Dev,DCB_CMD_STAT,0x00);
           
-          if (io_busy == 0 && last_command_read)
+          if (--io_busy == 0 && read_cache_available)
           {
-              last_command_read=0;
               AdamFlushCache();
           }
       }
@@ -406,8 +422,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
       {
          SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
       }
-    return;
-    return;
+      return;
   }
 
   /* Reset errors, report missing disks */
@@ -428,19 +443,27 @@ static void UpdateDSK(byte N,byte Dev,int V)
     case CMD_WRITE:
     case CMD_READ:
       io_show_status = (V==CMD_READ) ? 1:2;
-      if (io_show_status == 2) disk_unsaved_data[0] = 1;
+      if (io_show_status == 2) disk_unsaved_data[N] = 1;
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
-      io_busy = DELAY_IO;
+      io_busy = (V==CMD_READ ? DELAY_IO_READ : DELAY_IO_WRITE);
+      
       /* If no disk, stop here */
       if(!Disks[N].Data) break;
+      
       /* Determine buffer address, length, block number */
       BUF = GetDCBBase(Dev);
       LEN = GetDCBLen(Dev);
-      LEN = LEN<0x0400? LEN:0x0400;
+      LEN = LEN<0x0400 ? LEN:0x0400;
       SEC = GetDCBSector(Dev);
+
+      // ---------------------------------------------------------------
+      // If we are a READ command, we buffer slightly as some programs 
+      // will start reading the NEXT block while processing the last.
+      // ---------------------------------------------------------------
       savedBUF = BUF;
       savedLEN = LEN;
+      
       /* For each 512-byte sector... */
       for(I=0, SEC<<=1 ; I<LEN ; ++SEC, I+=0x200)
       {
@@ -459,7 +482,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
         K = I+0x200>LEN? LEN-I:0x200;
         if(V==CMD_READ)
         {
-            last_command_read = true;
+            read_cache_available = true;
             for(J=0;J<K;++J,++BUF) 
             {
                 HoldingBuf[I+J] = Data[J];
@@ -467,7 +490,6 @@ static void UpdateDSK(byte N,byte Dev,int V)
         }
         else
         {
-          last_command_read = false;
           for(J=0;J<K;++J,++BUF) 
           {
               Data[J] = RAM_Memory[BUF];
@@ -497,11 +519,9 @@ static void UpdateTAP(byte N,byte Dev,int V)
   {
       if (io_busy)
       {
-          io_busy--;
           SetDCB(Dev,DCB_CMD_STAT,0x00);
-          if (io_busy == 0 && last_command_read)
+          if (--io_busy == 0 && read_cache_available)
           {
-              last_command_read = 0;
               AdamFlushCache();
           }
       }
@@ -530,10 +550,12 @@ static void UpdateTAP(byte N,byte Dev,int V)
     case CMD_WRITE:
     case CMD_READ:
       io_show_status = (V==CMD_READ) ? 1:2;
-      if (io_show_status == 2) disk_unsaved_data[0] = 1;
+      if (io_show_status == 2) disk_unsaved_data[N] = 1;
+      
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
-      io_busy = DELAY_IO;
+      io_busy = (V==CMD_READ ? DELAY_IO_READ : DELAY_IO_WRITE);
+      
       /* If no tape, stop here */
       if(!Tapes[N].Data) break;
       /* Determine buffer address, length, block number */
@@ -541,6 +563,11 @@ static void UpdateTAP(byte N,byte Dev,int V)
       LEN = GetDCBLen(Dev);
       LEN = LEN<0x0400? LEN:0x0400;
       SEC = GetDCBSector(Dev);
+
+      // ---------------------------------------------------------------
+      // If we are a READ command, we buffer slightly as some programs 
+      // will start reading the NEXT block while processing the last.
+      // ---------------------------------------------------------------
       savedBUF = BUF;
       savedLEN = LEN;
       
@@ -560,7 +587,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
         K = I+0x200>LEN? LEN-I:0x200;
         if(V==CMD_READ)
         {
-          last_command_read = true;
+          read_cache_available = true;
           for(J=0;J<K;++J,++BUF) 
           {
               HoldingBuf[I+J] = Data[J];
@@ -568,7 +595,6 @@ static void UpdateTAP(byte N,byte Dev,int V)
         }
         else
         {
-          last_command_read = false;
           for(J=0;J<K;++J,++BUF) Data[J] = RAM(BUF);
         }
         /* If disk access failed, stop here */
@@ -703,7 +729,7 @@ void ResetPCB(void)
   io_busy  = 0;
   savedBUF = 0;
   savedLEN = 0;
-  last_command_read=false;
+  read_cache_available=false;
   io_show_status=0;
 }
 
