@@ -43,8 +43,7 @@ static const struct { int Sides,Tracks,Sectors,SecSize; } Formats[] =
   { 2,  40, 8,  512 }, /* FMT_ADMDSK320 - Coleco Adam disk 320K */
 };
 
-static const int SecSizes[] =
-{ 128,256,512,1024,4096,0 };
+static const int SecSizes[] = { 128,256,512,1024,4096,0 };
 
 static const char FDIDiskLabel[] =
 "Disk image created by EMULib (C)Marat Fayzullin";
@@ -93,21 +92,23 @@ byte *NewFDI(FDIDisk *D,int Sides,int Tracks,int Sectors,int SecSize)
     
   if ((I+K) > MAX_FDID_SIZE) return 0;   // Too big...
   
-  // ----------------------------------------------------------
+  // -----------------------------------------------------------------
   // Reuse the huge ROM_Memory[] array as it has no other
   // use at this point and it's more efficient than allocating
   // another big chunk of memory off the heap!  We have space
-  // for two 320K Adam .DSK files (or .ddp files). The layout
-  // is this:
+  // for an ADAM Disk Drive at 320K and an Adam DDP Tape at 256K.
+  //
+  // The re-user of the ROM_Memory[] is as follows:
   // ROM_Memory+0K   is for the read-in buffer from the SD card.
-  // ROM_Memory+330K is the converted FDID image for DISK0
-  // ROM_Memory+660K is the converted FDID image for DISK1
-  // ----------------------------------------------------------
-  int offset = ((D == &Disks[0]) ? MAX_FDID_SIZE : (2*MAX_FDID_SIZE));
-  P = (byte*)ROM_Memory+offset;   // index into the big buffer depending on whether we are DISK0 or DISK1
+  // ROM_Memory+330K is the converted FDID image the Disk Image
+  // ROM_Memory+660K is the converted FDID image the Tape Image
+  // ROM_Memory - last 64K is for the PCBTable[]
+  // -----------------------------------------------------------------
+  int offset = ((D == &Disks[0]) ? (330*1024) : (660*1024));
+  P = (byte*)ROM_Memory+offset;   // index into the big buffer depending on whether we are the Disk drive or Tape drive
   memset(P,0x00,I+K);             // Clear out the disk buffer - we'll assemble the FDID image below
     
-  /* Eject previous disk image */
+  /* Eject previous disk/tape image */
   EjectFDI(D);
 
   /* Set disk dimensions according to format */

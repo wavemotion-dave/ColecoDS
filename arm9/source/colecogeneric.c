@@ -1083,7 +1083,7 @@ u8 colecoDSLoadFile(void)
     swiWaitForVBlank();
   }
     
-  // Remet l'ecran du haut en mode bitmap
+  // Wait for some key to be pressed before returning
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B | KEY_R | KEY_L | KEY_UP | KEY_DOWN))!=0);
   
   return 0x01;
@@ -1559,16 +1559,25 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xae4d50e9)                 myConfig.memWipe = 2;  // zork i - the great underground empire (1981) (infocom).dsk
     
     // ---------------------------------------------------------------
-    // Check for CP/M games which want memory and full keyboard
+    // Check for CP/M disks which want memory and full keyboard.
+    // Also check for T-DOS disks which want a faster cache flush.
     // ---------------------------------------------------------------
     if (adam_mode)
     {
-        for (int i=0; i<0x1000; i++)
+        extern u8 fast_flush;
+        fast_flush = 0;
+        for (int i=0; i<0x2000; i++)
         {
             if ((ROM_Memory[i] == 'C') && (ROM_Memory[i+1] == 'P') && (ROM_Memory[i+2] == '/') && (ROM_Memory[i+3] == 'M')) // Look for CP/M
             {
                 myConfig.memWipe = 2;  // Set to CPM clear pattern by default
                 myConfig.overlay = 1;  // And most CPM games are going to want a full keyboard
+                break;
+            }
+            if ((ROM_Memory[i] == 'T') && (ROM_Memory[i+1] == '-') && (ROM_Memory[i+2] == 'D') && (ROM_Memory[i+3] == 'O') && (ROM_Memory[i+4] == 'S')) // Look for T-DOS
+            {
+                myConfig.overlay = 1;  // And most T-DOS games are going to want a full keyboard
+                fast_flush = 1;        // Faster write-thru for T-DOS
                 break;
             }
         }
@@ -2323,7 +2332,7 @@ void ReadFileCRCAndConfig(void)
         FILE *fp = fopen(gpFic[ucGameChoice].szName, "rb");
         if (fp != NULL)
         {
-            fread(ROM_Memory, 1, 0x1000, fp);
+            fread(ROM_Memory, 1, 0x2000, fp);   // First 8K is enough...
             fclose(fp);
         }
     }
