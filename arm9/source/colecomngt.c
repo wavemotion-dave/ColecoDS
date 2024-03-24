@@ -151,8 +151,8 @@ void colecoWipeRAM(void)
   }
   else if (svi_mode)
   {
+    memset(RAM_Memory, 0xFF, 0x10000);
     for (int i=0; i< 0x8000; i++) RAM_Memory[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
-    memset(RAM_Memory,  0x00, 0x10000);
   }
   else if (msx_mode)
   {
@@ -164,17 +164,21 @@ void colecoWipeRAM(void)
   }
   else if (adam_mode)
   {
-      // ADAM has special handling...
-      u8 pattern = 0x00;                               // Default to all-clear
-      if (myConfig.memWipe == 1) pattern = 0x02;       // The 0x02 pattern tends to make most things start up properly... don't ask.
-      if (myConfig.memWipe == 2) pattern = 0x38;       // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
+      // ----------------------------------------------------------------------------------- ------------
+      // ADAM has special handling for memory clear. For some reason ADAM disks are finiky and I
+      // feel like some of this is voodoo - but it *mostly* works. I've tried to contact T.Cherryhomes 
+      // to try and demystify the way an ADAM comes up from a cold-start but have yet to hear an answer.
+      // ----------------------------------------------------------------------------------- ------------
+      u8 pattern = 0x00;                          // Default to all-clear
+      if (myConfig.memWipe == 1) pattern = 0x02;  // The 0x02 pattern tends to make most non-CPM disks start up properly... don't ask.
+      if (myConfig.memWipe == 2) pattern = 0x38;  // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
       for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? pattern : (rand() & 0xFF));
   }
   else if (einstein_mode)
   {
       for (int i=0; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
-  else  // Normal colecovision which has 1K of RAM and is mirrored
+  else  // Normal colecovision which has 1K of RAM and is mirrored (so each mirror gets the same byte)
   {
       for (int i=0; i<0x400; i++)
       {

@@ -419,7 +419,9 @@ V9.5: ??-???-2024 by wavemotion-dave
 * Tatung Einstein full keybaord now uses LED indicators under the SHIFT/CTRL/GRAPH and ALPHA LOCK keys for a visual improvement.
 * Tatung Einstein properly handles the backspace key when using the Alpha-Numeric keyboard overlay.
 * Adam full keyboard now uses an LED indicator under the CAPS LOCK button to indicate status.
-* Adam now properly handles 320K disk and two full disk drives (or tape drives) are supported.
+* Adam now properly handles 320K disk and two drive bays are virtually attacked (a disk drive and the internal Tape drive).
+* Adam no longer mirrors RAM as a Colecovision would.
+
 
 V9.4: 16-Mar-2024 by wavemotion-dave
 * Tatung Einstein improvements - more games run more correctly.
