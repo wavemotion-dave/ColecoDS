@@ -100,10 +100,10 @@ typedef unsigned char byte;
 typedef unsigned short word;
 #endif
     
-extern u8 *PCBTable;
+extern u16 *PCBTable;
 extern u8 HoldingBuf[];
-extern u8  io_busy, KBDStatus, LastKey, DiskID;
-extern u16 savedBUF, savedLEN, PCBAddr;
+extern u8 KBDStatus, LastKey, DiskID;
+extern u16 io_busy, savedBUF, savedLEN, PCBAddr;
 
 /** ReadPCB() ************************************************/
 /** Read value from a given PCB or DCB address.             **/

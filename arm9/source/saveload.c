@@ -251,7 +251,12 @@ void colecoSaveState()
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
-        if (uNbO) fwrite(PCBTable+0x8000, 0x8000,1, handle);
+        // Since we are ADAM mode, we can steal the MSX SRAM_Memory[] buffer which is 16K to help us read/write the PCB Table from 16-bit LCD memory...
+        for (u16 i=0; i<0x4000; i++)  SRAM_Memory[i] = (u8)PCBTable[0x8000+i];
+        if (uNbO) fwrite(SRAM_Memory, 0x4000, 1, handle);
+        for (u16 i=0; i<0x4000; i++)  SRAM_Memory[i] = (u8)PCBTable[0xC000+i];
+        if (uNbO) fwrite(SRAM_Memory, 0x4000, 1, handle);
+        
         if (uNbO) fwrite(HoldingBuf, 0x2000,1, handle);
         if (uNbO) fwrite(Tapes, sizeof(Tapes),1, handle);
         if (uNbO) fwrite(Disks, sizeof(Disks),1, handle);
@@ -500,7 +505,12 @@ void colecoLoadState()
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {
-                if (uNbO) fread(PCBTable+0x8000, 0x8000,1, handle);
+                // Since we are ADAM mode, we can steal the MSX SRAM_Memory[] buffer which is 16K to help us read/write the PCB Table from 16-bit LCD memory...
+                if (uNbO) fread(SRAM_Memory, 0x4000, 1, handle);
+                for (u16 i=0; i<0x4000; i++)  PCBTable[0x8000+i] = SRAM_Memory[i];
+                if (uNbO) fread(SRAM_Memory, 0x4000, 1, handle);
+                for (u16 i=0; i<0x4000; i++)  PCBTable[0xC000+i] = SRAM_Memory[i];
+                
                 if (uNbO) fread(HoldingBuf, 0x2000,1, handle);
                 if (uNbO) fread(Tapes, sizeof(Tapes),1, handle);
                 if (uNbO) fread(Disks, sizeof(Disks),1, handle);

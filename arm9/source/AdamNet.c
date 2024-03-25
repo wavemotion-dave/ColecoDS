@@ -26,7 +26,7 @@ FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
 FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
 byte HoldingBuf[4096];
-u8 io_busy                  = 0;
+u16 io_busy                 = 0;
 word savedBUF               = 0;
 word savedLEN               = 0;
 byte read_cache_available   = false;
@@ -147,9 +147,10 @@ static const byte CtrlKey[256] =
 
 extern byte Port60;
 
-// Steal 64K at the back-end of the cart buffer... we have room here and
-// we don't want to allocate another 64K when we have plenty of space.
-byte *PCBTable = ROM_Memory+((MAX_CART_SIZE)*1024) - 0x10000;
+// We use LCD_D area of VRAM to store the PCB Table. This is 16-bit memory so it
+// takes the full 128K of LCD VRAM to hold the 8-bit values. A bit of a waste but 
+// better than allocating another 64K somewhere...
+u16 *PCBTable = (u16*)0x06860000;
 
 word PCBAddr;
 byte DiskID;
@@ -697,10 +698,10 @@ void WritePCB(word A,byte V)
       case CMD_PCB_WAIT:
         break;
       case CMD_PCB_RESET:
-        memset(PCBTable,0,0x10000);
+        memset(PCBTable,0,0x20000);
         break;
       default:
-        memset(PCBTable,0,0x10000);
+        memset(PCBTable,0,0x20000);
         break;
     }
   }
@@ -718,7 +719,7 @@ void WritePCB(word A,byte V)
 void ResetPCB(void)
 {
   /* PCB/DCB not mapped yet */
-  memset(PCBTable,0x00,0x10000);
+  memset(PCBTable,0x00,0x20000);
 
   /* Set starting PCB address */
   PCBAddr = 0x0000;
