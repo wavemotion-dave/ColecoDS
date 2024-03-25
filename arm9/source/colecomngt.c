@@ -785,6 +785,7 @@ void adam_setup_bios(void)
     memcpy(BIOS_Memory+0x0000, AdamWRITER, 0x8000);
     memcpy(BIOS_Memory+0x8000, AdamEOS,    0x2000);
     memcpy(BIOS_Memory+0xA000, ColecoBios, 0x2000);
+    // The last 8K at 0xC000 in the BIOS_Memory[] will be all 0xFF and we use that to our advantage below in SetupAdam()
 }
 
 // ================================================================================================
@@ -883,6 +884,10 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ram_hi = false;
         adam_ram_hi_exp = false;
+        MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
     }
 
     // Check if we are to Reset the AdamNet
@@ -1029,7 +1034,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 
   switch(Port&0xE0)
   {
-    case 0x20:
+    case 0x20:  // AdamNet Port from 0x20 to 0x3F
       return Port20 & 0x0F;
       break;
 
@@ -1037,7 +1042,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
       return(0xFF);
       break;
 
-    case 0x60:  // Adam/Memory Port
+    case 0x60:  // Adam/Memory Port from 0x60 to 0x7F
       return Port60;
       break;
 
@@ -1046,7 +1051,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
       Port = JoyMode     ? (Port>>8):Port;
       return(~Port&0x7F);
 
-    case 0xA0: /* VDP Status/Data */
+    case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
       return(Port&0x01 ? RdCtrl9918():RdData9918());
   }
 
@@ -1097,6 +1102,10 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
     ay38910DataW(Value, &myAY);
     return;
   }
+  else if (Port == 0x42)
+  {
+      debug[1]++;
+  }
 
   // ---------------------------------------------------------------------------
   // Now handle the rest of the CV ports - this handles the mirroring of
@@ -1114,18 +1123,18 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
     case 0xE0:  // The SN Sound port
       sn76496W(Value, &mySN);
       return;
-    case 0xA0:  // The VDP graphics port
+    case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
       if(!(Port&0x01)) WrData9918(Value);
       else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI; cpuirequest=Z80_NMI_INT;}
       return;
     case 0x40:  // Printer status and ADAM related stuff...not used
       return;
-    case 0x20:  // AdamNet port
+    case 0x20:  // AdamNet port from 0x20 to 0x3F
       resetAdamNet = (Port20 & 1) && ((Value & 1) == 0);
       Port20 = Value;
       if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
       return;
-    case 0x60:  // Adam/Memory port
+    case 0x60:  // Adam/Memory port from 0x60 to 0x7F
       resetAdamNet = false;
       Port60 = Value;
       if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();

@@ -3370,7 +3370,7 @@ void colecoDS_main(void)
 // ----------------------------------------------------------------------------------------
 void useVRAM(void)
 {
-  vramSetBankD(VRAM_D_LCD );                 // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   Currently unused (future expansion)
+  vramSetBankD(VRAM_D_LCD );                 // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   Used for ADAM PCB memory map check
   vramSetBankE(VRAM_E_LCD );                 // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   We use this block of 128K memory to store 4x MSX BIOS flavors
   vramSetBankF(VRAM_F_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
   vramSetBankG(VRAM_G_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..

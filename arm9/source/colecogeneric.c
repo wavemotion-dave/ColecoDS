@@ -1779,6 +1779,8 @@ const struct options_t Option_Table[3][20] =
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
         {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)", 
                             "+20 (SLOWER)", "-1 (FASTER)", "-2 (FASTER)", "-3 (FASTER)", "-5 (FASTER)", "-10 (FASTER)", "-20 (FASTER)"},                                                        &myConfig.ein_ctc3,  13},
+                                
+        {"ADAMNET",        {"1", "5", "15", "30", "45", "60"},                                                                                                                             &myConfig.reserved3, 6},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Global Options

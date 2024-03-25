@@ -36,7 +36,6 @@ u8 msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8 msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
-extern u8 *PCBTable;
 extern u8 adam_ram_lo;
 extern u8 adam_ram_hi;
 extern u8 adam_ram_lo_exp;
@@ -88,7 +87,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
             return(Read24XX(&EEPROM));
           }
       }
-      else if ((adam_mode) && PCBTable[address]) ReadPCB(address);
+      else if ((adam_mode) && ((u16*)0x06860000)[address]) ReadPCB(address);
       else if (msx_sram_at_8000) // Don't need to check msx_mode as this can only be true in that mode
       {
           if (address <= 0xBFFF) // Between 0x8000 and 0xBFFF
@@ -351,11 +350,16 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
         // --------------------------------------------------------------
         if (machine_mode & MODE_ADAM)
         {
-            if ((address < 0x8000) && adam_ram_lo)        {RAM_Memory[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
-            else if ((address >= 0x8000) && adam_ram_hi)  {RAM_Memory[address] = value; if  (PCBTable[address]) WritePCB(address, value);}
-
-            if ((address < 0x8000) && adam_ram_lo_exp)        {RAM_Memory[0x10000 + address] = value;}
-            else if ((address >= 0x8000) && adam_ram_hi_exp)  {RAM_Memory[0x10000 + address] = value;}
+            if (address & 0x8000)
+            {
+                if (adam_ram_hi) {RAM_Memory[address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
+                else if (adam_ram_hi_exp)  {RAM_Memory[0x10000 + address] = value;}
+            }
+            else
+            {
+                if (adam_ram_lo) {RAM_Memory[address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
+                else if (adam_ram_lo_exp)  {RAM_Memory[0x10000 + address] = value;}
+            }
         }
         // -------------------------------------------------------------
         // If SG-1000 mode, we provide the Dhajee RAM expansion...
