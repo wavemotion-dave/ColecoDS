@@ -75,7 +75,7 @@ struct __attribute__((__packed__)) Config_t
     u8  memWipe;
     u8  clearInt;
     u8  cvEESize;
-    u8  reserved1;
+    u8  adamnet;
     u8  mirrorRAM;
     u8  msxBeeper;
     u8  cvisionLoad;
