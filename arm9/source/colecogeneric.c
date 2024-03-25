@@ -1291,7 +1291,7 @@ void SetDefaultGameConfig(void)
     myConfig.memWipe     = 0;                           // Default to RANDOM memory
     myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY; // By default clear VDP interrupts automatically
     myConfig.cvEESize    = C24XX_24C256;                // Default CV EEPROM size is 32K
-    myConfig.reserved1   = 0;                           // was AY envelopes which is no longer needed with proper AY driver so reuse this
+    myConfig.adamnet     = 0;                           // Adamnet is FAST by default
     myConfig.mirrorRAM   = COLECO_RAM_NORMAL_MIRROR;    // By default use the normal Colecovision (and CreatiVision) memory mirrors
     myConfig.msxBeeper   = 0;                           // Assume no MSX beeper required - only a few games need this
     myConfig.cvisionLoad = 0;                           // Default to normal Legacy A/B load for CreatiVision games
@@ -1779,8 +1779,7 @@ const struct options_t Option_Table[3][20] =
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
         {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)", 
                             "+20 (SLOWER)", "-1 (FASTER)", "-2 (FASTER)", "-3 (FASTER)", "-5 (FASTER)", "-10 (FASTER)", "-20 (FASTER)"},                                                        &myConfig.ein_ctc3,  13},
-                                
-        {"ADAMNET",        {"1", "5", "15", "30", "45", "60"},                                                                                                                             &myConfig.reserved3, 6},
+        {"ADAMNET",        {"FAST", "SLOW", "SLOWER"},                                                                                                                                          &myConfig.adamnet,    3},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Global Options

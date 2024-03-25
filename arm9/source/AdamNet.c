@@ -33,8 +33,8 @@ byte read_cache_available   = false;
 byte io_show_status         = 0;
 byte fast_flush             = 0;
 
-#define DELAY_IO_READ       10
-#define DELAY_IO_WRITE      255
+u16 DELAY_IO_READ[] =  {10,  450, 1250};
+u16 DELAY_IO_WRITE[] = {255, 650, 1500};
 
 /** RAM Access Macro *****************************************/
 #define RAM(A)         (RAM_Memory[A])
@@ -452,7 +452,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
       
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
-      io_busy = (V==CMD_READ ? DELAY_IO_READ : DELAY_IO_WRITE);
+      io_busy = (V==CMD_READ ? DELAY_IO_READ[myConfig.adamnet] : DELAY_IO_WRITE[myConfig.adamnet]);
       
       /* If no disk, stop here */
       if(!Disks[N].Data) break;
@@ -550,7 +550,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
       
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
-      io_busy = (V==CMD_READ ? DELAY_IO_READ : DELAY_IO_WRITE);
+      io_busy = (V==CMD_READ ? DELAY_IO_READ[myConfig.adamnet] : DELAY_IO_WRITE[myConfig.adamnet]);
       
       /* If no tape, stop here */
       if(!Tapes[N].Data) break;
@@ -558,7 +558,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
       /* Determine buffer address, length, block number */
       BUF = GetDCBBase(Dev);
       LEN = GetDCBLen(Dev);
-      LEN = LEN<0x0400? LEN:0x0400;
+      LEN = LEN<0x0400 ? LEN:0x0400;
       SEC = GetDCBSector(Dev);
 
       // ---------------------------------------------------------------------

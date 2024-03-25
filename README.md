@@ -108,7 +108,7 @@ BIOS Files :
 -----------------------
 Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek these out if you want maximum compatibility:
 ```
-* 3aa93ef3	coleco.rom (original version)
+* 3aa93ef3	coleco.rom (original version - rev 7)
 * a30b0c34	coleco.rom (faster boot)
 * 94ee12f3	msx.rom (MSX) - see below for more options
 * c3c590c6	bioscv.rom (Creativision)
@@ -117,8 +117,8 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 * 8f31f297	pv2000.rom (Casio PV-2000)
 * 92cf9353	sordm5.rom (Sord M5)
 * bc433df6	svi.rom (Spectravision)
-* 05a37a34	eos.rom (ADAM)
-* 58d86a2a	writer.rom (ADAM)
+* 05a37a34	eos.rom (ADAM - rev 5/6)
+* 58d86a2a	writer.rom (ADAM - rev 80)
 ```
 
 For the MSX, we support a number of different (optional) BIOS ROMs. To be honest, after quite a bit of searching online, I'm not quite sure what machine the ubiquitous msx.rom represents - it's some generic European machine and from doing binary compares, it appears to be extremely similar to the Goldstar FC-200 or possibly the Casio MX-15 (11 bytes different in each). 
