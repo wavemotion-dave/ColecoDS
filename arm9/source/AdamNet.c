@@ -381,13 +381,17 @@ void AdamFlushCache(void)
   read_cache_available = false;
 }
 
+// ----------------------------------------------------------
+// Called on every vertical blank when a frame is finished
+// to provide a simple cache flush check on disk reads.
+// ----------------------------------------------------------
 void AdamCheckFlushCache(void)
 {
     static u8 check_flush_idx=0;
 
     if (read_cache_available) 
     {
-      if (++check_flush_idx > (fast_flush ? 0:30)) // Half Second at 60fps
+      if (++check_flush_idx > (fast_flush ? 0:30)) // Half Second at 60fps unless we are "fast_flush"
       {
         AdamFlushCache(); 
         io_busy=0;
@@ -424,11 +428,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
   if(N>=MAX_DISKS) return;
 
   /* If reading DCB status, stop here */
-  if(V<0)
-  {
-      ReadStatusDCB(Dev);
-      return;
-  }
+  if(V<0) return ReadStatusDCB(Dev);
 
   /* Reset errors, report missing disks */
   SetDCB(Dev,DCB_NODE_TYPE,(GetDCB(Dev,DCB_NODE_TYPE)&0xF0) | (Disks[N].Data? 0x00:0x03));
@@ -447,7 +447,8 @@ static void UpdateDSK(byte N,byte Dev,int V)
 
     case CMD_WRITE:
     case CMD_READ:
-      io_show_status = (V==CMD_READ) ? 1:2;
+      if (io_show_status != 2) io_show_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
+      
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
       io_busy = (V==CMD_READ ? DELAY_IO_READ : DELAY_IO_WRITE);
@@ -461,10 +462,11 @@ static void UpdateDSK(byte N,byte Dev,int V)
       LEN = LEN<0x0400 ? LEN:0x0400;
       SEC = GetDCBSector(Dev);
 
-      // ---------------------------------------------------------------
-      // If we are a READ command, we buffer slightly as some programs 
-      // will start reading the NEXT block while processing the last.
-      // ---------------------------------------------------------------
+      // ---------------------------------------------------------------------
+      // If we are a READ command, we buffer slightly as some programs will
+      // start the disk/tape reading the NEXT block while processing the last
+      // knowing that disk/tape is slower than CPU fetching memory. Tricky!
+      // ---------------------------------------------------------------------
       savedBUF = BUF;
       savedLEN = LEN;
       
@@ -473,8 +475,10 @@ static void UpdateDSK(byte N,byte Dev,int V)
       {
         /* Remap sector number via interleave table */
         K = (SEC&~7) | InterleaveTable[SEC&7];
+        
         /* Get pointer to sector data on disk */
         Data = LinearFDI(&Disks[N],K);
+        
         /* If wrong sector number, stop here */
         if(!Data)
         {
@@ -482,6 +486,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
           LEN = 0;
           break;
         }
+        
         /* Read or write sectors */
         K = I+0x200>LEN? LEN-I:0x200;
         if(V==CMD_READ)
@@ -492,7 +497,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
                 HoldingBuf[I+J] = Data[J];
             }
         }
-        else
+        else // is CMD_WRITE
         {
           for(J=0;J<K;++J,++BUF) 
           {
@@ -500,6 +505,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
           }
           disk_unsaved_data[BAY_DISK] = 1;
         }
+        
         /* If disk access failed, stop here */
         if(J<K)
         {
@@ -520,11 +526,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
   byte *Data;
 
   /* If reading DCB status, stop here */
-  if(V<0)
-  {
-      ReadStatusDCB(Dev);
-      return;
-  }
+  if(V<0) return ReadStatusDCB(Dev);
 
   /* Reset errors, report missing tapes */
   SetDCB(Dev,DCB_NODE_TYPE,(Tapes[N&2].Data? 0x00:0x03)|(Tapes[(N&2)+1].Data? 0x00:0x30));
@@ -543,7 +545,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
 
     case CMD_WRITE:
     case CMD_READ:
-      io_show_status = (V==CMD_READ) ? 1:2;
+      if (io_show_status != 2) io_show_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
       
       /* Busy status by default */
       SetDCB(Dev,DCB_CMD_STAT,0x00);
@@ -551,16 +553,18 @@ static void UpdateTAP(byte N,byte Dev,int V)
       
       /* If no tape, stop here */
       if(!Tapes[N].Data) break;
+      
       /* Determine buffer address, length, block number */
       BUF = GetDCBBase(Dev);
       LEN = GetDCBLen(Dev);
       LEN = LEN<0x0400? LEN:0x0400;
       SEC = GetDCBSector(Dev);
 
-      // ---------------------------------------------------------------
-      // If we are a READ command, we buffer slightly as some programs 
-      // will start reading the NEXT block while processing the last.
-      // ---------------------------------------------------------------
+      // ---------------------------------------------------------------------
+      // If we are a READ command, we buffer slightly as some programs will
+      // start the disk/tape reading the NEXT block while processing the last
+      // knowing that disk/tape is slower than CPU fetching memory. Tricky!
+      // ---------------------------------------------------------------------
       savedBUF = BUF;
       savedLEN = LEN;
       
@@ -569,6 +573,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
       {
         /* Get pointer to sector data on tape */
         Data = LinearFDI(&Tapes[N],SEC);
+        
         /* If wrong sector number, stop here */
         if(!Data)
         {
@@ -576,6 +581,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
           LEN = 0;
           break;
         }
+        
         /* Read or write sectors */
         K = I+0x200>LEN? LEN-I:0x200;
         if(V==CMD_READ)
@@ -585,8 +591,8 @@ static void UpdateTAP(byte N,byte Dev,int V)
           {
               HoldingBuf[I+J] = Data[J];
           }
-        }
-        else
+        } 
+        else // is CMD_WRITE
         {
           for(J=0;J<K;++J,++BUF) 
           {
@@ -594,6 +600,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
           }
           disk_unsaved_data[BAY_TAPE] = 1;
         }
+        
         /* If disk access failed, stop here */
         if(J<K)
         {
