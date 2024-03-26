@@ -10,6 +10,9 @@
 /**     commercially. Please, notify me, if you make any    **/
 /**     changes to this file.                               **/
 /*************************************************************/
+
+#include "FDIDisk.h"
+
 #ifndef ADAMNET_H
 #define ADAMNET_H
 #ifdef __cplusplus
@@ -103,7 +106,19 @@ typedef unsigned short word;
 extern u16 *PCBTable;
 extern u8 HoldingBuf[];
 extern u8 KBDStatus, LastKey, DiskID;
-extern u16 io_busy, savedBUF, savedLEN, PCBAddr;
+extern u16 savedBUF, savedLEN, PCBAddr;
+
+
+typedef struct
+{
+    byte status;             // Current status byte for this drive
+    byte newstatus;          // Next status byte for this drive
+    word timeout;            // The current disk busy timeout - decremented once each VDP interrupt
+    int  lastblock;          // The last block read from the drive
+} DevStatus_t;
+
+extern DevStatus_t DiskStatus[MAX_DISKS];
+extern DevStatus_t TapeStatus[MAX_TAPES];
 
 /** ReadPCB() ************************************************/
 /** Read value from a given PCB or DCB address.             **/

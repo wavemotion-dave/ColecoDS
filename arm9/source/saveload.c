@@ -29,7 +29,7 @@
 #include "fdc.h"
 #include "printf.h"
 
-#define COLECODS_SAVE_VER 0x001A        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x001B        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 struct RomOffset
 {
@@ -205,9 +205,7 @@ void colecoSaveState()
     if (uNbO) fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
     if (uNbO) fwrite(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
     if (uNbO) fwrite(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
-    if (uNbO) fwrite(&Port53, sizeof(Port53),1, handle);
-    if (uNbO) fwrite(&Port60, sizeof(Port60),1, handle);
-      
+    
     if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
     if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
     if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
@@ -215,6 +213,12 @@ void colecoSaveState()
     
     if (uNbO) fwrite(CTC, sizeof(CTC),1, handle);
     if (uNbO) fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
+    
+    // Various ports used in the system
+    if (uNbO) fwrite(&Port53, sizeof(Port53),1, handle);
+    if (uNbO) fwrite(&Port60, sizeof(Port60),1, handle);
+    if (uNbO) fwrite(&Port20, sizeof(Port20),1, handle);
+    if (uNbO) fwrite(&Port42, sizeof(Port42),1, handle);    
       
     if (einstein_mode)
     {
@@ -262,7 +266,6 @@ void colecoSaveState()
         if (uNbO) fwrite(Disks, sizeof(Disks),1, handle);
         if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);
         
-        if (uNbO) fwrite(&Port20, sizeof(Port20),1, handle);
         if (uNbO) fwrite(&adam_ram_lo, sizeof(adam_ram_lo),1, handle);
         if (uNbO) fwrite(&adam_ram_hi, sizeof(adam_ram_hi),1, handle);
         if (uNbO) fwrite(&adam_ram_lo_exp, sizeof(adam_ram_lo_exp),1, handle);
@@ -270,12 +273,13 @@ void colecoSaveState()
         if (uNbO) fwrite(&DiskID, sizeof(DiskID),1, handle);
         if (uNbO) fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
         if (uNbO) fwrite(&LastKey, sizeof(LastKey),1, handle);
-        if (uNbO) fwrite(&io_busy, sizeof(io_busy),1, handle);
-        if (uNbO) fwrite(&savedBUF, sizeof(savedBUF),1, handle);
-        if (uNbO) fwrite(&savedLEN, sizeof(savedLEN),1, handle);
         if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
         if (uNbO) fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
-        if (uNbO) fwrite(spare, 31,1, handle);        
+        
+        if (uNbO) fwrite(DiskStatus, sizeof(DiskStatus),1, handle);
+        if (uNbO) fwrite(TapeStatus, sizeof(TapeStatus),1, handle);
+        
+        if (uNbO) fwrite(spare, 32,1, handle);        
         if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
         if (adam_128k_mode) fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
     }
@@ -462,8 +466,6 @@ void colecoLoadState()
             if (uNbO) fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
             if (uNbO) fread(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
             if (uNbO) fread(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
-            if (uNbO) fread(&Port53, sizeof(Port53),1, handle);
-            if (uNbO) fread(&Port60, sizeof(Port60),1, handle);
             
             if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
             if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
@@ -472,6 +474,13 @@ void colecoLoadState()
             
             if (uNbO) fread(CTC, sizeof(CTC),1, handle);
             if (uNbO) fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
+            
+            // Various ports used in the system
+            if (uNbO) fread(&Port53, sizeof(Port53),1, handle);
+            if (uNbO) fread(&Port60, sizeof(Port60),1, handle);
+            if (uNbO) fread(&Port20, sizeof(Port20),1, handle);
+            if (uNbO) fread(&Port42, sizeof(Port42),1, handle);
+            
 		    if (einstein_mode)
 		    {
 	            if (uNbO) fread(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
@@ -516,7 +525,6 @@ void colecoLoadState()
                 if (uNbO) fread(Disks, sizeof(Disks),1, handle);
                 if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
 
-                if (uNbO) fread(&Port20, sizeof(Port20),1, handle);
                 if (uNbO) fread(&adam_ram_lo, sizeof(adam_ram_lo),1, handle);
                 if (uNbO) fread(&adam_ram_hi, sizeof(adam_ram_hi),1, handle);
                 if (uNbO) fread(&adam_ram_lo_exp, sizeof(adam_ram_lo_exp),1, handle);
@@ -524,12 +532,13 @@ void colecoLoadState()
                 if (uNbO) fread(&DiskID, sizeof(DiskID),1, handle);
                 if (uNbO) fread(&KBDStatus, sizeof(KBDStatus),1, handle);
                 if (uNbO) fread(&LastKey, sizeof(LastKey),1, handle);
-                if (uNbO) fread(&io_busy, sizeof(io_busy),1, handle);
-                if (uNbO) fread(&savedBUF, sizeof(savedBUF),1, handle);
-                if (uNbO) fread(&savedLEN, sizeof(savedLEN),1, handle);
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
                 if (uNbO) fread(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
-                if (uNbO) fread(spare, 31,1, handle);                
+
+                if (uNbO) fread(DiskStatus, sizeof(DiskStatus),1, handle);
+                if (uNbO) fread(TapeStatus, sizeof(TapeStatus),1, handle);
+                
+                if (uNbO) fread(spare, 32,1, handle);                
                 if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
                 if (adam_128k_mode) fread(RAM_Memory+0x10000, 0x10000,1, handle);
             }

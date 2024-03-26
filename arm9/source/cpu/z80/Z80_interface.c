@@ -353,12 +353,12 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
             if (address & 0x8000)
             {
                 if (adam_ram_hi) {RAM_Memory[address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
-                else if (adam_ram_hi_exp)  {RAM_Memory[0x10000 + address] = value;}
+                else if (adam_ram_hi_exp)  {RAM_Memory[0x10000 + address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
             }
             else
             {
                 if (adam_ram_lo) {RAM_Memory[address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
-                else if (adam_ram_lo_exp)  {RAM_Memory[0x10000 + address] = value;}
+                else if (adam_ram_lo_exp)  {RAM_Memory[0x10000 + address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
             }
         }
         // -------------------------------------------------------------

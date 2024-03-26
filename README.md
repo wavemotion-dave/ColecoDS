@@ -84,8 +84,8 @@ the MSX keyboard and the MTX keyboard.
 Thanks to Marcel de Kogel who wrote the Adam-EM 
 emulator which is a bit of a grandfather to the
 more modern emulators. I got the final bugs worked 
-out of the VDP emulation on the ADAM thanks to 
-his work.
+out of the VDP emulation and for disk drive
+block caching on the ADAM thanks to his amazing work.
 
 Special thanks to  Marat Fayzullin, as the 
 author of ColEM which is the code for the 

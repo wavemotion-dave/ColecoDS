@@ -73,6 +73,7 @@ u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
 u8 Port53         __attribute__((section(".dtcm"))) = 0x00;
 u8 Port60         __attribute__((section(".dtcm"))) = 0x0F;
 u8 Port20         __attribute__((section(".dtcm"))) = 0x00;
+u8 Port42         __attribute__((section(".dtcm"))) = 0x00;
 
 u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
@@ -165,14 +166,10 @@ void colecoWipeRAM(void)
   else if (adam_mode)
   {
       // ----------------------------------------------------------------------------------- ------------
-      // ADAM has special handling for memory clear. For some reason ADAM disks are finiky and I
-      // feel like some of this is voodoo - but it *mostly* works. I've tried to contact T.Cherryhomes 
-      // to try and demystify the way an ADAM comes up from a cold-start but have yet to hear an answer.
+      // ADAM has special handling for memory clear. Rather than a 0x00 for clearing memory, we use
+      // 0x10 which is a pattern that has been shown to work with 'picky' software like Adam Bomb 2.
       // ----------------------------------------------------------------------------------- ------------
-      u8 pattern = 0x00;                          // Default to all-clear
-      if (myConfig.memWipe == 1) pattern = 0x02;  // The 0x02 pattern tends to make most non-CPM disks start up properly... don't ask.
-      if (myConfig.memWipe == 2) pattern = 0x38;  // The 0x38 pattern tends to make CPM disk games start up properly... don't ask.
-      for (int i=0; i< 0x20000; i++) RAM_Memory[i] = (myConfig.memWipe ? pattern : (rand() & 0xFF));
+      for (int i=0; i< 0x20000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
   }
   else if (einstein_mode)
   {
@@ -1104,7 +1101,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   }
   else if (Port == 0x42)
   {
-      debug[1]++;
+      // For the future... we can use this port to bank in other 64K expanded memory pages...
   }
 
   // ---------------------------------------------------------------------------
