@@ -81,6 +81,7 @@ extern u16 sgm_low_addr;
 extern u8 Port53;
 extern u8 Port60;
 extern u8 Port20;
+extern u8 Port42;
 
 extern u8 bFirstSGMEnable;
 extern u8 AY_Enable;

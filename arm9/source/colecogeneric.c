@@ -1298,11 +1298,14 @@ void SetDefaultGameConfig(void)
     myConfig.gameSpeed   = 0;                           // Default is 100% game speed
     myConfig.keyMute     = 0;                           // Default is no mute (key click heard)
     myConfig.ein_ctc3    = 0;                           // Default is normal CTC3 handling for Einstein (no fudge factor)
+    myConfig.reserved1   = 0;    
+    myConfig.reserved2   = 0;    
     myConfig.reserved3   = 0;    
     myConfig.reserved4   = 0;    
     myConfig.reserved5   = 0;    
-    myConfig.reserved6   = 0xA5;    // So it's easy to spot on an "upgrade"
-    myConfig.reserved32  = 0x00000000;
+    myConfig.reserved6   = 0;
+    myConfig.reserved7   = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reserved8   = 0xA5;    // So it's easy to spot on an "upgrade"
   
     // ----------------------------------------------------------------------------------
     // A few games don't want more than 4 max sprites (they pull tricks that rely on it)
@@ -1540,45 +1543,22 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xf8383d33)                 myConfig.overlay = 1; // MUSIC MAKER
     
     
-    // ----------------------------------------------------------------------------------
-    // A bunch of CP/M games for the Adam need a special memory wipe to load properly...
-    // ----------------------------------------------------------------------------------
-    if (file_crc == 0x07c07a56)                 myConfig.memWipe = 2;  // sorcerer (198x) (infocom).dsk
-    if (file_crc == 0xf27044d8)                 myConfig.memWipe = 2;  // spellbreaker (1985) (infocom).dsk
-    if (file_crc == 0xec88e6bb)                 myConfig.memWipe = 2;  // starcross (1982) (infocom) [a1].dsk
-    if (file_crc == 0xb4b1e0f3)                 myConfig.memWipe = 2;  // starcross (1982) (infocom).dsk
-    if (file_crc == 0xd092bbcb)                 myConfig.memWipe = 2;  // stationfall (1987) (infocom).dsk
-    if (file_crc == 0xdda503aa)                 myConfig.memWipe = 2;  // suspect (1984) (infocom).dsk
-    if (file_crc == 0x04e9d59e)                 myConfig.memWipe = 2;  // suspended (1983) (infocom).dsk
-    if (file_crc == 0x89f1cf13)                 myConfig.memWipe = 2;  // wishbringer (1985) (infocom).dsk
-    if (file_crc == 0x48a313ad)                 myConfig.memWipe = 2;  // witness (1983) (infocom).dsk
-    if (file_crc == 0xd890aad7)                 myConfig.memWipe = 2;  // zork iii - the dungeon master (1982) (infocom) [a1].dsk
-    if (file_crc == 0x5ce833b2)                 myConfig.memWipe = 2;  // zork iii - the dungeon master (1982) (infocom).dsk
-    if (file_crc == 0x3daf5073)                 myConfig.memWipe = 2;  // zork ii - the wizard of frobozz (1981) (infocom) [a1].dsk
-    if (file_crc == 0xc8ada76e)                 myConfig.memWipe = 2;  // zork ii - the wizard of frobozz (1981) (infocom).dsk
-    if (file_crc == 0x8dac567c)                 myConfig.memWipe = 2;  // zork i - the great underground empire (1981) (infocom) [a1].dsk
-    if (file_crc == 0xae4d50e9)                 myConfig.memWipe = 2;  // zork i - the great underground empire (1981) (infocom).dsk
-    
     // ---------------------------------------------------------------
     // Check for CP/M disks which want memory and full keyboard.
     // Also check for T-DOS disks which want a faster cache flush.
     // ---------------------------------------------------------------
     if (adam_mode)
     {
-        extern u8 fast_flush;
-        fast_flush = 0;
         for (int i=0; i<0x2000; i++)
         {
             if ((ROM_Memory[i] == 'C') && (ROM_Memory[i+1] == 'P') && (ROM_Memory[i+2] == '/') && (ROM_Memory[i+3] == 'M')) // Look for CP/M
             {
-                myConfig.memWipe = 2;  // Set to CPM clear pattern by default
                 myConfig.overlay = 1;  // And most CPM games are going to want a full keyboard
                 break;
             }
             if ((ROM_Memory[i] == 'T') && (ROM_Memory[i+1] == '-') && (ROM_Memory[i+2] == 'D') && (ROM_Memory[i+3] == 'O') && (ROM_Memory[i+4] == 'S')) // Look for T-DOS
             {
                 myConfig.overlay = 1;  // And most T-DOS games are going to want a full keyboard
-                fast_flush = 1;        // Faster write-thru for T-DOS
                 break;
             }
         }
@@ -1764,7 +1744,7 @@ const struct options_t Option_Table[3][20] =
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
         {"MSX BIOS",       {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"} ,                                                        &myConfig.msxBios,    7},
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
-        {"RAM WIPE",       {"RANDOM", "CLEAR", "ADAM CPM"},                                                                                                                                     &myConfig.memWipe,    3},
+        {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
@@ -1779,7 +1759,7 @@ const struct options_t Option_Table[3][20] =
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
         {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)", 
                             "+20 (SLOWER)", "-1 (FASTER)", "-2 (FASTER)", "-3 (FASTER)", "-5 (FASTER)", "-10 (FASTER)", "-20 (FASTER)"},                                                        &myConfig.ein_ctc3,  13},
-        {"ADAMNET",        {"FAST", "SLOW", "SLOWER"},                                                                                                                                          &myConfig.adamnet,    3},
+        {"ADAMNET",        {"FAST", "SLOWER", "SLOWEST"},                                                                                                                                       &myConfig.adamnet,    3},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Global Options

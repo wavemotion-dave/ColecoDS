@@ -26,15 +26,13 @@ FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
 FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
 byte HoldingBuf[4096];
-u16 io_busy                 = 0;
-word savedBUF               = 0;
-word savedLEN               = 0;
-byte read_cache_available   = false;
-byte io_show_status         = 0;
-byte fast_flush             = 0;
 
-u16 DELAY_IO_READ[] =  {10,  450, 1250};
-u16 DELAY_IO_WRITE[] = {255, 650, 1500};
+byte io_show_status         = 0;
+
+const byte timeouts[] = {5, 15, 30}; // FAST, SLOWER, SLOWEST
+
+DevStatus_t DiskStatus[MAX_DISKS];
+DevStatus_t TapeStatus[MAX_TAPES];
 
 /** RAM Access Macro *****************************************/
 #define RAM(A)         (RAM_Memory[A])
@@ -179,7 +177,7 @@ static word GetDCBLen(byte Dev)
   return(GetDCB(Dev,DCB_BUF_LEN_LO)+((word)GetDCB(Dev,DCB_BUF_LEN_HI)<<8));
 }
 
-static unsigned int GetDCBSector(byte Dev)
+static unsigned int GetDCBBlock(byte Dev)
 {
   return(
     GetDCB(Dev,DCB_SEC_NUM_0)
@@ -372,15 +370,6 @@ static void UpdatePRN(byte Dev,int V)
   }
 }
 
-void AdamFlushCache(void)
-{
-  for (word i=0; i<savedLEN; i++)
-  {
-      // Copy data from holding buffer...
-      RAM_Memory[savedBUF++] = HoldingBuf[i];
-  }
-  read_cache_available = false;
-}
 
 // ----------------------------------------------------------
 // Called on every vertical blank when a frame is finished
@@ -388,51 +377,39 @@ void AdamFlushCache(void)
 // ----------------------------------------------------------
 void AdamCheckFlushCache(void)
 {
-    static u8 check_flush_idx=0;
-
-    if (read_cache_available) 
-    {
-      if (++check_flush_idx > (fast_flush ? 0:30)) // Half Second at 60fps unless we are "fast_flush"
-      {
-        AdamFlushCache(); 
-        io_busy=0;
-        check_flush_idx=0;
-      }
-    } else check_flush_idx = 0;
+ for (int i=0;i<4;++i)
+ {
+  if (DiskStatus[i].timeout)
+  {
+   if (!--DiskStatus[i].timeout) DiskStatus[i].newstatus=0x80;
+  }
+  if (TapeStatus[i].timeout)
+  {
+   if (!--TapeStatus[i].timeout) TapeStatus[i].newstatus=0x80;
+  }    
+ }
 }
 
-static void ReadStatusDCB(byte Dev)
-{
-    if (io_busy)
-    {
-      SetDCB(Dev,DCB_CMD_STAT,0x00);
-      
-      if (--io_busy == 0 && read_cache_available)
-      {
-          AdamFlushCache();
-      }
-    }
-    else
-    {
-      SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
-    }
-}
 
 static void UpdateDSK(byte N,byte Dev,int V)
 {
   static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // The ADAM uses a sector Skew = 5
-  int I,J,K,LEN,SEC;
+  int I,J,K,LEN,SEC,BLK;
   word BUF;
   byte *Data;
-
+  
   /* We have limited number of disks */
   if(N>=MAX_DISKS) return;
 
   /* If reading DCB status, stop here */
-  if(V<0) return ReadStatusDCB(Dev);
+  if(V<0)
+  {
+      SetDCB(Dev,DCB_CMD_STAT, DiskStatus[N].status);
+      return;
+  }
 
   /* Reset errors, report missing disks */
-  SetDCB(Dev,DCB_NODE_TYPE,(GetDCB(Dev,DCB_NODE_TYPE)&0xF0) | (Disks[N].Data? 0x00:0x03));
+  SetDCB(Dev,DCB_NODE_TYPE,(GetDCB(Dev,DCB_NODE_TYPE)&0xF0) | (Disks[N].Data ? 0x00:0x03));
 
   /* Depending on the command... */
   switch(V)
@@ -440,80 +417,86 @@ static void UpdateDSK(byte N,byte Dev,int V)
     case CMD_STATUS:
       /* Block-based device, 1kB buffer */
       ReportDevice(Dev,0x0400,1);
+      DiskStatus[N].status=DiskStatus[N].newstatus;
+      SetDCB(Dev,DCB_CMD_STAT, DiskStatus[N].status);
       break;
 
     case CMD_SOFT_RESET:
-      SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
+      DiskStatus[N].status=DiskStatus[N].newstatus=0x80;
+      SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
       break;
 
     case CMD_WRITE:
     case CMD_READ:
       if (io_show_status != 2) io_show_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
       
-      /* Busy status by default */
-      SetDCB(Dev,DCB_CMD_STAT,0x00);
-      io_busy = (V==CMD_READ ? DELAY_IO_READ[myConfig.adamnet] : DELAY_IO_WRITE[myConfig.adamnet]);
+      DiskStatus[N].status=DiskStatus[N].newstatus;
+      SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
       
       /* If no disk, stop here */
       if(!Disks[N].Data) break;
       
-      /* Determine buffer address, length, block number */
-      BUF = GetDCBBase(Dev);
-      LEN = GetDCBLen(Dev);
-      LEN = LEN<0x0400 ? LEN:0x0400;
-      SEC = GetDCBSector(Dev);
-
-      // ---------------------------------------------------------------------
-      // If we are a READ command, we buffer slightly as some programs will
-      // start the disk/tape reading the NEXT block while processing the last
-      // knowing that disk/tape is slower than CPU fetching memory. Tricky!
-      // ---------------------------------------------------------------------
-      savedBUF = BUF;
-      savedLEN = LEN;
-      
-      /* For each 512-byte sector... */
-      for(I=0, SEC<<=1 ; I<LEN ; ++SEC, I+=0x200)
+      if (DiskStatus[N].status==0x9B)
       {
-        /* Remap sector number via interleave table */
-        K = (SEC&~7) | InterleaveTable[SEC&7];
-        
-        /* Get pointer to sector data on disk */
-        Data = LinearFDI(&Disks[N],K);
-        
-        /* If wrong sector number, stop here */
-        if(!Data)
-        {
-          SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x02);
-          LEN = 0;
-          break;
-        }
-        
-        /* Read or write sectors */
-        K = I+0x200>LEN? LEN-I:0x200;
-        if(V==CMD_READ)
-        {
-            read_cache_available = true;
-            for(J=0;J<K;++J,++BUF) 
-            {
-                HoldingBuf[I+J] = Data[J];
-            }
-        }
-        else // is CMD_WRITE
-        {
-          for(J=0;J<K;++J,++BUF) 
+         SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
+      }
+      else
+      {      
+          /* Determine buffer address, length, block number */
+          BUF = GetDCBBase(Dev);
+          LEN = GetDCBLen(Dev);
+          LEN = LEN<0x0400 ? LEN:0x0400;
+          BLK = GetDCBBlock(Dev);
+          SEC = BLK * 2;
+          
+          if (BLK==DiskStatus[N].lastblock || (V==CMD_WRITE))
           {
-              Data[J] = RAM_Memory[BUF];
+              /* For each 512-byte sector... */
+              for(I=0; I<LEN ; ++SEC, I+=0x200)
+              {
+                /* Remap sector number via interleave table */
+                K = (SEC&~7) | InterleaveTable[SEC&7];
+                
+                /* Get pointer to sector data on disk */
+                Data = LinearFDI(&Disks[N],K);
+                
+                /* If wrong sector number, stop here */
+                if(!Data)
+                {
+                  SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x02);
+                  LEN = 0;
+                  break;
+                }
+                
+                /* Read or write sectors */
+                K = I+0x200>LEN? LEN-I:0x200;
+                if(V==CMD_READ)
+                {
+                    for(J=0;J<K;++J,++BUF) 
+                    {
+                        RAM_Memory[BUF] = Data[J];
+                    }
+                }
+                else // is CMD_WRITE
+                {
+                  for(J=0;J<K;++J,++BUF) 
+                  {
+                      Data[J] = RAM_Memory[BUF];
+                  }
+                  disk_unsaved_data[BAY_DISK] = 1;
+                }
+                
+                DiskStatus[N].status=DiskStatus[N].newstatus=0x80;
+                SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
+            }
           }
-          disk_unsaved_data[BAY_DISK] = 1;
-        }
-        
-        /* If disk access failed, stop here */
-        if(J<K)
-        {
-          SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x06);
-          LEN = 0;
-          break;
-        }
+          else
+          {
+              // Cache block
+              DiskStatus[N].status=DiskStatus[N].newstatus=0x9B;
+              DiskStatus[N].timeout=timeouts[myConfig.adamnet];
+              DiskStatus[N].lastblock=BLK;              
+          }
       }
       /* Done */
       break;
@@ -522,12 +505,16 @@ static void UpdateDSK(byte N,byte Dev,int V)
 
 static void UpdateTAP(byte N,byte Dev,int V)
 {
-  int I,J,K,LEN,SEC;
+  int I,J,K,LEN,SEC,BLK;
   word BUF;
   byte *Data;
 
   /* If reading DCB status, stop here */
-  if(V<0) return ReadStatusDCB(Dev);
+  if(V<0)
+  {
+      SetDCB(Dev,DCB_CMD_STAT, TapeStatus[N].status);
+      return;
+  }
 
   /* Reset errors, report missing tapes */
   SetDCB(Dev,DCB_NODE_TYPE,(Tapes[N&2].Data? 0x00:0x03)|(Tapes[(N&2)+1].Data? 0x00:0x30));
@@ -538,77 +525,83 @@ static void UpdateTAP(byte N,byte Dev,int V)
     case CMD_STATUS:
       /* Block-based device, 1kB buffer */
       ReportDevice(Dev,0x0400,1);
+      TapeStatus[N].status=TapeStatus[N].newstatus;
+      SetDCB(Dev,DCB_CMD_STAT, TapeStatus[N].status);
       break;
- 
+
     case CMD_SOFT_RESET:
-      SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
+      TapeStatus[N].status=TapeStatus[N].newstatus=0x80;
+      SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
       break;
 
     case CMD_WRITE:
     case CMD_READ:
       if (io_show_status != 2) io_show_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
       
-      /* Busy status by default */
-      SetDCB(Dev,DCB_CMD_STAT,0x00);
-      io_busy = (V==CMD_READ ? DELAY_IO_READ[myConfig.adamnet] : DELAY_IO_WRITE[myConfig.adamnet]);
+      TapeStatus[N].status=TapeStatus[N].newstatus;
+      SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
       
       /* If no tape, stop here */
       if(!Tapes[N].Data) break;
       
-      /* Determine buffer address, length, block number */
-      BUF = GetDCBBase(Dev);
-      LEN = GetDCBLen(Dev);
-      LEN = LEN<0x0400 ? LEN:0x0400;
-      SEC = GetDCBSector(Dev);
-
-      // ---------------------------------------------------------------------
-      // If we are a READ command, we buffer slightly as some programs will
-      // start the disk/tape reading the NEXT block while processing the last
-      // knowing that disk/tape is slower than CPU fetching memory. Tricky!
-      // ---------------------------------------------------------------------
-      savedBUF = BUF;
-      savedLEN = LEN;
-      
-      /* For each 512-byte sector... */
-      for(I=0, SEC<<=1 ; I<LEN ; ++SEC, I+=0x200)
+      if (TapeStatus[N].status==0x9B)
       {
-        /* Get pointer to sector data on tape */
-        Data = LinearFDI(&Tapes[N],SEC);
-        
-        /* If wrong sector number, stop here */
-        if(!Data)
-        {
-          SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x02);
-          LEN = 0;
-          break;
-        }
-        
-        /* Read or write sectors */
-        K = I+0x200>LEN? LEN-I:0x200;
-        if(V==CMD_READ)
-        {
-          read_cache_available = true;
-          for(J=0;J<K;++J,++BUF) 
+         SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
+      }
+      else
+      {      
+          /* Determine buffer address, length, block number */
+          BUF = GetDCBBase(Dev);
+          LEN = GetDCBLen(Dev);
+          LEN = LEN<0x0400 ? LEN:0x0400;
+          BLK = GetDCBBlock(Dev);
+          SEC = BLK * 2;
+
+          if (BLK==TapeStatus[N].lastblock || (V==CMD_WRITE))
           {
-              HoldingBuf[I+J] = Data[J];
+              /* For each 512-byte sector... */
+              for(I=0; I<LEN ; ++SEC, I+=0x200)
+              {
+                /* Get pointer to sector data on tape */
+                Data = LinearFDI(&Tapes[N],SEC);
+                
+                /* If wrong sector number, stop here */
+                if(!Data)
+                {
+                  SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x02);
+                  LEN = 0;
+                  break;
+                }
+                
+                /* Read or write sectors */
+                K = I+0x200>LEN? LEN-I:0x200;
+                if(V==CMD_READ)
+                {
+                  for(J=0;J<K;++J,++BUF) 
+                  {
+                      RAM_Memory[BUF] = Data[J];
+                  }
+                } 
+                else // is CMD_WRITE
+                {
+                  for(J=0;J<K;++J,++BUF) 
+                  {
+                      Data[J] = RAM(BUF);
+                  }
+                  disk_unsaved_data[BAY_TAPE] = 1;
+                }
+                
+                TapeStatus[N].status=TapeStatus[N].newstatus=0x80;
+                SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
+              }
           }
-        } 
-        else // is CMD_WRITE
-        {
-          for(J=0;J<K;++J,++BUF) 
+          else
           {
-              Data[J] = RAM(BUF);
+              // Cache block
+              TapeStatus[N].status=TapeStatus[N].newstatus=0x9B;
+              TapeStatus[N].timeout=timeouts[myConfig.adamnet];
+              TapeStatus[N].lastblock=BLK;              
           }
-          disk_unsaved_data[BAY_TAPE] = 1;
-        }
-        
-        /* If disk access failed, stop here */
-        if(J<K)
-        {
-          SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x06);
-          LEN = 0;
-          break;
-        }
       }
       /* Done */
       break;
@@ -638,7 +631,7 @@ static void UpdateDCB(byte Dev,int V)
     case 0x09:
     case 0x18:
     case 0x19: UpdateTAP((DevID>>4)+((DevID&1)<<1),Dev,V);break;
-    case 0x52: UpdateDSK(DiskID,Dev,-2);break;
+    case 0x52: UpdateDSK(DiskID=2,Dev,V);break;
 
     default:
       SetDCB(Dev,DCB_CMD_STAT,RSP_ACK+0x0B);
@@ -731,11 +724,17 @@ void ResetPCB(void)
   DiskID    = 0;
     
   memset(HoldingBuf, 0x00, sizeof(HoldingBuf));
-  io_busy  = 0;
-  savedBUF = 0;
-  savedLEN = 0;
-  read_cache_available=false;
   io_show_status=0;
+  for (int i=0; i<4; i++)
+  {
+      DiskStatus[i].status = DiskStatus[i].newstatus = 0x80;
+      DiskStatus[i].timeout = 0;
+      DiskStatus[i].lastblock = 0;
+
+      TapeStatus[i].status = TapeStatus[i].newstatus = 0x80;
+      TapeStatus[i].timeout = 0;
+      TapeStatus[i].lastblock = 0;
+  }
 }
 
 /** ChangeTape() *********************************************/
