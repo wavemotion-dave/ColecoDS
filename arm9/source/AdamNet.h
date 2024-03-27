@@ -1,8 +1,31 @@
+// ===============================================================
+// Parts of this file were taken from ColEM with a number of 
+// disk/tape caching issues fixed using the algorithms from
+// ADAMEm with a liberal amount of glue and scaffolding from me.
+//
+// I do not claim copyright on much of this code... I've left
+// both the ADAMEm and ColEm copyright statements below.
+//
+// Marcel and Marat are pioneers for Coleco/ADAM emulation and
+// they have my heartfelt thanks for providing a blueprint.
+// ===============================================================
+
+/** ADAMEm: Coleco ADAM emulator ********************************************/
+/**                                                                        **/
+/**                                Coleco.c                                **/
+/**                                                                        **/
+/** This file contains the Coleco-specific emulation code                  **/
+/**                                                                        **/
+/** Copyright (C) Marcel de Kogel 1996,1997,1998,1999                      **/
+/**     You are not allowed to distribute this software commercially       **/
+/**     Please, notify me, if you make any changes to this file            **/
+/****************************************************************************/
+
 /** ColEm: portable Coleco emulator **************************/
 /**                                                         **/
 /**                       AdamNet.h                         **/
 /**                                                         **/
-/** This file contains declarations for the AdamNet I/O     **/
+/** This file contains implementation for the AdamNet I/O   **/
 /** interface found in Coleco Adam home computer.           **/
 /**                                                         **/
 /** Copyright (C) Marat Fayzullin 1994-2021                 **/
@@ -10,7 +33,6 @@
 /**     commercially. Please, notify me, if you make any    **/
 /**     changes to this file.                               **/
 /*************************************************************/
-
 #include "FDIDisk.h"
 
 #ifndef ADAMNET_H
@@ -108,7 +130,6 @@ extern u8 HoldingBuf[];
 extern u8 KBDStatus, LastKey, DiskID;
 extern u16 savedBUF, savedLEN, PCBAddr;
 
-
 typedef struct
 {
     byte status;             // Current status byte for this drive
@@ -119,6 +140,8 @@ typedef struct
 
 extern DevStatus_t DiskStatus[MAX_DISKS];
 extern DevStatus_t TapeStatus[MAX_TAPES];
+
+extern u8 adam_ram_present[8];
 
 /** ReadPCB() ************************************************/
 /** Read value from a given PCB or DCB address.             **/
@@ -143,7 +166,7 @@ void PutKBD(unsigned int Key);
 byte ChangeTape(byte N,const char *FileName);
 byte ChangeDisk(byte N,const char *FileName);
 
-void AdamCheckFlushCache(void);
+void adam_disk_tape_cache_check(void);
    
 #ifdef __cplusplus
 }

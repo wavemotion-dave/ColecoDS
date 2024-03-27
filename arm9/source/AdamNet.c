@@ -1,3 +1,26 @@
+// ===============================================================
+// Parts of this file were taken from ColEM with a number of 
+// disk/tape caching issues fixed using the algorithms from
+// ADAMEm with a liberal amount of glue and scaffolding from me.
+//
+// I do not claim copyright on much of this code... I've left
+// both the ADAMEm and ColEm copyright statements below.
+//
+// Marcel and Marat are pioneers for Coleco/ADAM emulation and
+// they have my heartfelt thanks for providing a blueprint.
+// ===============================================================
+
+/** ADAMEm: Coleco ADAM emulator ********************************************/
+/**                                                                        **/
+/**                                Coleco.c                                **/
+/**                                                                        **/
+/** This file contains the Coleco-specific emulation code                  **/
+/**                                                                        **/
+/** Copyright (C) Marcel de Kogel 1996,1997,1998,1999                      **/
+/**     You are not allowed to distribute this software commercially       **/
+/**     Please, notify me, if you make any changes to this file            **/
+/****************************************************************************/
+
 /** ColEm: portable Coleco emulator **************************/
 /**                                                         **/
 /**                       AdamNet.c                         **/
@@ -27,15 +50,12 @@ FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
 byte HoldingBuf[4096];
 
-byte io_show_status         = 0;
+byte io_show_status = 0; // Used to show RD/WR status on the DS topline
 
 const byte timeouts[] = {5, 15, 30}; // FAST, SLOWER, SLOWEST
 
 DevStatus_t DiskStatus[MAX_DISKS];
 DevStatus_t TapeStatus[MAX_TAPES];
-
-/** RAM Access Macro *****************************************/
-#define RAM(A)         (RAM_Memory[A])
 
 /** PCB Field Offsets ****************************************/
 #define PCB_CMD_STAT   0
@@ -143,8 +163,6 @@ static const byte CtrlKey[256] =
   0xF0,0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,0xF8,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF
 };
 
-extern byte Port60;
-
 // We use LCD_D area of VRAM to store the PCB Table. This is 16-bit memory so it
 // takes the full 128K of LCD VRAM to hold the 8-bit values. A bit of a waste but 
 // better than allocating another 64K somewhere...
@@ -155,8 +173,139 @@ byte DiskID;
 byte KBDStatus;
 byte LastKey;
 
-extern byte RAM_Memory[];
+u8 adam_ram_present[8]  __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 
+// ------------------------------------------------------------------------------------------------
+// The Coleco Adam bios files are in three locations... the original ColecoBIOS, EOS and Writer
+// The game/program can enable or disable various bios locations - see SetupAdam() below.
+// ------------------------------------------------------------------------------------------------
+void adam_setup_bios(void)
+{
+    memset(BIOS_Memory, 0xFF, 0x10000);
+    memcpy(BIOS_Memory+0x0000, AdamWRITER, 0x8000);
+    memcpy(BIOS_Memory+0x8000, AdamEOS,    0x2000);
+    memcpy(BIOS_Memory+0xA000, ColecoBios, 0x2000);
+    // The last 8K at 0xC000 in the BIOS_Memory[] will be all 0xFF and we use that to our advantage below in SetupAdam()
+
+    // SetupAdam() will change these as needed to map in RAM 
+    memset(adam_ram_present, 0x00, sizeof(adam_ram_present));
+}
+
+// ================================================================================================
+// Setup Adam based on Port60 (Adam Memory) and Port20 (AdamNet)
+// Most of this hinges around Port60:
+// xxxx xxNN  : Lower address space code.
+//       00 = Onboard ROM.  Can be switched between EOS and SmartWriter by output to port 0x20
+//       01 = Onboard RAM (lower 32K)
+//       10 = Expansion RAM.  Bank switch chosen by port 0x42
+//       11 = OS-7 and 24K RAM (ColecoVision mode)
+//
+// xxxx NNxx  : Upper address space code.
+//       00 = Onboard RAM (upper 32K)
+//       01 = Expansion ROM (those extra ROM sockets)
+//       10 = Expansion RAM.  Bank switch chosen by port 0x42
+//       11 = Cartridge ROM (ColecoVision mode).
+//
+// And Port20: bit 1 (0x02) to determine if EOS.ROM is present on top of WRITER.ROM
+// ================================================================================================
+void SetupAdam(bool bResetAdamNet)
+{
+    if (!adam_mode) return;
+
+    // ----------------------------------
+    // Configure lower 32K of memory
+    // ----------------------------------
+    if ((Port60 & 0x03) == 0x00)    // WRITER.ROM (and possibly EOS.ROM)
+    {
+        adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 0; // ROM
+        
+        MemoryMap[0] = BIOS_Memory + 0x0000;
+        MemoryMap[1] = BIOS_Memory + 0x2000;
+        MemoryMap[2] = BIOS_Memory + 0x4000;
+        if (Port20 & 0x02)
+        {
+            MemoryMap[3] = BIOS_Memory + 0x8000;    // EOS
+        }
+        else
+        {
+            MemoryMap[3] = BIOS_Memory + 0x6000;    // Last block of Adam WRITER
+        }
+    }
+    else if ((Port60 & 0x03) == 0x01)   // Onboard RAM
+    {
+        adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
+        
+        MemoryMap[0] = RAM_Memory + 0x0000;
+        MemoryMap[1] = RAM_Memory + 0x2000;
+        MemoryMap[2] = RAM_Memory + 0x4000;
+        MemoryMap[3] = RAM_Memory + 0x6000;
+    }
+    else if ((Port60 & 0x03) == 0x03)   // Colecovision BIOS + RAM
+    {
+        adam_ram_present[0] = 0; // ROM
+        adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM        
+        
+        MemoryMap[0] = BIOS_Memory + 0xA000;    // Coleco.rom BIOS
+        MemoryMap[1] = RAM_Memory + 0x2000;
+        MemoryMap[2] = RAM_Memory + 0x4000;
+        MemoryMap[3] = RAM_Memory + 0x6000;
+    }
+    else                                // Expanded RAM
+    {
+        adam_128k_mode = 1;
+        adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
+        
+        MemoryMap[0] = RAM_Memory + 0x10000;
+        MemoryMap[1] = RAM_Memory + 0x12000;
+        MemoryMap[2] = RAM_Memory + 0x14000;
+        MemoryMap[3] = RAM_Memory + 0x16000;
+    }
+
+
+    // ----------------------------------
+    // Configure upper 32K of memory
+    // ----------------------------------
+    if ((Port60 & 0x0C) == 0x00)    // Onboard RAM
+    {
+        adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
+        
+        MemoryMap[4] = RAM_Memory + 0x8000;
+        MemoryMap[5] = RAM_Memory + 0xA000;
+        MemoryMap[6] = RAM_Memory + 0xC000;
+        MemoryMap[7] = RAM_Memory + 0xE000;
+    }
+    else if ((Port60 & 0x0C) == 0x08)    // Expanded RAM
+    {
+        adam_128k_mode = 1;
+        adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
+        
+        MemoryMap[4] = RAM_Memory + 0x18000;
+        MemoryMap[5] = RAM_Memory + 0x1A000;
+        MemoryMap[6] = RAM_Memory + 0x1C000;
+        MemoryMap[7] = RAM_Memory + 0x1E000;
+    }
+    else if ((Port60 & 0x0C) == 0x0C)    // Cartridge ROM
+    {
+        adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
+        
+        MemoryMap[4] = ROM_Memory + 0x0000;
+        MemoryMap[5] = ROM_Memory + 0x2000;
+        MemoryMap[6] = ROM_Memory + 0x4000;
+        MemoryMap[7] = ROM_Memory + 0x6000;
+    }
+    else        // We don't use the expansion ROM slot so just return 0xFF here
+    {
+        adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
+        
+        MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
+    }
+
+    // Check if we are to Reset the AdamNet
+    if (bResetAdamNet)  ResetPCB();
+}
 
 /** GetDCB() *************************************************/
 /** Get DCB byte at given offset.                           **/
@@ -375,19 +524,23 @@ static void UpdatePRN(byte Dev,int V)
 // Called on every vertical blank when a frame is finished
 // to provide a simple cache flush check on disk reads.
 // ----------------------------------------------------------
-void AdamCheckFlushCache(void)
+void adam_disk_tape_cache_check(void)
 {
- for (int i=0;i<4;++i)
- {
-  if (DiskStatus[i].timeout)
-  {
-   if (!--DiskStatus[i].timeout) DiskStatus[i].newstatus=0x80;
-  }
-  if (TapeStatus[i].timeout)
-  {
-   if (!--TapeStatus[i].timeout) TapeStatus[i].newstatus=0x80;
-  }    
- }
+    for (int i=0;i<MAX_DISKS;++i)
+    {
+        if (DiskStatus[i].timeout)
+        {
+            if (!--DiskStatus[i].timeout) DiskStatus[i].newstatus=0x80;
+        }
+    }
+    
+    for (int i=0;i<MAX_TAPES;++i)
+    {
+        if (TapeStatus[i].timeout)
+        {
+            if (!--TapeStatus[i].timeout) TapeStatus[i].newstatus=0x80;
+        }    
+    }
 }
 
 
@@ -586,7 +739,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
                 {
                   for(J=0;J<K;++J,++BUF) 
                   {
-                      Data[J] = RAM(BUF);
+                      Data[J] = RAM_Memory[BUF];
                   }
                   disk_unsaved_data[BAY_TAPE] = 1;
                 }
