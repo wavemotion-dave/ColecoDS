@@ -415,13 +415,13 @@ And then move the soundbank.h file to the arm9/sources directory
 Versions :
 -----------------------
 V9.5: ??-???-2024 by wavemotion-dave
+* Massive ADAMnet improvement for disk/tape handling. Improved timing, improved caching and more disk/tape games should load and run correctly.
+* Adam now properly handles 320K disk and two drive bays are virtually attacked (a disk drive and the internal Tape drive).
+* Adam full keyboard now uses an LED indicator under the CAPS LOCK button to indicate status.
+* Adam no longer mirrors RAM as a Colecovision would.
 * Tatung Einstein now has two proper standard 200K disk drives.
 * Tatung Einstein full keybaord now uses LED indicators under the SHIFT/CTRL/GRAPH and ALPHA LOCK keys for a visual improvement.
 * Tatung Einstein properly handles the backspace key when using the Alpha-Numeric keyboard overlay.
-* Adam full keyboard now uses an LED indicator under the CAPS LOCK button to indicate status.
-* Adam now properly handles 320K disk and two drive bays are virtually attacked (a disk drive and the internal Tape drive).
-* Adam no longer mirrors RAM as a Colecovision would.
-
 
 V9.4: 16-Mar-2024 by wavemotion-dave
 * Tatung Einstein improvements - more games run more correctly.

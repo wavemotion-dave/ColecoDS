@@ -266,10 +266,8 @@ void colecoSaveState()
         if (uNbO) fwrite(Disks, sizeof(Disks),1, handle);
         if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);
         
-        if (uNbO) fwrite(&adam_ram_lo, sizeof(adam_ram_lo),1, handle);
-        if (uNbO) fwrite(&adam_ram_hi, sizeof(adam_ram_hi),1, handle);
-        if (uNbO) fwrite(&adam_ram_lo_exp, sizeof(adam_ram_lo_exp),1, handle);
-        if (uNbO) fwrite(&adam_ram_hi_exp, sizeof(adam_ram_hi_exp),1, handle);
+        if (uNbO) fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);
+        
         if (uNbO) fwrite(&DiskID, sizeof(DiskID),1, handle);
         if (uNbO) fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
         if (uNbO) fwrite(&LastKey, sizeof(LastKey),1, handle);
@@ -525,10 +523,8 @@ void colecoLoadState()
                 if (uNbO) fread(Disks, sizeof(Disks),1, handle);
                 if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
 
-                if (uNbO) fread(&adam_ram_lo, sizeof(adam_ram_lo),1, handle);
-                if (uNbO) fread(&adam_ram_hi, sizeof(adam_ram_hi),1, handle);
-                if (uNbO) fread(&adam_ram_lo_exp, sizeof(adam_ram_lo_exp),1, handle);
-                if (uNbO) fread(&adam_ram_hi_exp, sizeof(adam_ram_hi_exp),1, handle);
+                if (uNbO) fread(adam_ram_present, sizeof(adam_ram_present),1, handle);
+                
                 if (uNbO) fread(&DiskID, sizeof(DiskID),1, handle);
                 if (uNbO) fread(&KBDStatus, sizeof(KBDStatus),1, handle);
                 if (uNbO) fread(&LastKey, sizeof(LastKey),1, handle);

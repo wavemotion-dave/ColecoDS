@@ -48,11 +48,6 @@ u32 tape_len            __attribute__((section(".dtcm"))) = 0;
 u8 key_shift_hold       __attribute__((section(".dtcm"))) = 0;
 u8 spinner_enabled      __attribute__((section(".dtcm"))) = 0;
 
-u8 adam_ram_lo          __attribute__((section(".dtcm"))) = false;
-u8 adam_ram_hi          __attribute__((section(".dtcm"))) = false;
-u8 adam_ram_lo_exp      __attribute__((section(".dtcm"))) = false;
-u8 adam_ram_hi_exp      __attribute__((section(".dtcm"))) = false;
-
 Z80 CPU __attribute__((section(".dtcm")));      // Put the entire CPU state into fast memory for speed!
 
 // --------------------------------------------------
@@ -104,27 +99,48 @@ u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global fil
 // -----------------------------------------------------------
 // The two master sound chips... both are mapped to SN sound.
 // -----------------------------------------------------------
-SN76496 mySN    __attribute__((section(".dtcm")));
+SN76496 mySN   __attribute__((section(".dtcm")));
 AY38910 myAY   __attribute__((section(".dtcm")));
+
+
+// ------------------------------------------------------------------------
+// The Coleco (with or without SGM) and the ADAM have some key ports that
+// need setup. We sort that out here and setup for the appopriate system.
+// ------------------------------------------------------------------------
+void coleco_adam_port_setup(void)
+{
+    if (adam_mode) // ADAM mode requires special handling of Port60 
+    {
+        Port53 = 0x00;          // Init the SGM Port 53
+        Port60 = 0x00;          // Adam/Memory Port 60 is in 'ADAM Mode'
+        Port20 = 0x00;          // Adam Net Port 20
+        Port42 = 0x00;          // Only one Epanded Bank of 64K (may use this in the future)
+    }
+    else // Is Colecovision mode .. make sure the SGM ports are correct
+    {
+        Port53 = 0x00;          // Init the SGM Port 53
+        Port60 = 0x0F;          // Adam/Memory Port 60 is in 'Colecovision Mode'
+        Port20 = 0x00;          // Adam Net Port 20 not used for CV/SGM mode
+        Port42 = 0x00;          // Not used for CV/SGM mode
+    }
+}
 
 // ---------------------------------------------------------
 // Reset the Super Game Module vars... we reset back to
-// SGM disabled and no AY sound chip use
+// SGM disabled and no AY sound chip use to start.
 // ---------------------------------------------------------
 void sgm_reset(void)
 {
-    sgm_enable = false;          // Default to no SGM until enabled
-    sgm_low_addr = 0x2000;       // And the first 8K is BIOS
+    sgm_enable = false;            // Default to no SGM until enabled
+    sgm_low_addr = 0x2000;         // And the first 8K is BIOS
     if (!msx_mode && !svi_mode && !einstein_mode)
     {
-        AY_Enable = false;       // Default to no AY use until accessed
+        AY_Enable = false;         // Default to no AY use until accessed
     }
-    AY_EnvelopeOn = false;       // No Envelope mode yet
-    bFirstSGMEnable = true;      // First time SGM enable we clear ram
+    AY_EnvelopeOn = false;         // No Envelope mode yet
+    bFirstSGMEnable = true;        // First time SGM enable we clear ram
 
-    Port53 = 0x00;               // Init the SGM Port 53
-    Port60 = (adam_mode?0x00:0x0F);// And the Adam/Memory Port 60
-    Port20 = 0x00;               // Adam Net
+    coleco_adam_port_setup();      // Ensure the memory ports are setup properly
 }
 
 
@@ -343,7 +359,6 @@ u8 colecoInit(char *szGame)
   }
   else if (adam_mode)  // Load Adam DDP or DSK
   {
-      memset((u8*)0x6820000, 0x00, 0x20000);    // The 128K ADAM RAM is wiped clean
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start
       adam_CapsLock = 0;                 // CAPS Lock disabled to start
@@ -594,8 +609,7 @@ u8 loadrom(const char *path,u8 * ptr)
         // ---------------------------------------------------------------------------
         else if (adam_mode)
         {
-            Port60 = 0x00;               // Adam Memory default
-            Port20 = 0x00;               // Adam Net default
+            coleco_adam_port_setup();      // Ensure the memory ports are setup properly
             adam_128k_mode = 0;          // Normal 64K ADAM to start
             LastROMSize = romSize;       // So we know how big the original .dsk was
             SetupAdam(false);            // And make sure the ADAM is ready
@@ -614,12 +628,13 @@ u8 loadrom(const char *path,u8 * ptr)
                 strcpy(lastDiskDataPath[BAY_TAPE], path);
                 ChangeTape(0, path);
             }
-            else // Must be a .dsk file
+            else if ((strcasecmp(strrchr(path, '.'), ".dsk") == 0))  // Is this a DISK image (.dsk)?
             {
                 // Insert the disk into the virtual DISK drive
                 strcpy(lastDiskDataPath[BAY_DISK], path);
                 ChangeDisk(0, path);
-            }
+            } 
+            // else must be a ROM which is okay...
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {
@@ -771,125 +786,6 @@ void SetupSGM(void)
     }
 }
 
-
-// ------------------------------------------------------------------------------------------------
-// The Coleco Adam bios files are in three locations... the original ColecoBIOS, EOS and Writer
-// The game/program can enable or disable various bios locations - see SetupAdam() below.
-// ------------------------------------------------------------------------------------------------
-void adam_setup_bios(void)
-{
-    memset(BIOS_Memory, 0xFF, 0x10000);
-    memcpy(BIOS_Memory+0x0000, AdamWRITER, 0x8000);
-    memcpy(BIOS_Memory+0x8000, AdamEOS,    0x2000);
-    memcpy(BIOS_Memory+0xA000, ColecoBios, 0x2000);
-    // The last 8K at 0xC000 in the BIOS_Memory[] will be all 0xFF and we use that to our advantage below in SetupAdam()
-}
-
-// ================================================================================================
-// Setup Adam based on Port60 (Adam Memory) and Port20 (AdamNet)
-// Most of this hinges around Port60:
-// xxxx xxNN  : Lower address space code.
-//       00 = Onboard ROM.  Can be switched between EOS and SmartWriter by output to port 0x20
-//       01 = Onboard RAM (lower 32K)
-//       10 = Expansion RAM.  Bank switch chosen by port 0x42
-//       11 = OS-7 and 24K RAM (ColecoVision mode)
-//
-// xxxx NNxx  : Upper address space code.
-//       00 = Onboard RAM (upper 32K)
-//       01 = Expansion ROM (those extra ROM sockets)
-//       10 = Expansion RAM.  Bank switch chosen by port 0x42
-//       11 = Cartridge ROM (ColecoVision mode).
-//
-// And Port20: bit 1 (0x02) to determine if EOS.ROM is present on top of WRITER.ROM
-// ================================================================================================
-void SetupAdam(bool bResetAdamNet)
-{
-    if (!adam_mode) return;
-
-    // ----------------------------------
-    // Configure lower 32K of memory
-    // ----------------------------------
-    if ((Port60 & 0x03) == 0x00)    // WRITER.ROM (and possibly EOS.ROM)
-    {
-        adam_ram_lo = false;
-        adam_ram_lo_exp = false;
-        MemoryMap[0] = BIOS_Memory + 0x0000;
-        MemoryMap[1] = BIOS_Memory + 0x2000;
-        MemoryMap[2] = BIOS_Memory + 0x4000;
-        if (Port20 & 0x02)
-        {
-            MemoryMap[3] = BIOS_Memory + 0x8000;    // EOS
-        }
-        else
-        {
-            MemoryMap[3] = BIOS_Memory + 0x6000;    // Last block of Adam WRITER
-        }
-    }
-    else if ((Port60 & 0x03) == 0x01)   // Onboard RAM
-    {
-        adam_ram_lo = true;
-        adam_ram_lo_exp = false;
-        MemoryMap[0] = RAM_Memory + 0x0000;
-        MemoryMap[1] = RAM_Memory + 0x2000;
-        MemoryMap[2] = RAM_Memory + 0x4000;
-        MemoryMap[3] = RAM_Memory + 0x6000;
-    }
-    else if ((Port60 & 0x03) == 0x03)   // Colecovision BIOS + RAM
-    {
-        adam_ram_lo = true;
-        adam_ram_lo_exp = false;
-        MemoryMap[0] = BIOS_Memory + 0xA000;    // Coleco.rom BIOS
-        MemoryMap[1] = RAM_Memory + 0x2000;
-        MemoryMap[2] = RAM_Memory + 0x4000;
-        MemoryMap[3] = RAM_Memory + 0x6000;
-    }
-    else                                // Expanded RAM
-    {
-        adam_128k_mode = 1;
-        adam_ram_lo = false;
-        adam_ram_lo_exp = true;
-        MemoryMap[0] = RAM_Memory + 0x10000;
-        MemoryMap[1] = RAM_Memory + 0x12000;
-        MemoryMap[2] = RAM_Memory + 0x14000;
-        MemoryMap[3] = RAM_Memory + 0x16000;
-    }
-
-
-    // ----------------------------------
-    // Configure upper 32K of memory
-    // ----------------------------------
-    if ((Port60 & 0x0C) == 0x00)    // Onboard RAM
-    {
-        adam_ram_hi = true;
-        adam_ram_hi_exp = false;
-        MemoryMap[4] = RAM_Memory + 0x8000;
-        MemoryMap[5] = RAM_Memory + 0xA000;
-        MemoryMap[6] = RAM_Memory + 0xC000;
-        MemoryMap[7] = RAM_Memory + 0xE000;
-    }
-    else if ((Port60 & 0x0C) == 0x08)    // Expanded RAM
-    {
-        adam_128k_mode = 1;
-        adam_ram_hi = false;
-        adam_ram_hi_exp = true;
-        MemoryMap[4] = RAM_Memory + 0x18000;
-        MemoryMap[5] = RAM_Memory + 0x1A000;
-        MemoryMap[6] = RAM_Memory + 0x1C000;
-        MemoryMap[7] = RAM_Memory + 0x1E000;
-    }
-    else        // Nothing else exists so just return 0xFF
-    {
-        adam_ram_hi = false;
-        adam_ram_hi_exp = false;
-        MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
-    }
-
-    // Check if we are to Reset the AdamNet
-    if (bResetAdamNet)  ResetPCB();
-}
 
 unsigned char cpu_readport_pencil2(register unsigned short Port)
 {
@@ -1303,7 +1199,7 @@ ITCM_CODE u32 LoopZ80()
       }
       else if (adam_mode)
       {
-          AdamCheckFlushCache();    // Make sure the DSK is up to date
+          adam_disk_tape_cache_check();    // Make sure the disk and tape buffers are up to date
       }
       return 0;
   }

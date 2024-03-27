@@ -36,13 +36,10 @@ u8 msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8 msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
 
 extern u8 romBankMask;
-extern u8 adam_ram_lo;
-extern u8 adam_ram_hi;
-extern u8 adam_ram_lo_exp;
-extern u8 adam_ram_hi_exp;
 extern u8 svi_RAM[2];
 extern u16 msx_block_size;
 extern u8 *MemoryMap[8];
+extern u8 adam_ram_present[8];
 
 // -------------------------------------------------
 // Switch banks... do this as fast as possible..
@@ -347,18 +344,14 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
     {
         // --------------------------------------------------------------
         // If the ADAM is enabled, we may be trying to write to AdamNet
+        // or, more likely, to the various mapped RAM configurations...
         // --------------------------------------------------------------
         if (machine_mode & MODE_ADAM)
         {
-            if (address & 0x8000)
+            if (adam_ram_present[address >> 13]) // Is there RAM mapped in this 8K area?
             {
-                if (adam_ram_hi) {RAM_Memory[address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
-                else if (adam_ram_hi_exp)  {RAM_Memory[0x10000 + address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
-            }
-            else
-            {
-                if (adam_ram_lo) {RAM_Memory[address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
-                else if (adam_ram_lo_exp)  {RAM_Memory[0x10000 + address] = value; if  (((u16*)0x06860000)[address]) WritePCB(address, value);}
+                *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
+                if  (((u16*)0x06860000)[address]) WritePCB(address, value); // Check if we need to write to the PCB mapped area
             }
         }
         // -------------------------------------------------------------
