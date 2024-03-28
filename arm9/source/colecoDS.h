@@ -218,6 +218,9 @@ extern u16 timingFrames;
 extern u8 msx_scc_enable;
 extern u8 sg1000_double_reset;
 
+extern char initial_file[];
+extern char initial_path[];
+
 extern u8 spinX_left;
 extern u8 spinX_right;
 extern u8 spinY_left;
@@ -244,9 +247,10 @@ extern u16 machine_mode;
 extern u8 kbd_keys_pressed;
 extern u8 kbd_keys[12];
 
+extern char disk_last_file[3][256];
 extern char disk_last_path[3][256];
-extern u32 disk_last_size[3];
-extern u8 disk_unsaved_data[3];
+extern u32  disk_last_size[3];
+extern u8   disk_unsaved_data[3];
 
 extern u32 tape_pos, tape_len;
 

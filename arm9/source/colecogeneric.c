@@ -1443,7 +1443,8 @@ void SetDefaultGameConfig(void)
     // Some special BASIC carts that want full keyboards
     // ----------------------------------------------------
     if (file_crc == 0x69a92b72)                 myConfig.overlay = 1;  // PV-2000 BASIC uses keyboard
-    if (file_crc == 0x4891613b)                 myConfig.overlay = 11; // Hanimex Pencil II BASIC uses simplified keyboard    
+    if (file_crc == 0x4891613b)                 myConfig.overlay = 2;  // Hanimex Pencil II BASIC uses simplified keyboard
+    if (file_crc == 0x0c497839)                 myConfig.overlay = 2;  // Hanimex Pencil II BASIC [a] uses simplified keyboard    
 
     // ----------------------------------------------------------------------------------
     // Some CreatiVision games that want the new CV overlay keypad/keybaord

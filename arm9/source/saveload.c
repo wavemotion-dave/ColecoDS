@@ -55,12 +55,15 @@ void colecoSaveState()
 {
   u32 uNbO;
   long pSvg;
-    
+
+  // Return to the original path
+  chdir(initial_path);    
+  
   // Init filename = romname and SAV in place of ROM
   DIR* dir = opendir("sav");
-  if (dir) closedir(dir);  // Directory exists... close it out and move on.
+  if (dir) closedir(dir);    // Directory exists... close it out and move on.
   else mkdir("sav", 0777);   // Otherwise create the directory...
-  sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
+  sprintf(szLoadFile,"sav/%s", initial_file);
 
   int len = strlen(szLoadFile);
   if (szLoadFile[len-3] == '.') // In case of .sg or .sc
@@ -317,8 +320,11 @@ void colecoLoadState()
     u32 uNbO;
     long pSvg;
 
+    // Return to the original path
+    chdir(initial_path);    
+
     // Init filename = romname and .SAV in place of ROM
-    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", initial_file);
     int len = strlen(szLoadFile);
     if (szLoadFile[len-3] == '.') // In case of .sg or .sc
     {
@@ -595,7 +601,7 @@ void colecoSaveEEPROM(void)
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", initial_file);
 
     int len = strlen(szLoadFile);
     szLoadFile[len-3] = 'e';
@@ -612,11 +618,14 @@ void colecoSaveEEPROM(void)
 
 void colecoLoadEEPROM(void)
 {
+    // Return to the original path
+    chdir(initial_path);    
+    
     // Init filename = romname and EE in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", initial_file);
 
     int len = strlen(szLoadFile);
     szLoadFile[len-3] = 'e';
@@ -638,11 +647,14 @@ void colecoLoadEEPROM(void)
 
 void msxSaveEEPROM(void)
 {
+    // Return to the original path
+    chdir(initial_path);    
+
     // Init filename = romname and SRM (SRAM) in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", initial_file);
 
     int len = strlen(szLoadFile);
     szLoadFile[len-3] = 's';
@@ -660,11 +672,14 @@ void msxSaveEEPROM(void)
 
 void msxLoadEEPROM(void)
 {
+    // Return to the original path
+    chdir(initial_path);    
+
     // Init filename = romname and SRM (SRAM) in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.
     else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szLoadFile,"sav/%s", gpFic[ucGameAct].szName);
+    sprintf(szLoadFile,"sav/%s", initial_file);
 
     int len = strlen(szLoadFile);
     szLoadFile[len-3] = 's';
