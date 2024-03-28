@@ -276,7 +276,7 @@ void colecoSaveState()
         if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
         if (adam_128k_mode) 
         {
-            if (DSI_RAM_Buffer) fwrite(DSI_RAM_Buffer, 0x10000,1, handle); // Write 64K... bigger is not supported for save states at this time
+            if (DSI_RAM_Buffer) fwrite(DSI_RAM_Buffer, 0x80000,1, handle); // Write 512K... bigger is not supported for save states at this time
             else fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
         }
     }
@@ -532,7 +532,7 @@ void colecoLoadState()
                 if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
                 if (adam_128k_mode) 
                 {
-                    if (DSI_RAM_Buffer) fread(DSI_RAM_Buffer, 0x10000, 1, handle); // Read 64K... bigger is not supported for save states at this time
+                    if (DSI_RAM_Buffer) fread(DSI_RAM_Buffer, 0x80000, 1, handle); // Read 512K... bigger is not supported for save states at this time
                     else fread(RAM_Memory+0x10000, 0x10000, 1, handle);
                 }
             }
