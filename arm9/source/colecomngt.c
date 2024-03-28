@@ -614,9 +614,8 @@ u8 loadrom(const char *filename, u8 * ptr)
         // ---------------------------------------------------------------------------
         else if (adam_mode)
         {
-            coleco_adam_port_setup();      // Ensure the memory ports are setup properly
+            coleco_adam_port_setup();    // Ensure the memory ports are setup properly
             adam_128k_mode = 0;          // Normal 64K ADAM to start
-            LastROMSize = romSize;       // So we know how big the original .dsk was
             SetupAdam(false);            // And make sure the ADAM is ready
 
             strcpy(disk_last_file[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
@@ -626,6 +625,10 @@ u8 loadrom(const char *filename, u8 * ptr)
             strcpy(disk_last_path[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
             strcpy(disk_last_path[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
             strcpy(disk_last_path[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
+            
+            disk_last_size[BAY_DISK1] = 0;          // Nothing loaded in the DISK drive yet
+            disk_last_size[BAY_DISK2] = 0;          // Nothing loaded in the DISK drive yet
+            disk_last_size[BAY_TAPE]  = 0;          // Nothing loaded in the TAPE drive yet
 
             // ------------------------------------------
             // The .ddp or .dsk is now in ROM_Memory[]
@@ -637,6 +640,7 @@ u8 loadrom(const char *filename, u8 * ptr)
                 // Insert the tape into the virtual TAPE drive
                 strcpy(disk_last_file[BAY_TAPE], filename);
                 strcpy(disk_last_path[BAY_TAPE], initial_path);
+                disk_last_size[BAY_TAPE] = romSize;
                 ChangeTape(0, filename);
             }
             else if ((strcasecmp(strrchr(filename, '.'), ".dsk") == 0))  // Is this a DISK image (.dsk)?
@@ -644,6 +648,7 @@ u8 loadrom(const char *filename, u8 * ptr)
                 // Insert the disk into the virtual DISK drive
                 strcpy(disk_last_file[BAY_DISK1], filename);
                 strcpy(disk_last_path[BAY_DISK1], initial_path);
+                disk_last_size[BAY_DISK1] = romSize;
                 ChangeDisk(0, filename);
             } 
             // else must be a ROM which is okay...
@@ -658,7 +663,7 @@ u8 loadrom(const char *filename, u8 * ptr)
         {
             strcpy(disk_last_file[0], filename);
             strcpy(disk_last_path[0], initial_path);
-            ein_disk_size[0] = romSize;     // Might be a .COM file but we just reuse the einstein disk size variable
+            disk_last_size[0] = romSize;    // Might be a .COM file but we just reuse the einstein disk size variable
             if (romSize == 1626)            // A bit of a hack... the size of the Diagnostic ROM
             {
                 extern u8 EinsteinBios2[];
