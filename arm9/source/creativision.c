@@ -622,7 +622,7 @@ void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce mem
   #define MEM_SIZE (END_VID - START_VID)
     
   // We always load a .BAS file that has the same base filename as the ROM we loaded
-  strcpy(line, lastDiskDataPath[0]);
+  strcpy(line, disk_last_path[0]);
   int j = strlen(line)-1;
   while (line[j] != '.') j--;
   line[++j]='B';

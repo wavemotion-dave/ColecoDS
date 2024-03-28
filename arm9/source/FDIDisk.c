@@ -99,12 +99,14 @@ byte *NewFDI(FDIDisk *D,int Sides,int Tracks,int Sectors,int SecSize)
   // for an ADAM Disk Drive at 320K and an Adam DDP Tape at 256K.
   //
   // The re-user of the ROM_Memory[] is as follows:
-  // ROM_Memory+0K   is for the read-in buffer from the SD card.
-  // ROM_Memory+330K is the converted FDID image the Disk Image
-  // ROM_Memory+660K is the converted FDID image the Tape Image
-  // ROM_Memory - last 64K is for the PCBTable[]
-  // -----------------------------------------------------------------
-  int offset = ((D == &Disks[0]) ? (330*1024) : (660*1024));
+  // ROM_Memory+0K   is for DISK 1 sector dump
+  // ROM_Memory+330K is for DISK 2 sector dump
+  // ROM_Memory+660K is for TAPE 1 sector dump
+    // -----------------------------------------------------------------
+  int offset = 0;
+  if (D == &Disks[0]) offset = (0   * 1024);
+  if (D == &Disks[1]) offset = (330 * 1024);
+  if (D == &Tapes[0]) offset = (660 * 1024);
   P = (byte*)ROM_Memory+offset;   // index into the big buffer depending on whether we are the Disk drive or Tape drive
   memset(P,0x00,I+K);             // Clear out the disk buffer - we'll assemble the FDID image below
     

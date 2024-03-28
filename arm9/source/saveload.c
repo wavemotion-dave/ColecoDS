@@ -262,24 +262,23 @@ void colecoSaveState()
         if (uNbO) fwrite(SRAM_Memory, 0x4000, 1, handle);
         
         if (uNbO) fwrite(HoldingBuf, 0x2000,1, handle);
-        if (uNbO) fwrite(Tapes, sizeof(Tapes),1, handle);
-        if (uNbO) fwrite(Disks, sizeof(Disks),1, handle);
-        if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);
-        
-        if (uNbO) fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);
-        
+        if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);        
+        if (uNbO) fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);        
         if (uNbO) fwrite(&DiskID, sizeof(DiskID),1, handle);
         if (uNbO) fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
         if (uNbO) fwrite(&LastKey, sizeof(LastKey),1, handle);
-        if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
-        if (uNbO) fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
-        
+        if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);        
+        if (uNbO) fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);        
         if (uNbO) fwrite(DiskStatus, sizeof(DiskStatus),1, handle);
         if (uNbO) fwrite(TapeStatus, sizeof(TapeStatus),1, handle);
         
         if (uNbO) fwrite(spare, 32,1, handle);        
         if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
-        if (adam_128k_mode) fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
+        if (adam_128k_mode) 
+        {
+            if (DSI_RAM_Buffer) fwrite(DSI_RAM_Buffer, 0x10000,1, handle); // Write 64K... bigger is not supported for save states at this time
+            else fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
+        }
     }
     else if (bActivisionPCB)
     {
@@ -519,24 +518,23 @@ void colecoLoadState()
                 for (u16 i=0; i<0x4000; i++)  PCBTable[0xC000+i] = SRAM_Memory[i];
                 
                 if (uNbO) fread(HoldingBuf, 0x2000,1, handle);
-                if (uNbO) fread(Tapes, sizeof(Tapes),1, handle);
-                if (uNbO) fread(Disks, sizeof(Disks),1, handle);
                 if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
-
-                if (uNbO) fread(adam_ram_present, sizeof(adam_ram_present),1, handle);
-                
+                if (uNbO) fread(adam_ram_present, sizeof(adam_ram_present),1, handle);                
                 if (uNbO) fread(&DiskID, sizeof(DiskID),1, handle);
                 if (uNbO) fread(&KBDStatus, sizeof(KBDStatus),1, handle);
                 if (uNbO) fread(&LastKey, sizeof(LastKey),1, handle);
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
                 if (uNbO) fread(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
-
                 if (uNbO) fread(DiskStatus, sizeof(DiskStatus),1, handle);
                 if (uNbO) fread(TapeStatus, sizeof(TapeStatus),1, handle);
                 
                 if (uNbO) fread(spare, 32,1, handle);                
                 if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
-                if (adam_128k_mode) fread(RAM_Memory+0x10000, 0x10000,1, handle);
+                if (adam_128k_mode) 
+                {
+                    if (DSI_RAM_Buffer) fread(DSI_RAM_Buffer, 0x10000, 1, handle); // Read 64K... bigger is not supported for save states at this time
+                    else fread(RAM_Memory+0x10000, 0x10000, 1, handle);
+                }
             }
             else if (bActivisionPCB)
             {
