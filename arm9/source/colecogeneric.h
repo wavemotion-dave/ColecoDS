@@ -4,8 +4,8 @@
 #define MAX_ROMS        1500
 #define MAX_ROM_LENGTH  160
 
-#define MAX_CONFIGS     1358
-#define CONFIG_VER      0x0010
+#define MAX_CONFIGS     1950
+#define CONFIG_VER      0x0011
 
 #define COLROM          0x01
 #define DIRECT          0x02
@@ -36,6 +36,8 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u32 bios_checksums;
     char szLastRom[MAX_ROM_LENGTH+1];
     char szLastPath[MAX_ROM_LENGTH+1];
+    char reserved1[MAX_ROM_LENGTH+1];
+    char reserved2[MAX_ROM_LENGTH+1];
     u8  showBiosInfo;
     u8  showFPS;
     u8  defaultMSX;
@@ -90,6 +92,8 @@ struct __attribute__((__packed__)) Config_t
     u8  reserved6;
     u8  reserved7;
     u8  reserved8;
+    u8  reserved9;
+    u8  reserved10;
 };
  
 

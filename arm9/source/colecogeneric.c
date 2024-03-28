@@ -1304,8 +1304,10 @@ void SetDefaultGameConfig(void)
     myConfig.reserved4   = 0;    
     myConfig.reserved5   = 0;    
     myConfig.reserved6   = 0;
-    myConfig.reserved7   = 0xA5;    // So it's easy to spot on an "upgrade"
-    myConfig.reserved8   = 0xA5;    // So it's easy to spot on an "upgrade"
+    myConfig.reserved7   = 0;
+    myConfig.reserved8   = 0;
+    myConfig.reserved9   = 0xA5;    // So it's easy to spot on an "upgrade" and we can re-default it
+    myConfig.reserved10  = 0xA5;    // So it's easy to spot on an "upgrade" and we can re-default it
   
     // ----------------------------------------------------------------------------------
     // A few games don't want more than 4 max sprites (they pull tricks that rely on it)
@@ -1766,7 +1768,7 @@ const struct options_t Option_Table[3][20] =
     {
         {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,        3},
         {"EMU TEXT",       {"OFF",  "ON"},                                                                                                                                                      &myGlobalConfig.emuText,        2},
-        {"BIOS INFO",      {"HIDE", "SHOW"},                                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
+        {"BIOS INFO",      {"HIDE ON BOOT", "SHOW ON BOOT"},                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
         {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"},                                                         &myGlobalConfig.defaultMSX,     7},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},

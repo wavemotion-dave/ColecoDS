@@ -17,20 +17,19 @@
 #include "colecogeneric.h"
 #include "printf.h"
 
-// ------------------------------------------------------------------------------
-// With only 125 released games plus 25-50 prototypes and 50-ish homebrews,
-// this game limit should be more than enough to handle the entire library.
-// ------------------------------------------------------------------------------
-#define MAX_HS_GAMES    575         // Fits just barely into 128K which is all we want to use
-#define HS_VERSION      0x0006      // Changing this will wipe high scores on the next install
+// ------------------------------------------------------------------------------------
+// We need to put a practical limit on the size of the high scores... 740 games it is!
+// ------------------------------------------------------------------------------------
+#define MAX_HS_GAMES    744         // Fits just barely into 128K which is all we want to use
+#define HS_VERSION      0x0007      // Changing this will wipe high scores on the next install
 
 // --------------------------------------------------------------------------
 // We allow sorting on various criteria. By default sorting is high-to-low.
 // --------------------------------------------------------------------------
-#define HS_OPT_SORTMASK  0x0003
-#define HS_OPT_SORTLOW   0x0001
-#define HS_OPT_SORTTIME  0x0002
-#define HS_OPT_SORTASCII 0x0003
+#define HS_OPT_SORTMASK  0x03
+#define HS_OPT_SORTLOW   0x01
+#define HS_OPT_SORTTIME  0x02
+#define HS_OPT_SORTASCII 0x03
 
 #pragma pack(1)     // Keep things tight...
 
@@ -43,7 +42,7 @@ struct score_t
 {
     char    initials[4];        // With NULL this is only 3 ascii characters
     char    score[7];           // Six digits of score 
-    char    reserved[5];        // For the future...
+    char    reserved;           // For the future...
     u16  year;                  // Date score was achieved. We'll auto-fill this from DS time
     u8   month;
     u8   day;
@@ -55,8 +54,8 @@ struct score_t
 struct highscore_t
 {
     u32  crc;
-    char    notes[21];
-    u16  options;
+    char notes[11];
+    u8   options;
     struct score_t scores[10];
 };
 
@@ -140,13 +139,13 @@ void highscore_init(void)
         for (int i=400; i<MAX_HS_GAMES; i++)
         {
             highscores.highscore_table[i].crc = 0x00000000;
-            strcpy(highscores.highscore_table[i].notes, "                    ");
+            strcpy(highscores.highscore_table[i].notes, "          ");
             highscores.highscore_table[i].options = 0x0000;
             for (int j=0; j<10; j++)
             {
                 strcpy(highscores.highscore_table[i].scores[j].score, "000000");
                 strcpy(highscores.highscore_table[i].scores[j].initials, "   ");
-                strcpy(highscores.highscore_table[i].scores[j].reserved, "     ");                
+                highscores.highscore_table[i].scores[j].reserved = 0;
                 highscores.highscore_table[i].scores[j].year = 0;
                 highscores.highscore_table[i].scores[j].month = 0;
                 highscores.highscore_table[i].scores[j].day = 0;
@@ -161,13 +160,13 @@ void highscore_init(void)
         for (int i=0; i<MAX_HS_GAMES; i++)
         {
             highscores.highscore_table[i].crc = 0x00000000;
-            strcpy(highscores.highscore_table[i].notes, "                    ");
+            strcpy(highscores.highscore_table[i].notes, "          ");
             highscores.highscore_table[i].options = 0x0000;
             for (int j=0; j<10; j++)
             {
                 strcpy(highscores.highscore_table[i].scores[j].score, "000000");
                 strcpy(highscores.highscore_table[i].scores[j].initials, "   ");
-                strcpy(highscores.highscore_table[i].scores[j].reserved, "     ");                
+                highscores.highscore_table[i].scores[j].reserved = 0;
                 highscores.highscore_table[i].scores[j].year = 0;
                 highscores.highscore_table[i].scores[j].month = 0;
                 highscores.highscore_table[i].scores[j].day = 0;
@@ -485,7 +484,7 @@ void highscore_entry(short foundIdx, u32 crc)
 void highscore_options(short foundIdx, u32 crc)
 {
     u16 options = 0x0000;
-    static char notes[21];
+    static char notes[11];
     char bEntryDone = 0;
     char blink=0;
     unsigned short entry_idx=0;
@@ -519,7 +518,7 @@ void highscore_options(short foundIdx, u32 crc)
         {
             if ((keysCurrent() & KEY_RIGHT) || (keysCurrent() & KEY_A))
             {
-                if (entry_idx < 19) entry_idx++; 
+                if (entry_idx < 9) entry_idx++; 
                 blink=25;
                 dampen=15;
             }
@@ -586,13 +585,13 @@ void highscore_options(short foundIdx, u32 crc)
             {
                 highscores.highscore_table[foundIdx].crc = 0x00000000;
                 highscores.highscore_table[foundIdx].options = 0x0000;
-                strcpy(highscores.highscore_table[foundIdx].notes, "                    ");
-                strcpy(notes, "                    ");                
+                strcpy(highscores.highscore_table[foundIdx].notes, "          ");
+                strcpy(notes, "          ");                
                 for (int j=0; j<10; j++)
                 {
                     strcpy(highscores.highscore_table[foundIdx].scores[j].score, "000000");
                     strcpy(highscores.highscore_table[foundIdx].scores[j].initials, "   ");
-                    strcpy(highscores.highscore_table[foundIdx].scores[j].reserved, "    ");
+                    highscores.highscore_table[foundIdx].scores[j].reserved = 0;
                     highscores.highscore_table[foundIdx].scores[j].year = 0;
                     highscores.highscore_table[foundIdx].scores[j].month = 0;
                     highscores.highscore_table[foundIdx].scores[j].day = 0;
@@ -606,7 +605,7 @@ void highscore_options(short foundIdx, u32 crc)
             dampen--;
         }
 
-        sprintf(hs_line, "%-20s", notes);
+        sprintf(hs_line, "%-10s", notes);
         if ((++blink % 60) > 30)
         {
             hs_line[entry_idx] = '_';
