@@ -54,11 +54,11 @@ bool screenshotbmp(const char* filename) {
     while(REG_DISPCAPCNT & DCAP_ENABLE);
 
     // ----------------------------------------------------------------------------------------------
-    // Use the back-end 128K of the large cart buffer. In theory this might be used by some massive
+    // Use the back-end 100K of the large cart buffer. In theory this might be used by some massive
     // game - and screenshot of such a game would break.
     // This saves us from memory allocation and we're already pretty tight on space for ColecoDS.
     // ----------------------------------------------------------------------------------------------
-    u8 *temp = (u8*)ROM_Memory+((MAX_CART_SIZE-128)*1024);
+    u8 *temp = (u8*)ROM_Memory+((MAX_CART_SIZE-100)*1024);
 
     HEADER *header= (HEADER*)temp;
     INFOHEADER *infoheader = (INFOHEADER*)(temp + sizeof(HEADER));

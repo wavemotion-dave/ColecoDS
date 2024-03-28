@@ -1243,8 +1243,9 @@ void SaveAdamDisk(u8 drive)
 
     if (isBayLoaded(BAY_DISK1+drive))  // If we have a DISK loaded
     {
+        chdir(disk_last_path[BAY_DISK1+drive]);
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Disks[0], disk_last_file[BAY_DISK1+drive], (disk_last_size[BAY_DISK1+drive] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
+        SaveFDI(&Disks[drive], disk_last_file[BAY_DISK1+drive], (disk_last_size[BAY_DISK1+drive] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
         disk_unsaved_data[BAY_DISK1+drive] = 0;
@@ -1258,6 +1259,7 @@ void SaveAdamTape(void)
 
     if (isBayLoaded(BAY_TAPE))  // If we have a TAPE loaded
     {
+        chdir(disk_last_path[BAY_TAPE]);
         DSPrint(12,0,6, "SAVING");
         SaveFDI(&Tapes[0], disk_last_file[BAY_TAPE], FMT_DDP);
         DSPrint(12,0,6, "      ");
@@ -1571,10 +1573,10 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     }
     else if (einstein_mode)
     {
-        if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
-        if (disk_unsaved_data[1]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " DISK1 HAS UNSAVED DATA! ");
+        if (disk_unsaved_data[BAY_DISK1]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
+        if (disk_unsaved_data[BAY_DISK2]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " DISK1 HAS UNSAVED DATA! ");
         snprintf(tmp, 31, "DSK0: %s", disk_last_file[BAY_DISK1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
-        snprintf(tmp, 31, "DSK1: %s", disk_last_file[BAY_DISK1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
+        snprintf(tmp, 31, "DSK1: %s", disk_last_file[BAY_DISK2]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
     }
     
     // ----------------------------------------------------------------------------------------------
