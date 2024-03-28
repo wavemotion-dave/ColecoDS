@@ -51,6 +51,30 @@ const u32 crc32_table[256] = {
     0xB3667A2E, 0xC4614AB8, 0x5D681B02, 0x2A6F2B94, 0xB40BBE37, 0xC30C8EA1, 0x5A05DF1B, 0x2D02EF8D,  // 248 [0xF8 .. 0xFF]
 };
 
+// ------------------------------------------------------------------------
+// Is this filename a disk or data pack (based on extension of the file)?
+// ------------------------------------------------------------------------
+u8 isDiskOrDataPack(const char *filename)
+{
+    if ((strcasecmp(strrchr(filename, '.'), ".ddp") == 0) || (strcasecmp(strrchr(filename, '.'), ".dsk") == 0)) return 1;
+    else return 0;    
+}
+
+// -----------------------------------------------------------------------------------------------------------------
+// For disk and data pack games which may write back data, we don't want to base the CRC on the actual contents of
+// the media... so instead we'll just hash the filename as a CRC which is good enough to identify it in the future.
+// -----------------------------------------------------------------------------------------------------------------
+u32 crcBasedOnFilename(const char *filename)
+{
+    u32 crc = 0xFFFFFFFF;
+
+    for (int i=0; i < strlen(filename); i++)
+    {
+        crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)filename[i]]; 
+    }
+    
+    return ~crc;
+}
 
 // ------------------------------------------------------------------------------------
 // Read the file in and compute CRC... it's a bit slow but good enough and accurate!
@@ -62,17 +86,24 @@ ITCM_CODE u32 getFileCrc(const char* filename)
     u32 crc = 0xFFFFFFFF;
     int bytesRead;
 
-    FILE* file = fopen(filename, "rb");
-    file_size=0;
-    while ((bytesRead = fread(file_crc_buffer, 1, sizeof(file_crc_buffer), file)) > 0)
+    if (isDiskOrDataPack(filename))
     {
-        file_size += bytesRead;
-        for (int i=0; i < bytesRead; i++)
-        {
-            crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)file_crc_buffer[i]]; 
-        }
+        return crcBasedOnFilename(filename);
     }
-    fclose(file);
+    else
+    {
+        FILE* file = fopen(filename, "rb");
+        file_size=0;
+        while ((bytesRead = fread(file_crc_buffer, 1, sizeof(file_crc_buffer), file)) > 0)
+        {
+            file_size += bytesRead;
+            for (int i=0; i < bytesRead; i++)
+            {
+                crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)file_crc_buffer[i]]; 
+            }
+        }
+        fclose(file);
+    }
 
     return ~crc;
 }

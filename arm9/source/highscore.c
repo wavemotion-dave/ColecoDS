@@ -21,7 +21,7 @@
 // We need to put a practical limit on the size of the high scores... 740 games it is!
 // ------------------------------------------------------------------------------------
 #define MAX_HS_GAMES    744         // Fits just barely into 128K which is all we want to use
-#define HS_VERSION      0x0007      // Changing this will wipe high scores on the next install
+#define HS_VERSION      0x0008      // Changing this will wipe high scores on the next install
 
 // --------------------------------------------------------------------------
 // We allow sorting on various criteria. By default sorting is high-to-low.

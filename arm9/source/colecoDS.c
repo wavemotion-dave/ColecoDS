@@ -782,6 +782,8 @@ void ShowDebugZ80(void)
 {
     u8 idx=1;
 
+    debug[1] = file_crc;
+
     if (myGlobalConfig.debugger == 3)
     {
         extern u8 lastBank;
@@ -1674,7 +1676,7 @@ void CassetteMenu(void)
                     {
                         if (adam_mode)
                         {
-                            SaveAdamTape();
+                            SaveAdamDisk(1);
                         }
                         else if (einstein_mode)
                         {
@@ -1683,6 +1685,17 @@ void CassetteMenu(void)
                             WAITVBL;WAITVBL;
                             DSPrint(10,0,6, "      ");
                             bExitMenu = true;
+                        }
+                    }
+                    CassetteMenuShow(true, menuSelection);
+                    break;
+                    
+                case MENU_ACTION_SAVE2:
+                    if (showMessage("DO YOU REALLY WANT TO","WRITE CASSETTE/DISK DATA?") == ID_SHM_YES)
+                    {
+                        if (adam_mode)
+                        {
+                            SaveAdamTape();
                         }
                     }
                     CassetteMenuShow(true, menuSelection);
