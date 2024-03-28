@@ -126,6 +126,10 @@ u8 MSX_Bios[0x8000]       = {0};  // We store several kinds of MSX bios files in
 // --------------------------------------------------------------------------------
 C24XX EEPROM;
 
+static char cmd_line_file[256];
+char initial_file[MAX_ROM_LENGTH] = "";
+char initial_path[MAX_ROM_LENGTH] = "";
+
 // ------------------------------------------
 // Some ADAM and Tape related vars...
 // ------------------------------------------
@@ -135,6 +139,7 @@ u32 last_tape_pos       = 9999;
 
 u8   disk_unsaved_data[3]      = {0,0,0};
 u32  disk_last_size[3]         = {0,0,0};
+char disk_last_file[3][256]    = {"","",""};
 char disk_last_path[3][256]    = {"","",""};
 
 // --------------------------------------------------------------------------
@@ -782,8 +787,6 @@ void ShowDebugZ80(void)
 {
     u8 idx=1;
 
-    debug[1] = file_crc;
-
     if (myGlobalConfig.debugger == 3)
     {
         extern u8 lastBank;
@@ -922,7 +925,7 @@ void ShowDebugZ80(void)
 // ----------------------------------------------------------------
 bool isBayLoaded(u8 drive_bay)
 {
-    return (disk_last_path[drive_bay][0] == 0x00 ? false:true);
+    return (disk_last_file[drive_bay][0] == 0x00 ? false:true);
 }
 
 
@@ -1241,7 +1244,7 @@ void SaveAdamDisk(u8 drive)
     if (isBayLoaded(BAY_DISK1+drive))  // If we have a DISK loaded
     {
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Disks[0], disk_last_path[BAY_DISK1+drive], (disk_last_size[BAY_DISK1+drive] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
+        SaveFDI(&Disks[0], disk_last_file[BAY_DISK1+drive], (disk_last_size[BAY_DISK1+drive] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
         disk_unsaved_data[BAY_DISK1+drive] = 0;
@@ -1256,7 +1259,7 @@ void SaveAdamTape(void)
     if (isBayLoaded(BAY_TAPE))  // If we have a TAPE loaded
     {
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Tapes[0], disk_last_path[BAY_TAPE], FMT_DDP);
+        SaveFDI(&Tapes[0], disk_last_file[BAY_TAPE], FMT_DDP);
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
         disk_unsaved_data[BAY_TAPE] = 0;
@@ -1273,6 +1276,7 @@ void DigitalInsertDisk(u8 drive, char *filename)
     
     // Clear previous disk data - we'll set below
     strcpy(disk_last_path[BAY_DISK1+drive], "");
+    strcpy(disk_last_file[BAY_DISK1+drive], "");
     disk_unsaved_data[BAY_DISK1+drive] = 0;
     disk_last_size[BAY_DISK1+drive] = 0;
     
@@ -1296,8 +1300,9 @@ void DigitalInsertDisk(u8 drive, char *filename)
             // --------------------------------------------
             // And set it as the .dsk for this DISK drive
             // --------------------------------------------
-            strcpy(disk_last_path[BAY_DISK1+drive], filename);
-            ChangeDisk(drive, disk_last_path[BAY_DISK1+drive]);
+            getcwd(disk_last_path[BAY_DISK1+drive], MAX_ROM_LENGTH);
+            strcpy(disk_last_file[BAY_DISK1+drive], filename);
+            ChangeDisk(drive, disk_last_file[BAY_DISK1+drive]);
        }
    }
 }
@@ -1308,6 +1313,7 @@ void DigitalInsertTape(char *filename)
 
     // Clear previous tape data - we'll set below
     strcpy(disk_last_path[BAY_TAPE], "");
+    strcpy(disk_last_file[BAY_TAPE], "");
     disk_unsaved_data[BAY_TAPE] = 0;
     disk_last_size[BAY_TAPE] = 0;
 
@@ -1331,8 +1337,9 @@ void DigitalInsertTape(char *filename)
             // --------------------------------------------
             // And set it as the .ddp for this TAPE drive
             // --------------------------------------------
-            strcpy(disk_last_path[BAY_TAPE], filename);
-            ChangeTape(0, disk_last_path[BAY_TAPE]);
+            getcwd(disk_last_path[BAY_TAPE], MAX_ROM_LENGTH);
+            strcpy(disk_last_file[BAY_TAPE], filename);
+            ChangeTape(0, disk_last_file[BAY_TAPE]);
        }
     }
 }
@@ -1554,9 +1561,9 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
         if (disk_unsaved_data[BAY_DISK1]) DSPrint(1, 7,  0,  "*"); else DSPrint(1, 7,  0,  " ");
         if (disk_unsaved_data[BAY_DISK2]) DSPrint(1, 11, 0,  "*"); else DSPrint(1, 11, 0,  " ");
         if (disk_unsaved_data[BAY_TAPE])  DSPrint(1, 15, 0,  "*"); else DSPrint(1, 15, 0,  " ");
-        snprintf(tmp, 31, "DSK1: %s", (strlen(disk_last_path[BAY_DISK1]) > 1) ? disk_last_path[BAY_DISK1]:"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 20, 0, tmp);
-        snprintf(tmp, 31, "DSK2: %s", (strlen(disk_last_path[BAY_DISK2]) > 1) ? disk_last_path[BAY_DISK2]:"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 21, 0, tmp);
-        snprintf(tmp, 31, "TAPE: %s", (strlen(disk_last_path[BAY_TAPE])  > 1) ? disk_last_path[BAY_TAPE] :"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 22, 0, tmp);
+        snprintf(tmp, 31, "DSK1: %s", (strlen(disk_last_file[BAY_DISK1]) > 1) ? disk_last_file[BAY_DISK1]:"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 20, 0, tmp);
+        snprintf(tmp, 31, "DSK2: %s", (strlen(disk_last_file[BAY_DISK2]) > 1) ? disk_last_file[BAY_DISK2]:"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 21, 0, tmp);
+        snprintf(tmp, 31, "TAPE: %s", (strlen(disk_last_file[BAY_TAPE])  > 1) ? disk_last_file[BAY_TAPE] :"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 22, 0, tmp);
     }
     else if (msx_mode)
     {
@@ -1566,8 +1573,8 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     {
         if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
         if (disk_unsaved_data[1]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " DISK1 HAS UNSAVED DATA! ");
-        snprintf(tmp, 31, "DSK0: %s", einstein_disk_path[0]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
-        snprintf(tmp, 31, "DSK1: %s", einstein_disk_path[1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
+        snprintf(tmp, 31, "DSK0: %s", einstein_disk_file[0]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
+        snprintf(tmp, 31, "DSK1: %s", einstein_disk_file[1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
     }
     
     // ----------------------------------------------------------------------------------------------
@@ -4282,7 +4289,6 @@ void LoadBIOSFiles(void)
 /*********************************************************************************
  * Program entry point - check if an argument has been passed in probably from TWL++
  ********************************************************************************/
-char initial_file[256];
 int main(int argc, char **argv)
 {
   //  Init sound
@@ -4342,20 +4348,20 @@ int main(int argc, char **argv)
           char  *ptr = &path[strlen(path)-1];
           while (*ptr !=  '/') ptr--;
           ptr++;
-          strcpy(initial_file,  ptr);
+          strcpy(cmd_line_file,  ptr);
           *ptr=0;
           chdir(path);
       }
       else
       {
-          strcpy(initial_file,  argv[1]);
+          strcpy(cmd_line_file,  argv[1]);
       }
   }
   else
   {
-      initial_file[0]=0; // No file passed on command line...
-      chdir("/roms");    // Try to start in roms area... doesn't matter if it fails
-      chdir("coleco");   // And try to start in the subdir /coleco... doesn't matter if it fails.
+      cmd_line_file[0]=0; // No file passed on command line...
+      chdir("/roms");     // Try to start in roms area... doesn't matter if it fails
+      chdir("coleco");    // And try to start in the subdir /coleco... doesn't matter if it fails.
   }
 
   SoundPause();
@@ -4408,12 +4414,12 @@ int main(int argc, char **argv)
     {
       SoundPause();
       //  Choose option
-      if  (initial_file[0] != 0)
+      if  (cmd_line_file[0] != 0)
       {
           ucGameChoice=0;
           ucGameAct=0;
-          strcpy(gpFic[ucGameAct].szName, initial_file);
-          initial_file[0] = 0;    // No more initial file...
+          strcpy(gpFic[ucGameAct].szName, cmd_line_file);
+          cmd_line_file[0] = 0;    // No more initial file...
           ReadFileCRCAndConfig(); // Get CRC32 of the file and read the config/keys
       }
       else

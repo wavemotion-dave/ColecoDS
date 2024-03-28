@@ -189,6 +189,7 @@ extern void einstein_swap_disk(u8 disk, char *szFileName);
 extern void einstein_init_ramdisk(void);
 extern void einstein_install_ramdisk(void);
 extern char einstein_disk_path[2][256];
+extern char einstein_disk_file[2][256];
 
 extern u8 loadrom(const char *path,u8 * ptr);
 

@@ -86,23 +86,22 @@ ITCM_CODE u32 getFileCrc(const char* filename)
     u32 crc = 0xFFFFFFFF;
     int bytesRead;
 
+    FILE* file = fopen(filename, "rb");
+    file_size=0;
+    while ((bytesRead = fread(file_crc_buffer, 1, sizeof(file_crc_buffer), file)) > 0)
+    {
+        file_size += bytesRead;
+        for (int i=0; i < bytesRead; i++)
+        {
+            crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)file_crc_buffer[i]]; 
+        }
+    }
+    fclose(file);
+
+    // After we compute the size above... we check if this is a .dsk file and return CRC by name
     if (isDiskOrDataPack(filename))
     {
         return crcBasedOnFilename(filename);
-    }
-    else
-    {
-        FILE* file = fopen(filename, "rb");
-        file_size=0;
-        while ((bytesRead = fread(file_crc_buffer, 1, sizeof(file_crc_buffer), file)) > 0)
-        {
-            file_size += bytesRead;
-            for (int i=0; i < bytesRead; i++)
-            {
-                crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)file_crc_buffer[i]]; 
-            }
-        }
-        fclose(file);
     }
 
     return ~crc;
