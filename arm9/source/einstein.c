@@ -34,7 +34,6 @@ u8 key_int_mask      = 0xFF;
 u8 joy_int_mask      = 0xFF;
 u8 myKeyData         = 0xFF;
 u8 adc_mux           = 0x00;
-u32 ein_disk_size[2] = {0,0};
 u8 ein_alpha_lock    = 0x01;
 
 extern u8 EinsteinBios[];
@@ -44,9 +43,6 @@ extern u8 EinsteinBios2[];
 #define JOYSTICK_VECTOR  0xFD
 
 static u8 last_drive_select = 0x00;
-
-char einstein_disk_file[2][256] = {{0},{0}};
-char einstein_disk_path[2][256] = {{0},{0}};
 
 // ---------------------------------------------------------------------------------------------
 // We support two disk drives - Drive 0 is the normal floppy that can be mounted with Einstein 
@@ -590,7 +586,7 @@ void einstein_load_com_file(void)
     MemoryMap[7] = RAM_Memory + 0xE000;
     
     // The Quickload will write the .COM file into memory at offset 0x100 and jump to it
-    memcpy(RAM_Memory+0x100, ROM_Memory, ein_disk_size[0]);
+    memcpy(RAM_Memory+0x100, ROM_Memory, disk_last_size[0]);
     keyboard_interrupt=0;
     CPU.IRequest=INT_NONE;
     CPU.IFF&=~(IFF_1|IFF_EI);
@@ -646,17 +642,17 @@ struct TrackInfo_t
 // ---------------------------------------------------------------------
 void einstein_load_disk(u8 disk)
 {
-    getcwd(einstein_disk_path[disk], MAX_ROM_LENGTH);   // Save the path
+    getcwd(disk_last_path[disk], MAX_ROM_LENGTH);   // Save the path
     
     // -------------------------------------------------------------------------------------------
     // First read in the raw .DSK file into memory so we can manipulate the tracks/sectors below
     // -------------------------------------------------------------------------------------------
-    FILE *fp = fopen(einstein_disk_file[disk], "rb");
+    FILE *fp = fopen(disk_last_file[disk], "rb");
     
     if ((fp == NULL) && (disk==1)) // If we didn't find one and we are disk 1, we can use a blank RAMDISK
     {
         einstein_init_ramdisk();
-        fp = fopen(einstein_disk_file[disk], "rb");
+        fp = fopen(disk_last_file[disk], "rb");
     }
     
     // --------------------------------------------------------------------
@@ -666,9 +662,9 @@ void einstein_load_disk(u8 disk)
     
     if (fp != NULL)
     {
-        ein_disk_size[disk] = fread(ROM_Memory + (offset*1024), 1, 256*1024, fp);    // Read file into memory
+        disk_last_size[disk] = fread(ROM_Memory + (offset*1024), 1, 256*1024, fp);    // Read file into memory
         fclose(fp);
-    } else ein_disk_size[disk] = 0;
+    } else disk_last_size[disk] = 0;
     
     u8 *trackInfoPtr = ROM_Memory + 0x100;
     for (int i=0; i<40; i++)    // 40 tracks
@@ -691,7 +687,7 @@ void einstein_load_disk(u8 disk)
 
 void einstein_save_disk(u8 disk)
 {
-    chdir(einstein_disk_path[disk]);    // Change back to the right directory
+    chdir(disk_last_path[disk]);    // Change back to the right directory
     
     // --------------------------------------------------------------------
     // We assemble disk 0 vs disk 1 in different parts of our ROM_Memory[]
@@ -716,10 +712,10 @@ void einstein_save_disk(u8 disk)
         }
     }
     
-    FILE *fp = fopen(einstein_disk_file[disk], "wb");
+    FILE *fp = fopen(disk_last_file[disk], "wb");
     if (fp != NULL)
     {
-        fwrite(ROM_Memory + (offset * 1024), 1, ein_disk_size[disk], fp);
+        fwrite(ROM_Memory + (offset * 1024), 1, disk_last_size[disk], fp);
         fclose(fp);
     }
     
@@ -731,7 +727,7 @@ void einstein_save_disk(u8 disk)
 // ---------------------------------------------------------------------------
 void einstein_swap_disk(u8 disk, char *szFileName)
 {
-    strcpy(einstein_disk_file[disk], szFileName);
+    strcpy(disk_last_file[disk], szFileName);
     
     einstein_load_disk(disk);           // Get disk into memory and decode the tracks/sectors
     disk_unsaved_data[disk] = 0;        // Fresh install of disk has no unsaved data
@@ -742,7 +738,7 @@ void einstein_swap_disk(u8 disk, char *szFileName)
 
 void einstein_install_ramdisk(void)
 {
-    strcpy(einstein_disk_file[1], "/data/einstein.ramd");
+    strcpy(disk_last_file[1], "/data/einstein.ramd");
     einstein_load_disk(1);
 }
 
@@ -822,7 +818,8 @@ unsigned char RAMDisk_TrackInfo[] = {
 
 void einstein_init_ramdisk(void)
 {
-    FILE *fp = fopen("/data/einstein.ramd", "wb+");
+    strcpy(disk_last_file[1], "/data/einstein.ramd");
+    FILE *fp = fopen(disk_last_file[1], "wb+");
     fwrite(RAMDisk_Header, 1, sizeof(RAMDisk_Header), fp);
     for (u8 track=0; track<40; track++)
     {
@@ -888,7 +885,7 @@ void einstein_reset(void)
         if (einstein_mode == 2) // Are we loading a .dsk file (fairly common)
         {
             // The two disk drive paths so we can write-back changes
-            strcpy(einstein_disk_file[0], gpFic[ucGameChoice].szName);
+            strcpy(disk_last_file[0], gpFic[ucGameChoice].szName);
             
             // --------------------------------------------------------
             // Setup two (2) disk drives for the Einstein. By default, 

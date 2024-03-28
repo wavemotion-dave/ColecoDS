@@ -1573,8 +1573,8 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     {
         if (disk_unsaved_data[0]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
         if (disk_unsaved_data[1]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " DISK1 HAS UNSAVED DATA! ");
-        snprintf(tmp, 31, "DSK0: %s", einstein_disk_file[0]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
-        snprintf(tmp, 31, "DSK1: %s", einstein_disk_file[1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
+        snprintf(tmp, 31, "DSK0: %s", disk_last_file[BAY_DISK1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
+        snprintf(tmp, 31, "DSK1: %s", disk_last_file[BAY_DISK1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
     }
     
     // ----------------------------------------------------------------------------------------------

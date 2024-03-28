@@ -112,7 +112,6 @@ extern u8 MTX_KBD_DRIVE;
 extern u8 lastIOBYTE;
 extern u32 tape_pos;
 extern u32 tape_len;
-extern u32 ein_disk_size[2];
 extern u8 key_shift_hold;
 
 extern u8 Port_PPI_A;
@@ -188,8 +187,6 @@ extern void einstein_load_disk(u8 disk);
 extern void einstein_swap_disk(u8 disk, char *szFileName);
 extern void einstein_init_ramdisk(void);
 extern void einstein_install_ramdisk(void);
-extern char einstein_disk_path[2][256];
-extern char einstein_disk_file[2][256];
 
 extern u8 loadrom(const char *path,u8 * ptr);
 
