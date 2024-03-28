@@ -237,7 +237,6 @@ extern u8 svi_mode;
 extern u8 adam_mode;
 extern u8 coleco_mode;
 extern u8 adam_CapsLock;
-extern u8 disk_unsaved_data[2];
 extern u8 creativision_mode;
 
 extern u16 machine_mode;
@@ -245,7 +244,10 @@ extern u16 machine_mode;
 extern u8 kbd_keys_pressed;
 extern u8 kbd_keys[12];
 
-extern char lastDiskDataPath[2][256];
+extern char disk_last_path[3][256];
+extern u32 disk_last_size[3];
+extern u8 disk_unsaved_data[3];
+
 extern u32 tape_pos, tape_len;
 
 #define MODE_COLECO         0x0000  // No bits set! Fastest way to check the machine_mode
@@ -261,6 +263,8 @@ extern u32 tape_pos, tape_len;
 #define MODE_CREATIVISION   0x0400
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
+
+extern u8 *DSI_RAM_Buffer;
 
 extern volatile u16 vusCptVBL;                   // Video Management
 
@@ -281,6 +285,7 @@ extern u8 adam_ram_lo, adam_ram_hi;
 extern u8 io_show_status;
 
 extern void BottomScreenOptions(void);
+extern void BottomScreenOptionsAdam(void);
 extern void BottomScreenKeypad(void);
 extern void PauseSound(void);
 extern void UnPauseSound(void);

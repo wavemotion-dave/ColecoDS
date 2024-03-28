@@ -416,6 +416,7 @@ Versions :
 -----------------------
 V9.5: ??-???-2024 by wavemotion-dave
 * Massive ADAMnet improvement for disk/tape handling. Improved timing, improved caching and more disk/tape games should load and run correctly.
+* DSI gets a massive 1MB of Expansion RAM (16 banks of 64K). DS-Lite/Phat still has 128K (base 64K plus the standard 64K expansion RAM).
 * Adam now properly handles 320K disk and two drive bays are virtually attacked (a disk drive and the internal Tape drive).
 * Adam full keyboard now uses an LED indicator under the CAPS LOCK button to indicate status.
 * Adam no longer mirrors RAM as a Colecovision would.

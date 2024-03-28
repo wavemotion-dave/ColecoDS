@@ -50,8 +50,6 @@ FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
 byte HoldingBuf[4096];
 
-byte io_show_status = 0; // Used to show RD/WR status on the DS topline
-
 const byte timeouts[] = {5, 15, 30}; // FAST, SLOWER, SLOWEST
 
 DevStatus_t DiskStatus[MAX_DISKS];
@@ -255,10 +253,20 @@ void SetupAdam(bool bResetAdamNet)
         adam_128k_mode = 1;
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
         
-        MemoryMap[0] = RAM_Memory + 0x10000;
-        MemoryMap[1] = RAM_Memory + 0x12000;
-        MemoryMap[2] = RAM_Memory + 0x14000;
-        MemoryMap[3] = RAM_Memory + 0x16000;
+        if (DSI_RAM_Buffer) // Do we have extra RAM available?
+        {
+            MemoryMap[0] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x0000;
+            MemoryMap[1] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x2000;
+            MemoryMap[2] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x4000;
+            MemoryMap[3] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x6000;
+        }
+        else // Just the normal 64K RAM expansion
+        {
+            MemoryMap[0] = RAM_Memory + 0x10000;
+            MemoryMap[1] = RAM_Memory + 0x12000;
+            MemoryMap[2] = RAM_Memory + 0x14000;
+            MemoryMap[3] = RAM_Memory + 0x16000;
+        }
     }
 
 
@@ -279,19 +287,29 @@ void SetupAdam(bool bResetAdamNet)
         adam_128k_mode = 1;
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
         
-        MemoryMap[4] = RAM_Memory + 0x18000;
-        MemoryMap[5] = RAM_Memory + 0x1A000;
-        MemoryMap[6] = RAM_Memory + 0x1C000;
-        MemoryMap[7] = RAM_Memory + 0x1E000;
+        if (DSI_RAM_Buffer) // Do we have extra RAM available?
+        {
+            MemoryMap[4] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x8000;
+            MemoryMap[5] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0xA000;
+            MemoryMap[6] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0xC000;
+            MemoryMap[7] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0xE000;
+        }
+        else // Just the normal 64K RAM expansion
+        {
+            MemoryMap[4] = RAM_Memory + 0x18000;
+            MemoryMap[5] = RAM_Memory + 0x1A000;
+            MemoryMap[6] = RAM_Memory + 0x1C000;
+            MemoryMap[7] = RAM_Memory + 0x1E000;
+        }
     }
-    else if ((Port60 & 0x0C) == 0x0C)    // Cartridge ROM
+    else if ((Port60 & 0x0C) == 0x0C)    // Cartridge ROM - not used in ADAM mode
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
         
-        MemoryMap[4] = ROM_Memory + 0x0000;
-        MemoryMap[5] = ROM_Memory + 0x2000;
-        MemoryMap[6] = ROM_Memory + 0x4000;
-        MemoryMap[7] = ROM_Memory + 0x6000;
+        MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
+        MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
     }
     else        // We don't use the expansion ROM slot so just return 0xFF here
     {
@@ -581,7 +599,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
 
     case CMD_WRITE:
     case CMD_READ:
-      if (io_show_status != 2) io_show_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
+      if (DiskStatus[N].io_status != 2) DiskStatus[N].io_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
       
       DiskStatus[N].status=DiskStatus[N].newstatus;
       SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
@@ -636,7 +654,7 @@ static void UpdateDSK(byte N,byte Dev,int V)
                   {
                       Data[J] = RAM_Memory[BUF];
                   }
-                  disk_unsaved_data[BAY_DISK] = 1;
+                  disk_unsaved_data[BAY_DISK1+N] = 1;
                 }
                 
                 DiskStatus[N].status=DiskStatus[N].newstatus=0x80;
@@ -689,7 +707,7 @@ static void UpdateTAP(byte N,byte Dev,int V)
 
     case CMD_WRITE:
     case CMD_READ:
-      if (io_show_status != 2) io_show_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
+      if (TapeStatus[N].io_status != 2) TapeStatus[N].io_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
       
       TapeStatus[N].status=TapeStatus[N].newstatus;
       SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
@@ -784,7 +802,6 @@ static void UpdateDCB(byte Dev,int V)
     case 0x09:
     case 0x18:
     case 0x19: UpdateTAP((DevID>>4)+((DevID&1)<<1),Dev,V);break;
-    case 0x52: UpdateDSK(DiskID=2,Dev,V);break;
 
     default:
       SetDCB(Dev,DCB_CMD_STAT,RSP_ACK+0x0B);
@@ -877,16 +894,18 @@ void ResetPCB(void)
   DiskID    = 0;
     
   memset(HoldingBuf, 0x00, sizeof(HoldingBuf));
-  io_show_status=0;
+  
   for (int i=0; i<4; i++)
   {
       DiskStatus[i].status = DiskStatus[i].newstatus = 0x80;
       DiskStatus[i].timeout = 0;
       DiskStatus[i].lastblock = 0;
+      DiskStatus[i].io_status = 0;
 
       TapeStatus[i].status = TapeStatus[i].newstatus = 0x80;
       TapeStatus[i].timeout = 0;
       TapeStatus[i].lastblock = 0;
+      TapeStatus[i].io_status = 0;
   }
 }
 
@@ -913,7 +932,7 @@ byte ChangeTape(byte N,const char *FileName)
   }
 
   /* If no existing file, create a new 256kB tape image */
-  P = FormatFDI(&Tapes[N],FMT_DDP);
+  P = FormatFDI(&Tapes[N], FMT_DDP);
   return(!!P);
 }
 
@@ -933,14 +952,14 @@ byte ChangeDisk(byte N,const char *FileName)
   if(!FileName) { EjectFDI(&Disks[N]);return(1); }
   
   /* If FileName not empty, try loading disk image */
-  if(*FileName && LoadFDI(&Disks[N],FileName,(LastROMSize > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK))) // Should be 160 but we allow 2K overdump before we switch to 320K
+  if(*FileName && LoadFDI(&Disks[N],FileName,(disk_last_size[BAY_DISK1+N] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK))) // Should be 160 but we allow 2K overdump before we switch to 320K
   {
     /* Done */
     return(1);
   }
 
-  /* If no existing file, create a new 160kB or 320kB disk image */
-  P = FormatFDI(&Disks[N],(LastROMSize > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK));  // Should be 160 but we allow 2K overdump before we switch to 320K
+  /* If no existing file, create a new 160kB disk image */
+  P = FormatFDI(&Disks[N], FMT_ADMDSK);
   return(!!P);
 }
 

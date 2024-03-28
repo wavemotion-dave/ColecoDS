@@ -33,7 +33,6 @@
 // ------------------------------------------------
 u8 adam_128k_mode      = 0;
 u8 sg1000_double_reset = false;
-char lastDiskDataPath[2][256] = {0};
 
 // -------------------------------------
 // Some IO Port and Memory Map vars...
@@ -362,7 +361,8 @@ u8 colecoInit(char *szGame)
       spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
       sgm_reset();                       // Make sure the super game module is disabled to start
       adam_CapsLock = 0;                 // CAPS Lock disabled to start
-      disk_unsaved_data[BAY_DISK] = 0;   // No unsaved DISK data to start
+      disk_unsaved_data[BAY_DISK1] = 0;  // No unsaved DISK data to start
+      disk_unsaved_data[BAY_DISK2] = 0;  // No unsaved DISK data to start
       disk_unsaved_data[BAY_TAPE] = 0;   // No unsaved TAPE data to start
       
       // Clear existing drives of any disks/tapes and load the new game up      
@@ -566,7 +566,7 @@ u8 loadrom(const char *path,u8 * ptr)
         fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
         memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
         fclose(handle);
-        strcpy(lastDiskDataPath[0], path);
+        strcpy(disk_last_path[0], path);
         romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
         machine_mode = MODE_SG_1000;
@@ -614,8 +614,9 @@ u8 loadrom(const char *path,u8 * ptr)
             LastROMSize = romSize;       // So we know how big the original .dsk was
             SetupAdam(false);            // And make sure the ADAM is ready
 
-            strcpy(lastDiskDataPath[BAY_DISK], "");    // Nothing loaded in the DISK drive yet
-            strcpy(lastDiskDataPath[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
+            strcpy(disk_last_path[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
+            strcpy(disk_last_path[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
+            strcpy(disk_last_path[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
 
             // ------------------------------------------
             // The .ddp or .dsk is now in ROM_Memory[]
@@ -625,13 +626,13 @@ u8 loadrom(const char *path,u8 * ptr)
             if ((strcasecmp(strrchr(path, '.'), ".ddp") == 0))  // Is this a TAPE image (.ddp)?
             {
                 // Insert the tape into the virtual TAPE drive
-                strcpy(lastDiskDataPath[BAY_TAPE], path);
+                strcpy(disk_last_path[BAY_TAPE], path);
                 ChangeTape(0, path);
             }
             else if ((strcasecmp(strrchr(path, '.'), ".dsk") == 0))  // Is this a DISK image (.dsk)?
             {
                 // Insert the disk into the virtual DISK drive
-                strcpy(lastDiskDataPath[BAY_DISK], path);
+                strcpy(disk_last_path[BAY_DISK1], path);
                 ChangeDisk(0, path);
             } 
             // else must be a ROM which is okay...
@@ -644,7 +645,7 @@ u8 loadrom(const char *path,u8 * ptr)
         }
         else if (einstein_mode)
         {
-            strcpy(lastDiskDataPath[0], path);
+            strcpy(disk_last_path[0], path);
             ein_disk_size[0] = romSize;     // Might be a .COM file but we just reuse the einstein disk size variable
             if (romSize == 1626)            // A bit of a hack... the size of the Diagnostic ROM
             {
@@ -654,7 +655,7 @@ u8 loadrom(const char *path,u8 * ptr)
         }
         else if (creativision_mode)
         {
-            strcpy(lastDiskDataPath[0], path);
+            strcpy(disk_last_path[0], path);
             creativision_loadrom(romSize);
         }
         else if (sg1000_mode)
@@ -997,7 +998,12 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   }
   else if (Port == 0x42)
   {
-      // For the future... we can use this port to bank in other 64K expanded memory pages...
+      if (isDSiMode())
+      {
+          Port42 = Value & 0x0F;        // 1MB worth of banks (16 banks of 64K)
+          if (adam_mode) SetupAdam(false);
+      }
+      else Port42 = 0x00; // No extra banking for DS-Lite/Phat (just the stock 64K plus 64K expansion)
   }
 
   // ---------------------------------------------------------------------------

@@ -70,7 +70,7 @@ SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 PNGFILES	:=	$(foreach dir,$(GRAPHICS),$(notdir $(wildcard $(dir)/*.png)))
 
-OSPECIALS :=  colecovision.o options.o debug_ovl.o adam_sm.o cvision_kbd.o alpha_kbd.o m5_kbd.o msx_sm.o msx_full.o mtx_full.o sc3000_kbd.o svi_full.o msx_japan.o adam_full.o einstein_kbd.o pv2000_sm.o cvision.o topscreen.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o utopia.o shuttle.o pdev_bg0.o pdev_tbg0.o  
+OSPECIALS :=  colecovision.o options.o options_adam.o debug_ovl.o adam_sm.o cvision_kbd.o alpha_kbd.o m5_kbd.o msx_sm.o msx_full.o mtx_full.o sc3000_kbd.o svi_full.o msx_japan.o adam_full.o einstein_kbd.o pv2000_sm.o cvision.o topscreen.o wargames.o gateway.o mousetrap.o fixupmixup.o spyhunter.o boulder.o quest.o hal2010.o utopia.o shuttle.o pdev_bg0.o pdev_tbg0.o  
 
 #---------------------------------------------------------------------------------
 # use CXX for linking C++ projects, CC for standard C
@@ -189,6 +189,9 @@ debug_ovl.s debug_ovl.h : debug_ovl.png
 options.s options.h : options.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
     
+options_adam.s options_adam.h : options_adam.png
+	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
+
 topscreen.s topscreen.h : topscreen.png
 	grit $^ -o $@  -gt -mrt -mR8 -mLs -gzl -mzl
 

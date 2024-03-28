@@ -112,8 +112,9 @@ extern "C" {
 #define CON_OK       0xFE
 #define CON_EXIT     0xFF
 
-#define BAY_DISK     0
-#define BAY_TAPE     1
+#define BAY_DISK1    0
+#define BAY_DISK2    1
+#define BAY_TAPE     2
     
 #ifndef BYTE_TYPE_DEFINED
 #define BYTE_TYPE_DEFINED
@@ -134,7 +135,8 @@ typedef struct
 {
     byte status;             // Current status byte for this drive
     byte newstatus;          // Next status byte for this drive
-    word timeout;            // The current disk busy timeout - decremented once each VDP interrupt
+    byte timeout;            // The current disk busy timeout - decremented once each VDP interrupt
+    byte io_status;          // Used to produce the RD/WR and floppy sound under emulation
     int  lastblock;          // The last block read from the drive
 } DevStatus_t;
 

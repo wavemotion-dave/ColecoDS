@@ -43,6 +43,7 @@
 #include "pv2000_sm.h"
 #include "debug_ovl.h"
 #include "options.h"
+#include "options_adam.h"
 #include "colecovision.h"
 #include "topscreen.h"
 #include "wargames.h"
@@ -91,6 +92,8 @@ u8 RAM_Memory[0x20000]                ALIGN(32) = {0};        // RAM up to 128K 
 u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K as the BIOS  for various machines ends up in different spots)
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
 
+u8 *DSI_RAM_Buffer = 0; // Used as a large 1MB buffer for ADAM expanded RAM. May have other uses in the future.
+u8 io_show_status = 0;  // Used to indicate a RD/WR status for various disk/tape activities
 
 // --------------------------------------------------------------------------
 // This is the full 64K coleco memory map.
@@ -127,9 +130,12 @@ C24XX EEPROM;
 // Some ADAM and Tape related vars...
 // ------------------------------------------
 u8 adam_CapsLock        = 0;
-u8 disk_unsaved_data[2] = {0,0};
 u8 write_EE_counter     = 0;
 u32 last_tape_pos       = 9999;
+
+u8   disk_unsaved_data[3]      = {0,0,0};
+u32  disk_last_size[3]         = {0,0,0};
+char disk_last_path[3][256]    = {"","",""};
 
 // --------------------------------------------------------------------------
 // For machines that have a full keybaord, we use the Left and Right
@@ -914,7 +920,7 @@ void ShowDebugZ80(void)
 // ----------------------------------------------------------------
 bool isBayLoaded(u8 drive_bay)
 {
-    return (lastDiskDataPath[drive_bay][0] == 0x00 ? false:true);
+    return (disk_last_path[drive_bay][0] == 0x00 ? false:true);
 }
 
 
@@ -1085,6 +1091,34 @@ void DisplayStatusLine(bool bForce)
             DSPrint(1,23,0, (adam_CapsLock ? "@":" "));
         }
 
+        io_show_status = 0;
+        
+        u8 sfx = SFX_FLOPPY;
+        for (u8 i=0; i<MAX_DISKS; i++)
+        {
+            if (DiskStatus[i].io_status)
+            {
+                io_show_status = DiskStatus[i].io_status;
+                DiskStatus[i].io_status = 0;
+                sfx=SFX_FLOPPY; // floppy sound
+                break;
+            }
+        }
+        
+        if (io_show_status == 0)
+        {
+            for (u8 i=0; i<MAX_TAPES; i++)
+            {
+                if (TapeStatus[i].io_status)
+                {
+                    io_show_status = TapeStatus[i].io_status;
+                    TapeStatus[i].io_status = 0;
+                    sfx=SFX_ADAM_DDP; // DDP sound
+                    break;
+                }
+            }
+        }
+        
         if (io_show_status)
         {
             DSPrint(30,0,6, (io_show_status == 2 ? "WR":"RD"));
@@ -1098,7 +1132,7 @@ void DisplayStatusLine(bool bForce)
                 // If global settings does not MUTE the sound effects...
                 if (!myGlobalConfig.diskSfxMute)
                 {
-                    if (isBayLoaded(BAY_TAPE)) mmEffect(SFX_ADAM_DDP); else mmEffect(SFX_FLOPPY);
+                    mmEffect(sfx);
                     playingSFX = 1;
                 }
             }
@@ -1198,17 +1232,17 @@ void DisplayStatusLine(bool bForce)
 // ------------------------------------------------------------------------
 // Save out the ADAM .ddp or .dsk file and show 'SAVING' on screen
 // ------------------------------------------------------------------------
-void SaveAdamDisk(void)
+void SaveAdamDisk(u8 drive)
 {
     if (io_show_status) return; // Don't save while io status
 
-    if (isBayLoaded(BAY_DISK))  // If we have a DISK loaded
+    if (isBayLoaded(BAY_DISK1+drive))  // If we have a DISK loaded
     {
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Disks[0], lastDiskDataPath[BAY_DISK], (LastROMSize > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
+        SaveFDI(&Disks[0], disk_last_path[BAY_DISK1+drive], (disk_last_size[BAY_DISK1+drive] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
-        disk_unsaved_data[BAY_DISK] = 0;
+        disk_unsaved_data[BAY_DISK1+drive] = 0;
     }
 }
 
@@ -1220,7 +1254,7 @@ void SaveAdamTape(void)
     if (isBayLoaded(BAY_TAPE))  // If we have a TAPE loaded
     {
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Tapes[0], lastDiskDataPath[BAY_TAPE], FMT_DDP);
+        SaveFDI(&Tapes[0], disk_last_path[BAY_TAPE], FMT_DDP);
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
         disk_unsaved_data[BAY_TAPE] = 0;
@@ -1231,48 +1265,74 @@ void SaveAdamTape(void)
 // -----------------------------------------------------
 // Load a new Adam .ddp or .dsk file into main memory.
 // -----------------------------------------------------
-void DigitalInsertDisk(char *filename)
+void DigitalInsertDisk(u8 drive, char *filename)
 {
     FILE *fp;
-
-    // --------------------------------------------
-    // Read the .DDP or .DSK into the ROM_Memory[]
-    // --------------------------------------------
-    fp = fopen(filename, "rb");
-    if (fp)
+    
+    // Clear previous disk data - we'll set below
+    strcpy(disk_last_path[BAY_DISK1+drive], "");
+    disk_unsaved_data[BAY_DISK1+drive] = 0;
+    disk_last_size[BAY_DISK1+drive] = 0;
+    
+    if (filename == NULL) // asking to eject
     {
-        memset(ROM_Memory, 0xFF, MAX_FDID_SIZE);
-        LastROMSize = fread(ROM_Memory, 1, MAX_FDID_SIZE, fp);    
-        fclose(fp);
-        
+        ChangeDisk(drive, NULL);
+    }
+    else
+    {
         // --------------------------------------------
-        // And set it as the .dsk for this DISK drive
+        // Read the .DDP or .DSK into the ROM_Memory[]
         // --------------------------------------------
-        strcpy(lastDiskDataPath[BAY_DISK], filename);
-        ChangeDisk(0, lastDiskDataPath[BAY_DISK]);
-   } else LastROMSize = 0;
+        fp = fopen(filename, "rb");
+        if (fp)
+        {
+            /* Open file and find its size */
+            fseek(fp,0,SEEK_END);
+            disk_last_size[BAY_DISK1+drive] = ftell(fp);
+            fclose(fp);
+           
+            // --------------------------------------------
+            // And set it as the .dsk for this DISK drive
+            // --------------------------------------------
+            strcpy(disk_last_path[BAY_DISK1+drive], filename);
+            ChangeDisk(drive, disk_last_path[BAY_DISK1+drive]);
+       }
+   }
 }
 
 void DigitalInsertTape(char *filename)
 {
     FILE *fp;
 
-    // --------------------------------------------
-    // Read the .DDP or .DSK into the ROM_Memory[]
-    // --------------------------------------------
-    fp = fopen(filename, "rb");
-    if (fp)
+    // Clear previous tape data - we'll set below
+    strcpy(disk_last_path[BAY_TAPE], "");
+    disk_unsaved_data[BAY_TAPE] = 0;
+    disk_last_size[BAY_TAPE] = 0;
+
+    if (filename == NULL) // asking to eject
     {
-        memset(ROM_Memory, 0xFF, MAX_FDID_SIZE);
-        LastROMSize = fread(ROM_Memory, 1, MAX_FDID_SIZE, fp);    
-        fclose(fp);
-        
+        ChangeTape(0, NULL);
+    }
+    else
+    {
         // --------------------------------------------
-        // And set it as the .ddp for this TAPE drive
+        // Read the .DDP or .DSK into the ROM_Memory[]
         // --------------------------------------------
-        strcpy(lastDiskDataPath[BAY_TAPE], filename);
-        ChangeTape(0, lastDiskDataPath[BAY_TAPE]);
-   } else LastROMSize = 0;
+        fp = fopen(filename, "rb");
+        if (fp)
+        {
+            /* Open file and find its size */
+            fseek(fp,0,SEEK_END);
+            disk_last_size[BAY_TAPE] = ftell(fp);
+            fclose(fp);
+            
+            // --------------------------------------------
+            // And set it as the .ddp for this TAPE drive
+            // --------------------------------------------
+            strcpy(disk_last_path[BAY_TAPE], filename);
+            ChangeTape(0, disk_last_path[BAY_TAPE]);
+       }
+    }
 }
 
 
@@ -1298,19 +1358,30 @@ void CassetteInsert(char *filename)
 #define MENU_ACTION_EXIT            0   // Exit the menu
 #define MENU_ACTION_SAVE            1   // Save Disk or Cassette in primary drive
 #define MENU_ACTION_SWAP            2   // Swap Disk or Cassette in primary drive
-#define MENU_ACTION_SAVE1           3   // Save Disk or Cassette in secondary drive
-#define MENU_ACTION_SWAP1           4   // Swap Disk or Cassette in secondary drive
-#define MENU_ACTION_REWIND          5   // Rewind the Cassette
-#define MENU_ACTION_CLOAD_RUN       6   // Issue CLOAD RUN
-#define MENU_ACTION_BLOAD_CAS       7   // Issue BLOAD CAS
-#define MENU_ACTION_RUN_CAS         8   // Issue RUN CAS
-#define MENU_ACTION_LOAD            9   // Issue LOAD
-#define MENU_ACTION_RUN             10  // Issue RUN
+#define MENU_ACTION_EJECT           3   // Eject Disk or Cassette in primary drive
+
+#define MENU_ACTION_SAVE1           4   // Save Disk or Cassette in secondary drive
+#define MENU_ACTION_SWAP1           5   // Swap Disk or Cassette in secondary drive
+#define MENU_ACTION_EJECT1          6   // Eject Disk or Cassette in secondary drive
+
+#define MENU_ACTION_SAVE2           7   // Save Disk or Cassette in third drive
+#define MENU_ACTION_SWAP2           8   // Swap Disk or Cassette in third drive
+#define MENU_ACTION_EJECT2          9   // Eject Disk or Cassette in third drive
+
+#define MENU_ACTION_REWIND          10  // Rewind the Cassette
+#define MENU_ACTION_CLOAD_RUN       11  // Issue CLOAD RUN
+#define MENU_ACTION_BLOAD_CAS       12  // Issue BLOAD CAS
+#define MENU_ACTION_RUN_CAS         13  // Issue RUN CAS
+#define MENU_ACTION_LOAD            14  // Issue LOAD
+#define MENU_ACTION_RUN             15  // Issue RUN
 
 #define MENU_ACTION_RUN_EIN         20  // Load Einstein .COM FILE
 #define MENU_ACTION_RUN_MTX         21  // Load MTX .RUN or .COM FILE
 #define MENU_ACTION_INST_RAMDISK    22  // Install Einstein RAMDISK
 #define MENU_ACTION_INIT_RAMDISK    23  // Init Einstein RAMDISK
+
+#define MENU_ACTION_RESET           98  // Reset the machine
+#define MENU_ACTION_SKIP            99  // Skip this MENU choice
 
 typedef struct 
 {
@@ -1322,21 +1393,32 @@ typedef struct
 {
     char *title;
     u8   start_row;
-    MenuItem_t menulist[10];
+    MenuItem_t menulist[15];
 } CassetteDiskMenu_t;
 
 
 CassetteDiskMenu_t adam_ddp_menu =
 {
-    "ADAM DIGITAL DATA MENU",
-    5,
+    "                      ",
+    4,
     {
-        {" LOAD DISK IMAGE ",       MENU_ACTION_SWAP},
-        {" SAVE DISK IMAGE ",       MENU_ACTION_SAVE},
-        {" LOAD TAPE IMAGE ",       MENU_ACTION_SWAP1},
-        {" SAVE TAPE IMAGE ",       MENU_ACTION_SAVE1},
-        {" EXIT MENU       ",       MENU_ACTION_EXIT},
-        {" NULL            ",       MENU_ACTION_END},
+        {" INSERT DISK DRIVE 1 ",    MENU_ACTION_SWAP},
+        {" SAVE   DISK DRIVE 1 ",    MENU_ACTION_SAVE},
+        {" EJECT  DISK DRIVE 1 ",    MENU_ACTION_EJECT},
+        {"                     ",    MENU_ACTION_SKIP},
+        
+        {" INSERT DISK DRIVE 2 ",    MENU_ACTION_SWAP1},
+        {" SAVE   DISK DRIVE 2 ",    MENU_ACTION_SAVE1},
+        {" EJECT  DISK DRIVE 2 ",    MENU_ACTION_EJECT1},
+        {"                     ",    MENU_ACTION_SKIP},
+
+        {" INSERT TAPE DRIVE 1 ",    MENU_ACTION_SWAP2},
+        {" SAVE   TAPE DRIVE 1 ",    MENU_ACTION_SAVE2},
+        {" EJECT  TAPE DRIVE 1 ",    MENU_ACTION_EJECT2},
+        {"                     ",    MENU_ACTION_SKIP},
+
+        {" EXIT THIS MENU      ",    MENU_ACTION_EXIT},
+        {" NULL                ",    MENU_ACTION_END},
     },
 };
 
@@ -1438,7 +1520,8 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
       // ---------------------------------------------------
       // Put up a generic background for this mini-menu...
       // ---------------------------------------------------
-      BottomScreenOptions();
+      if (adam_mode) BottomScreenOptionsAdam();
+      else BottomScreenOptions();
     }
     
     // ---------------------------------------------------
@@ -1466,10 +1549,12 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     // --------------------------------------------------------------------
     if (adam_mode)
     {
-        if (disk_unsaved_data[BAY_DISK]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK HAS UNSAVED DATA! ");
-        if (disk_unsaved_data[BAY_TAPE]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " TAPE HAS UNSAVED DATA! ");
-        snprintf(tmp, 31, "DISK: %s", lastDiskDataPath[BAY_DISK]); tmp[31] = 0;  DSPrint(1, 21, 0, tmp);
-        snprintf(tmp, 31, "TAPE: %s", lastDiskDataPath[BAY_TAPE]); tmp[31] = 0;  DSPrint(1, 22, 0, tmp);
+        if (disk_unsaved_data[BAY_DISK1]) DSPrint(1, 7,  0,  "*"); else DSPrint(1, 7,  0,  " ");
+        if (disk_unsaved_data[BAY_DISK2]) DSPrint(1, 11, 0,  "*"); else DSPrint(1, 11, 0,  " ");
+        if (disk_unsaved_data[BAY_TAPE])  DSPrint(1, 15, 0,  "*"); else DSPrint(1, 15, 0,  " ");
+        snprintf(tmp, 31, "DSK1: %s", (strlen(disk_last_path[BAY_DISK1]) > 1) ? disk_last_path[BAY_DISK1]:"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 20, 0, tmp);
+        snprintf(tmp, 31, "DSK2: %s", (strlen(disk_last_path[BAY_DISK2]) > 1) ? disk_last_path[BAY_DISK2]:"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 21, 0, tmp);
+        snprintf(tmp, 31, "TAPE: %s", (strlen(disk_last_path[BAY_TAPE])  > 1) ? disk_last_path[BAY_TAPE] :"[NO MEDIA]"); tmp[31] = 0;  DSPrint(1, 22, 0, tmp);
     }
     else if (msx_mode)
     {
@@ -1528,11 +1613,19 @@ void CassetteMenu(void)
         if (nds_key & KEY_UP)
         {
             menuSelection = (menuSelection > 0) ? (menuSelection-1):(cassette_menu_items-1);
+            while (menu->menulist[menuSelection].menu_action == MENU_ACTION_SKIP)
+            {
+                menuSelection = (menuSelection > 0) ? (menuSelection-1):(cassette_menu_items-1);
+            }
             CassetteMenuShow(false, menuSelection);
         }
         if (nds_key & KEY_DOWN)
         {
             menuSelection = (menuSelection+1) % cassette_menu_items;
+            while (menu->menulist[menuSelection].menu_action == MENU_ACTION_SKIP)
+            {
+                menuSelection = (menuSelection+1) % cassette_menu_items;
+            }
             CassetteMenuShow(false, menuSelection);
         }
         if (nds_key & KEY_A)    // User has picked a menu item... let's see what it is!
@@ -1548,7 +1641,7 @@ void CassetteMenu(void)
                     {
                         if (adam_mode)
                         {
-                            SaveAdamDisk();
+                            SaveAdamDisk(0);
                         }
                         else if (einstein_mode)
                         {
@@ -1619,24 +1712,55 @@ void CassetteMenu(void)
                     }
                     break;
                     
+                case MENU_ACTION_EJECT:
+                    if (adam_mode)
+                    {
+                        DigitalInsertDisk(0, NULL);
+                        CassetteMenuShow(true, menuSelection);
+                    }
+                    break;
+                    
+                case MENU_ACTION_EJECT1:
+                    if (adam_mode)
+                    {
+                        DigitalInsertDisk(1, NULL);
+                        CassetteMenuShow(true, menuSelection);
+                    }
+                    break;
+
+                case MENU_ACTION_EJECT2:
+                    if (adam_mode)
+                    {
+                        DigitalInsertTape(NULL);
+                        CassetteMenuShow(true, menuSelection);
+                    }
+                    break;
+
                 case MENU_ACTION_SWAP:
+                    if (adam_mode) BottomScreenOptions();
                     colecoDSLoadFile();
                     if (ucGameChoice >= 0)
                     {
                         // For ADAM, only allow a .dsk file to be mounted here
-                        if (adam_mode && ((strcasecmp(strrchr(gpFic[ucGameChoice].szName, '.'), ".dsk") == 0)))
+                        if (adam_mode)
                         {
-                            DigitalInsertDisk(gpFic[ucGameChoice].szName);
+                            // Only insert if the user picked a DISK file
+                            if (strcasecmp(strrchr(gpFic[ucGameChoice].szName, '.'), ".dsk") == 0)
+                            {
+                                DigitalInsertDisk(0, gpFic[ucGameChoice].szName);
+                            }
+                            CassetteMenuShow(true, menuSelection);
                         }
                         else if (einstein_mode)
                         {
                             einstein_swap_disk(0, gpFic[ucGameChoice].szName);
+                            bExitMenu = true;
                         }
                         else
                         {
                             CassetteInsert(gpFic[ucGameChoice].szName);
-                        }
-                        bExitMenu = true;
+                            bExitMenu = true;
+                        }                        
                     }
                     else
                     {
@@ -1645,19 +1769,47 @@ void CassetteMenu(void)
                     break;
 
                 case MENU_ACTION_SWAP1:
+                    if (adam_mode) BottomScreenOptions();
                     colecoDSLoadFile();
                     if (ucGameChoice >= 0)
                     {
-                        // For ADAM, only allow a .ddp file to be mounted here
-                        if (adam_mode && ((strcasecmp(strrchr(gpFic[ucGameChoice].szName, '.'), ".ddp") == 0)))
+                        // For ADAM, only allow a .dsk file to be mounted here
+                        if (adam_mode)
                         {
-                            DigitalInsertTape(gpFic[ucGameChoice].szName);   
+                            // Only insert if the user picked a DISK file
+                            if (strcasecmp(strrchr(gpFic[ucGameChoice].szName, '.'), ".dsk") == 0)
+                            {
+                                DigitalInsertDisk(1, gpFic[ucGameChoice].szName);
+                            }
+                            CassetteMenuShow(true, menuSelection);
                         }
                         else if (einstein_mode) // Einstein supports a proper second disk drive
                         {
                             einstein_swap_disk(1, gpFic[ucGameChoice].szName);
+                            bExitMenu = true;
                         }
-                        bExitMenu = true;
+                    }
+                    else
+                    {
+                        CassetteMenuShow(true, menuSelection);
+                    }
+                    break;
+
+                case MENU_ACTION_SWAP2:
+                    if (adam_mode) BottomScreenOptions();
+                    colecoDSLoadFile();
+                    if (ucGameChoice >= 0)
+                    {
+                        // For ADAM, only allow a .ddp file to be mounted here
+                        if (adam_mode)
+                        {
+                            // Only insert if the user picked a TAPE file
+                            if (strcasecmp(strrchr(gpFic[ucGameChoice].szName, '.'), ".ddp") == 0)
+                            {
+                                DigitalInsertTape(gpFic[ucGameChoice].szName);   
+                            }
+                            CassetteMenuShow(true, menuSelection);
+                        }
                     }
                     else
                     {
@@ -3428,6 +3580,24 @@ void BottomScreenOptions(void)
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
 
+void BottomScreenOptionsAdam(void)
+{
+    swiWaitForVBlank();
+    
+    // ---------------------------------------------------
+    // Put up the options select screen background...
+    // ---------------------------------------------------
+    bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 31,0);
+    bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x256, 29,0);
+    bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
+    decompress(options_adamTiles, bgGetGfxPtr(bg0b), LZ77Vram);
+    decompress(options_adamMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
+    dmaCopy((void*) options_adamPal,(void*) BG_PALETTE_SUB,256*2);
+    unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
+}
+
+
 // ---------------------------------------------------------------------------
 // Setup the bottom screen - mostly for menu, high scores, options, etc.
 // ---------------------------------------------------------------------------
@@ -4133,6 +4303,14 @@ int main(int argc, char **argv)
   // -----------------------------------------------------------------
   useVRAM();
   LoadBIOSFiles();
+  
+  // -----------------------------------------------------------------
+  // Allocate the Large DSi buffer for expanded RAM banking...
+  // -----------------------------------------------------------------
+  if (isDSiMode())
+  {
+      DSI_RAM_Buffer = malloc(1024*1024); // 1MB
+  }
 
   // -----------------------------------------------------------------
   // And do an initial load of configuration... We'll match it up
