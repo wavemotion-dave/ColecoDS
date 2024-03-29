@@ -110,10 +110,10 @@ void coleco_adam_port_setup(void)
 {
     if (adam_mode) // ADAM mode requires special handling of Port60 
     {
-        Port53 = 0x00;          // Init the SGM Port 53
-        Port60 = 0x00;          // Adam/Memory Port 60 is in 'ADAM Mode'
-        Port20 = 0x00;          // Adam Net Port 20
-        Port42 = 0x00;          // Only one Epanded Bank of 64K (may use this in the future)
+        Port53 = 0x00;                          // Init the SGM Port 53
+        Port60 = (adam_mode == 3) ? 0x0F:0x00;  // Adam/Memory Port 60 is in 'ADAM Mode' (unless mode==3 in which case we are loading a .rom while retaining ADAM emulation)
+        Port20 = 0x00;                          // Adam Net Port 20
+        Port42 = 0x00;                          // The first Epanded Bank of 64K
     }
     else // Is Colecovision mode .. make sure the SGM ports are correct
     {
@@ -650,8 +650,12 @@ u8 loadrom(const char *filename, u8 * ptr)
                 strcpy(disk_last_path[BAY_DISK1], initial_path);
                 disk_last_size[BAY_DISK1] = romSize;
                 ChangeDisk(0, filename);
+            }
+            else if (adam_mode >= 2) // else must be a ROM which is okay...
+            {
+                memcpy(ROM_Memory + (992*1024), ROM_Memory, 0x8000); // Copy 32K to back end of ROM Memory
             } 
-            // else must be a ROM which is okay...
+            
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {

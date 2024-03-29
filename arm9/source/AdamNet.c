@@ -302,23 +302,43 @@ void SetupAdam(bool bResetAdamNet)
             MemoryMap[7] = RAM_Memory + 0x1E000;
         }
     }
-    else if ((Port60 & 0x0C) == 0x0C)    // Cartridge ROM - not used in ADAM mode
+    else if ((Port60 & 0x0C) == 0x0C)    // Cartridge ROM - in ADAM mode
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
         
-        MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
+        if (adam_mode == 3)
+        {
+            MemoryMap[4] = ROM_Memory + (992 * 1024) + 0x0000;
+            MemoryMap[5] = ROM_Memory + (992 * 1024) + 0x2000;
+            MemoryMap[6] = ROM_Memory + (992 * 1024) + 0x4000;
+            MemoryMap[7] = ROM_Memory + (992 * 1024) + 0x6000;
+        }
+        else
+        {
+            MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
+            MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
+            MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
+            MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
+        }
     }
-    else        // We don't use the expansion ROM slot so just return 0xFF here
+    else        // We allow for a 32K Expansion ROM - otherwise 0xFF out there
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
         
-        MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
-        MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
+        if (adam_mode == 2)
+        {
+            MemoryMap[4] = ROM_Memory + (992 * 1024) + 0x0000;
+            MemoryMap[5] = ROM_Memory + (992 * 1024) + 0x2000;
+            MemoryMap[6] = ROM_Memory + (992 * 1024) + 0x4000;
+            MemoryMap[7] = ROM_Memory + (992 * 1024) + 0x6000;
+        }
+        else
+        {
+            MemoryMap[4] = BIOS_Memory + 0xC000; // 0xFF out here
+            MemoryMap[5] = BIOS_Memory + 0xC000; // 0xFF out here
+            MemoryMap[6] = BIOS_Memory + 0xC000; // 0xFF out here
+            MemoryMap[7] = BIOS_Memory + 0xC000; // 0xFF out here
+        }
     }
 
     // Check if we are to Reset the AdamNet

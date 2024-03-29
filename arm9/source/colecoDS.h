@@ -290,6 +290,7 @@ extern u8 io_show_status;
 
 extern void BottomScreenOptions(void);
 extern void BottomScreenOptionsAdam(void);
+extern void BottomScreenOptionsEinstein(void);
 extern void BottomScreenKeypad(void);
 extern void PauseSound(void);
 extern void UnPauseSound(void);
