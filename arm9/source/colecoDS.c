@@ -2041,14 +2041,15 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
 {
     if ((iTy >= 12) && (iTy < 42))        // Row 1 (top row with I-VI Smartkeys)
     {
-        if      ((iTx >= 0)   && (iTx < 25))   kbd_key = ADAM_KEY_ESC;
-        else if ((iTx >= 25)  && (iTx < 53))   kbd_key = ADAM_KEY_F1;
-        else if ((iTx >= 53)  && (iTx < 81))   kbd_key = ADAM_KEY_F2;
-        else if ((iTx >= 81)  && (iTx < 108))  kbd_key = ADAM_KEY_F3;
-        else if ((iTx >= 108) && (iTx < 134))  kbd_key = ADAM_KEY_F4;
-        else if ((iTx >= 134) && (iTx < 161))  kbd_key = ADAM_KEY_F5;
-        else if ((iTx >= 161) && (iTx < 190))  kbd_key = ADAM_KEY_F6;
-        else if ((iTx >= 190) && (iTx < 213))  kbd_key = (key_shift ? ADAM_KEY_STORE:ADAM_KEY_MOVE);
+        if      ((iTx >= 0)   && (iTx < 22))   kbd_key = ADAM_KEY_ESC;
+        if      ((iTx >= 22)  && (iTx < 43))   kbd_key = (key_shift ? ADAM_KEY_WILDCARD:ADAM_KEY_STORE);
+        else if ((iTx >= 43)  && (iTx < 67))   kbd_key = ADAM_KEY_F1;
+        else if ((iTx >= 67)  && (iTx < 92))   kbd_key = ADAM_KEY_F2;
+        else if ((iTx >= 92)  && (iTx < 118))  kbd_key = ADAM_KEY_F3;
+        else if ((iTx >= 118) && (iTx < 142))  kbd_key = ADAM_KEY_F4;
+        else if ((iTx >= 142) && (iTx < 167))  kbd_key = ADAM_KEY_F5;
+        else if ((iTx >= 167) && (iTx < 192))  kbd_key = ADAM_KEY_F6;
+        else if ((iTx >= 192) && (iTx < 213))  kbd_key = (key_shift ? ADAM_KEY_WILDCARD:ADAM_KEY_MOVE);
         else if ((iTx >= 213) && (iTx < 235))  kbd_key = ADAM_KEY_BS;
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_HOME;
     }
@@ -4354,7 +4355,7 @@ int main(int argc, char **argv)
   // -----------------------------------------------------------------
   if (isDSiMode())
   {
-      DSI_RAM_Buffer = malloc(1024*1024); // 1MB
+      DSI_RAM_Buffer = malloc(2 * 1024*1024); // 2MB of Expanded RAM
   }
 
   // -----------------------------------------------------------------
