@@ -143,7 +143,7 @@ ADAM Compatibility :
 -----------------------
 * The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).  
 * Two drive bays are emulated - a Disk drive at either 160K (SSDD) or 320K (DSDD) and a Tape drive at the standard digital data pack size of 256K.
-* The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game or program.
+* The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game or program. For the DSi and above with extra memory, this expanded ADAM ram is boosted to 2MB (32 banks of 64K each).
 * By default, RAM is cleared when you reset the ADAM unless the game detects as a CP/M program - in which case a special memory pattern is used to aid in compatibility.
 * In Game Config you can change how RAM is initialized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
@@ -417,7 +417,7 @@ Versions :
 V9.5: ??-???-2024 by wavemotion-dave
 * Massive ADAMnet improvement for disk/tape handling. Improved timing, improved caching and more disk/tape games should load and run correctly.
 * DSI gets a massive 2MB of Expansion RAM (32 banks of 64K). DS-Lite/Phat still has 128K (base 64K plus the standard 64K expansion RAM).
-* Adam now properly handles 320K disks and three drive bays are virtually attacked (two 320K disk drives and the internal Tape drive at 256K).
+* Adam now properly handles 320K disks and three drive bays are virtually attached (two 320K disk drives and the internal Tape drive at 256K).
 * Adam full keyboard now uses an LED indicator under the CAPS LOCK button to indicate status.
 * Adam no longer mirrors RAM as a Colecovision would.
 * Adam supports the 32K expanded ROM and running carts under Adam emulation - name your ROMs as .adm so it loads into the right place in memory.
