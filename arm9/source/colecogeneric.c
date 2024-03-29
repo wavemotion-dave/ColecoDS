@@ -841,6 +841,12 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".adm") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
         if ( (strcasecmp(strrchr(szFile, '.'), ".cv") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -2156,6 +2162,8 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".DDP") != 0) adam_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".dsk") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else if (file_size/1024 == 720 || file_size/1024 == 360) msx_mode = 3; else adam_mode = 1;}
     if (strstr(gpFic[ucGameChoice].szName, ".DSK") != 0) {if (file_size/1024 == 210) einstein_mode = 2; else if (file_size/1024 == 720 || file_size/1024 == 360) msx_mode = 3; else adam_mode = 1;}
+    if (strstr(gpFic[ucGameChoice].szName, ".adm") != 0) adam_mode = 3;
+    if (strstr(gpFic[ucGameChoice].szName, ".ADM") != 0) adam_mode = 3;
     if (strstr(gpFic[ucGameChoice].szName, ".ein") != 0) einstein_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".EIN") != 0) einstein_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".pen") != 0) pencil2_mode = 1;
@@ -2168,6 +2176,11 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".COL") != 0) checkROM = 1;  // Coleco types - check if MSX or SVI
     
     if (checkROM) CheckRomHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX or SVI cart - this may set msx_mode=1 or svi_mode=2
+    
+    if (adam_mode == 3) // If we are a .adm file, we need to look at the first byte to tell us if we are perhaps an ADAM expansion ROM
+    {
+        if (ROM_Memory[0] == 0x66) adam_mode = 2; // 0x6699 at the start indicates we are an ADAM expansion ROM. Otherwise assume normal ADAM cart
+    }
     
     if (checkCOM)   // COM is usually Einstein... but we also support it for MTX for some games
     {

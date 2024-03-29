@@ -44,6 +44,7 @@
 #include "debug_ovl.h"
 #include "options.h"
 #include "options_adam.h"
+#include "options_ein.h"
 #include "colecovision.h"
 #include "topscreen.h"
 #include "wargames.h"
@@ -1469,13 +1470,18 @@ CassetteDiskMenu_t svi_digital_menu =
 
 CassetteDiskMenu_t einstein_disk_menu =
 {
-    "EINSTEIN DISK MENU",
+    "                     ",
     5,
     {
         {" SAVE    DISK0     ",     MENU_ACTION_SAVE},
         {" SWAP    DISK0     ",     MENU_ACTION_SWAP},
+        {"                   ",     MENU_ACTION_SKIP},
+        {"                   ",     MENU_ACTION_SKIP},
+        
         {" SAVE    DISK1     ",     MENU_ACTION_SAVE1},
         {" SWAP    DISK1     ",     MENU_ACTION_SWAP1},
+        {"                   ",     MENU_ACTION_SKIP},
+        {"                   ",     MENU_ACTION_SKIP},
         {" RAMDISK DISK1     ",     MENU_ACTION_INST_RAMDISK},
         {" RAMDISK CLEAR     ",     MENU_ACTION_INIT_RAMDISK},
         {" RUN  EINSTEIN .COM",     MENU_ACTION_RUN_EIN},
@@ -1532,6 +1538,7 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
       // Put up a generic background for this mini-menu...
       // ---------------------------------------------------
       if (adam_mode) BottomScreenOptionsAdam();
+      else if (einstein_mode) BottomScreenOptionsEinstein();
       else BottomScreenOptions();
     }
     
@@ -1573,8 +1580,8 @@ void CassetteMenuShow(bool bClearScreen, u8 sel)
     }
     else if (einstein_mode)
     {
-        if (disk_unsaved_data[BAY_DISK1]) DSPrint(4, menu->start_row+5+cassette_menu_items, 0,  " DISK0 HAS UNSAVED DATA! ");
-        if (disk_unsaved_data[BAY_DISK2]) DSPrint(4, menu->start_row+6+cassette_menu_items, 0,  " DISK1 HAS UNSAVED DATA! ");
+        if (disk_unsaved_data[BAY_DISK1]) DSPrint(1, 7,  0,  "*"); else DSPrint(1, 7,  0,  " ");
+        if (disk_unsaved_data[BAY_DISK2]) DSPrint(1, 11, 0,  "*"); else DSPrint(1, 11, 0,  " ");
         snprintf(tmp, 31, "DSK0: %s", disk_last_file[BAY_DISK1]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 21,0, tmp);
         snprintf(tmp, 31, "DSK1: %s", disk_last_file[BAY_DISK2]); tmp[31] = 0;  DSPrint((16 - (strlen(tmp)/2)), 22,0, tmp);
     }
@@ -1759,7 +1766,7 @@ void CassetteMenu(void)
                     break;
 
                 case MENU_ACTION_SWAP:
-                    if (adam_mode) BottomScreenOptions();
+                    if (adam_mode || einstein_mode) BottomScreenOptions();
                     colecoDSLoadFile();
                     if (ucGameChoice >= 0)
                     {
@@ -1791,7 +1798,7 @@ void CassetteMenu(void)
                     break;
 
                 case MENU_ACTION_SWAP1:
-                    if (adam_mode) BottomScreenOptions();
+                    if (adam_mode || einstein_mode) BottomScreenOptions();
                     colecoDSLoadFile();
                     if (ucGameChoice >= 0)
                     {
@@ -1818,7 +1825,7 @@ void CassetteMenu(void)
                     break;
 
                 case MENU_ACTION_SWAP2:
-                    if (adam_mode) BottomScreenOptions();
+                    if (adam_mode || einstein_mode) BottomScreenOptions();
                     colecoDSLoadFile();
                     if (ucGameChoice >= 0)
                     {
@@ -3615,6 +3622,23 @@ void BottomScreenOptionsAdam(void)
     decompress(options_adamTiles, bgGetGfxPtr(bg0b), LZ77Vram);
     decompress(options_adamMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
     dmaCopy((void*) options_adamPal,(void*) BG_PALETTE_SUB,256*2);
+    unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
+    dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
+}
+
+void BottomScreenOptionsEinstein(void)
+{
+    swiWaitForVBlank();
+    
+    // ---------------------------------------------------
+    // Put up the options select screen background...
+    // ---------------------------------------------------
+    bg0b = bgInitSub(0, BgType_Text8bpp, BgSize_T_256x256, 31,0);
+    bg1b = bgInitSub(1, BgType_Text8bpp, BgSize_T_256x256, 29,0);
+    bgSetPriority(bg0b,1);bgSetPriority(bg1b,0);
+    decompress(options_einTiles, bgGetGfxPtr(bg0b), LZ77Vram);
+    decompress(options_einMap, (void*) bgGetMapPtr(bg0b), LZ77Vram);
+    dmaCopy((void*) options_einPal,(void*) BG_PALETTE_SUB,256*2);
     unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b),32*24*2);
 }
