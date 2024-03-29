@@ -185,6 +185,7 @@ void colecoWipeRAM(void)
       // 0x10 which is a pattern that has been shown to work with 'picky' software like Adam Bomb 2.
       // ----------------------------------------------------------------------------------- ------------
       for (int i=0; i< 0x20000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
+      if (DSI_RAM_Buffer) memset(DSI_RAM_Buffer, 0x00, (2*1024*1024));
   }
   else if (einstein_mode)
   {

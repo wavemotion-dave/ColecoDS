@@ -277,10 +277,26 @@ void colecoSaveState()
         
         if (uNbO) fwrite(spare, 32,1, handle);        
         if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
-        if (adam_128k_mode) 
+        if (adam_128k_mode)
         {
-            if (DSI_RAM_Buffer) fwrite(DSI_RAM_Buffer, 0x80000,1, handle); // Write 512K... bigger is not supported for save states at this time
-            else fwrite(RAM_Memory+0x10000, 0x10000,1, handle);
+            // This must be the last thing written so we can compress it...
+            u32 len = (DSI_RAM_Buffer ? (2*1024*1024) : (64 * 1024)) >> 2;
+            u32 *ptr = (DSI_RAM_Buffer ? ((u32*)DSI_RAM_Buffer) : ((u32 *)(RAM_Memory+0x10000)));
+            for (u32 i=0; i<len; i++)
+            {
+                fwrite(ptr, 1, sizeof(u32), handle); // Write 32-bits at a time...
+                
+                u32 zero_count = 0;
+                while ((*ptr == 0x00000000) && (i<len)) // Compress
+                {
+                    zero_count++;
+                    ptr++;
+                    i++;
+                }
+                
+                if (zero_count) fwrite(&zero_count, 1, sizeof(zero_count), handle); // Write the zero count
+                else ptr++;
+            }
         }
     }
     else if (bActivisionPCB)
@@ -536,10 +552,35 @@ void colecoLoadState()
                 
                 if (uNbO) fread(spare, 32,1, handle);                
                 if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
-                if (adam_128k_mode) 
+                
+                if (adam_128k_mode)
                 {
-                    if (DSI_RAM_Buffer) fread(DSI_RAM_Buffer, 0x80000, 1, handle); // Read 512K... bigger is not supported for save states at this time
-                    else fread(RAM_Memory+0x10000, 0x10000, 1, handle);
+                    // This must be the last thing written so we can compress it...
+                    u32 len = (DSI_RAM_Buffer ? (2*1024*1024) : (64 * 1024)) >> 2;
+                    u32 *ptr = (DSI_RAM_Buffer ? ((u32*)DSI_RAM_Buffer) : ((u32 *)(RAM_Memory+0x10000)));
+                    for (u32 i=0; i<len; i++)
+                    {
+                        fread(ptr, 1, sizeof(u32), handle); // Read 32-bits at a time...
+                        
+                        u32 zero_count = 0;
+                        if (*ptr == 0x00000000) // UnCompress zeros...
+                        {
+                            fread(&zero_count, 1, sizeof(u32), handle);
+                        }
+                        
+                        if (zero_count)
+                        {
+                            for (u32 j=0; j<zero_count; j++)
+                            {
+                                if (i < len)
+                                {
+                                    *ptr++ = 0x00000000;
+                                    i++;
+                                }
+                            }
+                        }
+                        else ptr++;
+                    }
                 }
             }
             else if (bActivisionPCB)
