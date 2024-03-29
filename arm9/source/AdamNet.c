@@ -306,7 +306,7 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
         
-        if (adam_mode == 3)
+        if (adam_mode == 3) // We are running a normal CV Cart but with full ADAM emulation...
         {
             MemoryMap[4] = ROM_Memory + (992 * 1024) + 0x0000;
             MemoryMap[5] = ROM_Memory + (992 * 1024) + 0x2000;
@@ -325,7 +325,7 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
         
-        if (adam_mode == 2)
+        if (adam_mode == 2) // We've got a ROM expansion...
         {
             MemoryMap[4] = ROM_Memory + (992 * 1024) + 0x0000;
             MemoryMap[5] = ROM_Memory + (992 * 1024) + 0x2000;
