@@ -144,7 +144,8 @@ ADAM Compatibility :
 * The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).  
 * Two drive bays are emulated - a Disk drive at either 160K (SSDD) or 320K (DSDD) and a Tape drive at the standard digital data pack size of 256K.
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game or program. For the DSi and above with extra memory, this expanded ADAM ram is boosted to 2MB (32 banks of 64K each).
-* By default, RAM is cleared when you reset the ADAM unless the game detects as a CP/M program - in which case a special memory pattern is used to aid in compatibility.
+* By default, RAM is cleared when you reset the ADAM - you can change this to a random pattern on a per-game basis if you want.
+* The 32K ROM expansion of the Adam is emulated - rename your expansion rom as ".adm" so that the emulator knows it's a special ROM designed to be in the expansion ROM area. You can also rename normal cart .rom files as .adm to load them up with proper Adam emulation (useful if you want to run some of the Adam carts like in-house diagnostics utilities in full Adam emlation mode... normally when you load a .rom it would just load upw with standard Colecovision emulation).
 * In Game Config you can change how RAM is initialized by setting Memory Wipe to 'RANDOM' or 'ADAM CPM' which may improve the ability to load some games.
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only when the tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
