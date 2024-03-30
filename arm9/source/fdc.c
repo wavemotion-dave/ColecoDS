@@ -527,3 +527,5 @@ void fdc_init(u8 fdc_type, u8 drives, u8 sides, u8 tracks, u8 sectors, u16 secto
     Geom.disk1      = diskBuffer1;                      // Pointer to the second raw sector dump drive
     Geom.startSector= startSector;                      // Starting sector (some systems like MSX will start sector numbering at 1)
 }
+
+// End of file

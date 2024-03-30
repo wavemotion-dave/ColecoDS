@@ -1914,6 +1914,7 @@ void msx_reset(void)
         msx_basic = 0x0000;
     }
 }
+
 void msx_patch_bios(void)
 {
     // Patch the BIOS for Cassette Access...

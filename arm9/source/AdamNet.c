@@ -250,7 +250,7 @@ void SetupAdam(bool bResetAdamNet)
     }
     else                                // Expanded RAM
     {
-        adam_128k_mode = 1;
+        adam_ext_ram_used = 1;
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
         
         if (DSI_RAM_Buffer) // Do we have extra RAM available?
@@ -269,7 +269,6 @@ void SetupAdam(bool bResetAdamNet)
         }
     }
 
-
     // ----------------------------------
     // Configure upper 32K of memory
     // ----------------------------------
@@ -284,7 +283,7 @@ void SetupAdam(bool bResetAdamNet)
     }
     else if ((Port60 & 0x0C) == 0x08)    // Expanded RAM
     {
-        adam_128k_mode = 1;
+        adam_ext_ram_used = 1;
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
         
         if (DSI_RAM_Buffer) // Do we have extra RAM available?
@@ -589,9 +588,13 @@ static void UpdateDSK(byte N,byte Dev,int V)
   word BUF;
   byte *Data;
   
-  /* We have limited number of disks */
-  if(N>=MAX_DISKS) return;
-
+  /* We support two disk drives */
+  if(N>=2)
+  {
+      SetDCB(Dev,DCB_CMD_STAT, 0x9B);
+      return;
+  }
+  
   /* If reading DCB status, stop here */
   if(V<0)
   {
@@ -699,6 +702,13 @@ static void UpdateTAP(byte N,byte Dev,int V)
   int I,J,K,LEN,SEC,BLK;
   word BUF;
   byte *Data;
+
+  /* Only supporting 1 tape bay */
+  if(N>=1)
+  {
+      SetDCB(Dev,DCB_CMD_STAT, 0x9B);
+      return;
+  }
 
   /* If reading DCB status, stop here */
   if(V<0)

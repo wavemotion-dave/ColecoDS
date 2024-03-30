@@ -27,7 +27,6 @@
 #include "printf.h"
 
 typedef enum {FT_NONE,FT_FILE,FT_DIR} FILE_TYPE;
-extern u8 bMSXBiosFound;
 
 int countCV=0;
 int ucGameAct=0;

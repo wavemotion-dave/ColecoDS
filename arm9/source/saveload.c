@@ -276,8 +276,8 @@ void colecoSaveState()
         if (uNbO) fwrite(TapeStatus, sizeof(TapeStatus),1, handle);
         
         if (uNbO) fwrite(spare, 32,1, handle);        
-        if (uNbO) fwrite(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
-        if (adam_128k_mode)
+        if (uNbO) fwrite(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
+        if (adam_ext_ram_used)
         {
             // This must be the last thing written so we can compress it...
             u32 len = (DSI_RAM_Buffer ? (2*1024*1024) : (64 * 1024)) >> 2;
@@ -551,9 +551,9 @@ void colecoLoadState()
                 if (uNbO) fread(TapeStatus, sizeof(TapeStatus),1, handle);
                 
                 if (uNbO) fread(spare, 32,1, handle);                
-                if (uNbO) fread(&adam_128k_mode, sizeof(adam_128k_mode),1, handle);
+                if (uNbO) fread(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
                 
-                if (adam_128k_mode)
+                if (adam_ext_ram_used)
                 {
                     // This must be the last thing written so we can compress it...
                     u32 len = (DSI_RAM_Buffer ? (2*1024*1024) : (64 * 1024)) >> 2;

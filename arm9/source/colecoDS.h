@@ -15,7 +15,7 @@
 #include <string.h>
 #include "C24XX.h"
 
-#define VERSIONCLDS "9.4"
+#define VERSIONCLDS "9.5"
 
 extern u32 debug[0x10];
 
@@ -30,8 +30,8 @@ extern u32 debug[0x10];
 #define MENU_CHOICE_SWAP_KBD    0x07
 #define MENU_CHOICE_MENU        0xFF        // Special brings up a menu of choices
 
-#define JST_NONE            0x0000
-#define JST_KEYPAD          0x000F
+#define JST_NONE              0x0000
+#define JST_KEYPAD            0x000F
 
 // ------------------------------------------------------------------------------
 // Joystick UP, RIGHT, LEFT, DOWN and the two FIRE buttons are independent...

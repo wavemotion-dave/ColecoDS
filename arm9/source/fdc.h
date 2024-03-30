@@ -45,7 +45,6 @@ struct FDC_t
     u16 write_track_byte_counter;
 };
 
-
 struct FDC_GEOMETRY_t
 {
     u8  fdc_type;        // Either WD1770 or WD2793

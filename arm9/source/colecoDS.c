@@ -725,7 +725,7 @@ void ResetColecovision(void)
   else if (adam_mode)
   {
       colecoWipeRAM();                          // Wipe the RAM area
-      adam_128k_mode = 0;                       // Normal 64K ADAM to start
+      adam_ext_ram_used = 0;                       // Normal 64K ADAM to start
       sgm_reset();                              // Make sure the SGM memory is not functional
       SetupAdam(true);                          // Full reset of ADAMNet
   }
@@ -1473,19 +1473,20 @@ CassetteDiskMenu_t einstein_disk_menu =
     "                     ",
     5,
     {
+        {" INSERT  DISK0     ",     MENU_ACTION_SWAP},
         {" SAVE    DISK0     ",     MENU_ACTION_SAVE},
-        {" SWAP    DISK0     ",     MENU_ACTION_SWAP},
         {"                   ",     MENU_ACTION_SKIP},
         {"                   ",     MENU_ACTION_SKIP},
         
+        {" INSERT  DISK1     ",     MENU_ACTION_SWAP1},
         {" SAVE    DISK1     ",     MENU_ACTION_SAVE1},
-        {" SWAP    DISK1     ",     MENU_ACTION_SWAP1},
         {"                   ",     MENU_ACTION_SKIP},
         {"                   ",     MENU_ACTION_SKIP},
-        {" RAMDISK DISK1     ",     MENU_ACTION_INST_RAMDISK},
-        {" RAMDISK CLEAR     ",     MENU_ACTION_INIT_RAMDISK},
-        {" RUN  EINSTEIN .COM",     MENU_ACTION_RUN_EIN},
-        {" EXIT MENU         ",     MENU_ACTION_EXIT},
+        
+        {" INSERT RAMDISK    ",     MENU_ACTION_INST_RAMDISK},
+        {" CLEAR  RAMDISK    ",     MENU_ACTION_INIT_RAMDISK},
+        {" RUN    .COM       ",     MENU_ACTION_RUN_EIN},
+        {" EXIT   MENU       ",     MENU_ACTION_EXIT},
         {" NULL              ",     MENU_ACTION_END},
     },
 };
@@ -1667,7 +1668,6 @@ void CassetteMenu(void)
                             einstein_save_disk(0);
                             WAITVBL;WAITVBL;
                             DSPrint(12,0,6, "      ");
-                            bExitMenu = true;
                         }
                         else
                         {
@@ -1700,7 +1700,6 @@ void CassetteMenu(void)
                             einstein_save_disk(1);
                             WAITVBL;WAITVBL;
                             DSPrint(10,0,6, "      ");
-                            bExitMenu = true;
                         }
                     }
                     CassetteMenuShow(true, menuSelection);
@@ -1783,7 +1782,7 @@ void CassetteMenu(void)
                         else if (einstein_mode)
                         {
                             einstein_swap_disk(0, gpFic[ucGameChoice].szName);
-                            bExitMenu = true;
+                            CassetteMenuShow(true, menuSelection);
                         }
                         else
                         {
@@ -1815,7 +1814,7 @@ void CassetteMenu(void)
                         else if (einstein_mode) // Einstein supports a proper second disk drive
                         {
                             einstein_swap_disk(1, gpFic[ucGameChoice].szName);
-                            bExitMenu = true;
+                            CassetteMenuShow(true, menuSelection);
                         }
                     }
                     else
