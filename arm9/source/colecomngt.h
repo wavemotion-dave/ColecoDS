@@ -53,7 +53,7 @@ extern u8 *Slot1ROMPtr[8];
 extern u8 *MemoryMap[8];
 extern u8 msx_slot_dirty[4];
 
-extern u8 adam_128k_mode;
+extern u8 adam_ext_ram_used;
 
 extern SN76496 mySN;
 extern AY38910 myAY;
@@ -87,6 +87,8 @@ extern u8 adam_ram_hi_exp;
 extern u8 romBankMask;
 extern u8 sgm_enable;
 extern u16 sgm_low_addr;
+
+extern u8 bMSXBiosFound;
 
 extern u8 Port53;
 extern u8 Port60;

@@ -30,8 +30,9 @@
 
 // ------------------------------------------------
 // Adam RAM is 128K (64K Intrinsic, 64K Expanded)
+// DSi will bump the Expanded RAM to 2MB!
 // ------------------------------------------------
-u8 adam_128k_mode      = 0;
+u8 adam_ext_ram_used   = 0;
 u8 sg1000_double_reset = false;
 
 // -------------------------------------
@@ -184,8 +185,12 @@ void colecoWipeRAM(void)
       // ADAM has special handling for memory clear. Rather than a 0x00 for clearing memory, we use
       // 0x10 which is a pattern that has been shown to work with 'picky' software like Adam Bomb 2.
       // ----------------------------------------------------------------------------------- ------------
-      for (int i=0; i< 0x20000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
+      for (int i=0; i< 0x10000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
+      
+      // The Expanded MEM is always cleared to zeros
+      memset(RAM_Memory + 0x10000, 0x00, 0x10000);  
       if (DSI_RAM_Buffer) memset(DSI_RAM_Buffer, 0x00, (2*1024*1024));
+      
   }
   else if (einstein_mode)
   {
@@ -616,7 +621,7 @@ u8 loadrom(const char *filename, u8 * ptr)
         else if (adam_mode)
         {
             coleco_adam_port_setup();    // Ensure the memory ports are setup properly
-            adam_128k_mode = 0;          // Normal 64K ADAM to start
+            adam_ext_ram_used = 0;          // Normal 64K ADAM to start
             SetupAdam(false);            // And make sure the ADAM is ready
 
             strcpy(disk_last_file[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet

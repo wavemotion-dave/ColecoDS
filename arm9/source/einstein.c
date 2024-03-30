@@ -905,7 +905,6 @@ void einstein_reset(void)
 }
 
 
-
 // ------------------------------------------------------------------------
 // A few ZX Speccy ports utilize the beeper to "simulate" the sound... 
 // For the Einstein, this appears to be a rapid hit (writes) on PSG 
