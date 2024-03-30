@@ -422,11 +422,12 @@ V9.5: 30-Mar-2024 by wavemotion-dave
 * Adam full keyboard now uses an LED indicator under the CAPS LOCK button to indicate status.
 * Adam has improved keyboard graphic with more keys added.
 * Adam no longer mirrors RAM as a Colecovision would.
-* Adam optmization provided 5% improved emulation speed which should make most everything playable even on the older DS-Lite/Phat.
+* Adam optimization provided 5% improved emulation speed which should make most everything playable even on the older DS-Lite/Phat.
 * Adam supports the 32K expanded ROM and running carts under Adam emulation - name your ROMs as .adm so it loads into the right place in memory.
 * Tatung Einstein now has two proper standard 200K disk drives.
-* Tatung Einstein full keybaord now uses LED indicators under the SHIFT/CTRL/GRAPH and ALPHA LOCK keys for a visual improvement.
+* Tatung Einstein full keyboard now uses LED indicators under the SHIFT/CTRL/GRAPH and ALPHA LOCK keys for a visual improvement.
 * Tatung Einstein properly handles the backspace key when using the Alpha-Numeric keyboard overlay.
+* 2000 individual game configurations are supported - save/load states optimized and numerous tweaks under the hood.
 
 V9.4: 16-Mar-2024 by wavemotion-dave
 * Tatung Einstein improvements - more games run more correctly.
