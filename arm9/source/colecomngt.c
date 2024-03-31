@@ -621,7 +621,7 @@ u8 loadrom(const char *filename, u8 * ptr)
         else if (adam_mode)
         {
             coleco_adam_port_setup();    // Ensure the memory ports are setup properly
-            adam_ext_ram_used = 0;          // Normal 64K ADAM to start
+            adam_ext_ram_used = 0;       // Normal 64K ADAM to start
             SetupAdam(false);            // And make sure the ADAM is ready
 
             strcpy(disk_last_file[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
@@ -632,9 +632,9 @@ u8 loadrom(const char *filename, u8 * ptr)
             strcpy(disk_last_path[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
             strcpy(disk_last_path[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
             
-            disk_last_size[BAY_DISK1] = 0;          // Nothing loaded in the DISK drive yet
-            disk_last_size[BAY_DISK2] = 0;          // Nothing loaded in the DISK drive yet
-            disk_last_size[BAY_TAPE]  = 0;          // Nothing loaded in the TAPE drive yet
+            disk_last_size[BAY_DISK1] = 0;           // Nothing loaded in the DISK drive yet
+            disk_last_size[BAY_DISK2] = 0;           // Nothing loaded in the DISK drive yet
+            disk_last_size[BAY_TAPE]  = 0;           // Nothing loaded in the TAPE drive yet
 
             // ------------------------------------------
             // The .ddp or .dsk is now in ROM_Memory[]
@@ -660,8 +660,10 @@ u8 loadrom(const char *filename, u8 * ptr)
             else if (adam_mode >= 2) // else must be a ROM which is okay...
             {
                 memcpy(ROM_Memory + (992*1024), ROM_Memory, 0x8000); // Copy 32K to back end of ROM Memory
-            } 
+                memset(ROM_Memory, 0xFF, (992*1024));
+            }
             
+            debug[1]=10+adam_mode;
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {
