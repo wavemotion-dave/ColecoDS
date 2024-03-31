@@ -2176,11 +2176,6 @@ void ReadFileCRCAndConfig(void)
     
     if (checkROM) CheckRomHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX or SVI cart - this may set msx_mode=1 or svi_mode=2
     
-    if (adam_mode == 3) // If we are a .adm file, we need to look at the first byte to tell us if we are perhaps an ADAM expansion ROM
-    {
-        if (ROM_Memory[0] == 0x66) adam_mode = 2; // 0x6699 at the start indicates we are an ADAM expansion ROM. Otherwise assume normal ADAM cart
-    }
-    
     if (checkCOM)   // COM is usually Einstein... but we also support it for MTX for some games
     {
         if ( (file_crc == 0xb35a8beb)  ||  // SGM2M - alt
@@ -2259,6 +2254,11 @@ void ReadFileCRCAndConfig(void)
             fread(ROM_Memory, 1, 0x2000, fp);   // First 8K is enough...
             fclose(fp);
         }
+        
+        if (adam_mode == 3) // If we are a .adm file, we need to look at the first byte to tell us if we are perhaps an ADAM expansion ROM
+        {
+            if (ROM_Memory[0] == 0x66) adam_mode = 2; // 0x6699 at the start indicates we are an ADAM expansion ROM. Otherwise assume normal ADAM cart
+        }        
     }
     
     FindConfig();    // Try to find keymap and config for this file...
