@@ -92,8 +92,7 @@ author of ColEM which is the code for the
 core emulation (specifically TMS9918 VDP
 and the CZ80 CPU core).  I think the original 
 port was circa ColEM 2.1 with some fixes and 
-updated Sprite/Line handling from ColEM 5.6
-
+updated Sprite/Line handling from ColEM 5.6 
 Without Marat - this emulator simply wouldn't exist.
 
 Known Issues and Limitations:
@@ -141,7 +140,7 @@ Name the BIOS ROMs above exactly as shown (if you find them online, they will ha
 
 ADAM Compatibility :
 -----------------------
-* The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).  
+* The emulated ADAM will run most tape images (.ddp) or disk images (.dsk) - just pick the .dpp or .dsk image and it should auto boot (make sure you have all the ADAM BIOS files needed!)
 * Three drive bays are emulated - two Disk drives at either 160K (SSDD) or 320K (DSDD) and a Tape drive at the standard digital data pack size of 256K. This should be enough for any program you want to run.
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game or program. For the DSi and above with extra memory, this expanded ADAM ram is boosted to 2MB (32 banks of 64K each).
 * By default, RAM is cleared when you reset the ADAM - you can change this to a random pattern on a per-game basis if you want.
