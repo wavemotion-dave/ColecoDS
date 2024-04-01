@@ -142,7 +142,7 @@ Name the BIOS ROMs above exactly as shown (if you find them online, they will ha
 ADAM Compatibility :
 -----------------------
 * The emulated ADAM will run most tape images (.ddp) or disk images (.dsk).  
-* Two drive bays are emulated - a Disk drive at either 160K (SSDD) or 320K (DSDD) and a Tape drive at the standard digital data pack size of 256K.
+* Three drive bays are emulated - two Disk drives at either 160K (SSDD) or 320K (DSDD) and a Tape drive at the standard digital data pack size of 256K. This should be enough for any program you want to run.
 * The emulated ADAM is a 128K system (64K internal memory and 64K expanded RAM) - enough for almost any game or program. For the DSi and above with extra memory, this expanded ADAM ram is boosted to 2MB (32 banks of 64K each).
 * By default, RAM is cleared when you reset the ADAM - you can change this to a random pattern on a per-game basis if you want.
 * The 32K ROM expansion of the Adam is emulated - rename your expansion rom as ".adm" so that the emulator knows it's a special ROM designed to be in the expansion ROM area. You can also rename normal cart .rom files as .adm to load them up with proper Adam emulation (useful if you want to run some of the Adam carts like in-house diagnostics utilities in full Adam emlation mode... normally when you load a .rom it would just load up with standard Colecovision emulation).
