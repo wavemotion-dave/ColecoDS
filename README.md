@@ -92,7 +92,7 @@ author of ColEM which is the code for the
 core emulation (specifically TMS9918 VDP
 and the CZ80 CPU core).  I think the original 
 port was circa ColEM 2.1 with some fixes and 
-updated Sprite/Line handling from ColEM 5.6 
+updated Sprite/Line handling from ColEM 5.6. 
 Without Marat - this emulator simply wouldn't exist.
 
 Known Issues and Limitations:
