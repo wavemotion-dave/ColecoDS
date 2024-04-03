@@ -31,7 +31,7 @@ extern "C" {
 
 #define SEEK_DELETED (0x40000000)
 
-#define MAX_FDID_SIZE   (325*1024)    /* Big enough to hold a 320K disk plus header */
+#define MAX_FDID_SIZE   (328*1024)    /* Big enough to hold a 320K disk plus FDI header */
 
 #define DataFDI(D) ((D)->Data+(D)->Data[10]+((int)((D)->Data[11])<<8))
 
