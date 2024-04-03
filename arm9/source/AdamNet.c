@@ -48,8 +48,6 @@
 FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
 FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
 
-byte HoldingBuf[4096];
-
 const byte timeouts[] = {5, 15, 30}; // FAST, SLOWER, SLOWEST
 
 DevStatus_t DiskStatus[MAX_DISKS];
@@ -167,10 +165,12 @@ static const byte CtrlKey[256] =
 u16 *PCBTable = (u16*)0x06860000;
 
 word PCBAddr;
-byte DiskID;
 byte KBDStatus;
 byte LastKey;
 
+// ---------------------------------------------------------------------------
+// For each 8K block in the 64K ADAM memory, we mark it as either RAM or ROM
+// ---------------------------------------------------------------------------
 u8 adam_ram_present[8]  __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 
 // ------------------------------------------------------------------------------------------------
@@ -253,14 +253,14 @@ void SetupAdam(bool bResetAdamNet)
         adam_ext_ram_used = 1;
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
         
-        if (DSI_RAM_Buffer) // Do we have extra RAM available?
+        if (DSI_RAM_Buffer) // Do we have extra RAM available for bigger RAM expansions on the DSi?
         {
             MemoryMap[0] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x0000;
             MemoryMap[1] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x2000;
             MemoryMap[2] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x4000;
             MemoryMap[3] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x6000;
         }
-        else // Just the normal 64K RAM expansion
+        else // Just the normal 64K RAM expansion - no banking
         {
             MemoryMap[0] = RAM_Memory + 0x10000;
             MemoryMap[1] = RAM_Memory + 0x12000;
@@ -286,14 +286,14 @@ void SetupAdam(bool bResetAdamNet)
         adam_ext_ram_used = 1;
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
         
-        if (DSI_RAM_Buffer) // Do we have extra RAM available?
+        if (DSI_RAM_Buffer) // Do we have extra RAM available for bigger RAM expansions on the DSi?
         {
             MemoryMap[4] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x8000;
             MemoryMap[5] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0xA000;
             MemoryMap[6] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0xC000;
             MemoryMap[7] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0xE000;
         }
-        else // Just the normal 64K RAM expansion
+        else // Just the normal 64K RAM expansion - no banking
         {
             MemoryMap[4] = RAM_Memory + 0x18000;
             MemoryMap[5] = RAM_Memory + 0x1A000;
@@ -827,7 +827,7 @@ static void UpdateDCB(byte Dev,int V)
     case 0x04:
     case 0x05:
     case 0x06:
-    case 0x07: UpdateDSK(DiskID=DevID-4,Dev,V);break;
+    case 0x07: UpdateDSK(DevID-4,Dev,V);break;
     case 0x08:
     case 0x09:
     case 0x18:
@@ -913,7 +913,7 @@ void ResetPCB(void)
 {
   /* PCB/DCB not mapped yet */
   memset(PCBTable,0x00,0x20000);
-
+  
   /* Set starting PCB address */
   PCBAddr = 0x0000;
   MovePCB(0xFEC0,15);
@@ -921,10 +921,7 @@ void ResetPCB(void)
   /* @@@ Reset tape and disk here */
   KBDStatus = RSP_STATUS;
   LastKey   = 0x00;
-  DiskID    = 0;
     
-  memset(HoldingBuf, 0x00, sizeof(HoldingBuf));
-  
   for (int i=0; i<4; i++)
   {
       DiskStatus[i].status = DiskStatus[i].newstatus = 0x80;

@@ -264,10 +264,8 @@ void colecoSaveState()
         for (u16 i=0; i<0x4000; i++)  SRAM_Memory[i] = (u8)PCBTable[0xC000+i];
         if (uNbO) fwrite(SRAM_Memory, 0x4000, 1, handle);
         
-        if (uNbO) fwrite(HoldingBuf, 0x2000,1, handle);
         if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);        
         if (uNbO) fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);        
-        if (uNbO) fwrite(&DiskID, sizeof(DiskID),1, handle);
         if (uNbO) fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
         if (uNbO) fwrite(&LastKey, sizeof(LastKey),1, handle);
         if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);        
@@ -539,10 +537,8 @@ void colecoLoadState()
                 if (uNbO) fread(SRAM_Memory, 0x4000, 1, handle);
                 for (u16 i=0; i<0x4000; i++)  PCBTable[0xC000+i] = SRAM_Memory[i];
                 
-                if (uNbO) fread(HoldingBuf, 0x2000,1, handle);
                 if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
                 if (uNbO) fread(adam_ram_present, sizeof(adam_ram_present),1, handle);                
-                if (uNbO) fread(&DiskID, sizeof(DiskID),1, handle);
                 if (uNbO) fread(&KBDStatus, sizeof(KBDStatus),1, handle);
                 if (uNbO) fread(&LastKey, sizeof(LastKey),1, handle);
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);

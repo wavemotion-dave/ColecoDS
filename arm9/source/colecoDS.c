@@ -725,7 +725,7 @@ void ResetColecovision(void)
   else if (adam_mode)
   {
       colecoWipeRAM();                          // Wipe the RAM area
-      adam_ext_ram_used = 0;                       // Normal 64K ADAM to start
+      adam_ext_ram_used = 0;                    // Normal 64K ADAM to start
       sgm_reset();                              // Make sure the SGM memory is not functional
       SetupAdam(true);                          // Full reset of ADAMNet
   }
@@ -3890,7 +3890,7 @@ void colecoDSInitCPU(void)
   //  -----------------------------------------
   //  Init Main Memory and VDP Video Memory
   //  -----------------------------------------
-  memset(RAM_Memory, 0x00, 0x20000);
+  memset(RAM_Memory, 0x00, sizeof(RAM_Memory));
   memset(pVDPVidMem, 0x00, 0x4000);
 
   // -----------------------------------------------

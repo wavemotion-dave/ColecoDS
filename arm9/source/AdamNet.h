@@ -127,9 +127,9 @@ typedef unsigned short word;
 #endif
     
 extern u16 *PCBTable;
-extern u8 HoldingBuf[];
-extern u8 KBDStatus, LastKey, DiskID;
-extern u16 savedBUF, savedLEN, PCBAddr;
+extern u8 KBDStatus, LastKey;
+extern u16 PCBAddr;
+
 
 typedef struct
 {

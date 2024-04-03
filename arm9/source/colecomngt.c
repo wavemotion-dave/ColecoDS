@@ -187,10 +187,11 @@ void colecoWipeRAM(void)
       // ----------------------------------------------------------------------------------- ------------
       for (int i=0; i< 0x10000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
       
-      // The Expanded MEM is always cleared to zeros
+      // The Expanded MEM is always cleared to zeros (helps with compression on save/load state)
       memset(RAM_Memory + 0x10000, 0x00, 0x10000);  
       if (DSI_RAM_Buffer) memset(DSI_RAM_Buffer, 0x00, (2*1024*1024));
       
+      RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software      
   }
   else if (einstein_mode)
   {
@@ -662,8 +663,6 @@ u8 loadrom(const char *filename, u8 * ptr)
                 memcpy(ROM_Memory + (992*1024), ROM_Memory, 0x8000); // Copy 32K to back end of ROM Memory
                 memset(ROM_Memory, 0xFF, (992*1024));
             }
-            
-            debug[1]=10+adam_mode;
         }
         else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
         {
