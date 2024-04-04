@@ -21,7 +21,6 @@
 
 #include "colecoDS.h"
 #include "AdamNet.h"
-#include "FDIDisk.h"
 #include "highscore.h"
 #include "colecogeneric.h"
 #include "colecomngt.h"
