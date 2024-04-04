@@ -4,8 +4,6 @@
 #include <nds.h>
 
 #include "./cz80/Z80.h"
-#include "./drz80/drz80.h"
-#include "./cz80/Z80.h"
 
 #define word u16
 #define byte u8
@@ -19,27 +17,9 @@
 
 #define Z80_VECTOR(device,state) (((device)<<8)|(state))
 
-struct __attribute__((__packed__)) Z80_Regs {
-  struct DrZ80 regs;
-  u8 *z80Base;
-  u32 port16bits;
-};
-
-extern u16 cpuirequest;
-
-extern struct DrZ80 drz80;
 extern Z80 CPU;
 
 extern void ClearCPUInterrupt(void);
-
-extern void DrZ80_Cause_Interrupt(int type);
-extern void DrZ80_Interrupt(void);
-extern void DrZ80_Clear_Pending_Interrupts(void);
-extern void DrZ80_Reset(void);
-extern int  DrZ80_execute(int cycles);
-
-extern u32 z80_rebaseSP(u16 address);
-extern u32 z80_rebasePC(u16 address);
 
 extern void cpu_writeport16(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport16(register unsigned short Port);

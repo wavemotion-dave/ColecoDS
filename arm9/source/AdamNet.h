@@ -33,18 +33,13 @@
 /**     commercially. Please, notify me, if you make any    **/
 /**     changes to this file.                               **/
 /*************************************************************/
-#include "FDIDisk.h"
 
 #ifndef ADAMNET_H
 #define ADAMNET_H
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** Adam Key Codes *******************************************/
 #define ADAM_KEY_CONTROL    CON_CONTROL
 #define ADAM_KEY_SHIFT      CON_SHIFT
-#define ADAM_KEY_CAPS       CON_CAPS
 #define ADAM_KEY_ESC        27
 #define ADAM_KEY_BS         8   // + SHIFT = 184
 #define ADAM_KEY_TAB        9   // + SHIFT = 185
@@ -75,102 +70,66 @@ extern "C" {
 #define ADAM_KEY_RIGHT      161 // + CTRL = 165, + HOME = 173
 #define ADAM_KEY_DOWN       162 // + CTRL = 166, + HOME = 174
 #define ADAM_KEY_LEFT       163 // + CTRL = 167, + HOME = 175
-#define ADAM_KEY_DIAG_NE    168
-#define ADAM_KEY_DIAG_SE    169
-#define ADAM_KEY_DIAG_SW    170
-#define ADAM_KEY_DIAG_NW    171
     
     
-/** Special Key Codes ****************************************/
-/** Modifiers returned by GetKey() and WaitKey().           **/
-/*************************************************************/
-#define CON_KEYCODE  0x03FFFFFF /* Key code                  */
-#define CON_MODES    0xFC000000 /* Mode bits, as follows:    */
-#define CON_CLICK    0x04000000 /* Key click (LiteS60 only)  */
-#define CON_CAPS     0x08000000 /* CapsLock held             */
+// --------------------------------------------
+// Key modifiers augment normal keypresses...
+// --------------------------------------------
 #define CON_SHIFT    0x10000000 /* SHIFT held                */
 #define CON_CONTROL  0x20000000 /* CONTROL held              */
-#define CON_ALT      0x40000000 /* ALT held                  */
-#define CON_RELEASE  0x80000000 /* Key released (going up)   */
 
-#define CON_F1       0xEE
-#define CON_F2       0xEF
-#define CON_F3       0xF0
-#define CON_F4       0xF1
-#define CON_F5       0xF2
-#define CON_F6       0xF3
-#define CON_F7       0xF4
-#define CON_F8       0xF5
-#define CON_F9       0xF6
-#define CON_F10      0xF7
-#define CON_F11      0xF8
-#define CON_F12      0xF9
-#define CON_LEFT     0xFA
-#define CON_RIGHT    0xFB
-#define CON_UP       0xFC
-#define CON_DOWN     0xFD
-#define CON_OK       0xFE
-#define CON_EXIT     0xFF
-
-#define BAY_DISK1    0
-#define BAY_DISK2    1
-#define BAY_TAPE     2
-    
-#ifndef BYTE_TYPE_DEFINED
-#define BYTE_TYPE_DEFINED
-typedef unsigned char byte;
-#endif
-
-#ifndef WORD_TYPE_DEFINED
-#define WORD_TYPE_DEFINED
-typedef unsigned short word;
-#endif
-    
 extern u16 *PCBTable;
 extern u8 KBDStatus, LastKey;
 extern u16 PCBAddr;
 
+// -----------------------------------------------------
+// For the various disk/tape drives in the ADAM system
+// -----------------------------------------------------
+#define BAY_DISK1       0
+#define BAY_DISK2       1
+#define BAY_TAPE        2
+
+#define MAX_DRIVES      4
+
+#define DRIVE_TYPE_NONE 0
+#define DRIVE_TYPE_DISK 1
+#define DRIVE_TYPE_TAPE 2
+    
+typedef struct
+{
+    u8 *image;
+    u32 imageSize;
+    u32 imageSizeMax;
+    u16 secSize;
+    u8  skew;
+    u8  driveType;
+} AdamDrive_t;
 
 typedef struct
 {
-    byte status;             // Current status byte for this drive
-    byte newstatus;          // Next status byte for this drive
-    byte timeout;            // The current disk busy timeout - decremented once each VDP interrupt
-    byte io_status;          // Used to produce the RD/WR and floppy sound under emulation
-    int  lastblock;          // The last block read from the drive
-} DevStatus_t;
+    u8  status;             // Current status byte for this drive
+    u8  newstatus;          // Next status byte for this drive
+    u8  timeout;            // The current disk busy timeout - decremented once each VDP interrupt
+    u8  io_status;          // Used to produce the RD/WR and floppy sound under emulation
+    u32 lastblock;          // The last block read from the drive
+} DriveStatus_t;
 
-extern DevStatus_t DiskStatus[MAX_DISKS];
-extern DevStatus_t TapeStatus[MAX_TAPES];
+extern AdamDrive_t   AdamDrive[MAX_DRIVES];
+extern DriveStatus_t AdamDriveStatus[MAX_DRIVES];
 
 extern u8 adam_ram_present[8];
 
-/** ReadPCB() ************************************************/
-/** Read value from a given PCB or DCB address.             **/
-/*************************************************************/
 void ReadPCB(word A);
-
-/** WritePCB() ***********************************************/
-/** Write value to a given PCB or DCB address.              **/
-/*************************************************************/
 void WritePCB(word A,byte V);
-
-/** ResetPCB() ***********************************************/
-/** Reset PCB and attached hardware.                        **/
-/*************************************************************/
 void ResetPCB(void);
-
-/** PutKBD() *************************************************/
-/** Add a new key to the keyboard buffer.                   **/
-/*************************************************************/
 void PutKBD(unsigned int Key);
 
-byte ChangeTape(byte N,const char *FileName);
-byte ChangeDisk(byte N,const char *FileName);
+void adam_drive_insert(u8 drive, char *filename);
+void adam_drive_eject(u8 drive);
+u8  *adam_drive_sector(u8 drive, u32 sector);
+void adam_drive_save(u8 drive);
+void adam_drive_init(void);
+void adam_drive_cache_check(void);
+void adam_drive_update(u8 drive, u8 device, int cmd);
 
-void adam_disk_tape_cache_check(void);
-   
-#ifdef __cplusplus
-}
-#endif
 #endif /* ADAMNET_H */

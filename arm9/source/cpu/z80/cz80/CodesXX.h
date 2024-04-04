@@ -235,6 +235,8 @@ case HALT:
   CPU.IFF|=IFF_HALT;
   CPU.IBackup=0;
   CPU.ICount=0;
+  extern unsigned int debug[];
+  debug[1]++;
   break;
 
 case DI:

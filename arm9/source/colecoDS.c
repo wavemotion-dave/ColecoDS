@@ -635,8 +635,8 @@ void ResetColecovision(void)
   sgm_reset();                          // Reset Super Game Module
 
   sound_chip_reset();                   // Reset the SN, AY and SCC chips
-  
-  DrZ80_Reset();                        // Reset the DrZ80 CPU core
+
+  Z80_Interface_Reset();                // Reset the Z80 Interface  
   ResetZ80(&CPU);                       // Reset the Z80 CPU core
 
   sordm5_reset();                       // Reset the Sord M5 specific vars
@@ -1100,28 +1100,14 @@ void DisplayStatusLine(bool bForce)
         io_show_status = 0;
         
         u8 sfx = SFX_FLOPPY;
-        for (u8 i=0; i<MAX_DISKS; i++)
+        for (u8 i=0; i<MAX_DRIVES; i++)
         {
-            if (DiskStatus[i].io_status)
+            if (AdamDriveStatus[i].io_status)
             {
-                io_show_status = DiskStatus[i].io_status;
-                DiskStatus[i].io_status = 0;
-                sfx=SFX_FLOPPY; // floppy sound
+                io_show_status = AdamDriveStatus[i].io_status;
+                AdamDriveStatus[i].io_status = 0;
+                sfx = (AdamDrive[i].driveType == DRIVE_TYPE_TAPE) ? SFX_ADAM_DDP : SFX_FLOPPY;
                 break;
-            }
-        }
-        
-        if (io_show_status == 0)
-        {
-            for (u8 i=0; i<MAX_TAPES; i++)
-            {
-                if (TapeStatus[i].io_status)
-                {
-                    io_show_status = TapeStatus[i].io_status;
-                    TapeStatus[i].io_status = 0;
-                    sfx=SFX_ADAM_DDP; // DDP sound
-                    break;
-                }
             }
         }
         
@@ -1246,7 +1232,7 @@ void SaveAdamDisk(u8 drive)
     {
         chdir(disk_last_path[BAY_DISK1+drive]);
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Disks[drive], disk_last_file[BAY_DISK1+drive], (disk_last_size[BAY_DISK1+drive] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK)); // Should be 160 but we allow 2K overdump before we switch to 320K
+        adam_drive_save(BAY_DISK1+drive);
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
         disk_unsaved_data[BAY_DISK1+drive] = 0;
@@ -1262,7 +1248,7 @@ void SaveAdamTape(void)
     {
         chdir(disk_last_path[BAY_TAPE]);
         DSPrint(12,0,6, "SAVING");
-        SaveFDI(&Tapes[0], disk_last_file[BAY_TAPE], FMT_DDP);
+        adam_drive_save(BAY_TAPE);
         DSPrint(12,0,6, "      ");
         DisplayStatusLine(true);
         disk_unsaved_data[BAY_TAPE] = 0;
@@ -1285,7 +1271,7 @@ void DigitalInsertDisk(u8 drive, char *filename)
     
     if (filename == NULL) // asking to eject
     {
-        ChangeDisk(drive, NULL);
+        adam_drive_eject(BAY_DISK1+drive);
     }
     else
     {
@@ -1305,7 +1291,7 @@ void DigitalInsertDisk(u8 drive, char *filename)
             // --------------------------------------------
             getcwd(disk_last_path[BAY_DISK1+drive], MAX_ROM_LENGTH);
             strcpy(disk_last_file[BAY_DISK1+drive], filename);
-            ChangeDisk(drive, disk_last_file[BAY_DISK1+drive]);
+            adam_drive_insert(BAY_DISK1+drive, disk_last_file[BAY_DISK1+drive]);
        }
    }
 }
@@ -1322,7 +1308,7 @@ void DigitalInsertTape(char *filename)
 
     if (filename == NULL) // asking to eject
     {
-        ChangeTape(0, NULL);
+        adam_drive_eject(BAY_TAPE);
     }
     else
     {
@@ -1342,7 +1328,7 @@ void DigitalInsertTape(char *filename)
             // --------------------------------------------
             getcwd(disk_last_path[BAY_TAPE], MAX_ROM_LENGTH);
             strcpy(disk_last_file[BAY_TAPE], filename);
-            ChangeTape(0, disk_last_file[BAY_TAPE]);
+            adam_drive_insert(BAY_TAPE, disk_last_file[BAY_TAPE]);
        }
     }
 }
@@ -3942,10 +3928,7 @@ void colecoDSInitCPU(void)
   }
   else  // Finally we get to the Coleco BIOS
   {
-      if (myConfig.cpuCore == 0)    // If DrZ80 core... put the BIOS into main RAM for now
-      {
-        memcpy(RAM_Memory,ColecoBios,0x2000);
-      }
+    // Nothing to do here
   }
 }
 

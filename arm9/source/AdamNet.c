@@ -45,13 +45,16 @@
 #include "cpu/z80/Z80_interface.h"
 #include "printf.h"
 
-FDIDisk Disks[MAX_DISKS] = { 0 };  /* Adam disk drives          */
-FDIDisk Tapes[MAX_TAPES] = { 0 };  /* Adam tape drives          */
-
 const byte timeouts[] = {5, 15, 30}; // FAST, SLOWER, SLOWEST
 
-DevStatus_t DiskStatus[MAX_DISKS];
-DevStatus_t TapeStatus[MAX_TAPES];
+// ------------------------------------------------------------------
+// Adam Disk Drives are setup by default for standard 160K single 
+// sided drive emulation. If we read a disk bigger than 160K we will
+// adjust these parameters as appopriate for the new drive geometry.
+// ------------------------------------------------------------------
+AdamDrive_t AdamDrive[MAX_DRIVES];
+DriveStatus_t AdamDriveStatus[MAX_DRIVES];
+
 
 /** PCB Field Offsets ****************************************/
 #define PCB_CMD_STAT   0
@@ -103,11 +106,13 @@ DevStatus_t TapeStatus[MAX_TAPES];
 #define CMD_READ       0x04
 
 /** Response Codes *******************************************/
-#define RSP_STATUS     0x80 /* + SIZE_HI + SIZE_LO + TXCODE + STATUS + CRC */
-#define RSP_ACK        0x90
-#define RSP_CANCEL     0xA0
-#define RSP_SEND       0xB0 /* + SIZE_HI + SIZE_LO + DATA + CRC */
-#define RSP_NACK       0xC0
+// 0x80 -> Success
+// 0x81 -> Z80 clock in sync
+// 0x82 -> Master 6801 clock in sync
+// 0x83 -> adam_pcb relocated
+// 0x9B -> Time Out
+#define RSP_SUCCESS     0x80
+#define RSP_TIMEOUT     0x9B
 
 /** Key Codes with SHIFT and CTRL ****************************/
 /** Shifted Key Codes ****************************************/
@@ -463,7 +468,7 @@ static void MovePCB(word NewAddr,byte MaxDCB)
 /*************************************************************/
 static void ReportDevice(byte Dev,word MsgSize,byte IsBlock)
 {
-  SetDCB(Dev,DCB_CMD_STAT, RSP_STATUS);
+  SetDCB(Dev,DCB_CMD_STAT, RSP_SUCCESS);
   SetDCB(Dev,DCB_MAXL_LO,  MsgSize&0xFF);
   SetDCB(Dev,DCB_MAXL_HI,  MsgSize>>8);
   SetDCB(Dev,DCB_DEV_TYPE, IsBlock? 0x01:0x00);
@@ -478,11 +483,9 @@ void PutKBD(unsigned int Key)
 
   Mode = Key & ~0xFF;
   Key  = Key & 0xFF;
-  Key  = (Key>='A')&&(Key<='Z')? Key+'a'-'A':Key;
-  Key  = (Mode&ADAM_KEY_CONTROL || key_ctrl) && (CtrlKey[Key]!=Key)?  CtrlKey[Key]
-       : (Mode&ADAM_KEY_SHIFT || key_shift)  && (ShiftKey[Key]!=Key)? ShiftKey[Key]
-       : Key;
-  Key  = (Mode&ADAM_KEY_CAPS)&&(Key>='a')&&(Key<='z')? Key+'A'-'a':Key;
+  Key  = (Key>='A')&&(Key<='Z') ? Key+'a'-'A':Key;
+  Key  = (Mode&ADAM_KEY_CONTROL || key_ctrl) && (CtrlKey[Key]!=Key) ?  CtrlKey[Key]
+       : (Mode&ADAM_KEY_SHIFT || key_shift)  && (ShiftKey[Key]!=Key) ? ShiftKey[Key] : Key;
 
   LastKey = Key;
 }
@@ -508,12 +511,12 @@ static void UpdateKBD(byte Dev,int V)
     case CMD_SOFT_RESET:
       /* Character-based device, single character buffer */
       ReportDevice(Dev,0x0001,0);
-      KBDStatus = RSP_STATUS;
+      KBDStatus = RSP_SUCCESS;
       LastKey   = 0x00;
       break;
     case CMD_WRITE:
-      SetDCB(Dev,DCB_CMD_STAT,RSP_ACK+0x0B);
-      KBDStatus = RSP_STATUS;
+      SetDCB(Dev,DCB_CMD_STAT,RSP_TIMEOUT);
+      KBDStatus = RSP_SUCCESS;
       break;
     case CMD_READ:
       SetDCB(Dev,DCB_CMD_STAT,0x00);
@@ -523,7 +526,7 @@ static void UpdateKBD(byte Dev,int V)
       {
         RAM_Memory[A] = V;
       }
-      KBDStatus = RSP_STATUS+(J<N? 0x0C:0x00);
+      KBDStatus = RSP_SUCCESS+(J<N? 0x0C:0x00);
       break;
   }
 }
@@ -541,7 +544,7 @@ static void UpdatePRN(byte Dev,int V)
       ReportDevice(Dev,0x0001,0);
       break;
     case CMD_READ:
-      SetDCB(Dev,DCB_CMD_STAT,RSP_ACK+0x0B);
+      SetDCB(Dev,DCB_CMD_STAT,RSP_TIMEOUT);
       break;
     case CMD_WRITE:
       SetDCB(Dev,DCB_CMD_STAT,0x00);
@@ -551,290 +554,53 @@ static void UpdatePRN(byte Dev,int V)
       (void)N;
       break;
     default:
-      SetDCB(Dev,DCB_CMD_STAT,RSP_STATUS);
+      SetDCB(Dev,DCB_CMD_STAT,RSP_SUCCESS);
       break;
   }
 }
 
 
-// ----------------------------------------------------------
-// Called on every vertical blank when a frame is finished
-// to provide a simple cache flush check on disk reads.
-// ----------------------------------------------------------
-void adam_disk_tape_cache_check(void)
-{
-    for (int i=0;i<MAX_DISKS;++i)
-    {
-        if (DiskStatus[i].timeout)
-        {
-            if (!--DiskStatus[i].timeout) DiskStatus[i].newstatus=0x80;
-        }
-    }
-    
-    for (int i=0;i<MAX_TAPES;++i)
-    {
-        if (TapeStatus[i].timeout)
-        {
-            if (!--TapeStatus[i].timeout) TapeStatus[i].newstatus=0x80;
-        }    
-    }
-}
+ //   Device 0 = Master 6801 ADAMnet controller (uses the adam_pcb as DCB)
+ //   Device 1 = Keyboard
+ //   Device 2 = ADAM printer
+ //   Device 3 = Copywriter (projected)
+ //   Device 4 = Disk drive 1
+ //   Device 5 = Disk drive 2
+ //   Device 6 = Disk drive 3 (third party)
+ //   Device 7 = Disk drive 4 (third party)
+ //   Device 8 = Tape drive 1
+ //   Device 9 = Tape drive 3 (projected)
+ //   Device 10 = Unused
+ //   Device 11 = Non-ADAMlink modem
+ //   Device 12 = Hi-resolution monitor
+ //   Device 13 = ADAM parallel interface (never released)
+ //   Device 14 = ADAM serial interface (never released)
+ //   Device 15 = Gateway
+ //   Device 24 = Tape drive 2 (share DCB with Tape1)
+ //   Device 25 = Tape drive 4 (projected, may have share DCB with Tape3)
+ //   Device 26 = Expansion RAM disk drive (third party ID, not used by Coleco)
 
-
-static void UpdateDSK(byte N,byte Dev,int V)
-{
-  static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // The ADAM uses a sector Skew = 5
-  int I,J,K,LEN,SEC,BLK;
-  word BUF;
-  byte *Data;
-  
-  /* We support two disk drives */
-  if(N>=2)
-  {
-      SetDCB(Dev,DCB_CMD_STAT, 0x9B);
-      return;
-  }
-  
-  /* If reading DCB status, stop here */
-  if(V<0)
-  {
-      SetDCB(Dev,DCB_CMD_STAT, DiskStatus[N].status);
-      return;
-  }
-
-  /* Reset errors, report missing disks */
-  SetDCB(Dev,DCB_NODE_TYPE,(GetDCB(Dev,DCB_NODE_TYPE)&0xF0) | (Disks[N].Data ? 0x00:0x03));
-
-  /* Depending on the command... */
-  switch(V)
-  {
-    case CMD_STATUS:
-      /* Block-based device, 1kB buffer */
-      ReportDevice(Dev,0x0400,1);
-      DiskStatus[N].status=DiskStatus[N].newstatus;
-      SetDCB(Dev,DCB_CMD_STAT, DiskStatus[N].status);
-      break;
-
-    case CMD_SOFT_RESET:
-      DiskStatus[N].status=DiskStatus[N].newstatus=0x80;
-      SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
-      break;
-
-    case CMD_WRITE:
-    case CMD_READ:
-      if (DiskStatus[N].io_status != 2) DiskStatus[N].io_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
-      
-      DiskStatus[N].status=DiskStatus[N].newstatus;
-      SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
-      
-      /* If no disk, stop here */
-      if(!Disks[N].Data) break;
-      
-      if (DiskStatus[N].status==0x9B)
-      {
-         SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
-      }
-      else
-      {      
-          /* Determine buffer address, length, block number */
-          BUF = GetDCBBase(Dev);
-          LEN = GetDCBLen(Dev);
-          LEN = LEN<0x0400 ? LEN:0x0400;
-          BLK = GetDCBBlock(Dev);
-          SEC = BLK * 2;
-          
-          if (BLK==DiskStatus[N].lastblock || (V==CMD_WRITE))
-          {
-              /* For each 512-byte sector... */
-              for(I=0; I<LEN ; ++SEC, I+=0x200)
-              {
-                /* Remap sector number via interleave table */
-                K = (SEC&~7) | InterleaveTable[SEC&7];
-                
-                /* Get pointer to sector data on disk */
-                Data = LinearFDI(&Disks[N],K);
-                
-                /* If wrong sector number, stop here */
-                if(!Data)
-                {
-                  SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x02);
-                  LEN = 0;
-                  break;
-                }
-                
-                /* Read or write sectors */
-                K = I+0x200>LEN? LEN-I:0x200;
-                if(V==CMD_READ)
-                {
-                    for(J=0;J<K;++J,++BUF) 
-                    {
-                        RAM_Memory[BUF] = Data[J];
-                    }
-                }
-                else // is CMD_WRITE
-                {
-                  for(J=0;J<K;++J,++BUF) 
-                  {
-                      Data[J] = RAM_Memory[BUF];
-                  }
-                  disk_unsaved_data[BAY_DISK1+N] = 1;
-                }
-                
-                DiskStatus[N].status=DiskStatus[N].newstatus=0x80;
-                SetDCB(Dev,DCB_CMD_STAT,DiskStatus[N].status);
-            }
-          }
-          else
-          {
-              // Cache block
-              DiskStatus[N].status=DiskStatus[N].newstatus=0x9B;
-              DiskStatus[N].timeout=timeouts[myConfig.adamnet];
-              DiskStatus[N].lastblock=BLK;              
-          }
-      }
-      /* Done */
-      break;
-  }
-}
-
-static void UpdateTAP(byte N,byte Dev,int V)
-{
-  int I,J,K,LEN,SEC,BLK;
-  word BUF;
-  byte *Data;
-
-  /* Only supporting 1 tape bay */
-  if(N>=1)
-  {
-      SetDCB(Dev,DCB_CMD_STAT, 0x9B);
-      return;
-  }
-
-  /* If reading DCB status, stop here */
-  if(V<0)
-  {
-      SetDCB(Dev,DCB_CMD_STAT, TapeStatus[N].status);
-      return;
-  }
-
-  /* Reset errors, report missing tapes */
-  SetDCB(Dev,DCB_NODE_TYPE,(Tapes[N&2].Data? 0x00:0x03)|(Tapes[(N&2)+1].Data? 0x00:0x30));
-
-  /* Depending on the command... */
-  switch(V)
-  {
-    case CMD_STATUS:
-      /* Block-based device, 1kB buffer */
-      ReportDevice(Dev,0x0400,1);
-      TapeStatus[N].status=TapeStatus[N].newstatus;
-      SetDCB(Dev,DCB_CMD_STAT, TapeStatus[N].status);
-      break;
-
-    case CMD_SOFT_RESET:
-      TapeStatus[N].status=TapeStatus[N].newstatus=0x80;
-      SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
-      break;
-
-    case CMD_WRITE:
-    case CMD_READ:
-      if (TapeStatus[N].io_status != 2) TapeStatus[N].io_status = (V==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
-      
-      TapeStatus[N].status=TapeStatus[N].newstatus;
-      SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
-      
-      /* If no tape, stop here */
-      if(!Tapes[N].Data) break;
-      
-      if (TapeStatus[N].status==0x9B)
-      {
-         SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
-      }
-      else
-      {      
-          /* Determine buffer address, length, block number */
-          BUF = GetDCBBase(Dev);
-          LEN = GetDCBLen(Dev);
-          LEN = LEN<0x0400 ? LEN:0x0400;
-          BLK = GetDCBBlock(Dev);
-          SEC = BLK * 2;
-
-          if (BLK==TapeStatus[N].lastblock || (V==CMD_WRITE))
-          {
-              /* For each 512-byte sector... */
-              for(I=0; I<LEN ; ++SEC, I+=0x200)
-              {
-                /* Get pointer to sector data on tape */
-                Data = LinearFDI(&Tapes[N],SEC);
-                
-                /* If wrong sector number, stop here */
-                if(!Data)
-                {
-                  SetDCB(Dev,DCB_NODE_TYPE,GetDCB(Dev,DCB_NODE_TYPE)|0x02);
-                  LEN = 0;
-                  break;
-                }
-                
-                /* Read or write sectors */
-                K = I+0x200>LEN? LEN-I:0x200;
-                if(V==CMD_READ)
-                {
-                  for(J=0;J<K;++J,++BUF) 
-                  {
-                      RAM_Memory[BUF] = Data[J];
-                  }
-                } 
-                else // is CMD_WRITE
-                {
-                  for(J=0;J<K;++J,++BUF) 
-                  {
-                      Data[J] = RAM_Memory[BUF];
-                  }
-                  disk_unsaved_data[BAY_TAPE] = 1;
-                }
-                
-                TapeStatus[N].status=TapeStatus[N].newstatus=0x80;
-                SetDCB(Dev,DCB_CMD_STAT,TapeStatus[N].status);
-              }
-          }
-          else
-          {
-              // Cache block
-              TapeStatus[N].status=TapeStatus[N].newstatus=0x9B;
-              TapeStatus[N].timeout=timeouts[myConfig.adamnet];
-              TapeStatus[N].lastblock=BLK;              
-          }
-      }
-      /* Done */
-      break;
-  }
-}
-
-static void UpdateDCB(byte Dev,int V)
+static void UpdateDCB(byte device,int cmd)
 {
   byte DevID;
 
   /* When writing, ignore invalid commands */
-  if(!V || (V>=0x80)) return;
+  if(!cmd || (cmd>=0x80)) return;
 
   /* Compute device ID */
-  DevID = (GetDCB(Dev,DCB_DEV_NUM)<<4) + (GetDCB(Dev,DCB_ADD_CODE)&0x0F);
+  DevID = (GetDCB(device,DCB_DEV_NUM)<<4) + (GetDCB(device,DCB_ADD_CODE)&0x0F);
 
   /* Depending on the device ID... */
   switch(DevID)
   {
-    case 0x01: UpdateKBD(Dev,V);break;
-    case 0x02: UpdatePRN(Dev,V);break;
-    case 0x04:
-    case 0x05:
-    case 0x06:
-    case 0x07: UpdateDSK(DevID-4,Dev,V);break;
-    case 0x08:
-    case 0x09:
-    case 0x18:
-    case 0x19: UpdateTAP((DevID>>4)+((DevID&1)<<1),Dev,V);break;
+    case 0x01: UpdateKBD(device,cmd);break;
+    case 0x02: UpdatePRN(device,cmd);break;
+    case 0x04: adam_drive_update(BAY_DISK1, device, cmd); break;
+    case 0x05: adam_drive_update(BAY_DISK2, device, cmd); break;
+    case 0x08: adam_drive_update(BAY_TAPE,  device, cmd); break;
 
     default:
-      SetDCB(Dev,DCB_CMD_STAT,RSP_ACK+0x0B);
+      SetDCB(device,DCB_CMD_STAT, RSP_TIMEOUT);  // Everything else is missing... timeout
       break;
   }
 }
@@ -878,14 +644,14 @@ void WritePCB(word A,byte V)
     switch(V)
     {
       case CMD_PCB_SYNC1: /* Sync Z80 */
-        SetPCB(PCB_CMD_STAT,RSP_STATUS|V);
+        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|V);
         break;
       case CMD_PCB_SYNC2: /* Sync master 6801 */
-        SetPCB(PCB_CMD_STAT,RSP_STATUS|V);
+        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|V);
         break;
       case CMD_PCB_SNA: /* Rellocate PCB */
         MovePCB(GetPCBBase(),GetMaxDCB());
-        SetPCB(PCB_CMD_STAT,RSP_STATUS|V);
+        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|V);
         break;
       case CMD_PCB_IDLE:
       case CMD_PCB_WAIT:
@@ -919,74 +685,205 @@ void ResetPCB(void)
   MovePCB(0xFEC0,15);
 
   /* @@@ Reset tape and disk here */
-  KBDStatus = RSP_STATUS;
+  KBDStatus = RSP_SUCCESS;
   LastKey   = 0x00;
-    
-  for (int i=0; i<4; i++)
-  {
-      DiskStatus[i].status = DiskStatus[i].newstatus = 0x80;
-      DiskStatus[i].timeout = 0;
-      DiskStatus[i].lastblock = 0;
-      DiskStatus[i].io_status = 0;
-
-      TapeStatus[i].status = TapeStatus[i].newstatus = 0x80;
-      TapeStatus[i].timeout = 0;
-      TapeStatus[i].lastblock = 0;
-      TapeStatus[i].io_status = 0;
-  }
-}
-
-/** ChangeTape() *********************************************/
-/** Change tape image in a given drive. Closes current tape **/
-/** image if Name=0 was given. Creates a new tape image if  **/
-/** Name="" was given. Returns 1 on success or 0 on failure.**/
-/*************************************************************/
-byte ChangeTape(byte N,const char *FileName)
-{
-  byte *P;
-
-  /* We only have MAX_TAPES drives */
-  if(N>=MAX_TAPES) return(0);
-
-  /* Eject disk if requested */
-  if(!FileName) { EjectFDI(&Tapes[N]);return(1); }
-
-  /* If FileName not empty, try loading tape image */
-  if(*FileName && LoadFDI(&Tapes[N],FileName,FMT_DDP))
-  {
-    /* Done */
-    return(1);
-  }
-
-  /* If no existing file, create a new 256kB tape image */
-  P = FormatFDI(&Tapes[N], FMT_DDP);
-  return(!!P);
-}
-
-/** ChangeDisk() *********************************************/
-/** Change disk image in a given drive. Closes current disk **/
-/** image if Name=0 was given. Creates a new disk image if  **/
-/** Name="" was given. Returns 1 on success or 0 on failure.**/
-/*************************************************************/
-byte ChangeDisk(byte N,const char *FileName)
-{
-  byte *P;
-
-  /* We only have MAX_DISKS drives */
-  if(N>=MAX_DISKS) return(0);
-
-  /* Eject disk if requested */
-  if(!FileName) { EjectFDI(&Disks[N]);return(1); }
   
-  /* If FileName not empty, try loading disk image */
-  if(*FileName && LoadFDI(&Disks[N],FileName,(disk_last_size[BAY_DISK1+N] > (162*1024) ? FMT_ADMDSK320:FMT_ADMDSK))) // Should be 160 but we allow 2K overdump before we switch to 320K
+  // Reset drive status... but don't disturb the actual disk images...  
+  for (int i=0; i<MAX_DRIVES; i++)
   {
-    /* Done */
-    return(1);
+      AdamDriveStatus[i].status = AdamDriveStatus[i].newstatus = RSP_SUCCESS;
+      AdamDriveStatus[i].timeout = 0;
+      AdamDriveStatus[i].lastblock = 0;
+      AdamDriveStatus[i].io_status = 0;
   }
+}
 
-  /* If no existing file, create a new 160kB disk image */
-  P = FormatFDI(&Disks[N], FMT_ADMDSK);
-  return(!!P);
+///ZZZZZZZZZZZZZZZZZZZZ ADAM DRIVE STUFF
+
+// ----------------------------------------------------------
+// Called on every vertical blank when a frame is finished
+// to provide a simple cache flush check on disk reads.
+// ----------------------------------------------------------
+void adam_drive_cache_check(void)
+{
+    for (int i=0;i<MAX_DRIVES;++i)
+    {
+        if (AdamDriveStatus[i].timeout)
+        {
+            if (!--AdamDriveStatus[i].timeout) AdamDriveStatus[i].newstatus=RSP_SUCCESS;
+        }
+    }
+}
+
+
+void adam_drive_update(u8 drive, u8 device, int cmd)
+{
+  int I,J,LEN,SEC,BLK;
+  word BUF;
+  byte *Data;
+  
+  /* If reading DCB status, stop here */
+  if(cmd<0)
+  {
+      SetDCB(device, DCB_CMD_STAT, AdamDriveStatus[drive].status);
+      return;
+  }
+  
+  /* Reset errors, report missing disks */
+  SetDCB(device,DCB_NODE_TYPE,(GetDCB(device,DCB_NODE_TYPE)&0xF0) | (AdamDrive[drive].image ? 0x00:0x03));
+
+  /* Depending on the command... */
+  switch(cmd)
+  {
+    case CMD_STATUS:
+      /* Block-based device, 1kB buffer */
+      ReportDevice(device,0x0400,1);
+      AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus;
+      SetDCB(device,DCB_CMD_STAT, AdamDriveStatus[drive].status);
+      break;
+
+    case CMD_SOFT_RESET:
+      AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus=RSP_SUCCESS;
+      SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
+      break;
+
+    case CMD_WRITE:
+    case CMD_READ:
+      if (AdamDriveStatus[drive].io_status != 2) AdamDriveStatus[drive].io_status = (cmd==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
+      
+      AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus;
+      SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
+      
+      if (AdamDriveStatus[drive].status==RSP_TIMEOUT)
+      {
+         SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
+      }
+      else
+      {      
+          /* Determine buffer address, length, block number */
+          BUF = GetDCBBase(device);
+          LEN = GetDCBLen(device);
+          LEN = LEN<0x0400 ? LEN:0x0400;
+          BLK = GetDCBBlock(device);
+          SEC = BLK * 2;
+          
+          if (BLK==AdamDriveStatus[drive].lastblock || (cmd==CMD_WRITE))
+          {
+              /* For each 512-byte sector... */
+              for(I=0; I<LEN ; ++SEC, I+=0x200)
+              {
+                /* Get pointer to sector data on disk */
+                Data = adam_drive_sector(drive, SEC);
+                
+                /* If wrong sector number, stop here */
+                if(!Data)
+                {
+                  SetDCB(device,DCB_NODE_TYPE,GetDCB(device,DCB_NODE_TYPE)|0x02);
+                  LEN = 0;
+                  break;
+                }
+                
+                /* Read or write sectors */
+                int K = I+0x200>LEN? LEN-I:0x200;
+                if(cmd==CMD_READ)
+                {
+                    for(J=0;J<K;++J,++BUF) 
+                    {
+                        RAM_Memory[BUF] = Data[J];
+                    }
+                }
+                else // is CMD_WRITE
+                {
+                  for(J=0;J<K;++J,++BUF) 
+                  {
+                      Data[J] = RAM_Memory[BUF];
+                  }
+                  disk_unsaved_data[drive] = 1;
+                }
+                
+                AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus=RSP_SUCCESS;
+                SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
+            }
+          }
+          else
+          {
+              // Cache block
+              AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus=RSP_TIMEOUT;
+              AdamDriveStatus[drive].timeout=timeouts[myConfig.adamnet];
+              AdamDriveStatus[drive].lastblock=BLK;              
+          }
+      }
+      /* Done */
+      break;
+  }
+}
+
+void adam_drive_insert(u8 drive, char *filename)
+{
+    FILE *fp = fopen(filename, "rb");
+    if (fp)
+    {
+        AdamDrive[drive].image = ROM_Memory + ((drive*330)*1024);
+        AdamDrive[drive].imageSize = fread(AdamDrive[drive].image, 1, AdamDrive[drive].imageSizeMax, fp);
+        fclose(fp);
+    }
+}
+
+void adam_drive_eject(u8 drive)
+{
+    AdamDrive[drive].image = NULL;
+    AdamDrive[drive].imageSize = 0;
+}
+
+
+// Sectors are zero-based
+u8 *adam_drive_sector(u8 drive, u32 sector)
+{
+    static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // The ADAM uses a sector Skew = 5    
+    u8 *ptr = NULL;
+    
+    if (AdamDrive[drive].image)
+    {
+        /* Remap sector number via interleave table */
+        if (AdamDrive[drive].skew)  sector = (sector&~7) | InterleaveTable[sector&7];
+
+        ptr = AdamDrive[drive].image + (sector * (u32)AdamDrive[drive].secSize);
+    }
+    return ptr;
+}
+
+
+void adam_drive_save(u8 drive)
+{
+    chdir(disk_last_path[drive]);
+    FILE *fp = fopen(disk_last_file[drive], "wb");
+    if (fp)
+    {
+        fwrite(AdamDrive[drive].image, AdamDrive[drive].imageSize, 1, fp);
+        fclose(fp);
+    }
+}
+
+void adam_drive_init(void)
+{
+    memset(AdamDrive, 0x00, sizeof(AdamDrive));
+    
+    AdamDrive[BAY_DISK1].image = NULL;
+    AdamDrive[BAY_DISK1].imageSizeMax = (320*1024);
+    AdamDrive[BAY_DISK1].secSize = 512;
+    AdamDrive[BAY_DISK1].skew  = 5;
+    AdamDrive[BAY_DISK1].driveType = DRIVE_TYPE_DISK;
+    
+    AdamDrive[BAY_DISK2].image = NULL;
+    AdamDrive[BAY_DISK2].imageSizeMax = (320*1024);
+    AdamDrive[BAY_DISK2].secSize = 512;
+    AdamDrive[BAY_DISK2].skew  = 5;
+    AdamDrive[BAY_DISK2].driveType = DRIVE_TYPE_DISK;
+    
+    AdamDrive[BAY_TAPE].image = NULL;
+    AdamDrive[BAY_TAPE].imageSizeMax = (256*1024);
+    AdamDrive[BAY_TAPE].secSize = 512;
+    AdamDrive[BAY_TAPE].skew  = 0;
+    AdamDrive[BAY_TAPE].driveType = DRIVE_TYPE_TAPE;
 }
 
