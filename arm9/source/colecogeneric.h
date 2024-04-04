@@ -70,7 +70,7 @@ struct __attribute__((__packed__)) Config_t
     u8  vertSync;
     u8  spinSpeed;
     u8  touchPad;
-    u8  cpuCore;
+    u8  reserved0;
     u8  msxBios;
     u8  msxKey5;
     u8  dpad;

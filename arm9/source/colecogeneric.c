@@ -1289,7 +1289,7 @@ void SetDefaultGameConfig(void)
     myConfig.vertSync    = (isDSiMode() ? 1:0);         // Default is Vertical Sync ON for DSi and OFF for DS-LITE
     myConfig.spinSpeed   = 0;                           // Default spin speed is normal
     myConfig.touchPad    = 0;                           // Nothing special about the touch-pad by default
-    myConfig.cpuCore     = 1;                           // Default to the more accurate CZ80 core
+    myConfig.reserved0   = 1;                           // Repurpose (was CPU core)
     myConfig.msxBios     = (bMSXBiosFound ? myGlobalConfig.defaultMSX:0); // Default to real MSX bios unless we can't find it
     myConfig.msxKey5     = 0;                           // Default key map for MSX key 5 (question mark)
     myConfig.dpad        = DPAD_NORMAL;                 // Normal DPAD use - mapped to joystick
@@ -1442,7 +1442,7 @@ void SetDefaultGameConfig(void)
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
-    if (file_crc == 0x9b547ba8)                 myConfig.cpuCore = 0;  // Colecovision Boulder Dash only works with the DrZ80 core. Unsure why... it's one of the great mysteries of life.
+    if (file_crc == 0x9b547ba8)                 adam_mode = 3;  // Colecovision Boulder Dash writes to ROM and we can't allow that - so switch in ADAM emulation which blocks it
     
     // ----------------------------------------------------
     // Some special BASIC carts that want full keyboards
@@ -1689,7 +1689,6 @@ const struct options_t Option_Table[3][20] =
         {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
         {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
-        {"Z80 CPU CORE",   {"DRZ80 (Faster)", "CZ80 (Better)"},                                                                                                                                 &myConfig.cpuCore,    2},
         {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
         {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)", 

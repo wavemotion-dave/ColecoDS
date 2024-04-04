@@ -225,6 +225,6 @@ extern void msxLoadEEPROM(void);
 extern void BeeperON(u16 beeper_freq);
 extern void BeeperOFF(void);
 
-extern void DrZ80_InitHandlers(void);
+extern void Z80_Interface_Reset(void);
 
 #endif

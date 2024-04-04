@@ -304,8 +304,7 @@ u8 colecoInit(char *szGame)
   REG_BG3Y = 0;
 
   // Unload any ADAM related stuff
-  for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
-  for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
+  for(u8 J=0;J<MAX_DRIVES;++J) adam_drive_eject(J);
 
   // Init the page flipping buffer...
   for (uBcl=0;uBcl<192;uBcl++)
@@ -372,9 +371,12 @@ u8 colecoInit(char *szGame)
       disk_unsaved_data[BAY_DISK2] = 0;  // No unsaved DISK data to start
       disk_unsaved_data[BAY_TAPE] = 0;   // No unsaved TAPE data to start
       
+      adam_drive_init();                 // Initialize the Adam Net and disk drives
+      
       // Clear existing drives of any disks/tapes and load the new game up      
-      for(u8 J=0;J<MAX_DISKS;++J) ChangeDisk(J,0);
-      for(u8 J=0;J<MAX_TAPES;++J) ChangeTape(J,0);
+      for(u8 J=0;J<MAX_DRIVES;++J) adam_drive_eject(J);
+      
+      // Load the game into memory
       RetFct = loadrom(szGame,RAM_Memory);
 
       RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
@@ -428,7 +430,7 @@ u8 colecoInit(char *szGame)
  ********************************************************************************/
 void colecoRun(void)
 {
-  DrZ80_Reset();                        // Reset the DrZ80 CPU core
+  Z80_Interface_Reset();                // Reset the Z80 Interface module
   ResetZ80(&CPU);                       // Reset the CZ80 core CPU
   BottomScreenKeypad();                 // Show the game-related screen with keypad / keyboard
 }
@@ -648,7 +650,7 @@ u8 loadrom(const char *filename, u8 * ptr)
                 strcpy(disk_last_file[BAY_TAPE], filename);
                 strcpy(disk_last_path[BAY_TAPE], initial_path);
                 disk_last_size[BAY_TAPE] = romSize;
-                ChangeTape(0, filename);
+                adam_drive_insert(BAY_TAPE, (char*)filename);
             }
             else if ((strcasecmp(strrchr(filename, '.'), ".dsk") == 0))  // Is this a DISK image (.dsk)?
             {
@@ -656,7 +658,7 @@ u8 loadrom(const char *filename, u8 * ptr)
                 strcpy(disk_last_file[BAY_DISK1], filename);
                 strcpy(disk_last_path[BAY_DISK1], initial_path);
                 disk_last_size[BAY_DISK1] = romSize;
-                ChangeDisk(0, filename);
+                adam_drive_insert(BAY_DISK1, (char*)filename);
             }
             else if (adam_mode >= 2) // else must be a ROM which is okay...
             {
@@ -1053,7 +1055,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       return;
     case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
       if(!(Port&0x01)) WrData9918(Value);
-      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI; cpuirequest=Z80_NMI_INT;}
+      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI;}
       return;
     case 0x40:  // Printer status and ADAM related stuff...not used
       return;
@@ -1091,7 +1093,6 @@ void PatchZ80(register Z80 *r)
 ITCM_CODE u32 LoopZ80()
 {
   static u16 spinnerDampen = 0;
-  cpuirequest=0;
 
   // ----------------------------------------------------------------------------
   // Special system as it runs an m6502 CPU core and is different than the Z80
@@ -1113,14 +1114,12 @@ ITCM_CODE u32 LoopZ80()
           {
               if (spinX_left)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xFFFFCFFF;
                   JoyState   |= 0x00003000;
               }
               else if (spinX_right)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xFFFFCFFF;
                   JoyState   |= 0x00001000;
@@ -1128,14 +1127,12 @@ ITCM_CODE u32 LoopZ80()
 
               if (spinY_left)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xCFFFFFFF;
                   JoyState   |= 0x30000000;
               }
               else if (spinY_right)
               {
-                  cpuirequest = Z80_IRQ_INT;    // The DrZ80 way of requesting interrupt
                   CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
                   JoyState   &= 0xCFFFFFFF;
                   JoyState   |= 0x10000000;
@@ -1143,77 +1140,51 @@ ITCM_CODE u32 LoopZ80()
           }
       }
 
-      // ---------------------------------------------------------------
-      // We current support two different Z80 cores... the DrZ80 is
-      // (relatively) blazingly fast on the DS ARM processor but
-      // the compatibilty isn't 100%. The CZ80 core is slower but
-      // has higher compatibilty. For now, the default core is
-      // DrZ80 for the DS-LITE/PHAT and CZ80 for the DSi and above.
-      // The DSi has enough processing power to utilize this slower
-      // but more accurate core. The user can switch cores as they like.
-      // ---------------------------------------------------------------
-      if (myConfig.cpuCore == 0) // DrZ80 Core ... faster but lower accuracy
+      // Execute 1 scanline worth of CPU instructions
+      u32 cycles_to_process = tms_cpu_line + cycle_deficit;
+      cycle_deficit = ExecZ80(cycles_to_process);
+      
+      // Refresh VDP
+      if(Loop9918())
       {
-          // Execute 1 scanline worth of CPU instructions
-          cycle_deficit = DrZ80_execute(tms_cpu_line + cycle_deficit);
-
-          // Refresh VDP
-          if(Loop9918()) cpuirequest = ((machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SVI)) ? Z80_IRQ_INT : Z80_NMI_INT);
-
-          // Generate interrupt if called for
-          if (cpuirequest)
-            DrZ80_Cause_Interrupt(cpuirequest);
-          else
-            DrZ80_Clear_Pending_Interrupts();
+          CPU.IRequest = vdp_int_source;    // Use the proper VDP interrupt souce (set in TMS9918 init)
       }
-      else  // CZ80 core from fMSX()... slower but higher accuracy
+      else if (ctc_enabled)
       {
-          // Execute 1 scanline worth of CPU instructions
-          u32 cycles_to_process = tms_cpu_line + cycle_deficit;
-          cycle_deficit = ExecZ80(cycles_to_process);
-          
-          // Refresh VDP
-          if(Loop9918())
+          // -------------------------------------------------------------------------
+          // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer
+          // circuit that needs attention - this isnt timing accurate but it's good
+          // enough to allow those timers to trigger and the games to be played.
+          // -------------------------------------------------------------------------
+          if (CPU.IRequest == INT_NONE)
           {
-              CPU.IRequest = vdp_int_source;    // Use the proper VDP interrupt souce (set in TMS9918 init)
+              CTC_Timer(cycles_to_process);
           }
-          else if (ctc_enabled)
+          if (CPU.IRequest == INT_NONE)
           {
-              // -------------------------------------------------------------------------
-              // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer
-              // circuit that needs attention - this isnt timing accurate but it's good
-              // enough to allow those timers to trigger and the games to be played.
-              // -------------------------------------------------------------------------
-              if (CPU.IRequest == INT_NONE)
+              if (einstein_mode)  // For Einstein, check if the keyboard is generating an interrupt...
               {
-                  CTC_Timer(cycles_to_process);
+                  einstein_handle_interrupts();
+                  if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+                  else if (joystick_interrupt) CPU.IRequest = joystick_interrupt;
               }
-              if (CPU.IRequest == INT_NONE)
+              else if (sordm5_mode)  // For Sord M5, check if the keyboard is generating an interrupt...
               {
-                  if (einstein_mode)  // For Einstein, check if the keyboard is generating an interrupt...
-                  {
-                      einstein_handle_interrupts();
-                      if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
-                      else if (joystick_interrupt) CPU.IRequest = joystick_interrupt;
-                  }
-                  else if (sordm5_mode)  // For Sord M5, check if the keyboard is generating an interrupt...
-                  {
-                      CPU.IRequest = keyboard_interrupt;    // This will either be INT_NONE or the CTC interrupt for a keypress... set in sordm5_check_keyboard_interrupt()
-                      keyboard_interrupt = INT_NONE;
-                  }
+                  CPU.IRequest = keyboard_interrupt;    // This will either be INT_NONE or the CTC interrupt for a keypress... set in sordm5_check_keyboard_interrupt()
+                  keyboard_interrupt = INT_NONE;
               }
           }
+      }
 
-          // Generate an interrupt if called for...
-          if(CPU.IRequest!=INT_NONE)
+      // Generate an interrupt if called for...
+      if(CPU.IRequest!=INT_NONE)
+      {
+          IntZ80(&CPU, CPU.IRequest);
+          CPU.User++;   // Track Interrupt Requests
+          if (pv2000_mode)
           {
-              IntZ80(&CPU, CPU.IRequest);
-              CPU.User++;   // Track Interrupt Requests
-              if (pv2000_mode)
-              {
-                  extern void pv2000_check_kbd(void);
-                  pv2000_check_kbd();
-              }
+              extern void pv2000_check_kbd(void);
+              pv2000_check_kbd();
           }
       }
   }
@@ -1234,7 +1205,7 @@ ITCM_CODE u32 LoopZ80()
       }
       else if (adam_mode)
       {
-          adam_disk_tape_cache_check();    // Make sure the disk and tape buffers are up to date
+          adam_drive_cache_check();    // Make sure the disk and tape buffers are up to date
       }
       return 0;
   }

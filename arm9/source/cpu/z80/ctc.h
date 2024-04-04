@@ -4,8 +4,6 @@
 #include <nds.h>
 
 #include "./cz80/Z80.h"
-#include "./drz80/drz80.h"
-#include "./cz80/Z80.h"
 
 #define CTC_INT_ENABLE      0x80    // 1=Interupt Enabled (0=No Interrupt Generated)
 #define CTC_COUNTER_MODE    0x40    // 1=Counter Mode (vs Timer mode)

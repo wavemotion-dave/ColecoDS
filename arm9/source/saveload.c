@@ -29,7 +29,7 @@
 #include "fdc.h"
 #include "printf.h"
 
-#define COLECODS_SAVE_VER 0x001C        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER 0x001D        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 struct RomOffset
 {
@@ -89,18 +89,8 @@ void colecoSaveState()
     u16 save_ver = COLECODS_SAVE_VER;
     uNbO = fwrite(&save_ver, sizeof(u16), 1, handle);
       
-    // Write DrZ80 CPU
-    uNbO = fwrite(&drz80, sizeof(struct DrZ80), 1, handle);
-      
     // Write CZ80 CPU
     uNbO = fwrite(&CPU, sizeof(CPU), 1, handle);
-      
-    // Need to save the DrZ80 SP/PC offsets as memory might shift on next load...
-    u32 z80SPOffset = (u32) (drz80.Z80SP - drz80.Z80SP_BASE);
-    if (uNbO) uNbO = fwrite(&z80SPOffset, sizeof(z80SPOffset),1, handle);
-
-    u32 z80PCOffset = (u32) (drz80.Z80PC - drz80.Z80PC_BASE);
-    if (uNbO) uNbO = fwrite(&z80PCOffset, sizeof(z80PCOffset),1, handle);
       
     // Deficit Z80 CPU Cycle counter
     if (uNbO) uNbO = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
@@ -270,8 +260,7 @@ void colecoSaveState()
         if (uNbO) fwrite(&LastKey, sizeof(LastKey),1, handle);
         if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);        
         if (uNbO) fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);        
-        if (uNbO) fwrite(DiskStatus, sizeof(DiskStatus),1, handle);
-        if (uNbO) fwrite(TapeStatus, sizeof(TapeStatus),1, handle);
+        if (uNbO) fwrite(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
         
         if (uNbO) fwrite(spare, 32,1, handle);        
         if (uNbO) fwrite(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
@@ -365,20 +354,9 @@ void colecoLoadState()
         
         if (save_ver == COLECODS_SAVE_VER)
         {
-            // Load DrZ80 CPU
-            uNbO = fread(&drz80, sizeof(struct DrZ80), 1, handle);
-            DrZ80_InitHandlers(); //DRZ80 saves a lot of binary code dependent stuff, reset the handlers
-            
             // Load CZ80 CPU
             uNbO = fread(&CPU, sizeof(CPU), 1, handle);
-
-            // Need to load and restore the DrZ80 SP/PC offsets as memory might have shifted ...
-            u32 z80Offset = 0;
-            if (uNbO) uNbO = fread(&z80Offset, sizeof(z80Offset),1, handle);
-            z80_rebaseSP(z80Offset);
-            if (uNbO) uNbO = fread(&z80Offset, sizeof(z80Offset),1, handle);
-            z80_rebasePC(z80Offset);                  
-
+       
             // Deficit Z80 CPU Cycle counter
             if (uNbO) uNbO = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
             
@@ -543,8 +521,7 @@ void colecoLoadState()
                 if (uNbO) fread(&LastKey, sizeof(LastKey),1, handle);
                 if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
                 if (uNbO) fread(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
-                if (uNbO) fread(DiskStatus, sizeof(DiskStatus),1, handle);
-                if (uNbO) fread(TapeStatus, sizeof(TapeStatus),1, handle);
+                if (uNbO) fread(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
                 
                 if (uNbO) fread(spare, 32,1, handle);                
                 if (uNbO) fread(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
