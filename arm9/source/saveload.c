@@ -18,7 +18,7 @@
 #include <dirent.h>
 
 #include "colecoDS.h"
-#include "AdamNet.h"
+#include "Adam.h"
 #include "CRC32.h"
 #include "cpu/z80/Z80_interface.h"
 #include "cpu/z80/ctc.h"

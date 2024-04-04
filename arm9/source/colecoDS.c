@@ -20,7 +20,7 @@
 #include <maxmod9.h>
 
 #include "colecoDS.h"
-#include "AdamNet.h"
+#include "Adam.h"
 #include "highscore.h"
 #include "colecogeneric.h"
 #include "colecomngt.h"

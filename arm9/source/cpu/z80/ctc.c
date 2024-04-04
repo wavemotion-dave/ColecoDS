@@ -18,7 +18,7 @@
 #include "../../colecoDS.h"
 #include "../../colecomngt.h"
 #include "../../colecogeneric.h"
-#include "../../AdamNet.h"
+#include "../../Adam.h"
 #include "../../C24XX.h"
 #include "../../printf.h"
 
