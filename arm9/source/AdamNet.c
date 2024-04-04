@@ -38,7 +38,6 @@
 
 #include "colecoDS.h"
 #include "AdamNet.h"
-#include "FDIDisk.h"
 #include "colecogeneric.h"
 #include "colecomngt.h"
 #include "cpu/tms9918a/tms9918a.h"
