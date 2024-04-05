@@ -369,13 +369,6 @@ it for almost all games (Princess Quest is one game where you might turn it off)
 handle it for the more simple games. So by default it's enabled for DSi and disabled for DS-LITE/PHAT.
 You can toggle this in the "Game Options" (and START=SAVE it out as you wish). 
 
-A Tale of Two Cores :
------------------------
-ColecoDS supports 2 different Z80 CPU cores. 
-DrZ80 is very fast but is not 100% accurate so some games don't run right.
-CZ80 is 10% slower but is much closer to 100% accurate and games generally run great.
-The CZ80 core is the default across the board - but you can change this (and save on a per-game basis) in GAME OPTIONS.
-
 The Need For Speed :
 -----------------------
 If a game just isn't running at the right speed or has periods of slowdown (not
@@ -385,7 +378,6 @@ would personally try them:
 * Turn off Vertical Sync
 * Turn on Frame Skip - there are two settings here... show 3/4 (light frame skip) and show 1/2 (heavy frame skip)
 * Set Max Sprites to 4
-* Switch to the DrZ80 core in configuration. Not all games will work with this core - but it's a solid 10% faster.
 
 Compile Instructions :
 -----------------------
@@ -413,6 +405,10 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V9.6: ??-???-2024 by wavemotion-dave
+* Removed DrZ80 core - the high quality CZ80 core is all that remains. 
+* Complete overhaul of the Adam handlers to clean and refine.
+
 V9.5: 30-Mar-2024 by wavemotion-dave
 * ADAMnet improvement for disk/tape handling. Improved timing, improved caching and more disk/tape games should load and run correctly.
 * DSI gets a massive 2MB of Expansion RAM (32 banks of 64K). DS-Lite/Phat still has 128K (base 64K plus the standard 64K expansion RAM).

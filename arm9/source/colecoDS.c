@@ -874,9 +874,8 @@ void ShowDebugZ80(void)
         }
 
         sprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "PORTS P23=%02X P53=%02X P60=%02X", Port20, Port53, Port60);          DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "VMode %02X %4s", TMS9918_Mode, VModeNames[TMS9918_Mode]);            DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "VSize %s", ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K"));            DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "VMode %02X %4s %3s", TMS9918_Mode, VModeNames[TMS9918_Mode], ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K")); DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "Ports P23=%02X P53=%02X P60=%02X P42=%02X", Port20, Port53, Port60, Port42); DSPrint(0,idx++,7, tmp);
 
         idx = 1;
         if (einstein_mode || sordm5_mode || memotech_mode)
@@ -903,12 +902,12 @@ void ShowDebugZ80(void)
     else
     {
         idx = 1;
-        for (u8 i=0; i<3; i++)
+        for (u8 i=0; i<4; i++)
         {
             sprintf(tmp, "D%d %-7lu %04lX ", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(0,idx++,7, tmp);
         }
         idx = 1;
-        for (u8 i=3; i<6; i++)
+        for (u8 i=4; i<8; i++)
         {
             sprintf(tmp, "D%d %-7lu %04lX", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(17,idx++,7, tmp);
         }
