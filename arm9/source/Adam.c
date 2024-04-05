@@ -1,5 +1,5 @@
 // ===============================================================
-// Parts of this file were taken from ColEM with a number of 
+// Parts of this file were taken from ColEM with a number of
 // disk/tape caching issues fixed using the algorithms from
 // ADAMEm with a liberal amount of glue and scaffolding from me.
 //
@@ -47,11 +47,11 @@
 const byte timeouts[] = {5, 15, 30}; // FAST, SLOWER, SLOWEST
 
 // ------------------------------------------------------------------
-// Adam Disk Drives are setup by default for standard 160K single 
+// Adam Disk Drives are setup by default for standard 160K single
 // sided drive emulation. If we read a disk bigger than 160K we will
 // adjust these parameters as appopriate for the new drive geometry.
 // ------------------------------------------------------------------
-AdamDrive_t AdamDrive[MAX_DRIVES];
+AdamDrive_t   AdamDrive[MAX_DRIVES];
 DriveStatus_t AdamDriveStatus[MAX_DRIVES];
 
 
@@ -93,13 +93,6 @@ DriveStatus_t AdamDriveStatus[MAX_DRIVES];
 /** DCB Commands *********************************************/
 #define CMD_RESET      0x00
 #define CMD_STATUS     0x01
-#define CMD_ACK        0x02
-#define CMD_CLEAR      0x03
-#define CMD_RECEIVE    0x04
-#define CMD_CANCEL     0x05
-#define CMD_SEND       0x06 /* + SIZE_HI + SIZE_LO + DATA + CRC */
-#define CMD_NACK       0x07
-
 #define CMD_SOFT_RESET 0x02
 #define CMD_WRITE      0x03
 #define CMD_READ       0x04
@@ -164,13 +157,14 @@ static const byte CtrlKey[256] =
 };
 
 // We use LCD_D area of VRAM to store the PCB Table. This is 16-bit memory so it
-// takes the full 128K of LCD VRAM to hold the 8-bit values. A bit of a waste but 
-// better than allocating another 64K somewhere...
+// takes the full 128K of LCD VRAM to hold the 8-bit values. A bit of a waste
+// especially considering the PCB block is only about 300 bytes long, but better
+// than allocating another 64K of global memory somewhere (precious DS resources!)
 u16 *PCBTable = (u16*)0x06860000;
 
-word PCBAddr;
-byte KBDStatus;
-byte LastKey;
+word PCBAddr    __attribute__((section(".dtcm"))) = 0;
+byte KBDStatus  __attribute__((section(".dtcm"))) = 0;
+byte LastKey    __attribute__((section(".dtcm"))) = 0;
 
 // ---------------------------------------------------------------------------
 // For each 8K block in the 64K ADAM memory, we mark it as either RAM or ROM
@@ -189,7 +183,7 @@ void adam_setup_bios(void)
     memcpy(BIOS_Memory+0xA000, ColecoBios, 0x2000);
     // The last 8K at 0xC000 in the BIOS_Memory[] will be all 0xFF and we use that to our advantage below in SetupAdam()
 
-    // SetupAdam() will change these as needed to map in RAM 
+    // SetupAdam() will change these as needed to map in RAM
     memset(adam_ram_present, 0x00, sizeof(adam_ram_present));
 }
 
@@ -220,7 +214,7 @@ void SetupAdam(bool bResetAdamNet)
     if ((Port60 & 0x03) == 0x00)    // WRITER.ROM (and possibly EOS.ROM)
     {
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 0; // ROM
-        
+
         MemoryMap[0] = BIOS_Memory + 0x0000;
         MemoryMap[1] = BIOS_Memory + 0x2000;
         MemoryMap[2] = BIOS_Memory + 0x4000;
@@ -236,7 +230,7 @@ void SetupAdam(bool bResetAdamNet)
     else if ((Port60 & 0x03) == 0x01)   // Onboard RAM
     {
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
-        
+
         MemoryMap[0] = RAM_Memory + 0x0000;
         MemoryMap[1] = RAM_Memory + 0x2000;
         MemoryMap[2] = RAM_Memory + 0x4000;
@@ -245,8 +239,8 @@ void SetupAdam(bool bResetAdamNet)
     else if ((Port60 & 0x03) == 0x03)   // Colecovision BIOS + RAM
     {
         adam_ram_present[0] = 0; // ROM
-        adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM        
-        
+        adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
+
         MemoryMap[0] = BIOS_Memory + 0xA000;    // Coleco.rom BIOS
         MemoryMap[1] = RAM_Memory + 0x2000;
         MemoryMap[2] = RAM_Memory + 0x4000;
@@ -256,7 +250,7 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ext_ram_used = 1;
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
-        
+
         if (DSI_RAM_Buffer) // Do we have extra RAM available for bigger RAM expansions on the DSi?
         {
             MemoryMap[0] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x0000;
@@ -279,7 +273,7 @@ void SetupAdam(bool bResetAdamNet)
     if ((Port60 & 0x0C) == 0x00)    // Onboard RAM
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
-        
+
         MemoryMap[4] = RAM_Memory + 0x8000;
         MemoryMap[5] = RAM_Memory + 0xA000;
         MemoryMap[6] = RAM_Memory + 0xC000;
@@ -289,7 +283,7 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ext_ram_used = 1;
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
-        
+
         if (DSI_RAM_Buffer) // Do we have extra RAM available for bigger RAM expansions on the DSi?
         {
             MemoryMap[4] = DSI_RAM_Buffer + ((64*Port42) * 1024) + 0x8000;
@@ -308,7 +302,7 @@ void SetupAdam(bool bResetAdamNet)
     else if ((Port60 & 0x0C) == 0x0C)    // Cartridge ROM - in ADAM mode
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
-        
+
         if (adam_mode == 3) // We are running a normal CV Cart but with full ADAM emulation...
         {
             MemoryMap[4] = ROM_Memory + (992 * 1024) + 0x0000;
@@ -327,7 +321,7 @@ void SetupAdam(bool bResetAdamNet)
     else        // We allow for a 32K Expansion ROM - otherwise 0xFF out there
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 0; // ROM
-        
+
         if (adam_mode == 2) // We've got a ROM expansion...
         {
             MemoryMap[4] = ROM_Memory + (992 * 1024) + 0x0000;
@@ -402,7 +396,6 @@ static word GetMaxDCB(void)
 static void SetDCB(byte Dev,byte Offset,byte Value)
 {
   word A = (PCBAddr+PCB_SIZE+Dev*DCB_SIZE+Offset)&0xFFFF;
-    
   RAM_Memory[A] = Value;
 }
 
@@ -422,7 +415,7 @@ static int IsPCB(word A)
 {
   /* Quick check for PCB presence */
   if(!PCBTable[A]) return(0);
-  
+
   /* Check if PCB is mapped in */
   if((A<0x2000) && ((Port60&0x03)!=1)) return(0);
   if((A<0x8000) && ((Port60&0x03)!=1) && ((Port60&0x03)!=3)) return(0);
@@ -506,6 +499,10 @@ static void UpdateKBD(byte Dev,int V)
     case -1:
       SetDCB(Dev,DCB_CMD_STAT,KBDStatus);
       break;
+    case CMD_RESET:
+      KBDStatus = RSP_SUCCESS;
+      SetDCB(Dev,DCB_CMD_STAT,KBDStatus);
+      break;
     case CMD_STATUS:
     case CMD_SOFT_RESET:
       /* Character-based device, single character buffer */
@@ -579,24 +576,24 @@ static void UpdatePRN(byte Dev,int V)
  //   Device 25 = Tape drive 4 (projected, may have share DCB with Tape3)
  //   Device 26 = Expansion RAM disk drive (third party ID, not used by Coleco)
 
-static void UpdateDCB(byte device,int cmd)
+static void UpdateDCB(byte device, int cmd)
 {
   byte DevID;
 
-  /* When writing, ignore invalid commands */
-  if(!cmd || (cmd>=0x80)) return;
-
   /* Compute device ID */
-  DevID = (GetDCB(device,DCB_DEV_NUM)<<4) + (GetDCB(device,DCB_ADD_CODE)&0x0F);
+  DevID = ((GetDCB(device,DCB_DEV_NUM)&0x0F)<<4) + (GetDCB(device,DCB_ADD_CODE)&0x0F);
 
   /* Depending on the device ID... */
   switch(DevID)
   {
-    case 0x01: UpdateKBD(device,cmd);break;
-    case 0x02: UpdatePRN(device,cmd);break;
+    case 0x01: UpdateKBD(device,cmd); break;
+    case 0x02: UpdatePRN(device,cmd); break;
     case 0x04: adam_drive_update(BAY_DISK1, device, cmd); break;
     case 0x05: adam_drive_update(BAY_DISK2, device, cmd); break;
     case 0x08: adam_drive_update(BAY_TAPE,  device, cmd); break;
+
+    // HACK: Why is this needed to make Best of Broderbund DISK work?!
+    case 180:  SetDCB(device,DCB_CMD_STAT, RSP_SUCCESS); break;
 
     default:
       SetDCB(device,DCB_CMD_STAT, RSP_TIMEOUT);  // Everything else is missing... timeout
@@ -656,10 +653,9 @@ void WritePCB(word A,byte V)
       case CMD_PCB_WAIT:
         break;
       case CMD_PCB_RESET:
-        memset(PCBTable,0,0x20000);
+        ResetPCB();
         break;
-      default:
-        memset(PCBTable,0,0x20000);
+      default: // Unknown command - do nothing
         break;
     }
   }
@@ -678,30 +674,34 @@ void ResetPCB(void)
 {
   /* PCB/DCB not mapped yet */
   memset(PCBTable,0x00,0x20000);
-  
+
   /* Set starting PCB address */
   PCBAddr = 0x0000;
   MovePCB(0xFEC0,15);
 
-  /* @@@ Reset tape and disk here */
+  /* Reset keyboard status here */
   KBDStatus = RSP_SUCCESS;
   LastKey   = 0x00;
-  
-  // Reset drive status... but don't disturb the actual disk images...  
+
+  // Reset drive status... but don't disturb the actual disk images...
   for (int i=0; i<MAX_DRIVES; i++)
   {
       AdamDriveStatus[i].status = AdamDriveStatus[i].newstatus = RSP_SUCCESS;
       AdamDriveStatus[i].timeout = 0;
-      AdamDriveStatus[i].lastblock = 0;
+      AdamDriveStatus[i].lastblock = -1;
       AdamDriveStatus[i].io_status = 0;
   }
 }
 
-///ZZZZZZZZZZZZZZZZZZZZ ADAM DRIVE STUFF
+// =========================================================================================
+// All of the Adam disk and tape (DDP) handling routines are below... the .dsk files for
+// Adam emulation are simply raw sector dumps and are easily read and handled as a single
+// block in memory. The only caveat is that the disks use a sector interleave of 4.
+// =========================================================================================
 
 // ----------------------------------------------------------
 // Called on every vertical blank when a frame is finished
-// to provide a simple cache flush check on disk reads.
+// to provide a simple cache flush check on disk/tape reads.
 // ----------------------------------------------------------
 void adam_drive_cache_check(void)
 {
@@ -720,20 +720,26 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
   int I,J,LEN,SEC,BLK;
   word BUF;
   byte *Data;
-  
+
   /* If reading DCB status, stop here */
   if(cmd<0)
   {
       SetDCB(device, DCB_CMD_STAT, AdamDriveStatus[drive].status);
       return;
   }
-  
+
   /* Reset errors, report missing disks */
   SetDCB(device,DCB_NODE_TYPE,(GetDCB(device,DCB_NODE_TYPE)&0xF0) | (AdamDrive[drive].image ? 0x00:0x03));
 
   /* Depending on the command... */
   switch(cmd)
   {
+    case CMD_RESET:
+      AdamDriveStatus[drive].lastblock = -1;
+      AdamDriveStatus[drive].status = AdamDriveStatus[drive].newstatus = RSP_SUCCESS;
+      SetDCB(device,DCB_CMD_STAT, 0x00);
+      break;
+
     case CMD_STATUS:
       /* Block-based device, 1kB buffer */
       ReportDevice(device,0x0400,1);
@@ -749,23 +755,23 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
     case CMD_WRITE:
     case CMD_READ:
       if (AdamDriveStatus[drive].io_status != 2) AdamDriveStatus[drive].io_status = (cmd==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
-      
+
       AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus;
       SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
-      
+
       if (AdamDriveStatus[drive].status==RSP_TIMEOUT)
       {
          SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
       }
       else
-      {      
+      {
           /* Determine buffer address, length, block number */
           BUF = GetDCBBase(device);
           LEN = GetDCBLen(device);
           LEN = LEN<0x0400 ? LEN:0x0400;
           BLK = GetDCBBlock(device);
           SEC = BLK * 2;
-          
+
           if (BLK==AdamDriveStatus[drive].lastblock || (cmd==CMD_WRITE))
           {
               /* For each 512-byte sector... */
@@ -773,7 +779,7 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
               {
                 /* Get pointer to sector data on disk */
                 Data = adam_drive_sector(drive, SEC);
-                
+
                 /* If wrong sector number, stop here */
                 if(!Data)
                 {
@@ -781,25 +787,25 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
                   LEN = 0;
                   break;
                 }
-                
+
                 /* Read or write sectors */
                 int K = I+0x200>LEN? LEN-I:0x200;
                 if(cmd==CMD_READ)
                 {
-                    for(J=0;J<K;++J,++BUF) 
+                    for(J=0;J<K;++J,++BUF)
                     {
                         RAM_Memory[BUF] = Data[J];
                     }
                 }
                 else // is CMD_WRITE
                 {
-                  for(J=0;J<K;++J,++BUF) 
+                  for(J=0;J<K;++J,++BUF)
                   {
                       Data[J] = RAM_Memory[BUF];
                   }
                   disk_unsaved_data[drive] = 1;
                 }
-                
+
                 AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus=RSP_SUCCESS;
                 SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
             }
@@ -808,8 +814,9 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
           {
               // Cache block
               AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus=RSP_TIMEOUT;
+              SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
               AdamDriveStatus[drive].timeout=timeouts[myConfig.adamnet];
-              AdamDriveStatus[drive].lastblock=BLK;              
+              AdamDriveStatus[drive].lastblock=BLK;
           }
       }
       /* Done */
@@ -817,6 +824,7 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
   }
 }
 
+// Read a .dsk or .ddp file from the SD card and place into memory
 void adam_drive_insert(u8 drive, char *filename)
 {
     FILE *fp = fopen(filename, "rb");
@@ -828,6 +836,7 @@ void adam_drive_insert(u8 drive, char *filename)
     }
 }
 
+// Set the disk image for this drive bay back to NULL
 void adam_drive_eject(u8 drive)
 {
     AdamDrive[drive].image = NULL;
@@ -838,9 +847,9 @@ void adam_drive_eject(u8 drive)
 // Sectors are zero-based
 u8 *adam_drive_sector(u8 drive, u32 sector)
 {
-    static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // The ADAM uses a sector Skew = 5    
+    static const byte InterleaveTable[8]= { 0,5,2,7,4,1,6,3 }; // The ADAM uses a sector Skew = 5
     u8 *ptr = NULL;
-    
+
     if (AdamDrive[drive].image)
     {
         /* Remap sector number via interleave table */
@@ -863,22 +872,25 @@ void adam_drive_save(u8 drive)
     }
 }
 
+// -------------------------------------------------------------------------------------------
+// Setup for 3 drive bays for the emulated Adam. Two disk drives and a single DDP tape drive.
+// -------------------------------------------------------------------------------------------
 void adam_drive_init(void)
 {
     memset(AdamDrive, 0x00, sizeof(AdamDrive));
-    
+
     AdamDrive[BAY_DISK1].image = NULL;
     AdamDrive[BAY_DISK1].imageSizeMax = (320*1024);
     AdamDrive[BAY_DISK1].secSize = 512;
     AdamDrive[BAY_DISK1].skew  = 5;
     AdamDrive[BAY_DISK1].driveType = DRIVE_TYPE_DISK;
-    
+
     AdamDrive[BAY_DISK2].image = NULL;
     AdamDrive[BAY_DISK2].imageSizeMax = (320*1024);
     AdamDrive[BAY_DISK2].secSize = 512;
     AdamDrive[BAY_DISK2].skew  = 5;
     AdamDrive[BAY_DISK2].driveType = DRIVE_TYPE_DISK;
-    
+
     AdamDrive[BAY_TAPE].image = NULL;
     AdamDrive[BAY_TAPE].imageSizeMax = (256*1024);
     AdamDrive[BAY_TAPE].secSize = 512;
@@ -886,3 +898,4 @@ void adam_drive_init(void)
     AdamDrive[BAY_TAPE].driveType = DRIVE_TYPE_TAPE;
 }
 
+// End of file
