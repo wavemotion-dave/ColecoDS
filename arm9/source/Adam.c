@@ -413,17 +413,14 @@ static void SetPCB(word Offset,byte Value)
 /*************************************************************/
 static int IsPCB(word A)
 {
-  /* Quick check for PCB presence */
-  //if(!PCBTable[A]) return(0);
-
-  /* Check if PCB is mapped in */
+  /* Check if PCB is mapped in - ADAM only allows PCB to be in internal/intrinsic RAM */
   if((A<0x2000) && ((Port60&0x03)!=1)) return(0);
   if((A<0x8000) && ((Port60&0x03)!=1) && ((Port60&0x03)!=3)) return(0);
   if((A>=0x8000) && (Port60&0x0C)) return(0);
 
   /* Check number of active devices */
   if(A>=PCBAddr+PCB_SIZE+GetMaxDCB()*DCB_SIZE) return(0);
-
+  
   /* This address belongs to AdamNet */
   return(1);
 }
@@ -593,8 +590,11 @@ static void UpdateDCB(byte device, int cmd)
     case 0x08: adam_drive_update(BAY_TAPE,  device, cmd); break;
     case 0x18: adam_drive_update(BAY_TAPE2, device, cmd); break;
 
-    // HACK: Why is this needed to make Best of Broderbund DISK work?!
+    // HACK: Why is this needed to make Best of Broderbund .DSK and .DDP work?!
+    // These appear to be different "units" for the Disk and Tape drives but I don't have it worked out yet.
     case 0xB4: SetDCB(device, DCB_CMD_STAT, RSP_SUCCESS); break;
+    case 0xB5: SetDCB(device, DCB_CMD_STAT, RSP_SUCCESS); break;
+    case 0xB8: SetDCB(device, DCB_CMD_STAT, RSP_SUCCESS); break;
 
     default:
       SetDCB(device, DCB_CMD_STAT, RSP_TIMEOUT);  // Everything else is missing... timeout
@@ -628,7 +628,7 @@ void ReadPCB(word A)
 /** WritePCB() ***********************************************/
 /** Write value to a given PCB or DCB address.              **/
 /*************************************************************/
-void WritePCB(word A,byte V)
+void WritePCB(word A, byte cmd)
 {
   if(!IsPCB(A)) return;
 
@@ -638,17 +638,17 @@ void WritePCB(word A,byte V)
   /* If writing a PCB command... */
   if(A==PCB_CMD_STAT)
   {
-    switch(V)
+    switch(cmd)
     {
       case CMD_PCB_SYNC1: /* Sync Z80 */
-        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|V);
+        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|cmd);
         break;
       case CMD_PCB_SYNC2: /* Sync master 6801 */
-        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|V);
+        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|cmd);
         break;
       case CMD_PCB_SNA: /* Rellocate PCB */
         MovePCB(GetPCBBase(),GetMaxDCB());
-        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|V);
+        SetPCB(PCB_CMD_STAT,RSP_SUCCESS|cmd);
         break;
       case CMD_PCB_IDLE:
       case CMD_PCB_WAIT:
@@ -664,7 +664,7 @@ void WritePCB(word A,byte V)
   else if(!((A-PCB_SIZE)%DCB_SIZE))
   {
     byte Dev = (A-PCB_SIZE)/DCB_SIZE;
-    if(Dev<=GetMaxDCB()) UpdateDCB(Dev,V);
+    if(Dev<=GetMaxDCB()) UpdateDCB(Dev,cmd);
   }
 }
 
@@ -689,7 +689,7 @@ void ResetPCB(void)
   {
       AdamDriveStatus[i].status = AdamDriveStatus[i].newstatus = RSP_SUCCESS;
       AdamDriveStatus[i].timeout = 0;
-      AdamDriveStatus[i].lastblock = 0;
+      AdamDriveStatus[i].lastblock = -1;
       AdamDriveStatus[i].io_status = 0;
   }
 }
@@ -790,10 +790,11 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
                 /* Get pointer to sector data on disk */
                 Data = adam_drive_sector(drive, SEC);
 
-                /* If wrong sector number, stop here */
+                /* If out of bounds sector number, stop here */
                 if(!Data)
                 {
-                  SetDCB(device,DCB_NODE_TYPE,GetDCB(device,DCB_NODE_TYPE)|0x06);
+                  SetDCB(device,DCB_NODE_TYPE,GetDCB(device,DCB_NODE_TYPE)|0x02);
+                  AdamDriveStatus[drive].lastblock = -1;
                   LEN = 0;
                   break;
                 }
@@ -831,6 +832,11 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
               AdamDriveStatus[drive].timeout=timeouts[myConfig.adamnet];
               AdamDriveStatus[drive].lastblock=BLK;
           }
+      }
+      else // No media
+      {
+          SetDCB(device,DCB_NODE_TYPE,GetDCB(device,DCB_NODE_TYPE)|0x06);
+          AdamDriveStatus[drive].lastblock = -1;
       }
       /* Done */
       break;
