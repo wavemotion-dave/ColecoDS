@@ -789,10 +789,6 @@ void ShowDebugZ80(void)
 
     if (myGlobalConfig.debugger == 3)
     {
-        extern u8 lastBank;
-        extern u8 romBankMask;
-        extern u8 Port20, Port53, Port60;
-
         sprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
         DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[4],VDP[5],VDP[6],VDP[7]);
@@ -873,9 +869,9 @@ void ShowDebugZ80(void)
             idx--;
         }
 
-        sprintf(tmp, "Bank  %02X [%02X]", (lastBank != 199 ? lastBank:0), romBankMask);    DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "VMode %02X %4s %3s", TMS9918_Mode, VModeNames[TMS9918_Mode], ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K")); DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "Ports P23=%02X P53=%02X P60=%02X P42=%02X", Port20, Port53, Port60, Port42); DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "Bank %02X [%02X] EX=%d", (lastBank != 199 ? lastBank:0), romBankMask, adam_ext_ram_used);    DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "VMod %02X %4s %3s", TMS9918_Mode, VModeNames[TMS9918_Mode], ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K")); DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "Port P23=%02X P53=%02X P60=%02X P42=%02X", Port20, Port53, Port60, Port42); DSPrint(0,idx++,7, tmp);
 
         idx = 1;
         if (einstein_mode || sordm5_mode || memotech_mode)
@@ -894,7 +890,7 @@ void ShowDebugZ80(void)
         }
        
         idx++;
-        for (u8 i=0; i<= ((einstein_mode || (msx_mode == 3)) ? 4:6); i++)
+        for (u8 i=0; i<= ((einstein_mode || (msx_mode == 3)) ? 4:8); i++)
         {
             sprintf(tmp, "D%d %-9lu %04X", i, debug[i], (u16)debug[i]); DSPrint(15,idx++,7, tmp);
         }
@@ -904,13 +900,10 @@ void ShowDebugZ80(void)
         idx = 1;
         for (u8 i=0; i<4; i++)
         {
-            sprintf(tmp, "D%d %-7lu %04lX ", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "D%d %-7ld %04lX  D%d %-7ld %04lX", i, (s32)debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF), 4+i, (s32)debug[4+i], (debug[4+i] < 0xFFFF ? debug[4+i]:0xFFFF)); 
+            DSPrint(0,idx++,7, tmp);
         }
-        idx = 1;
-        for (u8 i=4; i<8; i++)
-        {
-            sprintf(tmp, "D%d %-7lu %04lX", i, debug[i], (debug[i] < 0xFFFF ? debug[i]:0xFFFF)); DSPrint(17,idx++,7, tmp);
-        }
+        
         if (einstein_mode || (msx_mode == 3))
         {
             sprintf(tmp, "FD.ST=%02X CM=%02X TR=%02X SI=%02X SE=%02X", FDC.status, FDC.command, FDC.track, FDC.side, FDC.sector); DSPrint(0,idx++,7, tmp);
