@@ -414,7 +414,7 @@ static void SetPCB(word Offset,byte Value)
 static int IsPCB(word A)
 {
   /* Quick check for PCB presence */
-  if(!PCBTable[A]) return(0);
+  //if(!PCBTable[A]) return(0);
 
   /* Check if PCB is mapped in */
   if((A<0x2000) && ((Port60&0x03)!=1)) return(0);
@@ -582,21 +582,22 @@ static void UpdateDCB(byte device, int cmd)
 
   /* Compute device ID */
   DevID = ((GetDCB(device,DCB_DEV_NUM)&0x0F)<<4) + (GetDCB(device,DCB_ADD_CODE)&0x0F);
-
+  
   /* Depending on the device ID... */
   switch(DevID)
   {
-    case 0x01: UpdateKBD(device,cmd); break;
-    case 0x02: UpdatePRN(device,cmd); break;
+    case 0x01: UpdateKBD(device, cmd); break;
+    case 0x02: UpdatePRN(device, cmd); break;
     case 0x04: adam_drive_update(BAY_DISK1, device, cmd); break;
     case 0x05: adam_drive_update(BAY_DISK2, device, cmd); break;
     case 0x08: adam_drive_update(BAY_TAPE,  device, cmd); break;
+    case 0x18: adam_drive_update(BAY_TAPE2, device, cmd); break;
 
     // HACK: Why is this needed to make Best of Broderbund DISK work?!
-    case 180:  SetDCB(device,DCB_CMD_STAT, RSP_SUCCESS); break;
+    case 0xB4: SetDCB(device, DCB_CMD_STAT, RSP_SUCCESS); break;
 
     default:
-      SetDCB(device,DCB_CMD_STAT, RSP_TIMEOUT);  // Everything else is missing... timeout
+      SetDCB(device, DCB_CMD_STAT, RSP_TIMEOUT);  // Everything else is missing... timeout
       break;
   }
 }
@@ -688,7 +689,7 @@ void ResetPCB(void)
   {
       AdamDriveStatus[i].status = AdamDriveStatus[i].newstatus = RSP_SUCCESS;
       AdamDriveStatus[i].timeout = 0;
-      AdamDriveStatus[i].lastblock = -1;
+      AdamDriveStatus[i].lastblock = 0;
       AdamDriveStatus[i].io_status = 0;
   }
 }
@@ -729,13 +730,23 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
   }
 
   /* Reset errors, report missing disks */
-  SetDCB(device,DCB_NODE_TYPE,(GetDCB(device,DCB_NODE_TYPE)&0xF0) | (AdamDrive[drive].image ? 0x00:0x03));
-
+  if ((drive == BAY_DISK1) || (drive == BAY_DISK2))
+  {
+      SetDCB(device, DCB_NODE_TYPE,(GetDCB(device,DCB_NODE_TYPE)&0xF0) | (AdamDrive[drive].image ? 0x00:0x03));
+  }
+  else // Report missing tapes...
+  {
+      byte node_type = 0x00;
+      if (!(AdamDrive[BAY_TAPE].image))  node_type |= 0x03;
+      if (!(AdamDrive[BAY_TAPE2].image)) node_type |= 0x30;
+      SetDCB(device, DCB_NODE_TYPE, node_type);
+  }
+  
   /* Depending on the command... */
   switch(cmd)
   {
     case CMD_RESET:
-      AdamDriveStatus[drive].lastblock = -1;
+      AdamDriveStatus[drive].lastblock = 0;
       AdamDriveStatus[drive].status = AdamDriveStatus[drive].newstatus = RSP_SUCCESS;
       SetDCB(device,DCB_CMD_STAT, 0x00);
       break;
@@ -757,13 +768,12 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
       if (AdamDriveStatus[drive].io_status != 2) AdamDriveStatus[drive].io_status = (cmd==CMD_READ) ? 1:2;    // Prioritize showing WR (Write) over RD (Read)
 
       AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus;
-      SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
 
       if (AdamDriveStatus[drive].status==RSP_TIMEOUT)
       {
          SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
       }
-      else
+      else if (AdamDrive[drive].image) // Is there media in the drive?
       {
           /* Determine buffer address, length, block number */
           BUF = GetDCBBase(device);
@@ -771,7 +781,7 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
           LEN = LEN<0x0400 ? LEN:0x0400;
           BLK = GetDCBBlock(device);
           SEC = BLK * 2;
-
+          
           if (BLK==AdamDriveStatus[drive].lastblock || (cmd==CMD_WRITE))
           {
               /* For each 512-byte sector... */
@@ -783,7 +793,7 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
                 /* If wrong sector number, stop here */
                 if(!Data)
                 {
-                  SetDCB(device,DCB_NODE_TYPE,GetDCB(device,DCB_NODE_TYPE)|0x02);
+                  SetDCB(device,DCB_NODE_TYPE,GetDCB(device,DCB_NODE_TYPE)|0x06);
                   LEN = 0;
                   break;
                 }
@@ -805,10 +815,13 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
                   }
                   disk_unsaved_data[drive] = 1;
                 }
-
-                AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus=RSP_SUCCESS;
-                SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
             }
+            
+            if (cmd == CMD_WRITE) AdamDriveStatus[drive].lastblock = -1;
+            
+            // Indicate the read or write request was accepted...
+            AdamDriveStatus[drive].status=AdamDriveStatus[drive].newstatus=RSP_SUCCESS;
+            SetDCB(device,DCB_CMD_STAT,AdamDriveStatus[drive].status);
           }
           else
           {
@@ -852,23 +865,31 @@ u8 *adam_drive_sector(u8 drive, u32 sector)
 
     if (AdamDrive[drive].image)
     {
-        /* Remap sector number via interleave table */
+        // Remap sector number via interleave table
         if (AdamDrive[drive].skew)  sector = (sector&~7) | InterleaveTable[sector&7];
 
-        ptr = AdamDrive[drive].image + (sector * (u32)AdamDrive[drive].secSize);
+        // Make sure the sector being asked for is within our image size
+        if ((sector * (u32)AdamDrive[drive].secSize) < AdamDrive[drive].imageSizeMax)
+        {
+            ptr = AdamDrive[drive].image + (sector * (u32)AdamDrive[drive].secSize);
+        }
     }
     return ptr;
 }
 
 
+// Write the .dsk or .ddp image back to disk in the same sector dump format
 void adam_drive_save(u8 drive)
 {
-    chdir(disk_last_path[drive]);
-    FILE *fp = fopen(disk_last_file[drive], "wb");
-    if (fp)
+    if (AdamDrive[drive].image)
     {
-        fwrite(AdamDrive[drive].image, AdamDrive[drive].imageSize, 1, fp);
-        fclose(fp);
+        chdir(disk_last_path[drive]);
+        FILE *fp = fopen(disk_last_file[drive], "wb");
+        if (fp)
+        {
+            fwrite(AdamDrive[drive].image, AdamDrive[drive].imageSize, 1, fp);
+            fclose(fp);
+        }
     }
 }
 

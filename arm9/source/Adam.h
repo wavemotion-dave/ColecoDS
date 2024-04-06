@@ -88,6 +88,7 @@ extern u16 PCBAddr;
 #define BAY_DISK1       0
 #define BAY_DISK2       1
 #define BAY_TAPE        2
+#define BAY_TAPE2       3   // Unused at present
 
 #define MAX_DRIVES      4
 
