@@ -405,9 +405,10 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V9.6: ??-???-2024 by wavemotion-dave
+V9.6: 08-Apr-2024 by wavemotion-dave
 * Removed DrZ80 core - the high quality CZ80 core is all that remains. 
 * Complete overhaul of the Adam handlers to clean and refine.
+* Fix for games like Best of Broderbund (dsk and ddp) now load properly.
 
 V9.5: 30-Mar-2024 by wavemotion-dave
 * ADAMnet improvement for disk/tape handling. Improved timing, improved caching and more disk/tape games should load and run correctly.
