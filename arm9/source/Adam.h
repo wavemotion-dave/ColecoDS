@@ -129,8 +129,8 @@ void adam_drive_insert(u8 drive, char *filename);
 void adam_drive_eject(u8 drive);
 u8  *adam_drive_sector(u8 drive, u32 sector);
 void adam_drive_save(u8 drive);
-void adam_drive_init(void);
 void adam_drive_cache_check(void);
 void adam_drive_update(u8 drive, u8 device, int cmd);
+void adamnet_init(void);
 
 #endif /* ADAMNET_H */

@@ -156,10 +156,12 @@ static const byte CtrlKey[256] =
   0xF0,0xF1,0xF2,0xF3,0xF4,0xF5,0xF6,0xF7,0xF8,0xF9,0xFA,0xFB,0xFC,0xFD,0xFE,0xFF
 };
 
+// ---------------------------------------------------------------------------------
 // We use LCD_D area of VRAM to store the PCB Table. This is 16-bit memory so it
-// takes the full 128K of LCD VRAM to hold the 8-bit values. A bit of a waste
+// takes the full 128K of LCD VRAM to hold the boolean values. A bit of a waste
 // especially considering the PCB block is only about 300 bytes long, but better
 // than allocating another 64K of global memory somewhere (precious DS resources!)
+// ---------------------------------------------------------------------------------
 u16 *PCBTable = (u16*)0x06860000;
 
 word PCBAddr    __attribute__((section(".dtcm"))) = 0;
@@ -215,19 +217,19 @@ void SetupAdam(bool bResetAdamNet)
     {
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 0; // ROM
 
-        MemoryMap[0] = BIOS_Memory + 0x0000;
-        MemoryMap[1] = BIOS_Memory + 0x2000;
-        MemoryMap[2] = BIOS_Memory + 0x4000;
+        MemoryMap[0] = BIOS_Memory + 0x0000;        // SMARTWriter 
+        MemoryMap[1] = BIOS_Memory + 0x2000;        // SMARTWriter 
+        MemoryMap[2] = BIOS_Memory + 0x4000;        // SMARTWriter 
         if (Port20 & 0x02)
         {
             MemoryMap[3] = BIOS_Memory + 0x8000;    // EOS
         }
         else
         {
-            MemoryMap[3] = BIOS_Memory + 0x6000;    // Last block of Adam WRITER
+            MemoryMap[3] = BIOS_Memory + 0x6000;    // Last block of SMARTWriter
         }
     }
-    else if ((Port60 & 0x03) == 0x01)   // Onboard RAM
+    else if ((Port60 & 0x03) == 0x01)   // Onboard (Intrinsic) RAM
     {
         adam_ram_present[0] = adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
 
@@ -236,7 +238,7 @@ void SetupAdam(bool bResetAdamNet)
         MemoryMap[2] = RAM_Memory + 0x4000;
         MemoryMap[3] = RAM_Memory + 0x6000;
     }
-    else if ((Port60 & 0x03) == 0x03)   // Colecovision BIOS + RAM
+    else if ((Port60 & 0x03) == 0x03)   // Colecovision BIOS + Intrinsic RAM
     {
         adam_ram_present[0] = 0; // ROM
         adam_ram_present[1] = adam_ram_present[2] = adam_ram_present[3] = 1; // RAM
@@ -270,7 +272,7 @@ void SetupAdam(bool bResetAdamNet)
     // ----------------------------------
     // Configure upper 32K of memory
     // ----------------------------------
-    if ((Port60 & 0x0C) == 0x00)    // Onboard RAM
+    if ((Port60 & 0x0C) == 0x00)    // Onboard (Intrinsic) RAM
     {
         adam_ram_present[4] = adam_ram_present[5] = adam_ram_present[6] = adam_ram_present[7] = 1; // RAM
 
@@ -457,7 +459,6 @@ static void MovePCB(word NewAddr,byte MaxDCB)
 /*************************************************************/
 static void ReportDevice(byte Dev,word MsgSize,byte IsBlock)
 {
-  SetDCB(Dev,DCB_CMD_STAT, RSP_SUCCESS);
   SetDCB(Dev,DCB_MAXL_LO,  MsgSize&0xFF);
   SetDCB(Dev,DCB_MAXL_HI,  MsgSize>>8);
   SetDCB(Dev,DCB_DEV_TYPE, IsBlock? 0x01:0x00);
@@ -490,12 +491,15 @@ static void UpdateKBD(byte Dev,int V)
 {
   int J,N;
   word A;
+  
+  if (V < 0) // Are we reading status?
+  {
+      SetDCB(Dev,DCB_CMD_STAT,KBDStatus);
+      return;
+  }
 
   switch(V)
   {
-    case -1:
-      SetDCB(Dev,DCB_CMD_STAT,KBDStatus);
-      break;
     case CMD_RESET:
       KBDStatus = RSP_SUCCESS;
       SetDCB(Dev,DCB_CMD_STAT,KBDStatus);
@@ -506,13 +510,13 @@ static void UpdateKBD(byte Dev,int V)
       ReportDevice(Dev,0x0001,0);
       KBDStatus = RSP_SUCCESS;
       LastKey   = 0x00;
+      SetDCB(Dev,DCB_CMD_STAT,KBDStatus);
       break;
     case CMD_WRITE:
       SetDCB(Dev,DCB_CMD_STAT,RSP_TIMEOUT);
       KBDStatus = RSP_SUCCESS;
       break;
     case CMD_READ:
-      SetDCB(Dev,DCB_CMD_STAT,0x00);
       A = GetDCBBase(Dev);
       N = GetDCBLen(Dev);
       for(J=0 ; (J<N) && (V=GetKBD()) ; ++J, A=(A+1)&0xFFFF)
@@ -520,34 +524,35 @@ static void UpdateKBD(byte Dev,int V)
         RAM_Memory[A] = V;
       }
       KBDStatus = RSP_SUCCESS+(J<N? 0x0C:0x00);
+      SetDCB(Dev,DCB_CMD_STAT,KBDStatus);
       break;
   }
 }
 
 static void UpdatePRN(byte Dev,int V)
 {
-  int N;
-  word A;
-
+  if (V < 0) // Are we reading status?
+  {
+      SetDCB(Dev,DCB_CMD_STAT,0x80);
+      return;
+  }
+  
   switch(V)
   {
+    case CMD_RESET:
+      SetDCB(Dev,DCB_CMD_STAT, RSP_SUCCESS);
+      break;
     case CMD_STATUS:
     case CMD_SOFT_RESET:
       /* Character-based device, single character buffer */
       ReportDevice(Dev,0x0001,0);
+      SetDCB(Dev,DCB_CMD_STAT, RSP_SUCCESS);
       break;
     case CMD_READ:
       SetDCB(Dev,DCB_CMD_STAT,RSP_TIMEOUT);
       break;
     case CMD_WRITE:
-      SetDCB(Dev,DCB_CMD_STAT,0x00);
-      A = GetDCBBase(Dev);
-      N = GetDCBLen(Dev);
-      (void)A;
-      (void)N;
-      break;
-    default:
-      SetDCB(Dev,DCB_CMD_STAT,RSP_SUCCESS);
+      SetDCB(Dev,DCB_CMD_STAT, RSP_SUCCESS);
       break;
   }
 }
@@ -590,12 +595,6 @@ static void UpdateDCB(byte device, int cmd)
     case 0x08: adam_drive_update(BAY_TAPE,  device, cmd); break;
     case 0x18: adam_drive_update(BAY_TAPE2, device, cmd); break;
 
-    // HACK: Why is this needed to make Best of Broderbund .DSK and .DDP work?!
-    // These appear to be different "units" for the Disk and Tape drives but I don't have it worked out yet.
-    case 0xB4: SetDCB(device, DCB_CMD_STAT, RSP_SUCCESS); break;
-    case 0xB5: SetDCB(device, DCB_CMD_STAT, RSP_SUCCESS); break;
-    case 0xB8: SetDCB(device, DCB_CMD_STAT, RSP_SUCCESS); break;
-
     default:
       SetDCB(device, DCB_CMD_STAT, RSP_TIMEOUT);  // Everything else is missing... timeout
       break;
@@ -631,7 +630,7 @@ void ReadPCB(word A)
 void WritePCB(word A, byte cmd)
 {
   if(!IsPCB(A)) return;
-
+  
   /* Compute offset within PCB/DCB */
   A -= PCBAddr;
 
@@ -664,7 +663,7 @@ void WritePCB(word A, byte cmd)
   else if(!((A-PCB_SIZE)%DCB_SIZE))
   {
     byte Dev = (A-PCB_SIZE)/DCB_SIZE;
-    if(Dev<=GetMaxDCB()) UpdateDCB(Dev,cmd);
+    if(Dev<=GetMaxDCB()) UpdateDCB(Dev,cmd);    
   }
 }
 
@@ -679,19 +678,6 @@ void ResetPCB(void)
   /* Set starting PCB address */
   PCBAddr = 0x0000;
   MovePCB(0xFEC0,15);
-
-  /* Reset keyboard status here */
-  KBDStatus = RSP_SUCCESS;
-  LastKey   = 0x00;
-
-  // Reset drive status... but don't disturb the actual disk images...
-  for (int i=0; i<MAX_DRIVES; i++)
-  {
-      AdamDriveStatus[i].status = AdamDriveStatus[i].newstatus = RSP_SUCCESS;
-      AdamDriveStatus[i].timeout = 0;
-      AdamDriveStatus[i].lastblock = -1;
-      AdamDriveStatus[i].io_status = 0;
-  }
 }
 
 // =========================================================================================
@@ -710,7 +696,7 @@ void adam_drive_cache_check(void)
     {
         if (AdamDriveStatus[i].timeout)
         {
-            if (!--AdamDriveStatus[i].timeout) AdamDriveStatus[i].newstatus=RSP_SUCCESS;
+            if (!--AdamDriveStatus[i].timeout) {AdamDriveStatus[i].newstatus=RSP_SUCCESS;}
         }
     }
 }
@@ -722,8 +708,7 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
   word BUF;
   byte *Data;
 
-  /* If reading DCB status, stop here */
-  if(cmd<0)
+  if (cmd < 0) // Are we reading status?
   {
       SetDCB(device, DCB_CMD_STAT, AdamDriveStatus[drive].status);
       return;
@@ -732,7 +717,7 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
   /* Reset errors, report missing disks */
   if ((drive == BAY_DISK1) || (drive == BAY_DISK2))
   {
-      SetDCB(device, DCB_NODE_TYPE,(GetDCB(device,DCB_NODE_TYPE)&0xF0) | (AdamDrive[drive].image ? 0x00:0x03));
+      SetDCB(device, DCB_NODE_TYPE, (GetDCB(device,DCB_NODE_TYPE)&0xF0) | (AdamDrive[drive].image ? 0x00:0x03));
   }
   else // Report missing tapes...
   {
@@ -742,13 +727,14 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
       SetDCB(device, DCB_NODE_TYPE, node_type);
   }
   
+  cmd &= 0x7F; // TODO: check why we need to mask off the top bit - games like Best of Broderbund .dsk/.ddp will write 0x80 here when they really want to RESET the DCB
+  
   /* Depending on the command... */
   switch(cmd)
   {
     case CMD_RESET:
       AdamDriveStatus[drive].lastblock = 0;
       AdamDriveStatus[drive].status = AdamDriveStatus[drive].newstatus = RSP_SUCCESS;
-      SetDCB(device,DCB_CMD_STAT, 0x00);
       break;
 
     case CMD_STATUS:
@@ -902,7 +888,7 @@ void adam_drive_save(u8 drive)
 // -------------------------------------------------------------------------------------------
 // Setup for 3 drive bays for the emulated Adam. Two disk drives and a single DDP tape drive.
 // -------------------------------------------------------------------------------------------
-void adam_drive_init(void)
+void adamnet_init(void)
 {
     memset(AdamDrive, 0x00, sizeof(AdamDrive));
 
@@ -923,6 +909,19 @@ void adam_drive_init(void)
     AdamDrive[BAY_TAPE].secSize = 512;
     AdamDrive[BAY_TAPE].skew  = 0;
     AdamDrive[BAY_TAPE].driveType = DRIVE_TYPE_TAPE;
+
+    /* Reset keyboard status here */
+    KBDStatus = RSP_SUCCESS;
+    LastKey   = 0x00;
+
+    // Reset drive status... but don't disturb the actual disk images...
+    for (int i=0; i<MAX_DRIVES; i++)
+    {
+        AdamDriveStatus[i].status = AdamDriveStatus[i].newstatus = RSP_SUCCESS;
+        AdamDriveStatus[i].timeout = 0;
+        AdamDriveStatus[i].lastblock = -1;
+        AdamDriveStatus[i].io_status = 0;
+    }
 }
 
 // End of file

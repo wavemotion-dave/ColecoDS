@@ -369,9 +369,8 @@ u8 colecoInit(char *szGame)
       disk_unsaved_data[BAY_DISK1] = 0;  // No unsaved DISK data to start
       disk_unsaved_data[BAY_DISK2] = 0;  // No unsaved DISK data to start
       disk_unsaved_data[BAY_TAPE] = 0;   // No unsaved TAPE data to start
-      
-      adam_drive_init();                 // Initialize the Adam Net and disk drives
-      
+      adamnet_init();                    // Initialize the Adam Net and disk drives
+            
       // Clear existing drives of any disks/tapes and load the new game up      
       for(u8 J=0;J<MAX_DRIVES;++J) adam_drive_eject(J);
       
