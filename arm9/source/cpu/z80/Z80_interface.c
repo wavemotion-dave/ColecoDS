@@ -33,9 +33,9 @@ extern u8 *MemoryMap[8];
 extern u8 adam_ram_present[8];
 
 // -------------------------------------------------
-// Switch banks... do this as fast as possible..
-// Up to 256K of the Colecovision Mega Cart ROM can 
-// be stored in fast VRAM so we check that here.
+// Switch banks... do this as fast as possible by
+// switching only the memory map and not trying
+// to copy blocks of memory around.
 // -------------------------------------------------
 ITCM_CODE void MegaCartBankSwitch(u8 bank)
 {
@@ -47,13 +47,18 @@ ITCM_CODE void MegaCartBankSwitch(u8 bank)
     }
 }
 
+// ---------------------------------------------------------
+// The fast way to read memory - just index into the memory 
+// map which gives us the 8K of memory to read...
+// ---------------------------------------------------------
 ITCM_CODE u8 cpu_readmem16(u16 address)
 {
     return *(MemoryMap[address>>13] + (address&0x1FFF));    
 }
 
 // -------------------------------------------------
-// 8-bit read with bankswitch support... slower...
+// 8-bit read with bankswitch support... slower, so
+// we only use it for 'complicated' memory fetches.
 // -------------------------------------------------
 ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
 {
@@ -691,7 +696,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 if (myConfig.mirrorRAM)
                 {
                     address&=0x03FF;
-                    RAM_Memory[0x6400|address]=RAM_Memory[0x6800|address]=RAM_Memory[0x7400|address]=RAM_Memory[0x7C00|address]=value;
+                    RAM_Memory[0x6400|address]=RAM_Memory[0x6C00|address]=RAM_Memory[0x7400|address]=RAM_Memory[0x7C00|address]=value;
                     RAM_Memory[0x6000|address]=RAM_Memory[0x6800|address]=RAM_Memory[0x7000|address]=RAM_Memory[0x7800|address]=value;
                 }
                 else RAM_Memory[address] = value;

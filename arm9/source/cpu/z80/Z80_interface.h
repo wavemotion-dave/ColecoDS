@@ -8,15 +8,6 @@
 #define word u16
 #define byte u8
 
-#define Z80_IGNORE_INT	-1 /* Ignore interrupt */
-#define Z80_NMI_INT 	0x01 /* Execute NMI */
-#define Z80_IRQ_INT 	0xFF /* Execute IRQ */
-
-#define Z80_INT_REQ     0x01    /* interrupt request mask       */
-#define Z80_INT_IEO     0x02    /* interrupt disable mask(IEO)  */
-
-#define Z80_VECTOR(device,state) (((device)<<8)|(state))
-
 extern Z80 CPU;
 
 extern void ClearCPUInterrupt(void);

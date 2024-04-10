@@ -1442,8 +1442,6 @@ void SetDefaultGameConfig(void)
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
-    if (file_crc == 0x9b547ba8)                 adam_mode = 3;  // Colecovision Boulder Dash writes to ROM and we can't allow that - so switch in ADAM emulation which blocks it
-    
     // ----------------------------------------------------
     // Some special BASIC carts that want full keyboards
     // ----------------------------------------------------
