@@ -869,7 +869,7 @@ void ShowDebugZ80(void)
             idx--;
         }
 
-        sprintf(tmp, "Bank %02X [%02X] EX=%d", (lastBank != 199 ? lastBank:0), romBankMask, adam_ext_ram_used);    DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "Bank %02X [%02X] EX=%d", (last_mega_bank != 199 ? last_mega_bank:0), romBankMask, adam_ext_ram_used);    DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "VMod %02X %4s %3s", TMS9918_Mode, VModeNames[TMS9918_Mode], ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K")); DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "Port P23=%02X P53=%02X P60=%02X P42=%02X", Port20, Port53, Port60, Port42); DSPrint(0,idx++,7, tmp);
 

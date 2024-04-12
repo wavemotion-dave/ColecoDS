@@ -17,20 +17,12 @@
 #include "../../printf.h"
 #include "../scc/SCC.h"
 
-extern SCC mySCC;
-
-u8  lastBank           __attribute__((section(".dtcm"))) = 199;
+u8  last_mega_bank     __attribute__((section(".dtcm"))) = 199;
 s32 cycle_deficit      __attribute__((section(".dtcm"))) = 0;
 u32 msx_offset         __attribute__((section(".dtcm"))) = 0;
 u8  msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8  msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
 u8  msx_last_block[4]  __attribute__((section(".dtcm"))) = {99,99,99,99};
-
-extern u8 romBankMask;
-extern u8 svi_RAM[2];
-extern u16 msx_block_size;
-extern u8 *MemoryMap[8];
-extern u8 adam_ram_present[8];
 
 // -------------------------------------------------
 // Switch banks... do this as fast as possible by
@@ -39,29 +31,23 @@ extern u8 adam_ram_present[8];
 // -------------------------------------------------
 ITCM_CODE void MegaCartBankSwitch(u8 bank)
 {
-    if (lastBank != bank)   // Only if the bank was changed...
+    if (last_mega_bank != bank)   // Only if the bank was changed...
     {
         MemoryMap[6] = ROM_Memory + ((u32)bank * (u32)0x4000);
         MemoryMap[7] = MemoryMap[6] + 0x2000;
-        lastBank = bank;
+        last_mega_bank = bank;
     }
 }
 
-// ---------------------------------------------------------
-// The fast way to read memory - just index into the memory 
-// map which gives us the 8K of memory to read...
-// ---------------------------------------------------------
-ITCM_CODE u8 cpu_readmem16(u16 address)
+// ----------------------------------------------------------------
+// 8-bit read with bankswitch support... slower, so we only use it 
+// for 'complicated' memory fetches. Otherwise a more direct read 
+// of memory is implemented in the Z80.c file.
+// ----------------------------------------------------------------
+ITCM_CODE u8 cpu_readmem16_banked(u16 address) 
 {
-    return *(MemoryMap[address>>13] + (address&0x1FFF));    
-}
-
-// -------------------------------------------------
-// 8-bit read with bankswitch support... slower, so
-// we only use it for 'complicated' memory fetches.
-// -------------------------------------------------
-ITCM_CODE u8 cpu_readmem16_banked (u16 address) 
-{
+    if (pv2000_mode) return cpu_readmem_pv2000(address);
+    
     // Everything in this block is accessing high-memory...
     if (address & 0x8000)
     {
@@ -71,16 +57,18 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
           {
               MegaCartBankSwitch(address & romBankMask);
           }
-      }    
-      else if (bActivisionPCB)
+      }
+      else if (adam_mode)   // See if this is a read from the PCB area
+      {
+          if (((u16*)0x06860000)[address]) ReadPCB(address);
+      }
+      else if (bActivisionPCB) // Is this an Activision style PCB with EEPROM?
       {
           if (address==0xFF80)
           {
-            /* Return EEPROM output bit */
-            return(Read24XX(&EEPROM));
+            return(Read24XX(&EEPROM));  // Return EEPROM output bit
           }
       }
-      else if ((adam_mode) && ((u16*)0x06860000)[address]) ReadPCB(address);
       else if (msx_sram_at_8000) // Don't need to check msx_mode as this can only be true in that mode
       {
           if (address <= 0xBFFF) // Between 0x8000 and 0xBFFF
@@ -90,7 +78,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
       }
     }
     
-    if (pv2000_mode) return cpu_readmem_pv2000(address);
+    // Otherwise normal read - just index into the 8K memory block and fetch the byte...
     return *(MemoryMap[address>>13] + (address&0x1FFF));
 }
 
@@ -103,7 +91,7 @@ ITCM_CODE u8 cpu_readmem16_banked (u16 address)
 //8000h~9FFFh (mirror: 0000h~1FFFh) 8000h (mirrors: 8001h~9FFFh)    2
 //A000h~BFFFh (mirror: 2000h~3FFFh) A000h (mirrors: A001h~BFFFh)    3
 // -----------------------------------------------------------------------
-void HandleZemina8K(u32* src, u8 block, u16 address)
+ITCM_CODE void HandleZemina8K(u32* src, u8 block, u16 address)
 {
     if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x6000))
     {
@@ -152,7 +140,7 @@ void HandleZemina8K(u32* src, u8 block, u16 address)
 // 4000h~7FFFh  via writes to 4000h-7FFF
 // 8000h~BFFFh  via writes to 8000h-BFFF
 // -------------------------------------------------------------------------
-void HandleZemina16K(u32* src, u8 block, u16 address)
+ITCM_CODE void HandleZemina16K(u32* src, u8 block, u16 address)
 {
     if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x8000))
     {
@@ -197,7 +185,7 @@ void HandleZemina16K(u32* src, u8 block, u16 address)
     }
 }    
     
-void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
+ITCM_CODE void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
 {
     // --------------------------------------------------------
     // Konami 8K mapper with SCC 
@@ -256,7 +244,7 @@ void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
 // 4000h~7FFFh  via writes to 6000h
 // 8000h~BFFFh  via writes to 7000h or 77FFh
 // -------------------------------------------------------------------------
-void HandleAscii16K(u32* src, u8 block, u16 address)
+ITCM_CODE void HandleAscii16K(u32* src, u8 block, u16 address)
 {
     if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x7000))
     {
@@ -315,7 +303,7 @@ void HandleAscii16K(u32* src, u8 block, u16 address)
     }
 }
 
-void activision_pcb_write(u16 address)
+ITCM_CODE void activision_pcb_write(u16 address)
 {
   if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
   {
@@ -333,7 +321,7 @@ void activision_pcb_write(u16 address)
 // write is much less common than reads...   We handle the MSX
 // Konami 8K, SCC and ASCII 8K mappers directly here for max speed.
 // ------------------------------------------------------------------
-ITCM_CODE void cpu_writemem16 (u8 value,u16 address) 
+ITCM_CODE void cpu_writemem16(u8 value,u16 address) 
 {
     // machine_mode will be non-zero for anything except the ColecoVision (handled further below)
     if (machine_mode)
@@ -400,7 +388,7 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 if (msx_sram_at_8000) 
                 {
                     SRAM_Memory[address&0x3FFF] = value;   // Write SRAM area
-                    write_EE_counter = 4;               // This will back the EE in 4 seconds of non-activity on the SRAM
+                    write_EE_counter = 4;                  // This will back the EE in 4 seconds of non-activity on the SRAM
                 }
                 else RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
             }
@@ -696,26 +684,33 @@ ITCM_CODE void cpu_writemem16 (u8 value,u16 address)
                 if (myConfig.mirrorRAM)
                 {
                     address&=0x03FF;
-                    RAM_Memory[0x6400|address]=RAM_Memory[0x6C00|address]=RAM_Memory[0x7400|address]=RAM_Memory[0x7C00|address]=value;
-                    RAM_Memory[0x6000|address]=RAM_Memory[0x6800|address]=RAM_Memory[0x7000|address]=RAM_Memory[0x7800|address]=value;
+                    RAM_Memory[0x6000|address]=RAM_Memory[0x6400|address]=RAM_Memory[0x6800|address]=RAM_Memory[0x6C00|address]=value;
+                    RAM_Memory[0x7000|address]=RAM_Memory[0x7400|address]=RAM_Memory[0x7800|address]=RAM_Memory[0x7C00|address]=value;
                 }
-                else RAM_Memory[address] = value;
+                else RAM_Memory[address] = value; // Mainly for the older DS hardware as the proper mirroring above chews up almost 10% of our CPU
             }
         }
     }
 }
 
-
+// -----------------------------------------------------------------
+// Reset a few key variables needed for proper Z80 interface use...
+// -----------------------------------------------------------------
 void Z80_Interface_Reset(void) 
 {
-  lastBank = 199;
-  cycle_deficit = 0;
-  msx_sram_at_8000 = 0;
-  msx_scc_enable = 0;
-    
-  memset(msx_last_block, 99, 4);
+  last_mega_bank    = 199;
+  cycle_deficit     = 0;
+  msx_sram_at_8000  = 0;
+  msx_scc_enable    = 0;
+  msx_last_block[0] = 
+  msx_last_block[1] =
+  msx_last_block[2] =
+  msx_last_block[3] = 99;
 }
 
+// -----------------------------------------------------------------
+// Trap and report illegal opcodes to the ColecoDS debugger...
+// -----------------------------------------------------------------
 void Z80_Trap_Bad_Ops(char *prefix, byte I, word W)
 {
     if (myGlobalConfig.debugger)

@@ -582,7 +582,7 @@ void colecoLoadState()
                BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
             }
             
-            lastBank = 199;  // Force load of bank if needed
+            last_mega_bank = 199;   // Force load of bank if needed
             last_tape_pos = 9999;   // Force tape position to show
         }
         else uNbO = 0;
