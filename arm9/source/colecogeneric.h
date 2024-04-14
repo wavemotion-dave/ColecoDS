@@ -84,7 +84,7 @@ struct __attribute__((__packed__)) Config_t
     u8  gameSpeed;
     u8  keyMute;
     u8  ein_ctc3;
-    u8  reserved1;
+    u8  cvCartType;
     u8  reserved2;
     u8  reserved3;
     u8  reserved4;

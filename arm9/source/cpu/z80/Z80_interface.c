@@ -69,6 +69,11 @@ ITCM_CODE u8 cpu_readmem16_banked(u16 address)
             return(Read24XX(&EEPROM));  // Return EEPROM output bit
           }
       }
+      else if (bSuperGameCart)
+      {
+          // Handle Super Game Cart
+          return SuperGameCartRead(address);                
+      }
       else if (msx_sram_at_8000) // Don't need to check msx_mode as this can only be true in that mode
       {
           if (address <= 0xBFFF) // Between 0x8000 and 0xBFFF
@@ -91,7 +96,7 @@ ITCM_CODE u8 cpu_readmem16_banked(u16 address)
 //8000h~9FFFh (mirror: 0000h~1FFFh) 8000h (mirrors: 8001h~9FFFh)    2
 //A000h~BFFFh (mirror: 2000h~3FFFh) A000h (mirrors: A001h~BFFFh)    3
 // -----------------------------------------------------------------------
-ITCM_CODE void HandleZemina8K(u32* src, u8 block, u16 address)
+void HandleZemina8K(u32* src, u8 block, u16 address)
 {
     if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x6000))
     {
@@ -140,7 +145,7 @@ ITCM_CODE void HandleZemina8K(u32* src, u8 block, u16 address)
 // 4000h~7FFFh  via writes to 4000h-7FFF
 // 8000h~BFFFh  via writes to 8000h-BFFF
 // -------------------------------------------------------------------------
-ITCM_CODE void HandleZemina16K(u32* src, u8 block, u16 address)
+void HandleZemina16K(u32* src, u8 block, u16 address)
 {
     if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x8000))
     {
@@ -662,6 +667,11 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
             else if (bActivisionPCB)
             {
                 activision_pcb_write(address);
+            }
+            else if (bSuperGameCart)
+            {
+                // Handle Super Game Cart
+                SuperGameCartWrite(address, value);                
             }
             else if (address >= 0xFFC0) // MC = Mega Cart support
             {

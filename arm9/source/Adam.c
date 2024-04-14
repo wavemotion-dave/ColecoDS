@@ -683,7 +683,7 @@ void ResetPCB(void)
 // =========================================================================================
 // All of the Adam disk and tape (DDP) handling routines are below... the .dsk files for
 // Adam emulation are simply raw sector dumps and are easily read and handled as a single
-// block in memory. The only caveat is that the disks use a sector interleave of 4.
+// block in memory. The only caveat is that the disks use a sector interleave of 5.
 // =========================================================================================
 
 // ----------------------------------------------------------

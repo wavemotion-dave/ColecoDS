@@ -1303,7 +1303,7 @@ void SetDefaultGameConfig(void)
     myConfig.gameSpeed   = 0;                           // Default is 100% game speed
     myConfig.keyMute     = 0;                           // Default is no mute (key click heard)
     myConfig.ein_ctc3    = 0;                           // Default is normal CTC3 handling for Einstein (no fudge factor)
-    myConfig.reserved1   = 0;    
+    myConfig.cvCartType  = 0;                           // Default is normal detect of Coleco Cart
     myConfig.reserved2   = 0;    
     myConfig.reserved3   = 0;    
     myConfig.reserved4   = 0;    
@@ -1495,7 +1495,10 @@ void SetDefaultGameConfig(void)
                 break;
             }
         }
-    }    
+    }
+    
+    if (file_crc == 0x30d337e4) myConfig.cvCartType = 6; // Gradius Arcade - Super Game Cart with 1K of EEPROM
+    if (file_crc == 0x6831ad48) myConfig.cvCartType = 2; // Penguin Adventure - Super Game Cart with no EEPROM
     
     // ----------------------------------------------------------------------------
     // For these machines, we default to clearing interrupts only on VDP read...
@@ -1679,6 +1682,7 @@ const struct options_t Option_Table[3][20] =
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
+        {"COLECO CART",    {"GUESS", "ADAM", "SGC NO EE", "SGC 128B EE", "SGC 256B EE", "SGC 512B EE", "SGC 1KB EE", "SGC 2KB EE", "SGC 4KB EE", "SGC 8KB EE"},                                 &myConfig.cvCartType, 10},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Page 2
