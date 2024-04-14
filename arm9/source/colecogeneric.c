@@ -1396,6 +1396,12 @@ void SetDefaultGameConfig(void)
         MapPlayer2();               // These games want P2 mapping...
     }
     
+	// --------------------------------------------------------------------------
+	// There are a few games that don't want the SGM or ADAM... Check those now.
+	// --------------------------------------------------------------------------
+	if (file_crc == 0xef25af90) myConfig.cvCartType = 2; // Super DK Prototype - ignore any SGM/Adam Writes (this disables SGM)
+	if (file_crc == 0xc2e7f0e0) myConfig.cvCartType = 2; // Super DK JR Prototype - ignore any SGM/Adam Writes (this disables SGM)
+
    
     // -----------------------------------------------------------
     // If we are DS-PHAT or DS-LITE running on slower CPU, we 
@@ -1497,8 +1503,8 @@ void SetDefaultGameConfig(void)
         }
     }
     
-    if (file_crc == 0x30d337e4) myConfig.cvCartType = 6; // Gradius Arcade - Super Game Cart with 1K of EEPROM
-    if (file_crc == 0x6831ad48) myConfig.cvCartType = 2; // Penguin Adventure - Super Game Cart with no EEPROM
+    if (file_crc == 0x30d337e4) myConfig.cvCartType = 8; // Gradius Arcade - Super Game Cart with 1K of EEPROM
+    if (file_crc == 0x6831ad48) myConfig.cvCartType = 4; // Penguin Adventure - Super Game Cart with no EEPROM
     
     // ----------------------------------------------------------------------------
     // For these machines, we default to clearing interrupts only on VDP read...
@@ -1682,7 +1688,7 @@ const struct options_t Option_Table[3][20] =
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
-        {"COLECO CART",    {"GUESS", "ADAM", "SGC NO EE", "SGC 128B EE", "SGC 256B EE", "SGC 512B EE", "SGC 1KB EE", "SGC 2KB EE", "SGC 4KB EE", "SGC 8KB EE"},                                 &myConfig.cvCartType, 10},
+        {"COLECO CART",    {"DEFAULT", "FORCE ADAM", "SGM DISABLE", "RESERVED", "SGC NO EE", "SGC 128B EE", "SGC 256B EE", "SGC 512B EE", "SGC 1KB EE", "SGC 2KB EE", "SGC 4KB EE", "SGC 8KB EE"}, &myConfig.cvCartType, 12},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Page 2

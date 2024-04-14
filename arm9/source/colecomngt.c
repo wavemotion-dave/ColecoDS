@@ -71,8 +71,6 @@ u8 Port42         __attribute__((section(".dtcm"))) = 0x00;
 
 u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
-u8 AY_NeverEnable  __attribute__((section(".dtcm"))) = false;
-u8 SGM_NeverEnable __attribute__((section(".dtcm"))) = false;
 u8 AY_EnvelopeOn   __attribute__((section(".dtcm"))) = false;
 u8 ctc_enabled     __attribute__((section(".dtcm"))) = false;
 
@@ -521,14 +519,6 @@ void getfile_crc(const char *filename)
 	if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      // 32K version of Lord of the Dungeon
 	if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      // 24K version of Lord of the Dungeon
 
-	// --------------------------------------------------------------------------
-	// There are a few games that don't want the SGM module... Check those now.
-	// --------------------------------------------------------------------------
-	AY_NeverEnable = false;                             // Default to allow AY sound
-	SGM_NeverEnable = false;                            // And allow SGM by default unless Super DK or Super DK-Jr (directly below)
-	if (file_crc == 0xef25af90) SGM_NeverEnable = true; // Super DK Prototype - ignore any SGM/Adam Writes
-	if (file_crc == 0xc2e7f0e0) SGM_NeverEnable = true; // Super DK JR Prototype - ignore any SGM/Adam Writes
-
 	// ------------------------------------------------------------------------------
 	// And a handful of games require SRAM which is a special case-by-case basis...
 	// ------------------------------------------------------------------------------
@@ -731,7 +721,7 @@ u8 loadrom(const char *filename, u8 * ptr)
 				memcpy(ptr+0x4000, ROM_Memory+0x4000, 0x4000);       // bank 1
 				romBankMask = 0x03;
 			}
-			if (myConfig.cvCartType >= 2) // These are the Super Game Cart types... of varying EE sizes
+			if (myConfig.cvCartType >= 4) // These are the Super Game Cart types... of varying EE sizes
 			{ 
 				bSuperGameCart = 1;
 				memcpy(ptr, ROM_Memory, 0x2000);
@@ -785,8 +775,8 @@ u8 loadrom(const char *filename, u8 * ptr)
 // --------------------------------------------------------------------------
 __attribute__ ((noinline)) void SetupSGM(void)
 {
-	if (SGM_NeverEnable) return;        // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
-	if (adam_mode) return;
+	if (adam_mode) return;                  // ADAM has it's own setup handler
+	if (myConfig.cvCartType == 2) return;   // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
 
 	sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
 
@@ -1022,7 +1012,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x50)
   {
-	  if ((Value & 0x0F) == 0x07) {AY_Enable = (AY_NeverEnable ? false:true);}
+	  if ((Value & 0x0F) == 0x07) AY_Enable = true;
 	  ay38910IndexW(Value&0xF, &myAY);
 	  return;
   }
