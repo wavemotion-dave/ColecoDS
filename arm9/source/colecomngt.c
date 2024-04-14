@@ -122,7 +122,7 @@ void coleco_adam_port_setup(void)
 		Port20 = 0x00;          // Adam Net Port 20 not used for CV/SGM mode
 		Port42 = 0x00;          // Not used for CV/SGM mode
 		
-		if (bSuperGameCart) Port53 = 0x01; // Super Game Carts expect memory mapped in
+        if (bSuperGameCart) Port53 = 0x01; // Super Game Carts expect the SGM memory mapped in
 	}
 }
 
