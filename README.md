@@ -147,7 +147,7 @@ ADAM Compatibility :
 * The 32K ROM expansion of the Adam is emulated - rename your expansion rom as ".adm" so that the emulator knows it's a special ROM designed to be in the expansion ROM area. You can also rename normal cart .rom files as .adm to load them up with proper Adam emulation (useful if you want to run some of the Adam carts like in-house diagnostics utilities in full Adam emlation mode... normally when you load a .rom it would just load up with standard Colecovision emulation).
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only when the tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
-* Due to screen constraints, the WILDCARD key is omited but you can use it if you hit SHIFT ST/GET or you can map the WILDCARD key to one of the DS buttons.
+* Due to screen constraints, the placement of keys on the virtual ADAM keybaord have been repositioned to maximize the 4x3 screen orientation - but all ADAM keys should be present and functional.
 
 MSX Compatibility :
 -----------------------
@@ -405,6 +405,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V9.7: ??-???-2024 by wavemotion-dave
+* Fixed Colecovision RAM mirrors such that Boulderdash runs properly.
+* Added the Wildcard and Print buttons on the virtual ADAM keyboard.
+* Minor cleanup and optmizations to the Adam core.
+
 V9.6: 08-Apr-2024 by wavemotion-dave
 * Removed DrZ80 core - the high quality CZ80 core is all that remains. 
 * Complete overhaul of the Adam handlers to clean and refine.

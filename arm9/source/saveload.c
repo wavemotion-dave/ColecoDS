@@ -159,9 +159,13 @@ void colecoSaveState()
     {
         if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);        
     }
-      
+
+    if (uNbO) uNbO = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
+    if (uNbO) uNbO = fwrite(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
+    if (uNbO) uNbO = fwrite(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+    
     // Some spare memory we can eat into...
-    if (uNbO) uNbO = fwrite(&spare, 512,1, handle); 
+    if (uNbO) uNbO = fwrite(spare, 506,1, handle);
       
     // Write VDP
     if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
@@ -421,8 +425,12 @@ void colecoLoadState()
                 if (uNbO) uNbO = fread(&FDC, sizeof(FDC), 1, handle);
             }
 
+            if (uNbO) uNbO = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
+            if (uNbO) uNbO = fread(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
+            if (uNbO) uNbO = fread(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+
             // Load spare memory for future use
-            if (uNbO) uNbO = fread(&spare, 512,1, handle); 
+            if (uNbO) uNbO = fread(spare, 506,1, handle); 
 
             // Load VDP
             if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 

@@ -1194,7 +1194,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_mc_mode != romBankMask) || bForce)
         {
             last_mc_mode = romBankMask;
-            DSPrint(22,0,6, (romBankMask ? "MC":"  "));
+            DSPrint(22,0,6, (romBankMask ? (bSuperGameCart ? "SC":"MC"):"  "));
         }
 
         if (write_EE_counter > 0)
@@ -1203,9 +1203,11 @@ void DisplayStatusLine(bool bForce)
             if (write_EE_counter == 0)
             {
                 // Save EE now!
-                colecoSaveEEPROM();
+                if (bSuperGameCart) SuperGameCartWriteEE();
+                else colecoSaveEEPROM();
             }
-            DSPrint(30,0,6, (write_EE_counter ? "EE":"  "));
+            
+            DSPrint(15,0,6, (write_EE_counter ? "EE":"  "));
         }
     }
 }
@@ -2015,17 +2017,27 @@ u8 last_kbd_key = 0;
 
 u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
 {
-    if ((iTy >= 12) && (iTy < 42))        // Row 1 (top row with I-VI Smartkeys)
+    
+    if ((iTy >= 42) && (iTy < 102) && (iTx >= 212))  // Special block of 6 keys that don't fit neatly in the normal grid
+    {
+        if      ((iTy >= 42) && (iTy < 62)  && (iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_INS;
+        else if ((iTy >= 42) && (iTy < 62)  && (iTx >= 235) && (iTx < 256))  kbd_key = ADAM_KEY_DEL;
+        else if ((iTy >= 62) && (iTy < 82)  && (iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_UNDO;
+        else if ((iTy >= 62) && (iTy < 82)  && (iTx >= 235) && (iTx < 256))  kbd_key = ADAM_KEY_CLEAR;
+        else if ((iTy >= 82) && (iTy < 102) && (iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_WILDCARD;
+        else if ((iTy >= 82) && (iTy < 102) && (iTx >= 235) && (iTx < 256))  kbd_key = ADAM_KEY_PRINT;
+    }
+    else if ((iTy >= 12) && (iTy < 42))        // Row 1 (top row with I-VI Smartkeys)
     {
         if      ((iTx >= 0)   && (iTx < 22))   kbd_key = ADAM_KEY_ESC;
-        if      ((iTx >= 22)  && (iTx < 43))   kbd_key = (key_shift ? ADAM_KEY_WILDCARD:ADAM_KEY_STORE);
+        if      ((iTx >= 22)  && (iTx < 43))   kbd_key = ADAM_KEY_STORE;
         else if ((iTx >= 43)  && (iTx < 67))   kbd_key = ADAM_KEY_F1;
         else if ((iTx >= 67)  && (iTx < 92))   kbd_key = ADAM_KEY_F2;
         else if ((iTx >= 92)  && (iTx < 118))  kbd_key = ADAM_KEY_F3;
         else if ((iTx >= 118) && (iTx < 142))  kbd_key = ADAM_KEY_F4;
         else if ((iTx >= 142) && (iTx < 167))  kbd_key = ADAM_KEY_F5;
         else if ((iTx >= 167) && (iTx < 192))  kbd_key = ADAM_KEY_F6;
-        else if ((iTx >= 192) && (iTx < 213))  kbd_key = (key_shift ? ADAM_KEY_WILDCARD:ADAM_KEY_MOVE);
+        else if ((iTx >= 192) && (iTx < 213))  kbd_key = ADAM_KEY_MOVE;
         else if ((iTx >= 213) && (iTx < 235))  kbd_key = ADAM_KEY_BS;
         else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_HOME;
     }
@@ -2045,8 +2057,6 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         else if ((iTx >= 165) && (iTx < 181))  kbd_key = '-';
         else if ((iTx >= 181) && (iTx < 195))  kbd_key = '+';
         else if ((iTx >= 195) && (iTx < 210))  kbd_key = '^';
-        else if ((iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_INS;
-        else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_DEL;
     }
     else if ((iTy >= 72) && (iTy < 102))  // Row 3 (QWERTY row)
     {
@@ -2063,8 +2073,6 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
         else if ((iTx >= 158) && (iTx < 174))  kbd_key = 'P';
         else if ((iTx >= 174) && (iTx < 189))  kbd_key = '[';
         else if ((iTx >= 189) && (iTx < 203))  kbd_key = ']';
-        else if ((iTx >= 210) && (iTx < 235))  kbd_key = ADAM_KEY_UNDO;
-        else if ((iTx >= 235) && (iTx < 255))  kbd_key = ADAM_KEY_CLEAR;
     }
     else if ((iTy >= 102) && (iTy < 132)) // Row 4 (ASDF row)
     {
