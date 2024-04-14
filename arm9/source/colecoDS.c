@@ -737,7 +737,7 @@ void ResetColecovision(void)
       memset(BIOS_Memory+0x2000, 0xFF, 0xE000);
       memcpy(BIOS_Memory+0x0000, ColecoBios, 0x2000);
       MemoryMap[0] = BIOS_Memory+0x0000;
-
+      
       if (bActivisionPCB)
       {
           Reset24XX(&EEPROM, myConfig.cvEESize);
@@ -4387,6 +4387,12 @@ int main(int argc, char **argv)
     // ---------------------------------------------------------------
     if (bColecoBiosFound)
     {
+        // If configured for a shorter delay bios... change one byte to make that happen
+        if (myGlobalConfig.biosDelay == 1)
+        {
+            if (ColecoBios[0x196a] == 0x17) ColecoBios[0x196a] = 0x05;
+        }
+        
         if (myGlobalConfig.showBiosInfo)
         {
             u8 idx = 6;

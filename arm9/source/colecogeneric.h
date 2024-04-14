@@ -45,7 +45,7 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  msxCartOverlay;
     u8  defSprites;
     u8  diskSfxMute;
-    u8  global_08;
+    u8  biosDelay;
     u8  global_09;
     u8  global_10;
     u8  global_11;

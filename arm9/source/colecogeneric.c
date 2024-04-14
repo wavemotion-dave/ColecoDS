@@ -1271,6 +1271,7 @@ void SetDefaultGlobalConfig(void)
     myGlobalConfig.msxCartOverlay = 1;    // Default is to show Keyboard for CART games
     myGlobalConfig.defSprites     = 0;    // Default is to show 32 sprites (real hardware is 4 per line)
     myGlobalConfig.diskSfxMute    = 0;    // By default Disk/DDP loading sounds are enabled... 1=Mute
+    myGlobalConfig.biosDelay      = 0;    // Normal BIOS delay
 }
 
 void SetDefaultGameConfig(void)
@@ -1713,6 +1714,8 @@ const struct options_t Option_Table[3][20] =
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},
         {"DISK / DDP",     {"SOUND ON", "SOUND OFF"},                                                                                                                                           &myGlobalConfig.diskSfxMute,    2},
+        {"BIOS DELAY",     {"NORMAL", "SHORT"},                                                                                                                                                 &myGlobalConfig.biosDelay,      2},        
+        
         {"DEBUGGER",       {"OFF", "BAD OPS", "DEBUG", "FULL DEBUG"},                                                                                                                           &myGlobalConfig.debugger,       4},
         
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
