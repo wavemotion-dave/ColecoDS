@@ -2269,6 +2269,11 @@ void ReadFileCRCAndConfig(void)
     // --------------------------------------------
     if (file_crc == 0x8375203e) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
     if (file_crc == 0x77afd38b) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
+    
+    // ------------------------------------------------------------------------
+    // And if the cart type is specifically set to ADAM, force that driver in.
+    // ------------------------------------------------------------------------
+    if (myConfig.cvCartType == 1)  adam_mode = 3;
 }
 
 // --------------------------------------------------------------------
