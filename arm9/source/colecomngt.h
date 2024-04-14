@@ -99,8 +99,6 @@ extern u8 Port42;
 
 extern u8 bFirstSGMEnable;
 extern u8 AY_Enable;
-extern u8 AY_NeverEnable;
-extern u8 SGM_NeverEnable;
 extern u8 AY_EnvelopeOn;
 
 extern u16 einstein_ram_start;
