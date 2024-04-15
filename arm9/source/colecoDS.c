@@ -1194,7 +1194,7 @@ void DisplayStatusLine(bool bForce)
         if ((last_mc_mode != romBankMask) || bForce)
         {
             last_mc_mode = romBankMask;
-            DSPrint(22,0,6, (romBankMask ? (bSuperGameCart ? "SC":"MC"):"  "));
+            DSPrint(22,0,6, (romBankMask ? (bSuperGameCart ? "SC": (bActivisionPCB ? "AC":"MC")):"  "));
         }
 
         if (write_EE_counter > 0)

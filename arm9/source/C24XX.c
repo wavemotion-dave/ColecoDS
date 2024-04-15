@@ -64,7 +64,7 @@ byte Read24XX(C24XX *D)
 byte Write24XX(C24XX *D,byte V)
 {
   static const unsigned int PageSize[16] =
-  { 8,8,16,16,16,32,32,64,128,256,256,256,256,256,256,256 };
+  { 8,8,16,16,16,32,32,64,64,128,128,256,256,256,256,256 };
 
   word J;
     
@@ -144,7 +144,10 @@ byte Write24XX(C24XX *D,byte V)
         D->Bits = ((word)D->Data[D->Addr]<<8)|0x0080;
         /* Go to the next address inside N-byte page */
         J = PageSize[D->Flags&C24XX_CHIP]-1;
-        D->Addr = ((D->Addr+1)&J)|(D->Addr&~J);
+        //D->Addr = ((D->Addr+1)&J)|(D->Addr&~J);
+        // Sequential reads are not restricted by page size - just EE size
+        D->Addr++;
+        D->Addr &= (0x80<<(D->Flags&C24XX_CHIP))-1;
       }
     }
   }
