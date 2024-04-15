@@ -17,27 +17,29 @@ extern "C" {
 #endif
 
 #define C24XX_CHIP    0x0F
-#define C24XX_24C01   0x00 // 128 bytes   (7bit, 8/page)
-#define C24XX_24C02   0x01 // 256 bytes   (8bit, 8/page)
-#define C24XX_24C04   0x02 // 512 bytes   (1+8bit, 16/page)
-#define C24XX_24C08   0x03 // 1024 bytes  (2+8bit, 16/page)
-#define C24XX_24C16   0x04 // 2048 bytes  (3+8bit, 16/page)
-#define C24XX_24C32   0x05 // 4096 bytes  (12bit, 32/page)
-#define C24XX_24C64   0x06 // 8192 bytes  (13bit, 32/page)
-#define C24XX_24C128  0x07 // 16384 bytes (14bit, 64/page)
-#define C24XX_24C256  0x08 // 32768 bytes (15bit, 64/page)
+#define C24XX_NONE    0x00 // No EEPROM
+#define C24XX_24C01   0x01 // 128 bytes   (7bit, 8/page)
+#define C24XX_24C02   0x02 // 256 bytes   (8bit, 8/page)
+#define C24XX_24C04   0x03 // 512 bytes   (1+8bit, 16/page)
+#define C24XX_24C08   0x04 // 1024 bytes  (2+8bit, 16/page)
+#define C24XX_24C16   0x05 // 2048 bytes  (3+8bit, 16/page)
+#define C24XX_24C32   0x06 // 4096 bytes  (12bit, 32/page)
+#define C24XX_24C64   0x07 // 8192 bytes  (13bit, 32/page)
+#define C24XX_24C128  0x08 // 16384 bytes (14bit, 64/page)
+#define C24XX_24C256  0x09 // 32768 bytes (15bit, 64/page)
 #define C24XX_DEBUG   0x10
 
 /* Alternative chip names */
-#define C24XX_128B    C24XX_24C01
-#define C24XX_256B    C24XX_24C02
-#define C24XX_512B    C24XX_24C04
-#define C24XX_1kB     C24XX_24C08
-#define C24XX_2kB     C24XX_24C16
-#define C24XX_4kB     C24XX_24C32
-#define C24XX_8kB     C24XX_24C64
-#define C24XX_16kB    C24XX_24C128
-#define C24XX_32kB    C24XX_24C256
+#define EEPROM_NONE   C24XX_NONE
+#define EEPROM_128B   C24XX_24C01
+#define EEPROM_256B   C24XX_24C02
+#define EEPROM_512B   C24XX_24C04
+#define EEPROM_1KB    C24XX_24C08
+#define EEPROM_2KB    C24XX_24C16
+#define EEPROM_4KB    C24XX_24C32
+#define EEPROM_8KB    C24XX_24C64
+#define EEPROM_16KB   C24XX_24C128
+#define EEPROM_32KB   C24XX_24C256
 
 #define C24XX_SDA     0x01
 #define C24XX_SCL     0x02

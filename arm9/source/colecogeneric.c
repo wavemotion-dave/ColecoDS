@@ -22,6 +22,7 @@
 #include "cpu/z80/ctc.h"
 #include "options.h"
 #include "topscreen.h"
+#include "C24XX.h"
 
 #include "CRC32.h"
 #include "printf.h"
@@ -1296,7 +1297,7 @@ void SetDefaultGameConfig(void)
     myConfig.dpad        = DPAD_NORMAL;                 // Normal DPAD use - mapped to joystick
     myConfig.memWipe     = 0;                           // Default to RANDOM memory
     myConfig.clearInt    = CPU_CLEAR_INT_AUTOMATICALLY; // By default clear VDP interrupts automatically
-    myConfig.cvEESize    = C24XX_24C256;                // Default CV EEPROM size is 32K
+    myConfig.cvEESize    = EEPROM_NONE;                 // Default CV EEPROM size is NONE
     myConfig.adamnet     = 0;                           // Adamnet is FAST by default
     myConfig.mirrorRAM   = COLECO_RAM_NORMAL_MIRROR;    // By default use the normal Colecovision (and CreatiVision) memory mirrors
     myConfig.msxBeeper   = 0;                           // Assume no MSX beeper required - only a few games need this
@@ -1504,9 +1505,6 @@ void SetDefaultGameConfig(void)
         }
     }
     
-    if (file_crc == 0x30d337e4) myConfig.cvCartType = 8; // Gradius Arcade - Super Game Cart with 1K of EEPROM
-    if (file_crc == 0x6831ad48) myConfig.cvCartType = 4; // Penguin Adventure - Super Game Cart with no EEPROM
-    
     // ----------------------------------------------------------------------------
     // For these machines, we default to clearing interrupts only on VDP read...
     // ----------------------------------------------------------------------------
@@ -1574,7 +1572,34 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xc10a6e96)                 myConfig.isPAL   = 1;   // Sord M5 Master Chess is PAL
     if (file_crc == 0xca2cd257)                 myConfig.isPAL   = 1;   // Sord M5 Reversi is PAL
 
-    if (file_crc == 0xdddd1396)                 myConfig.cvEESize = C24XX_256B; // Black Onyx is 256 bytes... Boxxle is 32K. Other EE are unknown...
+
+    // -------------------------------------------------------------------
+    // Some special cart types - for known Activision PCB and Super Carts
+    // -------------------------------------------------------------------
+    if (file_crc == 0xdddd1396)
+    {
+        myConfig.cvCartType = 3;            // Black Onyx is Activision PCB
+        myConfig.cvEESize = EEPROM_256B;    // Black Onyx EEPROM is 256 bytes
+    }
+    
+    if (file_crc == 0x62dacf07)
+    {
+        myConfig.cvCartType = 3;            // Boxxle is Activision PCB
+        myConfig.cvEESize = EEPROM_32KB;    // Boxxle EEPROM is 32K bytes
+    }
+    
+    if (file_crc == 0x30d337e4) 
+    {
+        myConfig.cvCartType = 4;            // Gradius Arcade - Super Game Cart
+        myConfig.cvEESize = EEPROM_1KB;     // Gradius Arcade - 1K of EEPROM
+    }
+    
+    if (file_crc == 0x6831ad48)
+    {
+        myConfig.cvCartType = 4;            // Penguin Adventure - Super Game Cart
+        myConfig.cvEESize = EEPROM_NONE;    // No EEPROM
+    }
+    
     
     if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
     if (file_crc == 0x011899cf)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max (32K version)
@@ -1686,18 +1711,18 @@ const struct options_t Option_Table[3][20] =
         {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
         {"MSX BIOS",       {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"} ,                                                        &myConfig.msxBios,    7},
-        {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
-        {"COLECO CART",    {"DEFAULT", "FORCE ADAM", "SGM DISABLE", "RESERVED", "SGC NO EE", "SGC 128B EE", "SGC 256B EE", "SGC 512B EE", "SGC 1KB EE", "SGC 2KB EE", "SGC 4KB EE", "SGC 8KB EE"}, &myConfig.cvCartType, 12},
+        {"COLECO CART",    {"DEFAULT","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART"},                                                                                                 &myConfig.cvCartType, 5},
+        {"COLECO EPROM",   {"NONE", "128B", "256B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB"},                                                                                        &myConfig.cvEESize,   10},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Page 2
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
-        {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
-        {"CV EE SIZE",     {"128B", "256B", "512B", "1024B", "2048B", "4096B", "8192B", "16kB", "32kB"},                                                                                        &myConfig.cvEESize,   9},
+        {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
+        {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
         {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)", 
