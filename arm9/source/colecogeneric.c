@@ -1403,7 +1403,8 @@ void SetDefaultGameConfig(void)
 	// --------------------------------------------------------------------------
 	if (file_crc == 0xef25af90) myConfig.cvCartType = 2; // Super DK Prototype - ignore any SGM/Adam Writes (this disables SGM)
 	if (file_crc == 0xc2e7f0e0) myConfig.cvCartType = 2; // Super DK JR Prototype - ignore any SGM/Adam Writes (this disables SGM)
-
+    
+    if (file_crc == 0x987491ce) myConfig.memWipe = 1;    // The Heist for Colecovision is touchy about RAM (known issue with game) so force clear
    
     // -----------------------------------------------------------
     // If we are DS-PHAT or DS-LITE running on slower CPU, we 
@@ -1588,6 +1589,14 @@ void SetDefaultGameConfig(void)
         myConfig.cvEESize = EEPROM_32KB;    // Boxxle EEPROM is 32K bytes
     }
     
+    if (file_crc == 0x9f74b0e9)
+    {
+        myConfig.cvCartType = 3;            // Jewel Panic is Activision PCB
+        myConfig.cvEESize = EEPROM_256B;    // Jewel Panic EEPROM is 256 bytes
+    }
+    
+    // Acromage is also an Activision PCB and is thought to be 256 bytes of EE
+    
     if (file_crc == 0x30d337e4) 
     {
         myConfig.cvCartType = 4;            // Gradius Arcade - Super Game Cart
@@ -1715,7 +1724,7 @@ const struct options_t Option_Table[3][20] =
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {"COLECO CART",    {"DEFAULT","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART"},                                                                                                 &myConfig.cvCartType, 5},
-        {"COLECO EPROM",   {"128B", "256B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB", "NONE"},                                                                                        &myConfig.cvEESize,   10},
+        {"COLECO NVRAM",   {"128B", "256B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB", "NONE"},                                                                                        &myConfig.cvEESize,   10},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Page 2
