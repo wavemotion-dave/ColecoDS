@@ -714,7 +714,7 @@ u8 loadrom(const char *filename, u8 * ptr)
 			// --------------------------------------------------------------
 			bMagicMegaCart = ((ROM_Memory[0xC000] == 0x55 && ROM_Memory[0xC001] == 0xAA) ? 1:0);
 			last_mega_bank = 199;                                 // Force load of the first bank when asked to bankswitch
-			if ((romSize == (64 * 1024)) && !bMagicMegaCart)      // Some 64K carts are in the 'Activision PCB' style with EEPROM
+			if ((myConfig.cvCartType == 3) || ((romSize == (64 * 1024)) && !bMagicMegaCart))      // Some 64K carts are in the 'Activision PCB' style with EEPROM
 			{
 				bActivisionPCB = 1;
 				memcpy(ptr, ROM_Memory, 0x4000);                     // bank 0
