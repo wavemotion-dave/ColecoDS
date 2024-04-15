@@ -1629,12 +1629,13 @@ void LoadConfig(void)
         fread(&AllConfigs, sizeof(AllConfigs), 1, fp);          // Read the full array of game configs
         fclose(fp);                                             // Close file - we work from memory now
         
-        // We auto-update rev E to rev F configuration - it's just keyboard similfication
-        if (myGlobalConfig.config_ver == 0x000E)
+        // We auto-update rev 12 to rev 13 configuration
+        if (myGlobalConfig.config_ver == 0x0012)
         {
             for (u16 slot=0; slot<MAX_CONFIGS; slot++)
             {
-                if (AllConfigs[slot].overlay > 0)  AllConfigs[slot].overlay = 1; // Set anything other than generic to full keyboard (yes, a few CV games that had other overlays selected will have to be re-selected... no big deal)
+                AllConfigs[slot].cvCartType = 0;
+                AllConfigs[slot].cvEESize   = EEPROM_NONE;
             }
             myGlobalConfig.config_ver = CONFIG_VER;
             SaveConfig(FALSE);
@@ -1714,7 +1715,7 @@ const struct options_t Option_Table[3][20] =
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {"COLECO CART",    {"DEFAULT","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART"},                                                                                                 &myConfig.cvCartType, 5},
-        {"COLECO EPROM",   {"NONE", "128B", "256B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB"},                                                                                        &myConfig.cvEESize,   10},
+        {"COLECO EPROM",   {"128B", "256B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB", "NONE"},                                                                                        &myConfig.cvEESize,   10},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
     // Page 2
