@@ -721,7 +721,7 @@ u8 loadrom(const char *filename, u8 * ptr)
 				memcpy(ptr+0x4000, ROM_Memory+0x4000, 0x4000);       // bank 1
 				romBankMask = 0x03;
 			}
-			if (myConfig.cvCartType >= 4) // These are the Super Game Cart types... of varying EE sizes
+			else if (myConfig.cvCartType >= 4) // These are the Super Game Cart types... of varying EE sizes
 			{ 
 				bSuperGameCart = 1;
 				memcpy(ptr, ROM_Memory, 0x2000);
