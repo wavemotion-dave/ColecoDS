@@ -408,7 +408,6 @@ Versions :
 V9.7: ??-???-2024 by wavemotion-dave
 * Fixed Colecovision RAM mirrors such that Boulderdash runs properly.
 * Added the Wildcard and Print buttons on the virtual ADAM keyboard.
-* Added preliminary Super Game Cart support.
 * New global option to force ADAM mode, SGM can be Disabled, and BIOS auto-patch for 'Fast BIOS' to force the 15 second wait down to 3 seconds.
 * Minor cleanup and optmizations to the Adam core.
 
