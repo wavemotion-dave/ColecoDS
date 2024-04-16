@@ -405,10 +405,12 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V9.7: ??-???-2024 by wavemotion-dave
+V9.7: 16-Apr-2024 by wavemotion-dave
 * Fixed Colecovision RAM mirrors such that Boulderdash runs properly.
 * The Heist now forces RAM to clear (all zeros) as it is known to be picky about contents of RAM on power up.
-* Added the Wildcard and Print buttons on the virtual ADAM keyboard.
+* Fix EEPROM sequential reads so Activision PCB games like Jewel Panic work correctly.
+* Added the Wildcard and Print buttons on the virtual ADAM keyboard. All ADAM virtual keys should now be present.
+* Added new configuration options to select the Colecovision mode to run in - you can force ADAM emulation, force PCB types, and set EEPROM sizes, etc.
 * New global option to force ADAM mode, SGM can be Disabled, and BIOS auto-patch for 'Fast BIOS' to force the 15 second wait down to 3 seconds.
 * Minor cleanup and optmizations to the Adam core.
 

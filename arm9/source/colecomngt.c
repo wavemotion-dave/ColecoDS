@@ -714,14 +714,14 @@ u8 loadrom(const char *filename, u8 * ptr)
 			// --------------------------------------------------------------
 			bMagicMegaCart = ((ROM_Memory[0xC000] == 0x55 && ROM_Memory[0xC001] == 0xAA) ? 1:0);
 			last_mega_bank = 199;                                 // Force load of the first bank when asked to bankswitch
-			if ((myConfig.cvCartType == 3) || ((romSize == (64 * 1024)) && !bMagicMegaCart))      // Some 64K carts are in the 'Activision PCB' style with EEPROM
+			if ((myConfig.cvMode == CV_MODE_ACTCART) || ((romSize == (64 * 1024)) && !bMagicMegaCart)) // Some 64K carts are in the 'Activision PCB' style with EEPROM
 			{
 				bActivisionPCB = 1;
 				memcpy(ptr, ROM_Memory, 0x4000);                     // bank 0
 				memcpy(ptr+0x4000, ROM_Memory+0x4000, 0x4000);       // bank 1
 				romBankMask = 0x03;
 			}
-			else if (myConfig.cvCartType >= 4) // These are the Super Game Cart types... of varying EE sizes
+			else if (myConfig.cvMode == CV_MODE_SUPERCART) // These are the Super Game Cart types... of varying EE sizes
 			{ 
 				bSuperGameCart = 1;
 				memcpy(ptr, ROM_Memory, 0x2000);
@@ -775,8 +775,8 @@ u8 loadrom(const char *filename, u8 * ptr)
 // --------------------------------------------------------------------------
 __attribute__ ((noinline)) void SetupSGM(void)
 {
-	if (adam_mode) return;                  // ADAM has it's own setup handler
-	if (myConfig.cvCartType == 2) return;   // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
+	if (adam_mode) return;                          // ADAM has it's own setup handler
+	if (myConfig.cvMode == CV_MODE_NOSGM) return;   // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
 
 	sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
 
