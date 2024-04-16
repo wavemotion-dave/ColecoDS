@@ -23,6 +23,12 @@
 #define COLECO_RAM_NO_MIRROR        0
 #define COLECO_RAM_NORMAL_MIRROR    1
 
+#define CV_MODE_NORMAL              0
+#define CV_MODE_ADAM                1
+#define CV_MODE_NOSGM               2
+#define CV_MODE_ACTCART             3
+#define CV_MODE_SUPERCART           4
+
 typedef struct {
   char szName[MAX_ROM_LENGTH+1];
   u8 uType;
@@ -84,7 +90,7 @@ struct __attribute__((__packed__)) Config_t
     u8  gameSpeed;
     u8  keyMute;
     u8  ein_ctc3;
-    u8  cvCartType;
+    u8  cvMode;
     u8  reserved2;
     u8  reserved3;
     u8  reserved4;

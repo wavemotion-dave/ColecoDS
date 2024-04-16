@@ -1305,7 +1305,7 @@ void SetDefaultGameConfig(void)
     myConfig.gameSpeed   = 0;                           // Default is 100% game speed
     myConfig.keyMute     = 0;                           // Default is no mute (key click heard)
     myConfig.ein_ctc3    = 0;                           // Default is normal CTC3 handling for Einstein (no fudge factor)
-    myConfig.cvCartType  = 0;                           // Default is normal detect of Coleco Cart
+    myConfig.cvMode      = CV_MODE_NORMAL;              // Default is normal detect of Coleco Cart with possible SGM 
     myConfig.reserved2   = 0;    
     myConfig.reserved3   = 0;    
     myConfig.reserved4   = 0;    
@@ -1401,8 +1401,8 @@ void SetDefaultGameConfig(void)
 	// --------------------------------------------------------------------------
 	// There are a few games that don't want the SGM or ADAM... Check those now.
 	// --------------------------------------------------------------------------
-	if (file_crc == 0xef25af90) myConfig.cvCartType = 2; // Super DK Prototype - ignore any SGM/Adam Writes (this disables SGM)
-	if (file_crc == 0xc2e7f0e0) myConfig.cvCartType = 2; // Super DK JR Prototype - ignore any SGM/Adam Writes (this disables SGM)
+	if (file_crc == 0xef25af90) myConfig.cvMode = CV_MODE_NOSGM; // Super DK Prototype - ignore any SGM/Adam Writes (this disables SGM)
+	if (file_crc == 0xc2e7f0e0) myConfig.cvMode = CV_MODE_NOSGM; // Super DK JR Prototype - ignore any SGM/Adam Writes (this disables SGM)
     
     if (file_crc == 0x987491ce) myConfig.memWipe = 1;    // The Heist for Colecovision is touchy about RAM (known issue with game) so force clear
    
@@ -1579,19 +1579,19 @@ void SetDefaultGameConfig(void)
     // -------------------------------------------------------------------
     if (file_crc == 0xdddd1396)
     {
-        myConfig.cvCartType = 3;            // Black Onyx is Activision PCB
+        myConfig.cvMode = CV_MODE_ACTCART;  // Black Onyx is Activision PCB
         myConfig.cvEESize = EEPROM_256B;    // Black Onyx EEPROM is 256 bytes
     }
     
     if (file_crc == 0x62dacf07)
     {
-        myConfig.cvCartType = 3;            // Boxxle is Activision PCB
+        myConfig.cvMode = CV_MODE_ACTCART;  // Boxxle is Activision PCB
         myConfig.cvEESize = EEPROM_32KB;    // Boxxle EEPROM is 32K bytes
     }
     
     if (file_crc == 0x9f74b0e9)
     {
-        myConfig.cvCartType = 3;            // Jewel Panic is Activision PCB
+        myConfig.cvMode = CV_MODE_ACTCART;  // Jewel Panic is Activision PCB
         myConfig.cvEESize = EEPROM_256B;    // Jewel Panic EEPROM is 256 bytes
     }
     
@@ -1599,14 +1599,14 @@ void SetDefaultGameConfig(void)
     
     if (file_crc == 0x30d337e4) 
     {
-        myConfig.cvCartType = 4;            // Gradius Arcade - Super Game Cart
-        myConfig.cvEESize = EEPROM_1KB;     // Gradius Arcade - 1K of EEPROM
+        myConfig.cvMode = CV_MODE_SUPERCART; // Gradius Arcade - Super Game Cart
+        myConfig.cvEESize = EEPROM_1KB;      // Gradius Arcade - 1K of EEPROM
     }
     
     if (file_crc == 0x6831ad48)
     {
-        myConfig.cvCartType = 4;            // Penguin Adventure - Super Game Cart
-        myConfig.cvEESize = EEPROM_NONE;    // No EEPROM
+        myConfig.cvMode = CV_MODE_SUPERCART; // Penguin Adventure - Super Game Cart
+        myConfig.cvEESize = EEPROM_NONE;     // No EEPROM
     }
     
     
@@ -1643,8 +1643,8 @@ void LoadConfig(void)
         {
             for (u16 slot=0; slot<MAX_CONFIGS; slot++)
             {
-                AllConfigs[slot].cvCartType = 0;
-                AllConfigs[slot].cvEESize   = EEPROM_NONE;
+                AllConfigs[slot].cvMode   = CV_MODE_NORMAL;
+                AllConfigs[slot].cvEESize = EEPROM_NONE;
             }
             myGlobalConfig.config_ver = CONFIG_VER;
             SaveConfig(FALSE);
@@ -1723,7 +1723,7 @@ const struct options_t Option_Table[3][20] =
         {"MSX BIOS",       {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"} ,                                                        &myConfig.msxBios,    7},
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
-        {"COLECO CART",    {"DEFAULT","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART"},                                                                                                 &myConfig.cvCartType, 5},
+        {"COLECO MODE",    {"NORMAL","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART"},                                                                                                  &myConfig.cvMode, 5},
         {"COLECO NVRAM",   {"128B", "256B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB", "NONE"},                                                                                        &myConfig.cvEESize,   10},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
@@ -2317,7 +2317,7 @@ void ReadFileCRCAndConfig(void)
     // ------------------------------------------------------------------------
     // And if the cart type is specifically set to ADAM, force that driver in.
     // ------------------------------------------------------------------------
-    if (myConfig.cvCartType == 1)  adam_mode = 3;
+    if (myConfig.cvMode == CV_MODE_ADAM)  adam_mode = 3;
 }
 
 // --------------------------------------------------------------------
