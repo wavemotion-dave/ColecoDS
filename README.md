@@ -412,7 +412,7 @@ V9.7: 16-Apr-2024 by wavemotion-dave
 * Added the Wildcard and Print buttons on the virtual ADAM keyboard. All ADAM virtual keys should now be present.
 * Added new configuration options to select the Colecovision mode to run in - you can force ADAM emulation, force PCB types, and set EEPROM sizes, etc.
 * New global option to force ADAM mode, SGM can be Disabled, and BIOS auto-patch for 'Fast BIOS' to force the 15 second wait down to 3 seconds.
-* Minor cleanup and optmizations to the Adam core.
+* Minor cleanup and optimization to the Adam core.
 
 V9.6: 08-Apr-2024 by wavemotion-dave
 * Removed DrZ80 core - the high quality CZ80 core is all that remains. 
