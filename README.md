@@ -62,9 +62,7 @@ The ColecoDS emulator is offered as-is, without any warranty.
 
 Credits :
 -----------------------
-Thanks to Alekmaul who provided the 
-baseline code to work with and to lobo
-for the menu graphical design.
+Thanks to Alekmaul who provided the baseline code to work with and to lobo for the menu graphical design.
 
 Thanks to Flubba for the SN76496, AY38910 and SCC sound cores. 
 You can seek out his latest and greatest at https://github.com/FluBBaOfWard
