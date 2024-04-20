@@ -120,21 +120,18 @@ Here are the BIOS file CRC32 hashes I'm using with all of my testing - seek thes
 
 For the MSX, we support a number of different (optional) BIOS ROMs. To be honest, after quite a bit of searching online, I'm not quite sure what machine the ubiquitous msx.rom represents - it's some generic European machine and from doing binary compares, it appears to be extremely similar to the Goldstar FC-200 or possibly the Casio MX-15 (11 bytes different in each). 
 
-As such, starting with version 8.2, ColecoDS will support additional optional MSX BIOS roms as follows (and you can select them in Configuration and set a global default if you like):
+As such, ColecoDS will support additional optional MSX BIOS roms as follows (and you can select them in Configuration and set a global default if you like):
 
 ```
+* 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in slot 3 (normally slot 1)
 * e9ccd789  cx5m.rom    - Yamaha's UK/EU Machine with 32K of RAM
 * 5486b711  hx-10.rom   - Toshiba's UK/EU Machine with 64K of RAM
-* ee229390  hb-10.rom   - Sony HitBit JP Machine with 16K of RAM (uses the Japanese matrix)
-* 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese matrix)
-* ee229390  pv-7.rom    - Casio PV-7 with just 8K of RAM! If you can't find this BIOS, use pv-16.rom or hb-10.rom
-
-And for the MSX.ROM you can substitute one of these standard machines (and they will be searched/found in this order):
-* 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in slot 3 (normally slot 1)
-* 8205795e  fc-200.rom  - Goldstar FC-200 European Machine with 64K of RAM in slot 3 (normally slot 2)
+* ee229390  hb-10.rom   - Sony HitBit JP Machine with 16K of RAM (uses the Japanese keyboard matrix)
+* 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese keyboard matrix)
+* ee229390  pv-7.rom    - Casio PV-7 with just 8K of RAM! If you can't find this BIOS, use pv-16.rom as there is no difference in the binary.
 ```
 
-Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names which will also generally work) - place them into your usual BIOS directory. Once you select one of these optional BIOS roms (in Configuration), you will also enable that specific MSX machine to be emulated. This means RAM and memory slots will be exactly the same as the machine you're trying to emulate. See the MSX section for details on this.
+Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names which will also generally work but to be safe, renaming is preferred) - place them into your usual BIOS directory. Once you select one of these optional BIOS roms (in Configuration), you will also enable that specific MSX machine to be emulated. This means RAM and memory slots will be exactly the same as the machine you're trying to emulate. See the MSX section for details on this.
 
 ADAM Compatibility :
 -----------------------
@@ -403,6 +400,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V9.8: ??-???-2024 by wavemotion-dave
+* Cleanup of MSX BIOS handling - we now support the Panasonic CF-2700 directly. See MSX BIOS section for details.
+* MSX status line now shows RAM (based on machine chosen) on the status line (was previously showing ROM size which no other machine in ColecoDS did).
+* Improved memory handling to free up some DS resources for future expansion.
+
 V9.7: 16-Apr-2024 by wavemotion-dave
 * Fixed Colecovision RAM mirrors such that Boulderdash runs properly.
 * The Heist now forces RAM to clear (all zeros) as it is known to be picky about contents of RAM on power up.

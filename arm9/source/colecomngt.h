@@ -43,7 +43,7 @@ extern u8 mapperMask;
 #define MAX_CART_SIZE     1024  // 1MB of ROM Cart... that's pretty big!
 
 extern u8 ROM_Memory[MAX_CART_SIZE * 1024];
-extern u8 RAM_Memory[0x20000];
+extern u8 RAM_Memory[0x10000];
 extern u8 BIOS_Memory[0x10000];
 extern u8 SRAM_Memory[0x4000];
 
@@ -151,7 +151,6 @@ extern byte Loop9918(void);
 extern u8 ColecoBios[];
 extern u8 lastBank;
 extern u8 CBios[];
-extern u8 SVIBios[];
 extern u8 Pencil2Bios[];
 extern u8 AdamEOS[];
 extern u8 AdamWRITER[];
@@ -165,6 +164,16 @@ extern u32 LastROMSize;
 extern u8 OldPortC;
 extern u8 myKeyData;
 extern u8 adc_mux;
+
+// And the various SVI and MSX bios flavors...
+extern u8 *SVIBios;
+extern u8 *MSXBios_Generic;
+extern u8 *MSXBios_PanasonicCF2700;
+extern u8 *MSXBios_YamahaCX5M;
+extern u8 *MSXBios_ToshibaHX10;
+extern u8 *MSXBios_SonyHB10;
+extern u8 *MSXBios_NationalFS1300;
+extern u8 *MSXBios_CasioPV7;
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);

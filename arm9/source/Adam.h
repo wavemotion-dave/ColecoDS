@@ -78,9 +78,10 @@
 #define CON_SHIFT    0x10000000 /* SHIFT held                */
 #define CON_CONTROL  0x20000000 /* CONTROL held              */
 
-extern u16 *PCBTable;
+extern u8 PCBTable[];
 extern u8 KBDStatus, LastKey;
 extern u16 PCBAddr;
+extern u8 *EXP_Memory;
 
 // -----------------------------------------------------
 // For the various disk/tape drives in the ADAM system

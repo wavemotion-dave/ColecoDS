@@ -1183,11 +1183,12 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             switch (myConfig.msxBios)
             {
                 case 1:  msx_slot_map_generic(Value); break;     // Generic MSX.ROM (64K mapped in slot 3)
-                case 2:  msx_slot_map_cx5m(Value);    break;     // Yamaha CX5M (32K mapped in slot 0)
-                case 3:  msx_slot_map_hx10(Value);    break;     // Toshiba HX-10 (64K mapped in slot 2)
-                case 4:  msx_slot_map_hb10(Value);    break;     // Sony HB-10 (16K mapped in slot 0)
-                case 5:  msx_slot_map_generic(Value); break;     // National FS-1300 (64K mapped in slot 3)
-                case 6:  msx_slot_map_pv7(Value);     break;     // Casio PV-7 (8K mapped in slot 0)
+                case 2:  msx_slot_map_generic(Value); break;     // Panasonic CF-2700 (64K mapped in slot 3)
+                case 3:  msx_slot_map_cx5m(Value);    break;     // Yamaha CX5M (32K mapped in slot 0)
+                case 4:  msx_slot_map_hx10(Value);    break;     // Toshiba HX-10 (64K mapped in slot 2)
+                case 5:  msx_slot_map_hb10(Value);    break;     // Sony HB-10 (16K mapped in slot 0)
+                case 6:  msx_slot_map_generic(Value); break;     // National FS-1300 (64K mapped in slot 3)
+                case 7:  msx_slot_map_pv7(Value);     break;     // Casio PV-7 (8K mapped in slot 0)
                 default: msx_slot_map_generic(Value); break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }
             
@@ -1783,17 +1784,18 @@ void msx_restore_bios(void)
     // --------------------------------------------------------------
     if (myConfig.msxBios)
     {
-        extern u8 MSX_Bios[];
         // Determine which of the  MSX BIOS / machine flavors we should load...
         switch (myConfig.msxBios)
         {
-            case 1: memcpy(BIOS_Memory, MSX_Bios, 0x8000); msx_japanese_matrix = ((MSX_Bios[0x2c]&0xf) ? 0:1); break;   // Generic MSX.ROM - use the BIOS to determine matrix layout
-            case 2: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x00000), 0x8000); break;                                   // Yamaha CX5M
-            case 3: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x08000), 0x8000); break;                                   // Toshiba HX-10
-            case 4: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); msx_japanese_matrix = 1; break;          // Sony HB-10 (uses the Japanese matrix)
-            case 5: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x18000), 0x8000); msx_japanese_matrix = 1; break;          // National FS-1300 (uses the Japanese matrix)
-            case 6: memcpy(BIOS_Memory, (u8*) (0x06880000 + 0x10000), 0x8000); msx_japanese_matrix = 1; break;          // Casio PV-7 with a paultry 8K (uses the Japanese matrix) - same BIOS as HB-10
-            default: memcpy(BIOS_Memory, CBios, 0x8000); break;                                                         // C-BIOS as a fall-back
+            case 1: memcpy(BIOS_Memory, MSXBios_Generic, 0x8000); 
+                    msx_japanese_matrix = ((BIOS_Memory[0x2c]&0xf) ? 0:1); break;                              // Generic MSX.ROM - use the BIOS to determine matrix layout
+            case 2: memcpy(BIOS_Memory, MSXBios_PanasonicCF2700, 0x8000);  break;                              // Panasonic CF-2700
+            case 3: memcpy(BIOS_Memory, MSXBios_YamahaCX5M,      0x8000);  break;                              // Yamaha CX5M
+            case 4: memcpy(BIOS_Memory, MSXBios_ToshibaHX10,     0x8000);  break;                              // Toshiba HX-10
+            case 5: memcpy(BIOS_Memory, MSXBios_SonyHB10,        0x8000); msx_japanese_matrix = 1; break;      // Sony HB-10 (uses the Japanese matrix)
+            case 6: memcpy(BIOS_Memory, MSXBios_NationalFS1300,  0x8000); msx_japanese_matrix = 1; break;      // National FS-1300 (uses the Japanese matrix)
+            case 7: memcpy(BIOS_Memory, MSXBios_CasioPV7,        0x8000); msx_japanese_matrix = 1; break;      // Casio PV-7 with a paultry 8K (uses the Japanese matrix) - same BIOS as HB-10
+            default: memcpy(BIOS_Memory, CBios, 0x8000); break;                                                // C-BIOS as a fall-back
         }
     }
     else
