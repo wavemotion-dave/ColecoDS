@@ -308,7 +308,7 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 
 void svi_restore_bios(void)
 {
-     memcpy(BIOS_Memory,SVIBios,0x8000);       // Restore SVI BIOS
+    memcpy(BIOS_Memory, SVIBios, 0x8000);       // Restore SVI BIOS
 
     // And patch it for cassette use...
     BIOS_Memory[0x210A] = 0xed; BIOS_Memory[0x210B] = 0xfe; BIOS_Memory[0x210C] = 0xc9;

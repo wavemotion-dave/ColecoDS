@@ -1649,7 +1649,7 @@ void LoadConfig(void)
             myGlobalConfig.config_ver = CONFIG_VER;
             SaveConfig(FALSE);
         }
-        
+
         if (myGlobalConfig.config_ver != CONFIG_VER)
         {
             memset(&AllConfigs, 0x00, sizeof(AllConfigs));
@@ -1720,7 +1720,7 @@ const struct options_t Option_Table[3][20] =
         {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
         {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},
         {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
-        {"MSX BIOS",       {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"} ,                                                        &myConfig.msxBios,    7},
+        {"MSX BIOS",       {"C-BIOS 64K", "MSX.ROM 64K", "CF2700.ROM 64K", "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7.ROM  8K"},                                 &myConfig.msxBios,    8},
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {"COLECO MODE",    {"NORMAL","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART"},                                                                                                  &myConfig.cvMode, 5},
@@ -1745,7 +1745,7 @@ const struct options_t Option_Table[3][20] =
         {"FPS",            {"OFF", "ON", "ON FULLSPEED"},                                                                                                                                       &myGlobalConfig.showFPS,        3},
         {"EMU TEXT",       {"OFF",  "ON"},                                                                                                                                                      &myGlobalConfig.emuText,        2},
         {"BIOS INFO",      {"HIDE ON BOOT", "SHOW ON BOOT"},                                                                                                                                    &myGlobalConfig.showBiosInfo,   2},
-        {"DEFAULT MSX",    {"C-BIOS 64K", msx_rom_str, "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7  8K"},                                                         &myGlobalConfig.defaultMSX,     7},
+        {"DEFAULT MSX",    {"C-BIOS 64K", "MSX.ROM 64K", "CF2700.ROM 64K", "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7.ROM  8K"},                                 &myGlobalConfig.defaultMSX,     8},
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},
         {"DISK / DDP",     {"SOUND ON", "SOUND OFF"},                                                                                                                                           &myGlobalConfig.diskSfxMute,    2},

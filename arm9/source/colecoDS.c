@@ -88,7 +88,7 @@ u32 debug[0x10]={0};
 // -------------------------------------------------------------------------------------------
 
 u8 ROM_Memory[MAX_CART_SIZE * 1024]   ALIGN(32) = {0};        // ROM Carts up to 1MB (that's pretty huge in the Z80 world!)
-u8 RAM_Memory[0x20000]                ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
+u8 RAM_Memory[0x10000]                ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
 u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K as the BIOS  for various machines ends up in different spots)
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
 
@@ -114,12 +114,23 @@ u8 SordM5BiosEU[0x2000]   = {0};  // We keep the Sord M5 8K BIOS around to swap 
 u8 PV2000Bios[0x4000]     = {0};  // We keep the Casio PV-2000 16K BIOS around to swap in/out
 u8 AdamEOS[0x2000]        = {0};  // We keep the ADAM EOS.ROM bios around to swap in/out
 u8 AdamWRITER[0x8000]     = {0};  // We keep the ADAM WRITER.ROM bios around to swap in/out
-u8 SVIBios[0x8000]        = {0};  // We keep the SVI 32K BIOS around to swap in/out
 u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap in/out
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
 u8 EinsteinBios2[0x2000]  = {0};  // We keep the 8k Einstein diagnostics/peripheral BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
-u8 MSX_Bios[0x8000]       = {0};  // We store several kinds of MSX bios files in VRAM and copy out the one we want to use in msx_restore_bios() but this is for the ubiquitious MSX.ROM
+
+// ---------------------------------------------------------------------------------------------------
+// We have enough spare LCD Video Memory available for CPU use that we can store 8x of the 32K BIOS 
+// ROMS. So we pack this memory with the SVI BIOS and a number of different flavors of MSX BIOS roms.
+// ---------------------------------------------------------------------------------------------------
+u8 *SVIBios                     = (u8*) (0x06860000 + 0x00000);
+u8 *MSXBios_Generic             = (u8*) (0x06860000 + 0x08000);
+u8 *MSXBios_PanasonicCF2700     = (u8*) (0x06860000 + 0x10000);
+u8 *MSXBios_YamahaCX5M          = (u8*) (0x06860000 + 0x18000);
+u8 *MSXBios_ToshibaHX10         = (u8*) (0x06860000 + 0x20000);
+u8 *MSXBios_SonyHB10            = (u8*) (0x06860000 + 0x28000);
+u8 *MSXBios_NationalFS1300      = (u8*) (0x06860000 + 0x30000);
+u8 *MSXBios_CasioPV7            = (u8*) (0x06860000 + 0x38000);
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -994,16 +1005,16 @@ void DisplayStatusLine(bool bForce)
         if ((last_msx_mode != msx_mode) || bForce)
         {
             last_msx_mode = msx_mode;
-            int rom_size = (((LastROMSize/1024) <= 999) ? (LastROMSize/1024) : 999); // Good enough - 1MB will show as 999K 
             switch (myConfig.msxBios)
             {
-                case 1: sprintf(tmp, "%-7s %3dK", msx_rom_str_short,  rom_size);    break;     // MSX (64K machine... use variable name)
-                case 2: sprintf(tmp, "CX5M    %3dK",                  rom_size);    break;     // Yamaha CX5M (32K mapped in slot 0)
-                case 3: sprintf(tmp, "HX-10   %3dK",                  rom_size);    break;     // Toshiba HX-10 (64K mapped in slot 2)
-                case 4: sprintf(tmp, "HB-10   %3dK",                  rom_size);    break;     // Sony HB-10 (16K mapped in slot 0)
-                case 5: sprintf(tmp, "FS-1300 %3dK",                  rom_size);    break;     // National FS-1300 (64K mapped in slot 3)
-                case 6: sprintf(tmp, "PV-7    %3dK",                  rom_size);    break;     // Casio PV-7 (just 8K at the top of slot 0)
-                default:sprintf(tmp, "MSX     %3dK",                  rom_size);    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
+                case 1: sprintf(tmp, "MSX      64K");    break;     // MSX generic ROM (64K mapped in slot 3)
+                case 2: sprintf(tmp, "CF-2700  64K");    break;     // Panasonic CF-2700 (64K mapped in slot 3)
+                case 3: sprintf(tmp, "CX5M     32K");    break;     // Yamaha CX5M (32K mapped in slot 0)
+                case 4: sprintf(tmp, "HX-10    64K");    break;     // Toshiba HX-10 (64K mapped in slot 2)
+                case 5: sprintf(tmp, "HB-10    16K");    break;     // Sony HB-10 (16K mapped in slot 0)
+                case 6: sprintf(tmp, "FS-1300  64K");    break;     // National FS-1300 (64K mapped in slot 3)
+                case 7: sprintf(tmp, "PV-7      8K");    break;     // Casio PV-7 (just 8K at the top of slot 0)
+                default:sprintf(tmp, "MSX-C    64K");    break;     // C-BIOS as a fall-back (64K mapped in slot 3)
             }            
             DSPrint(20,0,6, tmp);
             last_pal_mode = 99;
@@ -3532,16 +3543,16 @@ void colecoDS_main(void)
 
 
 // ----------------------------------------------------------------------------------------
-// We steal 128K of the VRAM to hold the MSX BIOS flavors and 16K for one look-up table.
+// We steal 256K of the VRAM to hold the MSX BIOS flavors and 16K for one look-up table.
 // ----------------------------------------------------------------------------------------
 void useVRAM(void)
 {
-  vramSetBankD(VRAM_D_LCD );                 // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   Used for ADAM PCB memory map check
-  vramSetBankE(VRAM_E_LCD );                 // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   We use this block of 128K memory to store 4x MSX BIOS flavors
-  vramSetBankF(VRAM_F_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
-  vramSetBankG(VRAM_G_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..
-  vramSetBankH(VRAM_H_LCD );                 // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
-  vramSetBankI(VRAM_I_LCD );                 // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   16K Used for the VDP Look Up Table
+  vramSetBankD(VRAM_D_LCD );        // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   We use this block of 128K and the next block of 128K
+  vramSetBankE(VRAM_E_LCD );        // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   to store various flavors of SVI and MSX BIOS roms
+  vramSetBankF(VRAM_F_LCD );        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
+  vramSetBankG(VRAM_G_LCD );        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..
+  vramSetBankH(VRAM_H_LCD );        // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
+  vramSetBankI(VRAM_I_LCD );        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   16K Used for the VDP Look Up Table
 }
 
 /*********************************************************************************
@@ -4003,12 +4014,23 @@ void LoadBIOSFiles(void)
         fclose(fp);
     }
 
-    // -----------------------------------------------------------
-    // Next try to load the MSX.ROM or reasonable equivilents.
-    // If this fails we still have the C-BIOS as a backup.
-    // -----------------------------------------------------------
-    
+    // ---------------------------------------------------------------
+    // Next try to load MSX.ROM and any of the other supported
+    // MSX machine BIOS files - we support a half-dozen or so 
+    // different machines... the BIOS files are mostly the same
+    // with small tweaks by each manufacturer. These are all
+    // stored in LCD VRAM and the msx driver will load the right one.
+    // ---------------------------------------------------------------    
     fp = NULL;
+    
+    // Load the ubiquitous MSX.ROM - a generic ROM of unknown origin 
+    // for which the user will supply us... it should work but who knows!
+    if (fp == NULL)
+    {
+        if (fp == NULL) fp = fopen("msx.rom", "rb");
+        if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
+        if (fp == NULL) fp = fopen("/data/bios/msx.rom", "rb");
+    }    
     
     // First try the Panasonic CF-2700 ROM which is a fairly generic MSX machine
     if (fp == NULL)
@@ -4016,7 +4038,6 @@ void LoadBIOSFiles(void)
         if (fp == NULL) fp = fopen("cf-2700.rom", "rb");
         if (fp == NULL) fp = fopen("/roms/bios/cf-2700.rom", "rb");
         if (fp == NULL) fp = fopen("/data/bios/cf-2700.rom", "rb");    
-        if (fp != NULL) {strcpy(msx_rom_str, "CF2700.ROM 64K"); strcpy(msx_rom_str_short, "CF-2700");}
     }
 
     // First try the Panasonic CF-2700 ROM which is a fairly generic MSX machine
@@ -4025,7 +4046,6 @@ void LoadBIOSFiles(void)
         if (fp == NULL) fp = fopen("cf2700.rom", "rb");
         if (fp == NULL) fp = fopen("/roms/bios/cf2700.rom", "rb");
         if (fp == NULL) fp = fopen("/data/bios/cf2700.rom", "rb");    
-        if (fp != NULL) {strcpy(msx_rom_str, "CF2700.ROM 64K"); strcpy(msx_rom_str_short, "CF-2700");}
     }
     
     if (fp == NULL)
@@ -4033,7 +4053,6 @@ void LoadBIOSFiles(void)
         if (fp == NULL) fp = fopen("cf-2700_basic-bios1_gb.rom", "rb");
         if (fp == NULL) fp = fopen("/roms/bios/cf-2700_basic-bios1_gb.rom", "rb");
         if (fp == NULL) fp = fopen("/data/bios/cf-2700_basic-bios1_gb.rom", "rb");    
-        if (fp != NULL) {strcpy(msx_rom_str, "CF2700.ROM 64K"); strcpy(msx_rom_str_short, "CF-2700");}
     }
     
     // Next try the Goldstar FC-200 ROM which is a fairly generic MSX machine
@@ -4042,7 +4061,6 @@ void LoadBIOSFiles(void)
         if (fp == NULL) fp = fopen("fc-200.rom", "rb");
         if (fp == NULL) fp = fopen("/roms/bios/fc-200.rom", "rb");
         if (fp == NULL) fp = fopen("/data/bios/fc-200.rom", "rb");    
-        if (fp != NULL) {strcpy(msx_rom_str, "FC-200.ROM 64K"); strcpy(msx_rom_str_short, "FC-200");}
     }
 
     // If msx.rom not found, try the Goldstar FC-200 ROM which is a fairly generic MSX machine
@@ -4051,7 +4069,6 @@ void LoadBIOSFiles(void)
         if (fp == NULL) fp = fopen("fc-200_basic-bios1.rom", "rb");
         if (fp == NULL) fp = fopen("/roms/bios/fc-200_basic-bios1.rom", "rb");
         if (fp == NULL) fp = fopen("/data/bios/fc-200_basic-bios1.rom", "rb");    
-        if (fp != NULL) {strcpy(msx_rom_str, "FC-200.ROM 64K"); strcpy(msx_rom_str_short, "FC-200");}
     }
 
     // If any of the above not found, try the Casio MX-15 ROM which is a fairly generic MSX machine though we "expand it" to 64K
@@ -4060,18 +4077,11 @@ void LoadBIOSFiles(void)
         if (fp == NULL) fp = fopen("mx-15.rom", "rb");
         if (fp == NULL) fp = fopen("/roms/bios/mx-15.rom", "rb");
         if (fp == NULL) fp = fopen("/data/bios/mx-15.rom", "rb");    
-        if (fp != NULL) {strcpy(msx_rom_str, "MX-15.ROM 64K"); strcpy(msx_rom_str_short, "MX-15");}
     }
     
-    // Last we try to find the ubiquitous msx.rom which is some generic machine of unknown origin
-    if (fp == NULL)
-    {
-        if (fp == NULL) fp = fopen("msx.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/msx.rom", "rb");
-        if (fp != NULL) {strcpy(msx_rom_str, "MSX.ROM 64K"); strcpy(msx_rom_str_short, "MSX");}
-    }
-    
+    // --------------------------------------------------
+    // Now store this away as a generic MSX.ROM for use
+    // --------------------------------------------------
     if (fp != NULL)
     {
         bMSXBiosFound = true;
@@ -4081,13 +4091,46 @@ void LoadBIOSFiles(void)
         msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into memory so we can use it later in msx_restore_bios()
-        memcpy(MSX_Bios, BIOS_Memory, 0x8000);
+        memcpy(MSXBios_Generic, BIOS_Memory, 0x8000);
     }
+    
+    // --------------------------------
+    // Panasonic CF-2700
+    // --------------------------------
+                    fp = fopen("cf-2700.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/cf-2700.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/cf-2700.rom", "rb");    
+    
+    if (fp == NULL) fp = fopen("cf-2700_basic-bios1_gb.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/cf-2700_basic-bios1_gb.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/cf-2700_basic-bios1_gb.rom", "rb");    
+    
+    if (fp == NULL) fp = fopen("cf2700.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/cf2700.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/cf2700.rom", "rb");    
+    
+    if (fp != NULL)
+    {
+        bMSXBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
 
+        msx_patch_bios();   // Patch BIOS for cassette use
+
+        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        memcpy(MSXBios_PanasonicCF2700, BIOS_Memory, 0x8000);
+    }    
+
+    // --------------------------------
     // Yamaha CX5M
-    fp = fopen("cx5m.rom", "rb");
+    // --------------------------------
+                    fp = fopen("cx5m.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/cx5m.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/cx5m.rom", "rb");
+
+    if (fp == NULL) fp = fopen("cx-5m.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/cx-5m.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/cx-5m.rom", "rb");
 
     if (fp == NULL) fp = fopen("cx5m_basic-bios1.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/cx5m_basic-bios1.rom", "rb");
@@ -4102,14 +4145,19 @@ void LoadBIOSFiles(void)
         msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x0000);
-        memcpy(ptr, BIOS_Memory, 0x8000);
+        memcpy(MSXBios_YamahaCX5M, BIOS_Memory, 0x8000);
     }
 
+    // --------------------------------
     // Toshiba HX-10
-    fp = fopen("hx-10.rom", "rb");
+    // --------------------------------
+                    fp = fopen("hx-10.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/hx-10.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/hx-10.rom", "rb");
+
+    if (fp == NULL) fp = fopen("hx10.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/hx10.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/hx10.rom", "rb");
     
     if (fp == NULL) fp = fopen("hx-10_basic-bios1.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/hx-10_basic-bios1.rom", "rb");
@@ -4124,32 +4172,23 @@ void LoadBIOSFiles(void)
         msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x8000);
-        memcpy(ptr, BIOS_Memory, 0x8000);
+        memcpy(MSXBios_ToshibaHX10, BIOS_Memory, 0x8000);
     }
 
+    // --------------------------------
     // Sony Hit-Bit HB-10 (Japan)
-    fp = fopen("hb-10.rom", "rb");
+    // --------------------------------
+                    fp = fopen("hb-10.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/hb-10.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/hb-10.rom", "rb");
+
+    if (fp == NULL) fp = fopen("hb10.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/hb10.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/hb10.rom", "rb");
     
     if (fp == NULL) fp = fopen("hb-10_basic-bios1.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/hb-10_basic-bios1.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/hb-10_basic-bios1.rom", "rb");
-    
-    
-    // Casio PV-7 and PV-16 are the exact same BIOS as the HB-10 so if we couldn't find that, we try the pv-7
-    if (fp == NULL) fp = fopen("pv-7.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-7.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-7.rom", "rb");
-    
-    if (fp == NULL) fp = fopen("pv-7_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-7_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-7_basic-bios1.rom", "rb");
-    
-    if (fp == NULL) fp = fopen("pv-16.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-16.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-16.rom", "rb");        
     
     if (fp != NULL)
     {
@@ -4160,14 +4199,52 @@ void LoadBIOSFiles(void)
         msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x10000);
-        memcpy(ptr, BIOS_Memory, 0x8000);
+        memcpy(MSXBios_SonyHB10, BIOS_Memory, 0x8000);
+    }    
+    
+    // --------------------------------------------------------------
+    // Casio PV-7 and PV-16 are the exact same BIOS as the HB-10
+    // --------------------------------------------------------------
+                    fp = fopen("pv-7.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-7.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-7.rom", "rb");
+
+    if (fp == NULL) fp = fopen("pv7.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv7.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv7.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("pv-7_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-7_basic-bios1.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-7_basic-bios1.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("pv-16.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv-16.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv-16.rom", "rb");        
+    
+    if (fp == NULL) fp = fopen("pv16.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/pv16.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/pv16.rom", "rb");        
+
+    if (fp != NULL)
+    {
+        bMSXBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
+
+        msx_patch_bios();   // Patch BIOS for cassette use
+
+        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
+        memcpy(MSXBios_CasioPV7, BIOS_Memory, 0x8000);
     }
 
+    // --------------------------------
     // National FS-1300 (Japan)
-    fp = fopen("fs-1300.rom", "rb");
+    // --------------------------------
+                    fp = fopen("fs-1300.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/fs-1300.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/fs-1300.rom", "rb");
+    
+    if (fp == NULL) fp = fopen("fs1300.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/fs1300.rom", "rb");
     if (fp == NULL) fp = fopen("/data/bios/fs1300.rom", "rb");
     
@@ -4184,8 +4261,7 @@ void LoadBIOSFiles(void)
         msx_patch_bios();   // Patch BIOS for cassette use
 
         // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        u8 *ptr = (u8*) (0x06880000 + 0x18000);
-        memcpy(ptr, BIOS_Memory, 0x8000);
+        memcpy(MSXBios_NationalFS1300, BIOS_Memory, 0x8000);
     }
 
     
@@ -4198,8 +4274,9 @@ void LoadBIOSFiles(void)
     if (fp != NULL)
     {
         bSVIBiosFound = true;
-        fread(SVIBios, 0x8000, 1, fp);
+        fread(BIOS_Memory, 0x8000, 1, fp);
         fclose(fp);
+        memcpy(SVIBios, BIOS_Memory, 0x8000);
     }
 
     // -----------------------------------------------------------

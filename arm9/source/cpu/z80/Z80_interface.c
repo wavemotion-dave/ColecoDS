@@ -60,7 +60,7 @@ ITCM_CODE u8 cpu_readmem16_banked(u16 address)
       }
       else if (adam_mode)   // See if this is a read from the PCB area
       {
-          if (((u16*)0x06860000)[address]) ReadPCB(address);
+          if (PCBTable[address]) ReadPCB(address);
       }
       else if (bActivisionPCB) // Is this an Activision style PCB with EEPROM?
       {
@@ -340,7 +340,7 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
             if (adam_ram_present[address >> 13]) // Is there RAM mapped in this 8K area?
             {
                 *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
-                if  (((u16*)0x06860000)[address]) WritePCB(address, value); // Check if we need to write to the PCB mapped area
+                if  (PCBTable[address]) WritePCB(address, value); // Check if we need to write to the PCB mapped area
             }
         }
         // -------------------------------------------------------------

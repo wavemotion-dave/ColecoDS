@@ -54,6 +54,12 @@ const byte timeouts[] = {5, 15, 30}; // FAST, SLOWER, SLOWEST
 AdamDrive_t   AdamDrive[MAX_DRIVES];
 DriveStatus_t AdamDriveStatus[MAX_DRIVES];
 
+// -----------------------------------------------------------------
+// For the older DS-Lite/Phat, we steal 64K off the back-end of the 
+// large ROM cart buffer for the single bank of 64K expanded RAM.
+// The DSi gets a much larger buffer that is handled elsewhere.
+// -----------------------------------------------------------------
+u8 *EXP_Memory = RAM_Memory + (928*1024);
 
 /** PCB Field Offsets ****************************************/
 #define PCB_CMD_STAT   0
@@ -157,12 +163,9 @@ static const byte CtrlKey[256] =
 };
 
 // ---------------------------------------------------------------------------------
-// We use LCD_D area of VRAM to store the PCB Table. This is 16-bit memory so it
-// takes the full 128K of LCD VRAM to hold the boolean values. A bit of a waste
-// especially considering the PCB block is only about 300 bytes long, but better
-// than allocating another 64K of global memory somewhere (precious DS resources!)
+// A 1 in any location here tells us this memory location is part of the PCB map
 // ---------------------------------------------------------------------------------
-u16 *PCBTable = (u16*)0x06860000;
+u8 PCBTable[0x10000];
 
 word PCBAddr    __attribute__((section(".dtcm"))) = 0;
 byte KBDStatus  __attribute__((section(".dtcm"))) = 0;
@@ -262,10 +265,10 @@ void SetupAdam(bool bResetAdamNet)
         }
         else // Just the normal 64K RAM expansion - no banking
         {
-            MemoryMap[0] = RAM_Memory + 0x10000;
-            MemoryMap[1] = RAM_Memory + 0x12000;
-            MemoryMap[2] = RAM_Memory + 0x14000;
-            MemoryMap[3] = RAM_Memory + 0x16000;
+            MemoryMap[0] = EXP_Memory + 0x0000;
+            MemoryMap[1] = EXP_Memory + 0x2000;
+            MemoryMap[2] = EXP_Memory + 0x4000;
+            MemoryMap[3] = EXP_Memory + 0x6000;
         }
     }
 
@@ -295,10 +298,10 @@ void SetupAdam(bool bResetAdamNet)
         }
         else // Just the normal 64K RAM expansion - no banking
         {
-            MemoryMap[4] = RAM_Memory + 0x18000;
-            MemoryMap[5] = RAM_Memory + 0x1A000;
-            MemoryMap[6] = RAM_Memory + 0x1C000;
-            MemoryMap[7] = RAM_Memory + 0x1E000;
+            MemoryMap[4] = EXP_Memory + 0x8000;
+            MemoryMap[5] = EXP_Memory + 0xA000;
+            MemoryMap[6] = EXP_Memory + 0xC000;
+            MemoryMap[7] = EXP_Memory + 0xE000;
         }
     }
     else if ((Port60 & 0x0C) == 0x0C)    // Cartridge ROM - in ADAM mode
@@ -673,7 +676,7 @@ void WritePCB(word A, byte cmd)
 void ResetPCB(void)
 {
   /* PCB/DCB not mapped yet */
-  memset(PCBTable,0x00,0x20000);
+  memset(PCBTable, 0x00, sizeof(PCBTable));
 
   /* Set starting PCB address */
   PCBAddr = 0x0000;
@@ -835,7 +838,7 @@ void adam_drive_insert(u8 drive, char *filename)
     FILE *fp = fopen(filename, "rb");
     if (fp)
     {
-        AdamDrive[drive].image = ROM_Memory + ((drive*330)*1024);
+        AdamDrive[drive].image = ROM_Memory + ((drive*320)*1024);
         AdamDrive[drive].imageSize = fread(AdamDrive[drive].image, 1, AdamDrive[drive].imageSizeMax, fp);
         fclose(fp);
     }
@@ -887,6 +890,8 @@ void adam_drive_save(u8 drive)
 
 // -------------------------------------------------------------------------------------------
 // Setup for 3 drive bays for the emulated Adam. Two disk drives and a single DDP tape drive.
+// When a disk or tape is loaded, the .image pointer will point into the ROM_Buffer[] where
+// we will read and store the raw sector dumps. 
 // -------------------------------------------------------------------------------------------
 void adamnet_init(void)
 {

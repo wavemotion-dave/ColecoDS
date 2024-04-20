@@ -251,11 +251,7 @@ void colecoSaveState()
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
-        // Since we are ADAM mode, we can steal the MSX SRAM_Memory[] buffer which is 16K to help us read/write the PCB Table from 16-bit LCD memory...
-        for (u16 i=0; i<0x4000; i++)  SRAM_Memory[i] = (u8)PCBTable[0x8000+i];
-        if (uNbO) fwrite(SRAM_Memory, 0x4000, 1, handle);
-        for (u16 i=0; i<0x4000; i++)  SRAM_Memory[i] = (u8)PCBTable[0xC000+i];
-        if (uNbO) fwrite(SRAM_Memory, 0x4000, 1, handle);
+        if (uNbO) fwrite(PCBTable+0x8000, 0x8000, 1, handle);
         
         if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);        
         if (uNbO) fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);        
@@ -271,7 +267,7 @@ void colecoSaveState()
         {
             // This must be the last thing written so we can compress it...
             u32 len = (DSI_RAM_Buffer ? (2*1024*1024) : (64 * 1024)) >> 2;
-            u32 *ptr = (DSI_RAM_Buffer ? ((u32*)DSI_RAM_Buffer) : ((u32 *)(RAM_Memory+0x10000)));
+            u32 *ptr = (DSI_RAM_Buffer ? ((u32*)DSI_RAM_Buffer) : ((u32 *)(EXP_Memory)));
             for (u32 i=0; i<len; i++)
             {
                 fwrite(ptr, 1, sizeof(u32), handle); // Write 32-bits at a time...
@@ -516,11 +512,7 @@ void colecoLoadState()
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {
-                // Since we are ADAM mode, we can steal the MSX SRAM_Memory[] buffer which is 16K to help us read/write the PCB Table from 16-bit LCD memory...
-                if (uNbO) fread(SRAM_Memory, 0x4000, 1, handle);
-                for (u16 i=0; i<0x4000; i++)  PCBTable[0x8000+i] = SRAM_Memory[i];
-                if (uNbO) fread(SRAM_Memory, 0x4000, 1, handle);
-                for (u16 i=0; i<0x4000; i++)  PCBTable[0xC000+i] = SRAM_Memory[i];
+                if (uNbO) fread(PCBTable+0x8000, 0x8000, 1, handle);
                 
                 if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
                 if (uNbO) fread(adam_ram_present, sizeof(adam_ram_present),1, handle);                
@@ -537,7 +529,7 @@ void colecoLoadState()
                 {
                     // This must be the last thing written so we can compress it...
                     u32 len = (DSI_RAM_Buffer ? (2*1024*1024) : (64 * 1024)) >> 2;
-                    u32 *ptr = (DSI_RAM_Buffer ? ((u32*)DSI_RAM_Buffer) : ((u32 *)(RAM_Memory+0x10000)));
+                    u32 *ptr = (DSI_RAM_Buffer ? ((u32*)DSI_RAM_Buffer) : ((u32 *)(EXP_Memory)));
                     for (u32 i=0; i<len; i++)
                     {
                         fread(ptr, 1, sizeof(u32), handle); // Read 32-bits at a time...

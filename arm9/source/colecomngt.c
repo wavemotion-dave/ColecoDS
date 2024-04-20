@@ -80,7 +80,7 @@ u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick 
 // ---------------------------------------------------------------
 // We provide 5 "Sensitivity" settings for the X/Y spinner
 // ---------------------------------------------------------------
-// Hand Tweaked Speeds:      Norm   Fast   Fastest  Slow   Slowest
+// Hand Tweaked Speeds:                                  Norm   Fast   Fastest  Slow   Slowest
 u16 SPINNER_SPEED[] __attribute__((section(".dtcm"))) = {120,   75,    50,      200,   300};
 
 // ------------------------------------------------------------
@@ -106,22 +106,22 @@ AY38910 myAY   __attribute__((section(".dtcm")));
 // ------------------------------------------------------------------------
 void coleco_adam_port_setup(void)
 {
-	if (adam_mode) // ADAM mode requires special handling of Port60 
-	{
-		Port53 = 0x00;                          // Init the SGM Port 53
-		Port60 = (adam_mode == 3) ? 0x0F:0x00;  // Adam/Memory Port 60 is in 'ADAM Mode' (unless mode==3 in which case we are loading a .rom while retaining ADAM emulation)
-		Port20 = 0x00;                          // Adam Net Port 20
-		Port42 = 0x00;                          // The first Epanded Bank of 64K
-	}
-	else // Is Colecovision mode .. make sure the SGM ports are correct
-	{
-		Port53 = 0x00;          // Init the SGM Port 53
-		Port60 = 0x0F;          // Adam/Memory Port 60 is in 'Colecovision Mode'
-		Port20 = 0x00;          // Adam Net Port 20 not used for CV/SGM mode
-		Port42 = 0x00;          // Not used for CV/SGM mode
-		
+    if (adam_mode) // ADAM mode requires special handling of Port60 
+    {
+        Port53 = 0x00;                          // Init the SGM Port 53
+        Port60 = (adam_mode == 3) ? 0x0F:0x00;  // Adam/Memory Port 60 is in 'ADAM Mode' (unless mode==3 in which case we are loading a .rom while retaining ADAM emulation)
+        Port20 = 0x00;                          // Adam Net Port 20
+        Port42 = 0x00;                          // The first Epanded Bank of 64K
+    }
+    else // Is Colecovision mode .. make sure the SGM ports are correct
+    {
+        Port53 = 0x00;          // Init the SGM Port 53
+        Port60 = 0x0F;          // Adam/Memory Port 60 is in 'Colecovision Mode'
+        Port20 = 0x00;          // Adam Net Port 20 not used for CV/SGM mode
+        Port42 = 0x00;          // Not used for CV/SGM mode
+        
         if (bSuperGameCart) Port53 = 0x01; // Super Game Carts expect the SGM memory mapped in
-	}
+    }
 }
 
 // ---------------------------------------------------------
@@ -130,16 +130,16 @@ void coleco_adam_port_setup(void)
 // ---------------------------------------------------------
 void sgm_reset(void)
 {
-	sgm_enable = false;            // Default to no SGM until enabled
-	sgm_low_addr = 0x2000;         // And the first 8K is BIOS
-	if (!msx_mode && !svi_mode && !einstein_mode)
-	{
-		AY_Enable = false;         // Default to no AY use until accessed
-	}
-	AY_EnvelopeOn = false;         // No Envelope mode yet
-	bFirstSGMEnable = true;        // First time SGM enable we clear ram
+    sgm_enable = false;            // Default to no SGM until enabled
+    sgm_low_addr = 0x2000;         // And the first 8K is Coleco BIOS
+    if (!msx_mode && !svi_mode && !einstein_mode)
+    {
+        AY_Enable = false;         // Default to no AY use until accessed
+    }
+    AY_EnvelopeOn = false;         // No Envelope mode yet
+    bFirstSGMEnable = true;        // First time SGM enable we clear ram
 
-	coleco_adam_port_setup();      // Ensure the memory ports are setup properly
+    coleco_adam_port_setup();      // Ensure the memory ports are setup properly
 }
 
 
@@ -150,66 +150,66 @@ void colecoWipeRAM(void)
 {
   if (sg1000_mode)
   {
-	  for (int i=0xC000; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0xC000; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (pv2000_mode)
   {
-	  memset(RAM_Memory+0x4000, 0xFF, 0x8000);
-	  for (int i=0x7000; i<0x8000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      memset(RAM_Memory+0x4000, 0xFF, 0x8000);
+      for (int i=0x7000; i<0x8000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (sordm5_mode)
   {
-	  for (int i=0x7000; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0x7000; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (memotech_mode)
   {
-	for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+    for (int i=0; i< 0xC000; i++) RAM_Memory[0x4000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (svi_mode)
   {
-	memset(RAM_Memory, 0xFF, 0x10000);
-	for (int i=0; i< 0x8000; i++) RAM_Memory[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+    memset(RAM_Memory, 0xFF, 0x8000);
+    for (int i=0; i< 0x8000; i++) RAM_Memory[0x8000+i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (msx_mode)
   {
-	// Do nothing... MSX has all kinds of memory mapping that is handled elsewhere
+    // Do nothing... MSX has all kinds of memory mapping that is handled elsewhere
   }
   else if (creativision_mode)
   {
-	  for (int i=0x0000; i<0x1000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0x0000; i<0x1000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else if (adam_mode)
   {
-	  // ----------------------------------------------------------------------------------- ------------
-	  // ADAM has special handling for memory clear. Rather than a 0x00 for clearing memory, we use
-	  // 0x10 which is a pattern that has been shown to work with 'picky' software like Adam Bomb 2.
-	  // ----------------------------------------------------------------------------------- ------------
-	  for (int i=0; i< 0x10000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
-	  
-	  // The Expanded MEM is always cleared to zeros (helps with compression on save/load state)
-	  memset(RAM_Memory + 0x10000, 0x00, 0x10000);  
-	  if (DSI_RAM_Buffer) memset(DSI_RAM_Buffer, 0x00, (2*1024*1024));
-	  
-	  RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software      
+      // ----------------------------------------------------------------------------------- ------------
+      // ADAM has special handling for memory clear. Rather than a 0x00 for clearing memory, we use
+      // 0x10 which is a pattern that has been shown to work with 'picky' software like Adam Bomb 2.
+      // ----------------------------------------------------------------------------------- ------------
+      for (int i=0; i< 0x10000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
+      
+      // The Expanded MEM is always cleared to zeros (helps with compression on save/load state)
+      memset(EXP_Memory, 0x00, 0x10000);  
+      if (DSI_RAM_Buffer) memset(DSI_RAM_Buffer, 0x00, (2*1024*1024));
+      
+      RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software      
   }
   else if (einstein_mode)
   {
-	  for (int i=0; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+      for (int i=0; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
   else  // Normal colecovision which has 1K of RAM and is mirrored (so each mirror gets the same byte)
   {
-	  for (int i=0; i<0x400; i++)
-	  {
-		  u8 randbyte = rand() & 0xFF;
-		  RAM_Memory[0x6000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-		  RAM_Memory[0x6400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-		  RAM_Memory[0x6800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-		  RAM_Memory[0x6C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-		  RAM_Memory[0x7000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-		  RAM_Memory[0x7400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-		  RAM_Memory[0x7800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-		  RAM_Memory[0x7C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
-	  }
+      for (int i=0; i<0x400; i++)
+      {
+          u8 randbyte = rand() & 0xFF;
+          RAM_Memory[0x6000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x6400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x6800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x6C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7000 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7400 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7800 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+          RAM_Memory[0x7C00 + i] = (myConfig.memWipe ? 0x00 : randbyte);
+      }
   }
 }
 
@@ -222,14 +222,14 @@ u8 BufferedKeysWriteIdx=0;
 u8 BufferedKeysReadIdx=0;
 void BufferKey(u8 key)
 {
-	BufferedKeys[BufferedKeysWriteIdx] = key;
-	BufferedKeysWriteIdx = (BufferedKeysWriteIdx+1) % 32;
+    BufferedKeys[BufferedKeysWriteIdx] = key;
+    BufferedKeysWriteIdx = (BufferedKeysWriteIdx+1) % 32;
 }
 
 // Buffer a whole string worth of characters...
 void BufferKeys(char *str)
 {
-	for (int i=0; i<strlen(str); i++)  BufferKey((u8)str[i]);
+    for (int i=0; i<strlen(str); i++)  BufferKey((u8)str[i]);
 }
 
 // ---------------------------------------------------------------------------------------
@@ -238,28 +238,28 @@ void BufferKeys(char *str)
 // ---------------------------------------------------------------------------------------
 ITCM_CODE void ProcessBufferedKeys(void)
 {
-	static u8 next_dampen_time = 5;
-	static u8 dampen = 0;
-	static u8 buf_held = 0;
-	static u8 buf_shift = 0;
-	static u8 buf_ctrl = 0;
-	if (creativision_mode) return;  // Special handling in creativision.c
+    static u8 next_dampen_time = 5;
+    static u8 dampen = 0;
+    static u8 buf_held = 0;
+    static u8 buf_shift = 0;
+    static u8 buf_ctrl = 0;
+    if (creativision_mode) return;  // Special handling in creativision.c
 
-	if (++dampen >= next_dampen_time) // Roughly 50ms... experimentally good enough for all systems.
-	{
-		if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
-		{
-			buf_held = BufferedKeys[BufferedKeysReadIdx];
-			BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
-			if (buf_held == KBD_KEY_SHIFT) buf_shift = 2; else {if (buf_shift) buf_shift--;}
-			if (buf_held == KBD_KEY_CTRL)  buf_ctrl = 6; else {if (buf_ctrl) buf_ctrl--;}
-			if (buf_held == 255) {buf_held = 0; next_dampen_time=60;} else next_dampen_time = (memotech_mode ? 1:5);
-		} else buf_held = 0;
-		dampen = 0;
-	}
+    if (++dampen >= next_dampen_time) // Roughly 50ms... experimentally good enough for all systems.
+    {
+        if (BufferedKeysReadIdx != BufferedKeysWriteIdx)
+        {
+            buf_held = BufferedKeys[BufferedKeysReadIdx];
+            BufferedKeysReadIdx = (BufferedKeysReadIdx+1) % 32;
+            if (buf_held == KBD_KEY_SHIFT) buf_shift = 2; else {if (buf_shift) buf_shift--;}
+            if (buf_held == KBD_KEY_CTRL)  buf_ctrl = 6; else {if (buf_ctrl) buf_ctrl--;}
+            if (buf_held == 255) {buf_held = 0; next_dampen_time=60;} else next_dampen_time = (memotech_mode ? 1:5);
+        } else buf_held = 0;
+        dampen = 0;
+    }
 
-	// See if the shift key should be virtually pressed along with this buffered key...
-	if (buf_held) {kbd_keys[kbd_keys_pressed++] = buf_held; if (buf_shift) key_shift=1; if (buf_ctrl) key_ctrl=1;}
+    // See if the shift key should be virtually pressed along with this buffered key...
+    if (buf_held) {kbd_keys[kbd_keys_pressed++] = buf_held; if (buf_shift) key_shift=1; if (buf_ctrl) key_ctrl=1;}
 }
 
 
@@ -308,8 +308,8 @@ u8 colecoInit(char *szGame)
   // Init the page flipping buffer...
   for (uBcl=0;uBcl<192;uBcl++)
   {
-	 uVide=(uBcl/12);
-	 dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
+     uVide=(uBcl/12);
+     dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
   }
 
   write_EE_counter=0;
@@ -318,105 +318,105 @@ u8 colecoInit(char *szGame)
 
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
-	  colecoWipeRAM();                              // Wipe RAM
-	  RetFct = loadrom(szGame,RAM_Memory);          // Load up to 48K
-	  sg1000_reset();                               // Reset the SG-1000
+      colecoWipeRAM();                              // Wipe RAM
+      RetFct = loadrom(szGame,RAM_Memory);          // Load up to 48K
+      sg1000_reset();                               // Reset the SG-1000
   }
   else if (sordm5_mode)  // Load Sord M5 cartridge
   {
-	  ctc_enabled = true;
-	  if (file_crc == 0xb32c9e08)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
-	  if (file_crc == 0xa2edc01d)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
-	  colecoWipeRAM();
-	  RetFct = loadrom(szGame,RAM_Memory+0x2000);      // Load up to 20K
+      ctc_enabled = true;
+      if (file_crc == 0xb32c9e08)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
+      if (file_crc == 0xa2edc01d)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,RAM_Memory+0x2000);      // Load up to 20K
   }
   else if (pv2000_mode)  // Casio PV-2000 cartridge loads at C000
   {
-	  colecoWipeRAM();
-	  RetFct = loadrom(szGame,RAM_Memory+0xC000);      // Load up to 16K
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,RAM_Memory+0xC000);      // Load up to 16K
   }
   else if (creativision_mode)  // Creativision loads cart up against 0xC000
   {
-	  colecoWipeRAM();
-	  RetFct = loadrom(szGame,RAM_Memory+0xC000);      // Load up to 16K
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,RAM_Memory+0xC000);      // Load up to 16K
   }
   else if (memotech_mode)  // Load Memotech MTX file
   {
-	  ctc_enabled = true;
-	  RetFct = loadrom(szGame,RAM_Memory+0x4000);      // Load up to 48K
+      ctc_enabled = true;
+      RetFct = loadrom(szGame,RAM_Memory+0x4000);      // Load up to 48K
   }
   else if (msx_mode)  // Load MSX cartridge ...
   {
-	  // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-	  RetFct = loadrom(szGame,RAM_Memory+0x8000);
+      // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);
 
-	  // Wipe RAM area from 0xC000 upwards after ROM is loaded...
-	  colecoWipeRAM();
+      // Wipe RAM area from 0xC000 upwards after ROM is loaded...
+      colecoWipeRAM();
   }
   else if (svi_mode)  // Load SVI ROM ...
   {
-	  // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
-	  RetFct = loadrom(szGame,RAM_Memory+0x8000);
+      // loadrom() will figure out how big and where to load it... the 0x8000 here is meaningless.
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);
 
-	  // Wipe RAM area from 0x8000 upwards after ROM is loaded...
-	  colecoWipeRAM();
+      // Wipe RAM area from 0x8000 upwards after ROM is loaded...
+      colecoWipeRAM();
   }
   else if (adam_mode)  // Load Adam DDP or DSK
   {
-	  spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
-	  sgm_reset();                       // Make sure the super game module is disabled to start
-	  adam_CapsLock = 0;                 // CAPS Lock disabled to start
-	  disk_unsaved_data[BAY_DISK1] = 0;  // No unsaved DISK data to start
-	  disk_unsaved_data[BAY_DISK2] = 0;  // No unsaved DISK data to start
-	  disk_unsaved_data[BAY_TAPE] = 0;   // No unsaved TAPE data to start
-	  adamnet_init();                    // Initialize the Adam Net and disk drives
-			
-	  // Clear existing drives of any disks/tapes and load the new game up      
-	  for(u8 J=0;J<MAX_DRIVES;++J) adam_drive_eject(J);
-	  
-	  // Load the game into memory
-	  RetFct = loadrom(szGame,RAM_Memory);
+      spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
+      sgm_reset();                       // Make sure the super game module is disabled to start
+      adam_CapsLock = 0;                 // CAPS Lock disabled to start
+      disk_unsaved_data[BAY_DISK1] = 0;  // No unsaved DISK data to start
+      disk_unsaved_data[BAY_DISK2] = 0;  // No unsaved DISK data to start
+      disk_unsaved_data[BAY_TAPE] = 0;   // No unsaved TAPE data to start
+      adamnet_init();                    // Initialize the Adam Net and disk drives
+            
+      // Clear existing drives of any disks/tapes and load the new game up      
+      for(u8 J=0;J<MAX_DRIVES;++J) adam_drive_eject(J);
+      
+      // Load the game into memory
+      RetFct = loadrom(szGame,RAM_Memory);
 
-	  RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
+      RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
   }
   else if (pencil2_mode)
   {
-	  // Wipe area from BIOS onwards and then wipe RAM to random values below
-	  memset(RAM_Memory+0x2000, 0xFF, 0xE000);
+      // Wipe area from BIOS onwards and then wipe RAM to random values below
+      memset(RAM_Memory+0x2000, 0xFF, 0xE000);
 
-	  // Wipe RAM to Random Values
-	  colecoWipeRAM();
+      // Wipe RAM to Random Values
+      colecoWipeRAM();
 
-	  RetFct = loadrom(szGame,RAM_Memory+0x8000);    // Load up to 32K
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);    // Load up to 32K
   }
   else if (einstein_mode)  // Load Einstein COM file
   {
-	  ctc_enabled = true;
-	  colecoWipeRAM();
-	  RetFct = loadrom(szGame,RAM_Memory+0x4000);  // Load up to 48K
+      ctc_enabled = true;
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,RAM_Memory+0x4000);  // Load up to 48K
   }
   else  // Load coleco cartridge
   {
-	  spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
+      spinner_enabled = (myConfig.spinSpeed != 5) ? true:false;
 
-	  // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
-	  memset(RAM_Memory+0x2000, 0xFF, 0x4000);
+      // Wipe area between BIOS and RAM (often SGM RAM mapped here but until then we are 0xFF)
+      memset(RAM_Memory+0x2000, 0xFF, 0x4000);
 
-	  // Wipe RAM to Random Values
-	  colecoWipeRAM();
+      // Wipe RAM to Random Values
+      colecoWipeRAM();
 
-	  // Set upper 32K ROM area to 0xFF before load
-	  memset(RAM_Memory+0x8000, 0xFF, 0x8000);
+      // Set upper 32K ROM area to 0xFF before load
+      memset(RAM_Memory+0x8000, 0xFF, 0x8000);
 
-	  RetFct = loadrom(szGame,RAM_Memory+0x8000);
+      RetFct = loadrom(szGame,RAM_Memory+0x8000);
 
-	  coleco_mode = true;
+      coleco_mode = true;
   }
 
   if (RetFct)
   {
-	// Perform a standard system RESET
-	ResetColecovision();
+    // Perform a standard system RESET
+    ResetColecovision();
   }
 
   // Return with result
@@ -447,12 +447,12 @@ void colecoSetPal(void)
   // authenticity.
   // -----------------------------------------------------------------------
   for (uBcl=0;uBcl<16;uBcl++) {
-	r = (u8) ((float) TMS9918A_palette[uBcl*3+0]*0.121568f);
-	g = (u8) ((float) TMS9918A_palette[uBcl*3+1]*0.121568f);
-	b = (u8) ((float) TMS9918A_palette[uBcl*3+2]*0.121568f);
+    r = (u8) ((float) TMS9918A_palette[uBcl*3+0]*0.121568f);
+    g = (u8) ((float) TMS9918A_palette[uBcl*3+1]*0.121568f);
+    b = (u8) ((float) TMS9918A_palette[uBcl*3+2]*0.121568f);
 
-	SPRITE_PALETTE[uBcl] = RGB15(r,g,b);
-	BG_PALETTE[uBcl] = RGB15(r,g,b);
+    SPRITE_PALETTE[uBcl] = RGB15(r,g,b);
+    BG_PALETTE[uBcl] = RGB15(r,g,b);
   }
 }
 
@@ -465,42 +465,42 @@ void colecoSetPal(void)
  ********************************************************************************/
 ITCM_CODE void colecoUpdateScreen(void)
 {
-	// ------------------------------------------------------------
-	// If we are in 'blendMode' we will OR the last two frames.
-	// This helps on some games where things are just 1 pixel
-	// wide and the non XL/LL DSi will just not hold onto the
-	// image long enough to render it properly for the eye to
-	// pick up. This takes CPU speed, however, and will not be
-	// supported for older DS-LITE/PHAT units with slower CPU.
-	// ------------------------------------------------------------
-	if (myConfig.frameBlend)
-	{
-	  if (XBuf == XBuf_A)
-	  {
-		  XBuf = XBuf_B;
-	  }
-	  else
-	  {
-		  XBuf = XBuf_A;
+    // ------------------------------------------------------------
+    // If we are in 'blendMode' we will OR the last two frames.
+    // This helps on some games where things are just 1 pixel
+    // wide and the non XL/LL DSi will just not hold onto the
+    // image long enough to render it properly for the eye to
+    // pick up. This takes CPU speed, however, and will not be
+    // supported for older DS-LITE/PHAT units with slower CPU.
+    // ------------------------------------------------------------
+    if (myConfig.frameBlend)
+    {
+      if (XBuf == XBuf_A)
+      {
+          XBuf = XBuf_B;
+      }
+      else
+      {
+          XBuf = XBuf_A;
 
-		  // Because we are OR-ing two frames together, we only need to blend every other frame...
-		  u32 *p1 = (u32*)XBuf_A;
-		  u32 *p2 = (u32*)XBuf_B;
-		  u32 *destP = (u32*)pVidFlipBuf;
+          // Because we are OR-ing two frames together, we only need to blend every other frame...
+          u32 *p1 = (u32*)XBuf_A;
+          u32 *p2 = (u32*)XBuf_B;
+          u32 *destP = (u32*)pVidFlipBuf;
 
-		  for (u16 i=0; i<(256*192)/4; i++)
-		  {
-			  *destP++ = (*p1++ | *p2++);       // Simple OR blending of 2 frames...
-		  }
-	  }
-	}
-	else
-	{
-		// -----------------------------------------------------------------
-		// Not blend mode... just blast it out via DMA as fast as we can...
-		// -----------------------------------------------------------------
-		dmaCopyWordsAsynch(2, (u32*)XBuf_A, (u32*)pVidFlipBuf, 256*192);
-	}
+          for (u16 i=0; i<(256*192)/4; i++)
+          {
+              *destP++ = (*p1++ | *p2++);       // Simple OR blending of 2 frames...
+          }
+      }
+    }
+    else
+    {
+        // -----------------------------------------------------------------
+        // Not blend mode... just blast it out via DMA as fast as we can...
+        // -----------------------------------------------------------------
+        dmaCopyWordsAsynch(2, (u32*)XBuf_A, (u32*)pVidFlipBuf, 256*192);
+    }
 }
 
 
@@ -510,31 +510,31 @@ ITCM_CODE void colecoUpdateScreen(void)
  *******************************************************************************/
 void getfile_crc(const char *filename)
 {
-	file_crc = getFileCrc(filename);        // The CRC is used as a unique ID to save out High Scores and Configuration...
+    file_crc = getFileCrc(filename);        // The CRC is used as a unique ID to save out High Scores and Configuration...
 
-	// -----------------------------------------------------------------
-	// Only Lord of the Dungeon allows SRAM writting in this area...
-	// -----------------------------------------------------------------
-	sRamAtE000_OK = 0;
-	if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      // 32K version of Lord of the Dungeon
-	if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      // 24K version of Lord of the Dungeon
+    // -----------------------------------------------------------------
+    // Only Lord of the Dungeon allows SRAM writting in this area...
+    // -----------------------------------------------------------------
+    sRamAtE000_OK = 0;
+    if (file_crc == 0xfee15196) sRamAtE000_OK = 1;      // 32K version of Lord of the Dungeon
+    if (file_crc == 0x1053f610) sRamAtE000_OK = 1;      // 24K version of Lord of the Dungeon
 
-	// ------------------------------------------------------------------------------
-	// And a handful of games require SRAM which is a special case-by-case basis...
-	// ------------------------------------------------------------------------------
-	msx_sram_enabled = 0;
-	if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
-	if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
-	if (file_crc == 0xa0fd57cf) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
-	if (file_crc == 0xd640deaf) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (EN)
-	if (file_crc == 0x119b7ba8) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (JP)
-	if (file_crc == 0x27fd8f9a) msx_sram_enabled = 0x10;       // MSX Deep Dungeon I (JP)
-	if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (EN)
-	if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)
-	if (file_crc == 0x96b7faca) msx_sram_enabled = 0x10;       // MSX Harry Fox Special (JP)
-	if (file_crc == 0xb8fc19a4) msx_sram_enabled = 0x20;       // MSX Cosmic Soldier 2 - Psychic War
-	if (file_crc == 0x4ead5098) msx_sram_enabled = 0x20;       // MSX Ghengis Khan
-	if (file_crc == 0x3aa33a30) msx_sram_enabled = 0x20;       // MSX Nobunaga no Yabou - Zenkokuhan
+    // ------------------------------------------------------------------------------
+    // And a handful of games require SRAM which is a special case-by-case basis...
+    // ------------------------------------------------------------------------------
+    msx_sram_enabled = 0;
+    if (file_crc == 0x92943e5b) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
+    if (file_crc == 0xb29edaec) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
+    if (file_crc == 0xa0fd57cf) msx_sram_enabled = 0x10;       // MSX Hydlide 2 - Shine Of Darkness (EN)
+    if (file_crc == 0xd640deaf) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (EN)
+    if (file_crc == 0x119b7ba8) msx_sram_enabled = 0x20;       // MSX Dragon Slayer 2 - Xanadu (JP)
+    if (file_crc == 0x27fd8f9a) msx_sram_enabled = 0x10;       // MSX Deep Dungeon I (JP)
+    if (file_crc == 0x213da247) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (EN)
+    if (file_crc == 0x101db19c) msx_sram_enabled = 0x10;       // MSX Deep Dungeon II (JP)
+    if (file_crc == 0x96b7faca) msx_sram_enabled = 0x10;       // MSX Harry Fox Special (JP)
+    if (file_crc == 0xb8fc19a4) msx_sram_enabled = 0x20;       // MSX Cosmic Soldier 2 - Psychic War
+    if (file_crc == 0x4ead5098) msx_sram_enabled = 0x20;       // MSX Ghengis Khan
+    if (file_crc == 0x3aa33a30) msx_sram_enabled = 0x20;       // MSX Nobunaga no Yabou - Zenkokuhan
 }
 
 
@@ -550,221 +550,225 @@ u8 loadrom(const char *filename, u8 * ptr)
   FILE* handle = fopen(filename, "rb");
   if (handle != NULL)
   {
-	// Save the initial filename and file - we need it for save/restore of state
-	strcpy(initial_file, filename);
-	getcwd(initial_path, MAX_ROM_LENGTH);
+    // Save the initial filename and file - we need it for save/restore of state
+    strcpy(initial_file, filename);
+    getcwd(initial_path, MAX_ROM_LENGTH);
 
-	memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
+    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
 
-	fseek(handle, 0, SEEK_END);                             // Figure out how big the file is
-	int romSize = ftell(handle);
-	sg1000_double_reset = false;
+    fseek(handle, 0, SEEK_END);                             // Figure out how big the file is
+    int romSize = ftell(handle);
+    sg1000_double_reset = false;
 
-	// ----------------------------------------------------------------------
-	// Look for the Survivors .sc Multicart  (2MB!) or .sc MegaCart (4MB!)
-	// ----------------------------------------------------------------------
-	if (sg1000_mode && ((romSize == (2048 * 1024)) || (romSize == (4096 * 1024))))
-	{
-		fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
-		fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
-		memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
-		fclose(handle);
-		strcpy(disk_last_file[0], filename);
-		strcpy(disk_last_path[0], initial_path);
-		romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
-		sg1000_double_reset = true;
-		machine_mode = MODE_SG_1000;
-		return bOK;
-	}
-	else
-	if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB - that's pretty huge...
-	{
-		fseek(handle, 0, SEEK_SET);
-		fread((void*) ROM_Memory, romSize, 1, handle);
-		fclose(handle);
+    // ----------------------------------------------------------------------
+    // Look for the Survivors .sc Multicart  (2MB!) or .sc MegaCart (4MB!)
+    // ----------------------------------------------------------------------
+    if (sg1000_mode && ((romSize == (2048 * 1024)) || (romSize == (4096 * 1024))))
+    {
+        fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
+        fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
+        memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
+        fclose(handle);
+        strcpy(disk_last_file[0], filename);
+        strcpy(disk_last_path[0], initial_path);
+        romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
+        sg1000_double_reset = true;
+        machine_mode = MODE_SG_1000;
+        return bOK;
+    }
+    else
+    if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB - that's pretty huge...
+    {
+        fseek(handle, 0, SEEK_SET);
+        fread((void*) ROM_Memory, romSize, 1, handle);
+        fclose(handle);
 
-		if (file_crc == 0x68c85890) // M5 Up Up Balloon needs a patch to add 0x00 at the front
-		{
-			for (u16 i=romSize; i>0; i--)
-			{
-				ROM_Memory[i] = ROM_Memory[i-1];  // Shift everything up 1 byte
-			}
-			ROM_Memory[0] = 0x00;    // Add 0x00 to the first byte which is the patch
-			romSize++;               // Make sure the size is now correct
-		}
+        romBankMask = 0x00;         // No bank mask until proven otherwise
+        bMagicMegaCart = false;     // No Mega Cart to start
+        mapperMask = 0x00;          // No MSX mapper mask
+        bActivisionPCB = 0;         // No Activision PCB
+        bSuperGameCart = 0;         // No Super Game Cart (aka MegaCart2)
+        
+        // The SordM5 has one game that needs patching to run...
+        if (sordm5_mode)
+        {
+            if (file_crc == 0x68c85890) // M5 Up Up Balloon needs a patch to add 0x00 at the front
+            {
+                for (u16 i=romSize; i>0; i--)
+                {
+                    ROM_Memory[i] = ROM_Memory[i-1];  // Shift everything up 1 byte
+                }
+                ROM_Memory[0] = 0x00;    // Add 0x00 to the first byte which is the patch
+                romSize++;               // Make sure the size is now correct
+            }
+        }
 
-		romBankMask = 0x00;         // No bank mask until proven otherwise
-		bMagicMegaCart = false;     // No Mega Cart to start
-		mapperMask = 0x00;          // No MSX mapper mask
-		bActivisionPCB = 0;         // No Activision PCB
-		bSuperGameCart = 0;         // No Super Game Cart (aka MegaCart2)
+        // ------------------------------------------------------------------------------
+        // For the MSX emulation, we will use fast VRAM to hold ROM and mirrors...
+        // ------------------------------------------------------------------------------
+        if (msx_mode)
+        {
+            tape_len = romSize;  // For MSX, the tape size is saved for showing tape load progress
+            tape_pos = 0;
+            last_tape_pos = 9999;
+            MSX_InitialMemoryLayout(romSize);
+        }
+        // ---------------------------------------------------------------------------
+        // For ADAM mode, we need to setup the memory banks and tape/disk access...
+        // ---------------------------------------------------------------------------
+        else if (adam_mode)
+        {
+            coleco_adam_port_setup();    // Ensure the memory ports are setup properly
+            adam_ext_ram_used = 0;       // Normal 64K ADAM to start
+            SetupAdam(false);            // And make sure the ADAM is ready
 
-		// ------------------------------------------------------------------------------
-		// For the MSX emulation, we will use fast VRAM to hold ROM and mirrors...
-		// ------------------------------------------------------------------------------
-		if (msx_mode)
-		{
-			tape_len = romSize;  // For MSX, the tape size is saved for showing tape load progress
-			tape_pos = 0;
-			last_tape_pos = 9999;
-			MSX_InitialMemoryLayout(romSize);
-		}
-		// ---------------------------------------------------------------------------
-		// For ADAM mode, we need to setup the memory banks and tape/disk access...
-		// ---------------------------------------------------------------------------
-		else if (adam_mode)
-		{
-			coleco_adam_port_setup();    // Ensure the memory ports are setup properly
-			adam_ext_ram_used = 0;       // Normal 64K ADAM to start
-			SetupAdam(false);            // And make sure the ADAM is ready
+            strcpy(disk_last_file[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
+            strcpy(disk_last_file[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
+            strcpy(disk_last_file[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
+            
+            strcpy(disk_last_path[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
+            strcpy(disk_last_path[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
+            strcpy(disk_last_path[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
+            
+            disk_last_size[BAY_DISK1] = 0;           // Nothing loaded in the DISK drive yet
+            disk_last_size[BAY_DISK2] = 0;           // Nothing loaded in the DISK drive yet
+            disk_last_size[BAY_TAPE]  = 0;           // Nothing loaded in the TAPE drive yet
 
-			strcpy(disk_last_file[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
-			strcpy(disk_last_file[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
-			strcpy(disk_last_file[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
-			
-			strcpy(disk_last_path[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
-			strcpy(disk_last_path[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
-			strcpy(disk_last_path[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
-			
-			disk_last_size[BAY_DISK1] = 0;           // Nothing loaded in the DISK drive yet
-			disk_last_size[BAY_DISK2] = 0;           // Nothing loaded in the DISK drive yet
-			disk_last_size[BAY_TAPE]  = 0;           // Nothing loaded in the TAPE drive yet
-
-			// ------------------------------------------
-			// The .ddp or .dsk is now in ROM_Memory[]
-			// We need to convert this to an FDID image
-			// for use with the core emulation.
-			// ------------------------------------------
-			if ((strcasecmp(strrchr(filename, '.'), ".ddp") == 0))  // Is this a TAPE image (.ddp)?
-			{
-				// Insert the tape into the virtual TAPE drive
-				strcpy(disk_last_file[BAY_TAPE], filename);
-				strcpy(disk_last_path[BAY_TAPE], initial_path);
-				disk_last_size[BAY_TAPE] = romSize;
-				adam_drive_insert(BAY_TAPE, (char*)filename);
-			}
-			else if ((strcasecmp(strrchr(filename, '.'), ".dsk") == 0))  // Is this a DISK image (.dsk)?
-			{
-				// Insert the disk into the virtual DISK drive
-				strcpy(disk_last_file[BAY_DISK1], filename);
-				strcpy(disk_last_path[BAY_DISK1], initial_path);
-				disk_last_size[BAY_DISK1] = romSize;
-				adam_drive_insert(BAY_DISK1, (char*)filename);
-			}
-			else if (adam_mode >= 2) // else must be a ROM which is okay...
-			{
-				memcpy(ROM_Memory + (992*1024), ROM_Memory, 0x8000); // Copy 32K to back end of ROM Memory
-				memset(ROM_Memory, 0xFF, (992*1024));
-			}
-		}
-		else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
-		{
-			tape_len = romSize;  // The tape size is saved for showing tape load progress
-			tape_pos = 0;
-			last_tape_pos = 9999;
-		}
-		else if (einstein_mode)
-		{
-			strcpy(disk_last_file[0], filename);
-			strcpy(disk_last_path[0], initial_path);
-			disk_last_size[0] = romSize;    // Might be a .COM file but we just reuse the einstein disk size variable
-			if (romSize == 1626)            // A bit of a hack... the size of the Diagnostic ROM
-			{
-				extern u8 EinsteinBios2[];
-				memcpy(EinsteinBios2, ROM_Memory, romSize);   // only for Diagnostics ROM
-			}
-		}
-		else if (creativision_mode)
-		{
-			strcpy(disk_last_file[0], filename);
-			strcpy(disk_last_path[0], initial_path);
-			creativision_loadrom(romSize);
-		}
-		else if (sg1000_mode)
-		{
-			sg1000_sms_mapper = 0;
-			if (romSize <= (48*1024))
-			{
-				memcpy(ptr, ROM_Memory, romSize);     // Copy up to 48K flat into our memory map...
-			}
-			else // Assume this is one of the rare SMS memory mapper SG-1000 games unless it's a Survivors Cart
-			{
-				memcpy(ptr, ROM_Memory, 48*1024);     // Copy exactly 48K flat into our memory map... larger than this is the SMS mapper handled directly below
-				if      (romSize <= 128*1024) sg1000_sms_mapper = 0x07;   // Up to 128K
-				else if (romSize <= 256*1024) sg1000_sms_mapper = 0x0F;   // Up to 256K
-				else if (romSize <= 512*1024) sg1000_sms_mapper = 0x1F;   // Up to 512K
-				else                          sg1000_sms_mapper = 0x00;   // It's probably one of the Multi/Mega Survivors Carts. No mapper.
-			}
-		}
-		else
-		// ----------------------------------------------------------------------
-		// Do we fit within the standard 32K Colecovision Cart ROM memory space?
-		// ----------------------------------------------------------------------
-		if (romSize <= (32*1024)) // Allow up to 32K limit on Coleco Roms
-		{
-			memcpy(ptr, ROM_Memory, romSize);
-		}
-		else    // No - must be Mega Cart (MC) Bankswitched!!
-		{
-			// --------------------------------------------------------------
-			// Mega Carts have a special byte pattern in the upper block...
-			// but we need to distinguish between 64k Activision PCB and
-			// possible 64K Megacart (theoretically MC should be 128K+ but
-			// there are examples of 64K MegaCarts). This code does that...
-			// --------------------------------------------------------------
-			bMagicMegaCart = ((ROM_Memory[0xC000] == 0x55 && ROM_Memory[0xC001] == 0xAA) ? 1:0);
-			last_mega_bank = 199;                                 // Force load of the first bank when asked to bankswitch
-			if ((myConfig.cvMode == CV_MODE_ACTCART) || ((romSize == (64 * 1024)) && !bMagicMegaCart)) // Some 64K carts are in the 'Activision PCB' style with EEPROM
-			{
-				bActivisionPCB = 1;
-				memcpy(ptr, ROM_Memory, 0x4000);                     // bank 0
-				memcpy(ptr+0x4000, ROM_Memory+0x4000, 0x4000);       // bank 1
-				romBankMask = 0x03;
-			}
-			else if (myConfig.cvMode == CV_MODE_SUPERCART) // These are the Super Game Cart types... of varying EE sizes
-			{ 
-				bSuperGameCart = 1;
-				memcpy(ptr, ROM_Memory, 0x2000);
+            // ------------------------------------------
+            // The .ddp or .dsk is now in ROM_Memory[]
+            // We need to convert this to an FDID image
+            // for use with the core emulation.
+            // ------------------------------------------
+            if ((strcasecmp(strrchr(filename, '.'), ".ddp") == 0))  // Is this a TAPE image (.ddp)?
+            {
+                // Insert the tape into the virtual TAPE drive
+                strcpy(disk_last_file[BAY_TAPE], filename);
+                strcpy(disk_last_path[BAY_TAPE], initial_path);
+                disk_last_size[BAY_TAPE] = romSize;
+                adam_drive_insert(BAY_TAPE, (char*)filename);
+            }
+            else if ((strcasecmp(strrchr(filename, '.'), ".dsk") == 0))  // Is this a DISK image (.dsk)?
+            {
+                // Insert the disk into the virtual DISK drive
+                strcpy(disk_last_file[BAY_DISK1], filename);
+                strcpy(disk_last_path[BAY_DISK1], initial_path);
+                disk_last_size[BAY_DISK1] = romSize;
+                adam_drive_insert(BAY_DISK1, (char*)filename);
+            }
+            else if (adam_mode >= 2) // else must be a ROM which is okay...
+            {
+                memcpy(ROM_Memory + (992*1024), ROM_Memory, 0x8000); // Copy 32K to back end of ROM Memory
+                memset(ROM_Memory, 0xFF, (992*1024));
+            }
+        }
+        else if (memotech_mode || svi_mode)     // Can be any size tapes... up to 1024K
+        {
+            tape_len = romSize;  // The tape size is saved for showing tape load progress
+            tape_pos = 0;
+            last_tape_pos = 9999;
+        }
+        else if (einstein_mode)
+        {
+            strcpy(disk_last_file[0], filename);
+            strcpy(disk_last_path[0], initial_path);
+            disk_last_size[0] = romSize;    // Might be a .COM file but we just reuse the einstein disk size variable
+            if (romSize == 1626)            // A bit of a hack... the size of the Diagnostic ROM
+            {
+                extern u8 EinsteinBios2[];
+                memcpy(EinsteinBios2, ROM_Memory, romSize);   // only for Diagnostics ROM
+            }
+        }
+        else if (creativision_mode)
+        {
+            strcpy(disk_last_file[0], filename);
+            strcpy(disk_last_path[0], initial_path);
+            creativision_loadrom(romSize);
+        }
+        else if (sg1000_mode)
+        {
+            sg1000_sms_mapper = 0;
+            if (romSize <= (48*1024))
+            {
+                memcpy(ptr, ROM_Memory, romSize);     // Copy up to 48K flat into our memory map...
+            }
+            else // Assume this is one of the rare SMS memory mapper SG-1000 games unless it's a Survivors Cart
+            {
+                memcpy(ptr, ROM_Memory, 48*1024);     // Copy exactly 48K flat into our memory map... larger than this is the SMS mapper handled directly below
+                if      (romSize <= 128*1024) sg1000_sms_mapper = 0x07;   // Up to 128K
+                else if (romSize <= 256*1024) sg1000_sms_mapper = 0x0F;   // Up to 256K
+                else if (romSize <= 512*1024) sg1000_sms_mapper = 0x1F;   // Up to 512K
+                else                          sg1000_sms_mapper = 0x00;   // It's probably one of the Multi/Mega Survivors Carts. No mapper.
+            }
+        }
+        else
+        // ----------------------------------------------------------------------
+        // Do we fit within the standard 32K Colecovision Cart ROM memory space?
+        // ----------------------------------------------------------------------
+        if (romSize <= (32*1024)) // Allow up to 32K limit on Coleco Roms
+        {
+            memcpy(ptr, ROM_Memory, romSize);
+        }
+        else    // No - must be Mega Cart (MC) Bankswitched!!
+        {
+            // --------------------------------------------------------------
+            // Mega Carts have a special byte pattern in the upper block...
+            // but we need to distinguish between 64k Activision PCB and
+            // possible 64K Megacart (theoretically MC should be 128K+ but
+            // there are examples of 64K MegaCarts). This code does that...
+            // --------------------------------------------------------------
+            bMagicMegaCart = ((ROM_Memory[0xC000] == 0x55 && ROM_Memory[0xC001] == 0xAA) ? 1:0);
+            last_mega_bank = 199;                                 // Force load of the first bank when asked to bankswitch
+            if ((myConfig.cvMode == CV_MODE_ACTCART) || ((romSize == (64 * 1024)) && !bMagicMegaCart)) // Some 64K carts are in the 'Activision PCB' style with EEPROM
+            {
+                bActivisionPCB = 1;
+                memcpy(ptr, ROM_Memory, 0x4000);                     // bank 0
+                memcpy(ptr+0x4000, ROM_Memory+0x4000, 0x4000);       // bank 1
+                romBankMask = 0x03;
+            }
+            else if (myConfig.cvMode == CV_MODE_SUPERCART) // These are the Super Game Cart types... of varying EE sizes
+            { 
+                bSuperGameCart = 1;
+                memcpy(ptr, ROM_Memory, 0x2000);
                 SuperGameCartSetup(romSize);
-			}
-			else    // We will assume Megacart for everything else...
-			{
-				bMagicMegaCart = 1;
-				memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
-				MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
+            }
+            else    // We will assume Megacart for everything else...
+            {
+                bMagicMegaCart = 1;
+                memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
+                MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
 
-				if      (romSize <= (64  * 1024)) romBankMask = 0x03;
-				else if (romSize <= (128 * 1024)) romBankMask = 0x07;
-				else if (romSize <= (256 * 1024)) romBankMask = 0x0F;
-				else if (romSize <= (512 * 1024)) romBankMask = 0x1F;
-				else                              romBankMask = 0x3F;    // Up to 1024KB... huge!
-			}
-		}
-		bOK = 1;
-	}
-	else fclose(handle);
+                if      (romSize <= (64  * 1024)) romBankMask = 0x03;
+                else if (romSize <= (128 * 1024)) romBankMask = 0x07;
+                else if (romSize <= (256 * 1024)) romBankMask = 0x0F;
+                else if (romSize <= (512 * 1024)) romBankMask = 0x1F;
+                else                              romBankMask = 0x3F;    // Up to 1024KB... huge!
+            }
+        }
+        bOK = 1;
+    }
+    else fclose(handle);
 
-	// -------------------------------------------------------------------------
-	// For some combinations, we have hotspots or other memory stuff that
-	// needs to be more complicated than simply returning RAM_Memory[].
-	// -------------------------------------------------------------------------
-	bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || bSuperGameCart || adam_mode || msx_sram_enabled || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
+    // -------------------------------------------------------------------------
+    // For some combinations, we have hotspots or other memory stuff that
+    // needs to be more complicated than simply returning RAM_Memory[].
+    // -------------------------------------------------------------------------
+    bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || bSuperGameCart || adam_mode || msx_sram_enabled || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
 
-	// -----------------------------------------------------------------------
-	// To speed up processing in the memory write functions, we accumulate
-	// the bits so we only have to fetch one machine_mode variable.
-	// -----------------------------------------------------------------------
-	if      (pencil2_mode)      machine_mode = MODE_PENCIL2;
-	else if (msx_mode)          machine_mode = MODE_MSX;
-	else if (svi_mode)          machine_mode = MODE_SVI;
-	else if (einstein_mode)     machine_mode = MODE_EINSTEIN;
-	else if (memotech_mode)     machine_mode = MODE_MEMOTECH;
-	else if (pv2000_mode)       machine_mode = MODE_PV2000;
-	else if (sordm5_mode)       machine_mode = MODE_SORDM5;
-	else if (sg1000_mode)       machine_mode = MODE_SG_1000;
-	else if (adam_mode)         machine_mode = MODE_ADAM;
-	else if (creativision_mode) machine_mode = MODE_CREATIVISION;
-	else                        machine_mode = MODE_COLECO;
+    // -----------------------------------------------------------------------
+    // To speed up processing in the memory write functions, we accumulate
+    // the bits so we only have to fetch one machine_mode variable.
+    // -----------------------------------------------------------------------
+    if      (pencil2_mode)      machine_mode = MODE_PENCIL2;
+    else if (msx_mode)          machine_mode = MODE_MSX;
+    else if (svi_mode)          machine_mode = MODE_SVI;
+    else if (einstein_mode)     machine_mode = MODE_EINSTEIN;
+    else if (memotech_mode)     machine_mode = MODE_MEMOTECH;
+    else if (pv2000_mode)       machine_mode = MODE_PV2000;
+    else if (sordm5_mode)       machine_mode = MODE_SORDM5;
+    else if (sg1000_mode)       machine_mode = MODE_SG_1000;
+    else if (adam_mode)         machine_mode = MODE_ADAM;
+    else if (creativision_mode) machine_mode = MODE_CREATIVISION;
+    else                        machine_mode = MODE_COLECO;
   }
   return bOK;
 }
@@ -775,156 +779,156 @@ u8 loadrom(const char *filename, u8 * ptr)
 // --------------------------------------------------------------------------
 __attribute__ ((noinline)) void SetupSGM(void)
 {
-	if (adam_mode) return;                          // ADAM has it's own setup handler
-	if (myConfig.cvMode == CV_MODE_NOSGM) return;   // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
+    if (adam_mode) return;                          // ADAM has it's own setup handler
+    if (myConfig.cvMode == CV_MODE_NOSGM) return;   // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
 
-	sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
+    sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
 
-	// ----------------------------------------------------------------
-	// The first time we enable the SGM expansion RAM, we clear it out
-	// ----------------------------------------------------------------
-	if (sgm_enable && bFirstSGMEnable)
-	{
-		memset(RAM_Memory+0x2000, 0x00, 0x6000);
-		bFirstSGMEnable = false;
-	}
+    // ----------------------------------------------------------------
+    // The first time we enable the SGM expansion RAM, we clear it out
+    // ----------------------------------------------------------------
+    if (sgm_enable && bFirstSGMEnable)
+    {
+        memset(RAM_Memory+0x2000, 0x00, 0x6000);
+        bFirstSGMEnable = false;
+    }
 
-	// ------------------------------------------------------
-	// And Port 60 will tell us if we want to swap out the
-	// lower 8K bios for more RAM (total of 32K RAM for SGM)
-	// Since this can swap back and forth (not sure if any
-	// game really does this), we need to preserve that 8K
-	// when we switch back and forth...
-	// ------------------------------------------------------
-	if (Port60 & 0x02)
-	{
-	  if (sgm_low_addr != 0x2000)
-	  {
-		  sgm_low_addr = 0x2000;
-		  MemoryMap[0] = BIOS_Memory + 0x0000;
-	  }
-	}
-	else
-	{
-	  sgm_enable = true;    // Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
-	  if (sgm_low_addr != 0x0000)
-	  {
-		  MemoryMap[0] = RAM_Memory + 0x0000;
-		  sgm_low_addr = 0x0000;
-	  }
-	}
+    // ------------------------------------------------------
+    // And Port 60 will tell us if we want to swap out the
+    // lower 8K bios for more RAM (total of 32K RAM for SGM)
+    // Since this can swap back and forth (not sure if any
+    // game really does this), we need to preserve that 8K
+    // when we switch back and forth...
+    // ------------------------------------------------------
+    if (Port60 & 0x02)
+    {
+      if (sgm_low_addr != 0x2000)
+      {
+          sgm_low_addr = 0x2000;
+          MemoryMap[0] = BIOS_Memory + 0x0000;
+      }
+    }
+    else
+    {
+      sgm_enable = true;    // Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
+      if (sgm_low_addr != 0x0000)
+      {
+          MemoryMap[0] = RAM_Memory + 0x0000;
+          sgm_low_addr = 0x0000;
+      }
+    }
 }
 
 
 unsigned char cpu_readport_pencil2(register unsigned short Port)
 {
-	u8 key = 0x00;
-	// PencilII ports are 8-bit
-	Port &= 0x00FF;
+    u8 key = 0x00;
+    // PencilII ports are 8-bit
+    Port &= 0x00FF;
 
-	if ((Port & 0xE0) == 0xE0)
-	{
-		switch(Port)
-		{
-			case 0xE0: // Joystick/Keypad Data
-			  Port = (Port&0x02) ? (JoyState>>16):JoyState;
-			  Port = JoyMode     ? (Port>>8):Port;
-			  return(~Port&0x7F);
+    if ((Port & 0xE0) == 0xE0)
+    {
+        switch(Port)
+        {
+            case 0xE0: // Joystick/Keypad Data
+              Port = (Port&0x02) ? (JoyState>>16):JoyState;
+              Port = JoyMode     ? (Port>>8):Port;
+              return(~Port&0x7F);
 
-			case 0xE1: // Keyboard Data
-			  if (kbd_key == 'J')           key |= 0x01;
-			  if (kbd_key == ',')           key |= 0x02;
-			  if (kbd_key == '.')           key |= 0x04;
-			  if (kbd_key == 'M')           key |= 0x08;
-			  if (kbd_key == 'F')           key |= 0x20;
-			  if (kbd_key == 'N')           key |= 0x40;
-			  return(~key);
+            case 0xE1: // Keyboard Data
+              if (kbd_key == 'J')           key |= 0x01;
+              if (kbd_key == ',')           key |= 0x02;
+              if (kbd_key == '.')           key |= 0x04;
+              if (kbd_key == 'M')           key |= 0x08;
+              if (kbd_key == 'F')           key |= 0x20;
+              if (kbd_key == 'N')           key |= 0x40;
+              return(~key);
 
-			case 0xE3: // Keyboard Data
-			  if (kbd_key == ' ')           key |= 0x04;
-			  if (kbd_key == 'C')           key |= 0x08;
-			  if (kbd_key == 'B')           key |= 0x20;
-			  if (kbd_key == 'H')           key |= 0x40;
-			  if (key_ctrl)                 key |= 0x01;
-			  if (key_shift)                key |= 0x10;
-			  return(~key);
+            case 0xE3: // Keyboard Data
+              if (kbd_key == ' ')           key |= 0x04;
+              if (kbd_key == 'C')           key |= 0x08;
+              if (kbd_key == 'B')           key |= 0x20;
+              if (kbd_key == 'H')           key |= 0x40;
+              if (key_ctrl)                 key |= 0x01;
+              if (key_shift)                key |= 0x10;
+              return(~key);
 
-			case 0xE4: // Keyboard Data
-			  if (kbd_key == KBD_KEY_RET)   key |= 0x01;
-			  if (kbd_key == 'O')           key |= 0x02;
-			  if (kbd_key == 'P')           key |= 0x04;
-			  if (kbd_key == 'I')           key |= 0x08;
-			  if (kbd_key == '4')           key |= 0x20;
-			  if (kbd_key == 'T')           key |= 0x40;
-			  return(~key);
+            case 0xE4: // Keyboard Data
+              if (kbd_key == KBD_KEY_RET)   key |= 0x01;
+              if (kbd_key == 'O')           key |= 0x02;
+              if (kbd_key == 'P')           key |= 0x04;
+              if (kbd_key == 'I')           key |= 0x08;
+              if (kbd_key == '4')           key |= 0x20;
+              if (kbd_key == 'T')           key |= 0x40;
+              return(~key);
 
-			case 0xE6: // Keyboard Data
-			  if (kbd_key == 'Q')           key |= 0x01;
-			  if (kbd_key == 'W')           key |= 0x02;
-			  if (kbd_key == 'X')           key |= 0x04;
-			  if (kbd_key == 'E')           key |= 0x08;
-			  if (kbd_key == '7')           key |= 0x10;
-			  if (kbd_key == '5')           key |= 0x20;
-			  if (kbd_key == '6')           key |= 0x40;
-			  return(~key);
+            case 0xE6: // Keyboard Data
+              if (kbd_key == 'Q')           key |= 0x01;
+              if (kbd_key == 'W')           key |= 0x02;
+              if (kbd_key == 'X')           key |= 0x04;
+              if (kbd_key == 'E')           key |= 0x08;
+              if (kbd_key == '7')           key |= 0x10;
+              if (kbd_key == '5')           key |= 0x20;
+              if (kbd_key == '6')           key |= 0x40;
+              return(~key);
 
-			case 0xE8: // Keyboard Data
-			  if (kbd_key == ':')           key |= 0x01;
-			  if (kbd_key == 'L')           key |= 0x02;
-			  if (kbd_key == ';')           key |= 0x04;
-			  if (kbd_key == 'K')           key |= 0x08;
-			  if (kbd_key == 'R')           key |= 0x20;
-			  if (kbd_key == 'G')           key |= 0x40;
-			  return(~key);
+            case 0xE8: // Keyboard Data
+              if (kbd_key == ':')           key |= 0x01;
+              if (kbd_key == 'L')           key |= 0x02;
+              if (kbd_key == ';')           key |= 0x04;
+              if (kbd_key == 'K')           key |= 0x08;
+              if (kbd_key == 'R')           key |= 0x20;
+              if (kbd_key == 'G')           key |= 0x40;
+              return(~key);
 
-			case 0xEA: // Keyboard Data
-			  if (kbd_key == 'Z')           key |= 0x01;
-			  if (kbd_key == 'A')           key |= 0x02;
-			  if (kbd_key == 'S')           key |= 0x04;
-			  if (kbd_key == 'D')           key |= 0x08;
-			  if (kbd_key == 'U')           key |= 0x10;
-			  if (kbd_key == 'V')           key |= 0x20;
-			  if (kbd_key == 'Y')           key |= 0x40;
-			  return(~key);
+            case 0xEA: // Keyboard Data
+              if (kbd_key == 'Z')           key |= 0x01;
+              if (kbd_key == 'A')           key |= 0x02;
+              if (kbd_key == 'S')           key |= 0x04;
+              if (kbd_key == 'D')           key |= 0x08;
+              if (kbd_key == 'U')           key |= 0x10;
+              if (kbd_key == 'V')           key |= 0x20;
+              if (kbd_key == 'Y')           key |= 0x40;
+              return(~key);
 
-			case 0xF0: // Keyboard Data
-			  if (kbd_key == '-')           key |= 0x01;
-			  if (kbd_key == '9')           key |= 0x02;
-			  if (kbd_key == '0')           key |= 0x04;
-			  if (kbd_key == '8')           key |= 0x08;
-			  return(~key);
+            case 0xF0: // Keyboard Data
+              if (kbd_key == '-')           key |= 0x01;
+              if (kbd_key == '9')           key |= 0x02;
+              if (kbd_key == '0')           key |= 0x04;
+              if (kbd_key == '8')           key |= 0x08;
+              return(~key);
 
-			case 0xF2: // Keyboard Data
-			  if (kbd_key == '1')           key |= 0x01;
-			  if (kbd_key == '2')           key |= 0x02;
-			  if (kbd_key == '3')           key |= 0x04;
-			  if (kbd_key == KBD_KEY_F1)    key |= 0x08;
-			  return(~key);
-		}
-	}
-	else
-	{
-		switch(Port & 0xE0)
-		{
-			case 0x20:
-			  return Port20 & 0x0F;
-			  break;
+            case 0xF2: // Keyboard Data
+              if (kbd_key == '1')           key |= 0x01;
+              if (kbd_key == '2')           key |= 0x02;
+              if (kbd_key == '3')           key |= 0x04;
+              if (kbd_key == KBD_KEY_F1)    key |= 0x08;
+              return(~key);
+        }
+    }
+    else
+    {
+        switch(Port & 0xE0)
+        {
+            case 0x20:
+              return Port20 & 0x0F;
+              break;
 
-			case 0x40: // Printer Status - not used
-			  return(0xFF);
-			  break;
+            case 0x40: // Printer Status - not used
+              return(0xFF);
+              break;
 
-			case 0x60:  // Memory Port - probably not used on Pencil2
-			  return Port60;
-			  break;
+            case 0x60:  // Memory Port - probably not used on Pencil2
+              return Port60;
+              break;
 
-			case 0xA0: /* VDP Status/Data */
-			  return(Port&0x01 ? RdCtrl9918():RdData9918());
-		}
-	}
+            case 0xA0: /* VDP Status/Data */
+              return(Port&0x01 ? RdCtrl9918():RdData9918());
+        }
+    }
 
-	// No such port
-	return(NORAM);
+    // No such port
+    return(NORAM);
 }
 
 /** InZ80() **************************************************/
@@ -935,14 +939,14 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2))
   {
-	  if (machine_mode & MODE_MSX)      {return cpu_readport_msx(Port);}
-	  if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}
-	  if (machine_mode & MODE_SORDM5)   {return cpu_readport_m5(Port);}
-	  if (machine_mode & MODE_PV2000)   {return cpu_readport_pv2000(Port);}
-	  if (machine_mode & MODE_MEMOTECH) {return cpu_readport_memotech(Port);}
-	  if (machine_mode & MODE_SVI)      {return cpu_readport_svi(Port);}
-	  if (machine_mode & MODE_EINSTEIN) {return cpu_readport_einstein(Port);}
-	  if (machine_mode & MODE_PENCIL2)  {return cpu_readport_pencil2(Port);}
+      if (machine_mode & MODE_MSX)      {return cpu_readport_msx(Port);}
+      if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}
+      if (machine_mode & MODE_SORDM5)   {return cpu_readport_m5(Port);}
+      if (machine_mode & MODE_PV2000)   {return cpu_readport_pv2000(Port);}
+      if (machine_mode & MODE_MEMOTECH) {return cpu_readport_memotech(Port);}
+      if (machine_mode & MODE_SVI)      {return cpu_readport_svi(Port);}
+      if (machine_mode & MODE_EINSTEIN) {return cpu_readport_einstein(Port);}
+      if (machine_mode & MODE_PENCIL2)  {return cpu_readport_pencil2(Port);}
   }
 
   // Colecovision ports are 8-bit
@@ -951,30 +955,30 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
   // Port 52 is used for the AY sound chip for the Super Game Module
   if (Port == 0x52)
   {
-	  return ay38910DataR(&myAY);
+      return ay38910DataR(&myAY);
   }
 
   switch(Port&0xE0)
   {
-	case 0x20:  // AdamNet Port from 0x20 to 0x3F
-	  return Port20 & 0x0F;
-	  break;
+    case 0x20:  // AdamNet Port from 0x20 to 0x3F
+      return Port20 & 0x0F;
+      break;
 
-	case 0x40: // Printer Status - not used
-	  return(0xFF);
-	  break;
+    case 0x40: // Printer Status - not used
+      return(0xFF);
+      break;
 
-	case 0x60:  // Adam/Memory Port from 0x60 to 0x7F
-	  return Port60;
-	  break;
+    case 0x60:  // Adam/Memory Port from 0x60 to 0x7F
+      return Port60;
+      break;
 
-	case 0xE0: // Joystick/Keypad Data
-	  Port = (Port&0x02) ? (JoyState>>16):JoyState;
-	  Port = JoyMode     ? (Port>>8):Port;
-	  return(~Port&0x7F);
+    case 0xE0: // Joystick/Keypad Data
+      Port = (Port&0x02) ? (JoyState>>16):JoyState;
+      Port = JoyMode     ? (Port>>8):Port;
+      return(~Port&0x7F);
 
-	case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
-	  return(Port&0x01 ? RdCtrl9918():RdData9918());
+    case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
+      return(Port&0x01 ? RdCtrl9918():RdData9918());
   }
 
   // No such port
@@ -990,13 +994,13 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 {
   if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
   {
-	  if (machine_mode & MODE_MSX)      {cpu_writeport_msx(Port, Value);      return;}
-	  if (machine_mode & MODE_SG_1000)  {cpu_writeport_sg(Port, Value);       return;}
-	  if (machine_mode & MODE_SORDM5)   {cpu_writeport_m5(Port, Value);       return;}
-	  if (machine_mode & MODE_PV2000)   {cpu_writeport_pv2000(Port, Value);   return;}
-	  if (machine_mode & MODE_MEMOTECH) {cpu_writeport_memotech(Port, Value); return;}
-	  if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value);      return;}
-	  if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
+      if (machine_mode & MODE_MSX)      {cpu_writeport_msx(Port, Value);      return;}
+      if (machine_mode & MODE_SG_1000)  {cpu_writeport_sg(Port, Value);       return;}
+      if (machine_mode & MODE_SORDM5)   {cpu_writeport_m5(Port, Value);       return;}
+      if (machine_mode & MODE_PV2000)   {cpu_writeport_pv2000(Port, Value);   return;}
+      if (machine_mode & MODE_MEMOTECH) {cpu_writeport_memotech(Port, Value); return;}
+      if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value);      return;}
+      if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
   }
 
   // Colecovision ports are 8-bit
@@ -1012,26 +1016,26 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   // -----------------------------------------------
   else if (Port == 0x50)
   {
-	  if ((Value & 0x0F) == 0x07) AY_Enable = true;
-	  ay38910IndexW(Value&0xF, &myAY);
-	  return;
+      if ((Value & 0x0F) == 0x07) AY_Enable = true;
+      ay38910IndexW(Value&0xF, &myAY);
+      return;
   }
   // -----------------------------------------------
   // Port 51 is the AY Sound chip register write...
   // -----------------------------------------------
   else if (Port == 0x51)
   {
-	ay38910DataW(Value, &myAY);
-	return;
+    ay38910DataW(Value, &myAY);
+    return;
   }
   else if (Port == 0x42)
   {
-	  if (isDSiMode())
-	  {
-		  Port42 = Value & 0x1F;        // 2MB worth of banks (32 banks of 64K)
-		  if (adam_mode) SetupAdam(false);
-	  }
-	  else Port42 = 0x00; // No extra banking for DS-Lite/Phat (just the stock 64K plus 64K expansion)
+      if (isDSiMode())
+      {
+          Port42 = Value & 0x1F;        // 2MB worth of banks (32 banks of 64K)
+          if (adam_mode) SetupAdam(false);
+      }
+      else Port42 = 0x00; // No extra banking for DS-Lite/Phat (just the stock 64K plus 64K expansion)
   }
 
   // ---------------------------------------------------------------------------
@@ -1041,31 +1045,31 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
   bool resetAdamNet = false;
   switch(Port&0xE0)
   {
-	case 0x80:  // Set Joystick Read Mode
-	  JoyMode=JOYMODE_JOYSTICK;
-	  return;
-	case 0xC0:  // Set Keypad Read Mode
-	  JoyMode=JOYMODE_KEYPAD;
-	  return;
-	case 0xE0:  // The SN Sound port
-	  sn76496W(Value, &mySN);
-	  return;
-	case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
-	  if(!(Port&0x01)) WrData9918(Value);
-	  else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI;}
-	  return;
-	case 0x40:  // Printer status and ADAM related stuff...not used
-	  return;
-	case 0x20:  // AdamNet port from 0x20 to 0x3F
-	  resetAdamNet = (Port20 & 1) && ((Value & 1) == 0);
-	  Port20 = Value;
-	  if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
-	  return;
-	case 0x60:  // Adam/Memory port from 0x60 to 0x7F
-	  resetAdamNet = false;
-	  Port60 = Value;
-	  if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
-	  return;
+    case 0x80:  // Set Joystick Read Mode
+      JoyMode=JOYMODE_JOYSTICK;
+      return;
+    case 0xC0:  // Set Keypad Read Mode
+      JoyMode=JOYMODE_KEYPAD;
+      return;
+    case 0xE0:  // The SN Sound port
+      sn76496W(Value, &mySN);
+      return;
+    case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
+      if(!(Port&0x01)) WrData9918(Value);
+      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI;}
+      return;
+    case 0x40:  // Printer status and ADAM related stuff...not used
+      return;
+    case 0x20:  // AdamNet port from 0x20 to 0x3F
+      resetAdamNet = (Port20 & 1) && ((Value & 1) == 0);
+      Port20 = Value;
+      if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
+      return;
+    case 0x60:  // Adam/Memory port from 0x60 to 0x7F
+      resetAdamNet = false;
+      Port60 = Value;
+      if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
+      return;
   }
 }
 
@@ -1076,9 +1080,9 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
 // -------------------------------------------------------------------------
 void PatchZ80(register Z80 *r)
 {
-	if (msx_mode)               MSX_HandleCassette(r);
-	else if (svi_mode)          SVI_HandleCassette(r);
-	else if (memotech_mode)     MTX_HandleCassette(r);
+    if (msx_mode)               MSX_HandleCassette(r);
+    else if (svi_mode)          SVI_HandleCassette(r);
+    else if (memotech_mode)     MTX_HandleCassette(r);
 }
 
 
@@ -1096,115 +1100,115 @@ ITCM_CODE u32 LoopZ80()
   // ----------------------------------------------------------------------------
   if (creativision_mode)
   {
-	  creativision_run();
+      creativision_run();
   }
   else
   {
-	  // ------------------------------------------------------------------
-	  // Before we execute Z80 or Loop the 9918 (both of which can cause
-	  // NMI interrupt to occur), we check and adjust the spinners which
-	  // can generate a lower priority interrupt to the running Z80 code.
-	  // ------------------------------------------------------------------
-	  if (spinner_enabled)
-	  {
-		  if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
-		  {
-			  if (spinX_left)
-			  {
-				  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-				  JoyState   &= 0xFFFFCFFF;
-				  JoyState   |= 0x00003000;
-			  }
-			  else if (spinX_right)
-			  {
-				  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-				  JoyState   &= 0xFFFFCFFF;
-				  JoyState   |= 0x00001000;
-			  }
+      // ------------------------------------------------------------------
+      // Before we execute Z80 or Loop the 9918 (both of which can cause
+      // NMI interrupt to occur), we check and adjust the spinners which
+      // can generate a lower priority interrupt to the running Z80 code.
+      // ------------------------------------------------------------------
+      if (spinner_enabled)
+      {
+          if ((++spinnerDampen % SPINNER_SPEED[myConfig.spinSpeed]) == 0)
+          {
+              if (spinX_left)
+              {
+                  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+                  JoyState   &= 0xFFFFCFFF;
+                  JoyState   |= 0x00003000;
+              }
+              else if (spinX_right)
+              {
+                  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+                  JoyState   &= 0xFFFFCFFF;
+                  JoyState   |= 0x00001000;
+              }
 
-			  if (spinY_left)
-			  {
-				  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-				  JoyState   &= 0xCFFFFFFF;
-				  JoyState   |= 0x30000000;
-			  }
-			  else if (spinY_right)
-			  {
-				  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
-				  JoyState   &= 0xCFFFFFFF;
-				  JoyState   |= 0x10000000;
-			  }
-		  }
-	  }
+              if (spinY_left)
+              {
+                  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+                  JoyState   &= 0xCFFFFFFF;
+                  JoyState   |= 0x30000000;
+              }
+              else if (spinY_right)
+              {
+                  CPU.IRequest=INT_RST38;       // The CZ80 way of requesting interrupt
+                  JoyState   &= 0xCFFFFFFF;
+                  JoyState   |= 0x10000000;
+              }
+          }
+      }
 
-	  // Execute 1 scanline worth of CPU instructions
-	  u32 cycles_to_process = tms_cpu_line + cycle_deficit;
-	  cycle_deficit = ExecZ80(cycles_to_process);
-	  
-	  // Refresh VDP
-	  if(Loop9918())
-	  {
-		  CPU.IRequest = vdp_int_source;    // Use the proper VDP interrupt souce (set in TMS9918 init)
-	  }
-	  else if (ctc_enabled)
-	  {
-		  // -------------------------------------------------------------------------
-		  // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer
-		  // circuit that needs attention - this isnt timing accurate but it's good
-		  // enough to allow those timers to trigger and the games to be played.
-		  // -------------------------------------------------------------------------
-		  if (CPU.IRequest == INT_NONE)
-		  {
-			  CTC_Timer(cycles_to_process);
-		  }
-		  if (CPU.IRequest == INT_NONE)
-		  {
-			  if (einstein_mode)  // For Einstein, check if the keyboard is generating an interrupt...
-			  {
-				  einstein_handle_interrupts();
-				  if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
-				  else if (joystick_interrupt) CPU.IRequest = joystick_interrupt;
-			  }
-			  else if (sordm5_mode)  // For Sord M5, check if the keyboard is generating an interrupt...
-			  {
-				  CPU.IRequest = keyboard_interrupt;    // This will either be INT_NONE or the CTC interrupt for a keypress... set in sordm5_check_keyboard_interrupt()
-				  keyboard_interrupt = INT_NONE;
-			  }
-		  }
-	  }
+      // Execute 1 scanline worth of CPU instructions
+      u32 cycles_to_process = tms_cpu_line + cycle_deficit;
+      cycle_deficit = ExecZ80(cycles_to_process);
+      
+      // Refresh VDP
+      if(Loop9918())
+      {
+          CPU.IRequest = vdp_int_source;    // Use the proper VDP interrupt souce (set in TMS9918 init)
+      }
+      else if (ctc_enabled)
+      {
+          // -------------------------------------------------------------------------
+          // The Sord M5, Memotech MTX and the Tatung Einstein have a Z80 CTC timer
+          // circuit that needs attention - this isnt timing accurate but it's good
+          // enough to allow those timers to trigger and the games to be played.
+          // -------------------------------------------------------------------------
+          if (CPU.IRequest == INT_NONE)
+          {
+              CTC_Timer(cycles_to_process);
+          }
+          if (CPU.IRequest == INT_NONE)
+          {
+              if (einstein_mode)  // For Einstein, check if the keyboard is generating an interrupt...
+              {
+                  einstein_handle_interrupts();
+                  if (keyboard_interrupt) CPU.IRequest = keyboard_interrupt;
+                  else if (joystick_interrupt) CPU.IRequest = joystick_interrupt;
+              }
+              else if (sordm5_mode)  // For Sord M5, check if the keyboard is generating an interrupt...
+              {
+                  CPU.IRequest = keyboard_interrupt;    // This will either be INT_NONE or the CTC interrupt for a keypress... set in sordm5_check_keyboard_interrupt()
+                  keyboard_interrupt = INT_NONE;
+              }
+          }
+      }
 
-	  // Generate an interrupt if called for...
-	  if(CPU.IRequest!=INT_NONE)
-	  {
-		  IntZ80(&CPU, CPU.IRequest);
-		  CPU.User++;   // Track Interrupt Requests
-		  if (pv2000_mode)
-		  {
-			  extern void pv2000_check_kbd(void);
-			  pv2000_check_kbd();
-		  }
-	  }
+      // Generate an interrupt if called for...
+      if(CPU.IRequest!=INT_NONE)
+      {
+          IntZ80(&CPU, CPU.IRequest);
+          CPU.User++;   // Track Interrupt Requests
+          if (pv2000_mode)
+          {
+              extern void pv2000_check_kbd(void);
+              pv2000_check_kbd();
+          }
+      }
   }
 
   // Drop out unless end of screen is reached
   if (CurLine == tms_end_line)
   {
-	  // ------------------------------------------------------------------------------------
-	  // If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it),
-	  // then we need to service it here. We basically track the frequency at which the
-	  // game has hit the beeper and approximate that by using AY Channel A to produce the
-	  // tone.  This is crude and doesn't sound quite right... but good enough.
-	  // ------------------------------------------------------------------------------------
-	  if (myConfig.msxBeeper)
-	  {
-		  if (msx_mode) MSX_HandleBeeper();
-		  else if (einstein_mode) einstein_HandleBeeper();
-	  }
-	  else if (adam_mode)
-	  {
-		  adam_drive_cache_check();    // Make sure the disk and tape buffers are up to date
-	  }
-	  return 0;
+      // ------------------------------------------------------------------------------------
+      // If the MSX Beeper is being used (rare but a few of the ZX Spectrum ports use it),
+      // then we need to service it here. We basically track the frequency at which the
+      // game has hit the beeper and approximate that by using AY Channel A to produce the
+      // tone.  This is crude and doesn't sound quite right... but good enough.
+      // ------------------------------------------------------------------------------------
+      if (myConfig.msxBeeper)
+      {
+          if (msx_mode) MSX_HandleBeeper();
+          else if (einstein_mode) einstein_HandleBeeper();
+      }
+      else if (adam_mode)
+      {
+          adam_drive_cache_check();    // Make sure the disk and tape buffers are up to date
+      }
+      return 0;
   }
   return 1;
 }
