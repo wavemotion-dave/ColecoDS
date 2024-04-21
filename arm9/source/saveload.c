@@ -28,8 +28,14 @@
 #include "fdc.h"
 #include "printf.h"
 
-#define COLECODS_SAVE_VER 0x001D        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER   0x001E        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
+
+// -----------------------------------------------------------------------------------------------------
+// Since the main MemoryMap[] can point to differt things (RAM, ROM, BIOS, etc) and since we can't rely
+// on the memory being in the same spot on subsequent versions of the emulator... we need to save off
+// the type and the offset so that we can patch it back together when we load back a saved state.
+// -----------------------------------------------------------------------------------------------------
 struct RomOffset
 {
     u8   type;
@@ -37,10 +43,13 @@ struct RomOffset
 };
 
 struct RomOffset Offsets[8];
+
 #define TYPE_ROM   0
 #define TYPE_RAM   1
 #define TYPE_BIOS  2
-#define TYPE_OTHER 3
+#define TYPE_EXP   3
+#define TYPE_FDC   4
+#define TYPE_OTHER 5
 
 /*********************************************************************************
  * Save the current state - save everything we need to a single .sav file.
@@ -105,10 +114,20 @@ void colecoSaveState()
             Offsets[i].type = TYPE_ROM;
             Offsets[i].offset = MemoryMap[i] - ROM_Memory;
         }
+        else if ((MemoryMap[i] >= fastdrom_cdx2) && (MemoryMap[i] <= fastdrom_cdx2+(sizeof(fastdrom_cdx2))))
+        {
+            Offsets[i].type = TYPE_FDC;
+            Offsets[i].offset = MemoryMap[i] - fastdrom_cdx2;
+        }        
         else if ((MemoryMap[i] >= RAM_Memory) && (MemoryMap[i] <= RAM_Memory+(sizeof(RAM_Memory))))
         {
             Offsets[i].type = TYPE_RAM;
             Offsets[i].offset = MemoryMap[i] - RAM_Memory;
+        }
+        else if ((DSI_RAM_Buffer != 0) && (MemoryMap[i] >= DSI_RAM_Buffer) && (MemoryMap[i] <= DSI_RAM_Buffer+(2*1024*1024)))
+        {
+            Offsets[i].type = TYPE_EXP;
+            Offsets[i].offset = MemoryMap[i] - DSI_RAM_Buffer;
         }
         else if ((MemoryMap[i] >= BIOS_Memory) && (MemoryMap[i] <= BIOS_Memory+(sizeof(BIOS_Memory))))
         {
@@ -151,21 +170,13 @@ void colecoSaveState()
     if (uNbO) uNbO = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
     if (uNbO) uNbO = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
 
-    // Some Tatung Einstein stuff...
-    if (uNbO) uNbO = fwrite(&einstein_ram_start, sizeof(einstein_ram_start), 1, handle);                        
-    if (uNbO) uNbO = fwrite(&keyboard_w, sizeof(keyboard_w), 1, handle);                        
-    if (uNbO) uNbO = fwrite(&key_int_mask, sizeof(key_int_mask), 1, handle);
-    if (einstein_mode == 2 || msx_mode == 3)
-    {
-        if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);        
-    }
-
+    // And a few things for the Super Game Cart
     if (uNbO) uNbO = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
     if (uNbO) uNbO = fwrite(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
     if (uNbO) uNbO = fwrite(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
     
     // Some spare memory we can eat into...
-    if (uNbO) uNbO = fwrite(spare, 506,1, handle);
+    if (uNbO) uNbO = fwrite(spare, 506, 1, handle);
       
     // Write VDP
     if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
@@ -207,6 +218,7 @@ void colecoSaveState()
     if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
     if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
     
+    // Some systems utilize the Z80 CTC 
     if (uNbO) fwrite(CTC, sizeof(CTC),1, handle);
     if (uNbO) fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
     
@@ -216,7 +228,7 @@ void colecoSaveState()
     if (uNbO) fwrite(&Port20, sizeof(Port20),1, handle);
     if (uNbO) fwrite(&Port42, sizeof(Port42),1, handle);    
       
-    if (einstein_mode)
+    if (einstein_mode) // Big enough that we will not write this if we are not Einstein
     {
         if (uNbO) fwrite(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
         if (uNbO) fwrite(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
@@ -224,30 +236,14 @@ void colecoSaveState()
         if (uNbO) fwrite(&key_int_mask, sizeof(key_int_mask),1, handle);      
         if (uNbO) fwrite(&myKeyData, sizeof(myKeyData),1, handle);      
         if (uNbO) fwrite(&adc_mux, sizeof(adc_mux),1, handle);      
+        if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);
     }
     else if (msx_mode)   // Big enough that we will not write this if we are not MSX 
     {
-        for (u8 i=0; i<8; i++)
-        {
-            if ((Slot1ROMPtr[i] >= ROM_Memory) && (Slot1ROMPtr[i] <= ROM_Memory+(sizeof(ROM_Memory))))
-            {
-                Offsets[i].type = TYPE_ROM;
-                Offsets[i].offset = Slot1ROMPtr[i] - ROM_Memory;
-            }
-            else
-            {
-                Offsets[i].type = TYPE_OTHER;
-                Offsets[i].offset =  (u32)Slot1ROMPtr[i];
-            }
-        }
-        if (uNbO) fwrite(Offsets, sizeof(Offsets),1, handle);
-        
         if (uNbO) fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
         if (msx_sram_enabled) if (uNbO) fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
-        if (msx_scc_enable)
-        {
-            if (uNbO) uNbO = fwrite(&mySCC, sizeof(mySCC),1, handle);
-        }
+        if (msx_scc_enable)   if (uNbO) uNbO = fwrite(&mySCC, sizeof(mySCC),1, handle);
+        if (msx_mode == 3)    if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
@@ -370,9 +366,17 @@ void colecoLoadState()
                 {
                     MemoryMap[i] = (u8 *) (ROM_Memory + Offsets[i].offset);
                 }
+                else if (Offsets[i].type == TYPE_FDC)
+                {
+                    MemoryMap[i] = (u8 *) (fastdrom_cdx2 + Offsets[i].offset);
+                }
                 else if (Offsets[i].type == TYPE_RAM)
                 {
                     MemoryMap[i] = (u8 *) (RAM_Memory + Offsets[i].offset);
+                }
+                else if (Offsets[i].type == TYPE_EXP)
+                {
+                    MemoryMap[i] = (u8 *) (DSI_RAM_Buffer + Offsets[i].offset);
                 }
                 else if (Offsets[i].type == TYPE_BIOS)
                 {
@@ -412,21 +416,13 @@ void colecoLoadState()
             if (uNbO) uNbO = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
             if (uNbO) uNbO = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
             
-            // Some Tatung Einstein stuff...
-            if (uNbO) uNbO = fread(&einstein_ram_start, sizeof(einstein_ram_start), 1, handle);                        
-            if (uNbO) uNbO = fread(&keyboard_w, sizeof(keyboard_w), 1, handle);                        
-            if (uNbO) uNbO = fread(&key_int_mask, sizeof(key_int_mask), 1, handle);
-            if (einstein_mode == 2)
-            {
-                if (uNbO) uNbO = fread(&FDC, sizeof(FDC), 1, handle);
-            }
-
+            // And a few things for the Super Game Cart
             if (uNbO) uNbO = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
             if (uNbO) uNbO = fread(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
             if (uNbO) uNbO = fread(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
 
             // Load spare memory for future use
-            if (uNbO) uNbO = fread(spare, 506,1, handle); 
+            if (uNbO) uNbO = fread(spare, 506, 1, handle); 
 
             // Load VDP
             if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 
@@ -470,6 +466,7 @@ void colecoLoadState()
             if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
             if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
             
+            // Some systems utilize the Z80 CTC 
             if (uNbO) fread(CTC, sizeof(CTC),1, handle);
             if (uNbO) fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
             
@@ -479,7 +476,7 @@ void colecoLoadState()
             if (uNbO) fread(&Port20, sizeof(Port20),1, handle);
             if (uNbO) fread(&Port42, sizeof(Port42),1, handle);
             
-		    if (einstein_mode)
+		    if (einstein_mode) // Big enough that we will not write this if we are not Einstein
 		    {
 	            if (uNbO) fread(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
                 if (uNbO) fread(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
@@ -487,28 +484,17 @@ void colecoLoadState()
                 if (uNbO) fread(&key_int_mask, sizeof(key_int_mask),1, handle);      
                 if (uNbO) fread(&myKeyData, sizeof(myKeyData),1, handle);      
                 if (uNbO) fread(&adc_mux, sizeof(adc_mux),1, handle);      
+                if (uNbO) uNbO = fread(&FDC, sizeof(FDC), 1, handle);
     		}
     		else if (msx_mode)   // Big enough that we will not write this if we are not MSX
             {
-                if (uNbO) fread(Offsets, sizeof(Offsets),1, handle);
-                for (u8 i=0; i<8; i++)
-                {
-                    if (Offsets[i].type == TYPE_ROM)
-                    {
-                        Slot1ROMPtr[i] = (u8 *) (ROM_Memory + Offsets[i].offset);
-                    }
-                    else
-                    {
-                        Slot1ROMPtr[i] = (u8 *) (Offsets[i].offset);
-                    }
-                }
-
                 if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
                 if (msx_sram_enabled) if (uNbO) fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
-                if (msx_scc_enable)
-                {
-                    if (uNbO) uNbO = fread(&mySCC, sizeof(mySCC),1, handle);
-                }
+                if (msx_scc_enable)   if (uNbO) uNbO = fread(&mySCC, sizeof(mySCC),1, handle);
+                if (msx_mode == 3)    if (uNbO) uNbO = fread(&FDC, sizeof(FDC), 1, handle);
+                
+                msx_caps_lock = (Port_PPI_C & 0x40); // Set the caps lock state back to what it should be based on Port C
+                msx_last_block[0] = msx_last_block[1] = msx_last_block[2] = msx_last_block[3] = 199; // Ensure bank swaps always happen after a restore                
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {

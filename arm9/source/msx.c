@@ -57,8 +57,6 @@ u8  msx_japanese_matrix = 0;        // Default to International keyboard layout.
 
 static u8 header_MSX[8] = { 0x1f,0xa6,0xde,0xba,0xcc,0x13,0x7d,0x74 };
 
-extern unsigned char fastdrom_cdx2[];
-
 // ------------------------------------------------------------------
 // MSX IO Port Read - just VDP and Joystick to contend with...
 // ------------------------------------------------------------------
@@ -1210,37 +1208,23 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
     }
     else if (Port == 0xAB)  // PPI - Register C Fast Modify
     {
-        if ((Value & 0x0E) == 0x0E)
+        if ((Value & 0x0E) == 0x0E) // Are we hitting the Beeper ON/OFF bit?
         {
-            if (Value & 1)  // Beeper ON
-            {
-                if ((Port_PPI_C & 0x80) == 0) beeperFreq++;
-                Port_PPI_C |= 0x80; // Set bit
-            }
-            else
-            {
-                Port_PPI_C &= 0x7F; // Clear bit
-            }
-        }
-        if ((Value & 0x0E) == 0x0C) // Caps Lock Toggle
-        {
-            if (Value & 1)  // Caps Lock ON
-            {
-                Port_PPI_C |= 0x40; // Set bit
-            }
-            else
-            {
-                Port_PPI_C &= 0xBF; // Clear bit
-            }
+            if ((Value & 1) && ((Port_PPI_C & 0x80) == 0)) beeperFreq++;   // Beeper ON
         }
         
+        // Set or clear the proper bit in PORTC
+        u8 bit =  (Value & 0x0E) >> 1;
+        if (Value & 1) Port_PPI_C |= (1 << bit);
+        else Port_PPI_C &= ~(1 << bit);
+
         msx_caps_lock = (Port_PPI_C & 0x40);
     }
-  else if (Port >= 0xD0 && Port <= 0xD7)  // Floppy Drive Controller
-  {
+    else if (Port >= 0xD0 && Port <= 0xD7)  // Floppy Drive Controller
+    {
       //2 sides * 80 tracks * 9 sectors per track * 512 bytes per sector = 737280 Bytes (720kB)
       fdc_write(Port & 0x07, Value);
-  }
+    }
 }
 
 
