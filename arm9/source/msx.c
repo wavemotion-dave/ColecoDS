@@ -398,9 +398,9 @@ unsigned char cpu_readport_msx(register unsigned short Port)
 }
 
 
-//---------------------------------------------------------------
-// National FS-1300 and generic C-BIOS or MSX.ROM 64K Slot 3
-//---------------------------------------------------------------
+//------------------------------------------------------------------------------
+// National FS-1300, Panasonic CF-2700 and generic C-BIOS or MSX.ROM 64K Slot 3
+//------------------------------------------------------------------------------
 // Memory          Slot 0       Slot 1      Slot 2      Slot 3
 // C000h~FFFFh      ---       Cartridge      ---       16K RAM
 // 8000h~BFFFh      ---       Cartridge      ---       16K RAM
@@ -1206,6 +1206,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             if ((Port_PPI_C & 0x80) == 0) beeperFreq++;
         }
         Port_PPI_C = Value;
+        msx_caps_lock = (Port_PPI_C & 0x40);
     }
     else if (Port == 0xAB)  // PPI - Register C Fast Modify
     {
@@ -1221,6 +1222,19 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
                 Port_PPI_C &= 0x7F; // Clear bit
             }
         }
+        if ((Value & 0x0E) == 0x0C) // Caps Lock Toggle
+        {
+            if (Value & 1)  // Caps Lock ON
+            {
+                Port_PPI_C |= 0x40; // Set bit
+            }
+            else
+            {
+                Port_PPI_C &= 0xBF; // Clear bit
+            }
+        }
+        
+        msx_caps_lock = (Port_PPI_C & 0x40);
     }
   else if (Port >= 0xD0 && Port <= 0xD7)  // Floppy Drive Controller
   {

@@ -70,7 +70,6 @@
 
 #include "printf.h"
 
-extern Z80 CPU;
 u32 debug[0x10]={0};
 
 // -------------------------------------------------------------------------------------------
@@ -138,13 +137,14 @@ u8 *MSXBios_CasioPV7            = (u8*) (0x06860000 + 0x38000);
 C24XX EEPROM;
 
 static char cmd_line_file[256];
-char initial_file[MAX_ROM_LENGTH] = "";
-char initial_path[MAX_ROM_LENGTH] = "";
+char initial_file[MAX_ROM_NAME] = "";
+char initial_path[MAX_ROM_NAME] = "";
 
 // ------------------------------------------
 // Some ADAM and Tape related vars...
 // ------------------------------------------
 u8 adam_CapsLock        = 0;
+u8 msx_caps_lock        = 1;
 u8 write_EE_counter     = 0;
 u32 last_tape_pos       = 9999;
 
@@ -1064,6 +1064,11 @@ void DisplayStatusLine(bool bForce)
                 DSPrint(8,0,6, "          ");
             }            
         }
+        
+        if (myConfig.overlay == 1)
+        {
+            DSPrint(1,23,0, (msx_caps_lock ? " ":"@"));
+        }
     }
     else if (svi_mode)
     {
@@ -1293,7 +1298,7 @@ void DigitalInsertDisk(u8 drive, char *filename)
             // --------------------------------------------
             // And set it as the .dsk for this DISK drive
             // --------------------------------------------
-            getcwd(disk_last_path[BAY_DISK1+drive], MAX_ROM_LENGTH);
+            getcwd(disk_last_path[BAY_DISK1+drive], MAX_ROM_NAME);
             strcpy(disk_last_file[BAY_DISK1+drive], filename);
             adam_drive_insert(BAY_DISK1+drive, disk_last_file[BAY_DISK1+drive]);
        }
@@ -1330,7 +1335,7 @@ void DigitalInsertTape(char *filename)
             // --------------------------------------------
             // And set it as the .ddp for this TAPE drive
             // --------------------------------------------
-            getcwd(disk_last_path[BAY_TAPE], MAX_ROM_LENGTH);
+            getcwd(disk_last_path[BAY_TAPE], MAX_ROM_NAME);
             strcpy(disk_last_file[BAY_TAPE], filename);
             adam_drive_insert(BAY_TAPE, disk_last_file[BAY_TAPE]);
        }
@@ -4014,6 +4019,25 @@ void LoadBIOSFiles(void)
         fclose(fp);
     }
 
+    // ----------------------------------------------------
+    // We are using 256K of DS VRAM for the BIOS stores...
+    // ----------------------------------------------------
+    memset((u8*)0x06860000, 0xFF, 0x40000);
+    
+    // -----------------------------------------------------------
+    // Next try to load the SVI.ROM
+    // -----------------------------------------------------------
+    fp = fopen("svi.rom", "rb");
+    if (fp == NULL) fp = fopen("/roms/bios/svi.rom", "rb");
+    if (fp == NULL) fp = fopen("/data/bios/svi.rom", "rb");
+    if (fp != NULL)
+    {
+        bSVIBiosFound = true;
+        fread(BIOS_Memory, 0x8000, 1, fp);
+        fclose(fp);
+        memcpy(SVIBios, BIOS_Memory, 0x8000);
+    }
+
     // ---------------------------------------------------------------
     // Next try to load MSX.ROM and any of the other supported
     // MSX machine BIOS files - we support a half-dozen or so 
@@ -4264,21 +4288,6 @@ void LoadBIOSFiles(void)
         memcpy(MSXBios_NationalFS1300, BIOS_Memory, 0x8000);
     }
 
-    
-    // -----------------------------------------------------------
-    // Next try to load the SVI.ROM
-    // -----------------------------------------------------------
-    fp = fopen("svi.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/svi.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/svi.rom", "rb");
-    if (fp != NULL)
-    {
-        bSVIBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-        memcpy(SVIBios, BIOS_Memory, 0x8000);
-    }
-
     // -----------------------------------------------------------
     // Next try to load the PENCIL2.ROM
     // -----------------------------------------------------------
@@ -4306,7 +4315,7 @@ void LoadBIOSFiles(void)
     }
 
     // -----------------------------------------------------------
-    // Next try to load the EINSTIEN2.ROM (diagnostcs, etc)
+    // Next try to load the EINSTIEN2.ROM (diagnostics, etc)
     // -----------------------------------------------------------
     fp = fopen("einstein2.rom", "rb");
     if (fp == NULL) fp = fopen("/roms/bios/einstein2.rom", "rb");

@@ -195,7 +195,6 @@ const u32 cv_no_mirror_games[] =
   0x4359a3e5,   //  BC's Quest for Tires.rom
   0x7a93c6e5,   //  Beamrider.rom
   0xdf65fc87,   //  Blockade Runner.rom
-  0x9b547ba8,   //  Boulder Dash.rom
   0x829c967d,   //  Brain Strainers.rom
   0x00b37475,   //  Buck Rogers - Planet of Zoom.rom
   0x9e1fab59,   //  Bump 'n' Jump.rom
@@ -750,7 +749,7 @@ void colecoDSFindFiles(void)
       }
     }
     else {
-      if ((strlen(szFile)>4) && (strlen(szFile)<(MAX_ROM_LENGTH-4)) ) {
+      if ((strlen(szFile)>4) && (strlen(szFile)<(MAX_ROM_NAME-4)) ) {
         if ( (strcasecmp(strrchr(szFile, '.'), ".rom") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -1703,8 +1702,6 @@ struct options_t
     u8           option_max;
 };
 
-char msx_rom_str[16] = "MSX.ROM 64K";
-char msx_rom_str_short[16] = "MSX";
 const struct options_t Option_Table[3][20] =
 {
     // Page 1
@@ -1755,7 +1752,7 @@ const struct options_t Option_Table[3][20] =
         
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }
-};              
+};
 
 
 // ------------------------------------------------------------------
@@ -2059,11 +2056,14 @@ void colecoDSChangeKeymap(void)
 }
 
 
-// ----------------------------------------------------------------------------------
-// At the bottom of the main screen we show the currently selected filename and CRC
-// ----------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------
+// At the bottom of the main screen we show the currently selected filename, size and CRC32
+// -----------------------------------------------------------------------------------------
 void DisplayFileName(void)
 {
+    sprintf(szName, "[%d K] [CRC: %08X]", file_size/1024, file_crc);
+    DSPrint((16 - (strlen(szName)/2)),19,0,szName);
+    
     sprintf(szName,"%s",gpFic[ucGameChoice].szName);
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
@@ -2082,12 +2082,12 @@ void DisplayFileName(void)
 //*****************************************************************************
 void dispInfoOptions(u32 uY) 
 {
-    DSPrint(2, 8,(uY== 8 ? 2 : 0),("         LOAD  GAME         "));
-    DSPrint(2,10,(uY==10 ? 2 : 0),("         PLAY  GAME         "));
-    DSPrint(2,12,(uY==12 ? 2 : 0),("     REDEFINE  KEYS         "));
-    DSPrint(2,14,(uY==14 ? 2 : 0),("         GAME  OPTIONS      "));
-    DSPrint(2,16,(uY==16 ? 2 : 0),("       GLOBAL  OPTIONS      "));
-    DSPrint(2,18,(uY==18 ? 2 : 0),("         QUIT  EMULATOR     "));
+    DSPrint(2, 7,(uY== 7 ? 2 : 0),("         LOAD  GAME         "));
+    DSPrint(2, 9,(uY== 9 ? 2 : 0),("         PLAY  GAME         "));
+    DSPrint(2,11,(uY==11 ? 2 : 0),("     REDEFINE  KEYS         "));
+    DSPrint(2,13,(uY==13 ? 2 : 0),("         GAME  OPTIONS      "));
+    DSPrint(2,15,(uY==15 ? 2 : 0),("       GLOBAL  OPTIONS      "));
+    DSPrint(2,17,(uY==17 ? 2 : 0),("         QUIT  EMULATOR     "));
 }
 
 // --------------------------------------------------------------------
@@ -2325,7 +2325,7 @@ void ReadFileCRCAndConfig(void)
 // --------------------------------------------------------------------
 void colecoDSChangeOptions(void) 
 {
-  u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 8, bOK=0;
+  u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 7, bOK=0;
   
   // Upper Screen Background
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -2355,7 +2355,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
         dispInfoOptions(32);
-        ucY = (ucY == 8 ? 18 : ucY -2);
+        ucY = (ucY == 7 ? 17 : ucY -2);
         ucHaut=0x01;
         dispInfoOptions(ucY);
       }
@@ -2370,7 +2370,7 @@ void colecoDSChangeOptions(void)
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         dispInfoOptions(32);
-        ucY = (ucY == 18 ? 8 : ucY +2);
+        ucY = (ucY == 17 ? 7 : ucY +2);
         ucBas=0x01;
         dispInfoOptions(ucY);
       }
@@ -2386,7 +2386,7 @@ void colecoDSChangeOptions(void)
       if (!ucA) {
         ucA = 0x01;
         switch (ucY) {
-          case 8 :      // LOAD GAME
+          case 7 :      // LOAD GAME
             colecoDSLoadFile();
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
             if (ucGameChoice != -1) 
@@ -2394,10 +2394,10 @@ void colecoDSChangeOptions(void)
                 ReadFileCRCAndConfig(); // Get CRC32 of the file and read the config/keys
                 DisplayFileName();      // And put up the filename on the bottom screen
             }
-            ucY = 10;
+            ucY = 9;
             dispInfoOptions(ucY);
             break;
-          case 10 :     // PLAY GAME
+          case 9 :     // PLAY GAME
             if (ucGameChoice != -1) 
             { 
                 bOK = 1;
@@ -2407,7 +2407,7 @@ void colecoDSChangeOptions(void)
                 NoGameSelected(ucY);
             }
             break;
-          case 12 :     // REDEFINE KEYS
+          case 11 :     // REDEFINE KEYS
             if (ucGameChoice != -1) 
             { 
                 colecoDSChangeKeymap();
@@ -2420,7 +2420,7 @@ void colecoDSChangeOptions(void)
                 NoGameSelected(ucY);
             }
             break;
-          case 14 :     // GAME OPTIONS
+          case 13 :     // GAME OPTIONS
             if (ucGameChoice != -1) 
             { 
                 colecoDSGameOptions(false);
@@ -2434,14 +2434,14 @@ void colecoDSChangeOptions(void)
             }
             break;                
                 
-          case 16 :     // GLOBAL OPTIONS
+          case 15 :     // GLOBAL OPTIONS
             colecoDSGameOptions(true);
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
             dispInfoOptions(ucY);
             DisplayFileName();
             break;
                 
-          case 18 :     // QUIT EMULATOR
+          case 17 :     // QUIT EMULATOR
             exit(1);
             break;
         }
@@ -2498,7 +2498,7 @@ void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr,
   unsigned short ucFade;
   unsigned char ucBcl;
 
-  // Fade-out vers le noir
+  // Fade-out to black
   if (ucScr & 0x01) REG_BLDCNT=ucBG;
   if (ucScr & 0x02) REG_BLDCNT_SUB=ucBG;
   if (ucSens == 1) {
