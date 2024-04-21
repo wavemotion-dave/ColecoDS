@@ -48,6 +48,7 @@ extern u8 ROM_Memory[MAX_CART_SIZE * 1024];
 extern u8 RAM_Memory[0x10000];
 extern u8 BIOS_Memory[0x10000];
 extern u8 SRAM_Memory[0x4000];
+extern u8 fastdrom_cdx2[0x4000];
 
 extern u8 bROMInSlot[4];
 extern u8 bRAMInSlot[4];
@@ -56,6 +57,7 @@ extern u8 *MemoryMap[8];
 extern u8 msx_slot_dirty[4];
 
 extern u8 adam_ext_ram_used;
+extern u8  msx_last_block[4];
 
 extern SN76496 mySN;
 extern AY38910 myAY;

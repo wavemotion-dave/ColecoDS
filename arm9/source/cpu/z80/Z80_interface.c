@@ -725,7 +725,7 @@ void Z80_Interface_Reset(void)
   msx_last_block[0] = 
   msx_last_block[1] =
   msx_last_block[2] =
-  msx_last_block[3] = 99;
+  msx_last_block[3] = 199;
 }
 
 // -----------------------------------------------------------------
