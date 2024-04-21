@@ -1,7 +1,16 @@
-// ---------------------------------------------------------------------------------
+// =====================================================================================
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+//
+// Copying and distribution of this emulator, its source code and associated
+// readme files, with or without modification, are permitted in any medium without
+// royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
+// Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
+//
+// The ColecoDS emulator is offered as-is, without any warranty. Please see readme.md
+//
 // This file is our bridge between the Z80 CPU core and the rest of the system.
 // ColecoDS currently supports the CZ80 CPU core.
-// ---------------------------------------------------------------------------------
+// =====================================================================================
 #include <nds.h>
 
 #include <stdio.h>
@@ -24,11 +33,10 @@ u8  msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8  msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
 u8  msx_last_block[4]  __attribute__((section(".dtcm"))) = {99,99,99,99};
 
-// -------------------------------------------------
-// Switch banks... do this as fast as possible by
-// switching only the memory map and not trying
-// to copy blocks of memory around.
-// -------------------------------------------------
+// ---------------------------------------------------------------
+// Switch banks... do this as fast as possible by switching only
+// the memory map and not trying to copy blocks of memory around.
+// ---------------------------------------------------------------
 ITCM_CODE void MegaCartBankSwitch(u8 bank)
 {
     if (last_mega_bank != bank)   // Only if the bank was changed...
@@ -66,7 +74,7 @@ ITCM_CODE u8 cpu_readmem16_banked(u16 address)
       {
           if (address==0xFF80)
           {
-            return(Read24XX(&EEPROM));  // Return EEPROM output bit
+              return(Read24XX(&EEPROM));  // Return EEPROM output bit
           }
       }
       else if (bSuperGameCart)
@@ -314,11 +322,13 @@ ITCM_CODE void activision_pcb_write(u16 address)
   {
       MegaCartBankSwitch((address>>4) & romBankMask);
   }
-
-  if (address == 0xFFC0) Write24XX(&EEPROM,EEPROM.Pins&~C24XX_SCL);
-  if (address == 0xFFD0) Write24XX(&EEPROM,EEPROM.Pins|C24XX_SCL);
-  if (address == 0xFFE0) Write24XX(&EEPROM,EEPROM.Pins&~C24XX_SDA);
-  if (address == 0xFFF0) Write24XX(&EEPROM,EEPROM.Pins|C24XX_SDA);
+  else
+  {
+      if (address == 0xFFC0) Write24XX(&EEPROM,EEPROM.Pins&~C24XX_SCL);
+      if (address == 0xFFD0) Write24XX(&EEPROM,EEPROM.Pins|C24XX_SCL);
+      if (address == 0xFFE0) Write24XX(&EEPROM,EEPROM.Pins&~C24XX_SDA);
+      if (address == 0xFFF0) Write24XX(&EEPROM,EEPROM.Pins|C24XX_SDA);
+  }
 }
 
 // ------------------------------------------------------------------
@@ -340,7 +350,7 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
             if (adam_ram_present[address >> 13]) // Is there RAM mapped in this 8K area?
             {
                 *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
-                if  (PCBTable[address]) WritePCB(address, value); // Check if we need to write to the PCB mapped area
+                if (PCBTable[address]) WritePCB(address, value); // Check if we need to write to the PCB mapped area
             }
         }
         // -------------------------------------------------------------

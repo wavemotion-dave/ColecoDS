@@ -2,7 +2,7 @@
 #define _colecoDS_GENERIC_H_
 
 #define MAX_ROMS        1500
-#define MAX_ROM_LENGTH  160
+#define MAX_ROM_NAME    160
 
 #define MAX_CONFIGS     1950
 #define CONFIG_VER      0x0013
@@ -30,7 +30,7 @@
 #define CV_MODE_SUPERCART           4
 
 typedef struct {
-  char szName[MAX_ROM_LENGTH+1];
+  char szName[MAX_ROM_NAME+1];
   u8 uType;
   u32 uCrc;
 } FICcoleco;
@@ -40,10 +40,10 @@ struct __attribute__((__packed__)) GlobalConfig_t
 {
     u16 config_ver;
     u32 bios_checksums;
-    char szLastRom[MAX_ROM_LENGTH+1];
-    char szLastPath[MAX_ROM_LENGTH+1];
-    char reserved1[MAX_ROM_LENGTH+1];
-    char reserved2[MAX_ROM_LENGTH+1];
+    char szLastRom[MAX_ROM_NAME+1];
+    char szLastPath[MAX_ROM_NAME+1];
+    char reserved1[MAX_ROM_NAME+1];
+    char reserved2[MAX_ROM_NAME+1];
     u8  showBiosInfo;
     u8  showFPS;
     u8  defaultMSX;

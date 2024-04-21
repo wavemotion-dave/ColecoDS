@@ -24,6 +24,8 @@
 extern u8 mapperType;
 extern u8 mapperMask;
 
+extern u8 msx_caps_lock;
+
 #define GUESS       0
 #define KON8        1
 #define ASC8        2

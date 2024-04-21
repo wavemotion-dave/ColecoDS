@@ -552,7 +552,7 @@ u8 loadrom(const char *filename, u8 * ptr)
   {
     // Save the initial filename and file - we need it for save/restore of state
     strcpy(initial_file, filename);
-    getcwd(initial_path, MAX_ROM_LENGTH);
+    getcwd(initial_path, MAX_ROM_NAME);
 
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
 

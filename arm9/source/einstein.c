@@ -642,7 +642,7 @@ struct TrackInfo_t
 // ---------------------------------------------------------------------
 void einstein_load_disk(u8 disk)
 {
-    getcwd(disk_last_path[disk], MAX_ROM_LENGTH);   // Save the path
+    getcwd(disk_last_path[disk], MAX_ROM_NAME);   // Save the path
     
     // -------------------------------------------------------------------------------------------
     // First read in the raw .DSK file into memory so we can manipulate the tracks/sectors below
