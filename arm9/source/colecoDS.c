@@ -144,7 +144,7 @@ char initial_path[MAX_ROM_NAME] = "";
 // Some ADAM and Tape related vars...
 // ------------------------------------------
 u8 adam_CapsLock        = 0;
-u8 msx_caps_lock        = 1;
+u8 msx_caps_lock        = 0;
 u8 write_EE_counter     = 0;
 u32 last_tape_pos       = 9999;
 
@@ -659,6 +659,7 @@ void ResetColecovision(void)
   adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
   disk_unsaved_data[0] = 0;             // No unsaved tape/disk data to start
   disk_unsaved_data[1] = 0;             // No unsaved tape/disk data to start
+  msx_caps_lock = 0;                    // MSX caps lock off 
 
   write_EE_counter=0;                   // Nothing to write for EEPROM yet
     
@@ -1065,9 +1066,10 @@ void DisplayStatusLine(bool bForce)
             }            
         }
         
-        if (myConfig.overlay == 1)
+        if (myConfig.overlay == 1) // Is full keyboard showing?
         {
-            DSPrint(1,23,0, (msx_caps_lock ? " ":"@"));
+            DSPrint(1,23,0, (msx_caps_lock ? "@":" "));
+            DSPrint(2,23,(msx_caps_lock ? 2:0), (msx_caps_lock ? "@":" "));
         }
     }
     else if (svi_mode)

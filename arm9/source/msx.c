@@ -31,10 +31,10 @@
 // ---------------------------------------
 u8 mapperType           __attribute__((section(".dtcm"))) = 0;
 u8 mapperMask           __attribute__((section(".dtcm"))) = 0;
-u8 bROMInSlot[4]        __attribute__((section(".dtcm"))) = {0,0,0,0};
-u8 bRAMInSlot[4]        __attribute__((section(".dtcm"))) = {0,0,0,0};
+u8 bROMInSegment[4]     __attribute__((section(".dtcm"))) = {0,0,0,0};
+u8 bRAMInSegment[4]     __attribute__((section(".dtcm"))) = {0,0,0,0};
 
-u8 *Slot1ROMPtr[8]      __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
+u8 *MSXCartPtr[8]       __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 
 u8 *MemoryMap[8]        __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
         
@@ -397,7 +397,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
 
 
 //------------------------------------------------------------------------------
-// National FS-1300, Panasonic CF-2700 and generic C-BIOS or MSX.ROM 64K Slot 3
+// National FS-1300, and generic C-BIOS or MSX.ROM 64K Slot 3
 //------------------------------------------------------------------------------
 // Memory          Slot 0       Slot 1      Slot 2      Slot 3
 // C000h~FFFFh      ---       Cartridge      ---       16K RAM
@@ -417,29 +417,29 @@ void msx_slot_map_generic(unsigned char Value)
     switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = BIOS_Memory + 0x0000;
             MemoryMap[1] = BIOS_Memory + 0x2000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[0] = 1;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
-                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                bROMInSegment[0] = 1;
+                bRAMInSegment[0] = 0;
+                MemoryMap[0] = (u8 *)(MSXCartPtr[0]);
+                MemoryMap[1] = (u8 *)(MSXCartPtr[1]);
                 break;
             }
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to our 64K of RAM
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 1;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 1;
             MemoryMap[0] = RAM_Memory+0x0000;
             MemoryMap[1] = RAM_Memory+0x2000;
             break;
@@ -449,16 +449,16 @@ void msx_slot_map_generic(unsigned char Value)
     switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = BIOS_Memory + 0x4000;
             MemoryMap[3] = BIOS_Memory + 0x6000;                    
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 3)  // .dsk based MSX1 game so slide in the FDC Controller ROM
             {
-                bROMInSlot[1] = 1;
-                bRAMInSlot[1] = 0;
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
                 
                 MemoryMap[2] = fastdrom_cdx2 + 0x0000;
                 MemoryMap[3] = fastdrom_cdx2 + 0x2000;                
@@ -467,22 +467,22 @@ void msx_slot_map_generic(unsigned char Value)
             }
             else if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[1] = 1;
-                bRAMInSlot[1] = 0;
-                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
+                MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
+                MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to our 64K of RAM
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 1;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 1;
             MemoryMap[2] = RAM_Memory+0x4000;
             MemoryMap[3] = RAM_Memory+0x6000;
             break;
@@ -492,30 +492,30 @@ void msx_slot_map_generic(unsigned char Value)
     switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[2] = 1;
-                bRAMInSlot[2] = 0;
-                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                bROMInSegment[2] = 1;
+                bRAMInSegment[2] = 0;
+                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
+                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to our 64K of RAM
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 1;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 1;
             MemoryMap[4] = RAM_Memory+0x8000;
             MemoryMap[5] = RAM_Memory+0xA000;
             break;
@@ -525,32 +525,185 @@ void msx_slot_map_generic(unsigned char Value)
     switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[3] = 1;
-                bRAMInSlot[3] = 0;
-                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
-                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                bROMInSegment[3] = 1;
+                bRAMInSegment[3] = 0;
+                MemoryMap[6] = (u8 *)(MSXCartPtr[6]);
+                MemoryMap[7] = (u8 *)(MSXCartPtr[7]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3 is RAM so we allow RAM writes now
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 1;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 1;
             MemoryMap[6] = RAM_Memory+0xC000;
             MemoryMap[7] = RAM_Memory+0xE000;
+            break;
+    }
+}
+
+//------------------------------------------------------------------------------
+// Panasonic CF-2700 with RAM in Slot 1 and Cart in Slot 2 (nothing in Slot 3)
+//------------------------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh      ---        16K RAM     Cartridge     ---
+// 8000h~BFFFh      ---        16K RAM     Cartridge     ---
+// 4000h~7FFFh    Main-ROM     16K RAM     Cartridge     ---
+// 0000h~3FFFh    Main-ROM     16K RAM     Cartridge     ---
+//---------------------------------------------------------------
+void msx_slot_map_fs2700(unsigned char Value)
+{
+    if (((Value>>0) & 0x03) != ((Port_PPI_A>>0) & 0x03))
+    switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
+            MemoryMap[0] = BIOS_Memory + 0x0000;
+            MemoryMap[1] = BIOS_Memory + 0x2000;
+            break;
+        case 0x01:  // Slot 1:  Maps to our 64K of RAM
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 1;
+            MemoryMap[0] = RAM_Memory+0x0000;
+            MemoryMap[1] = RAM_Memory+0x2000;
+            break;
+        case 0x02:  // Slot 2:  Maps to our Game Cart
+            if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
+            {
+                bROMInSegment[0] = 1;
+                bRAMInSegment[0] = 0;
+                MemoryMap[0] = (u8 *)(MSXCartPtr[0]);
+                MemoryMap[1] = (u8 *)(MSXCartPtr[1]);
+                break;
+            } // else fall through
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
+            MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>2) & 0x03) != ((Port_PPI_A>>2) & 0x03))
+    switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
+    {
+        case 0x00:  // Slot 0:  Maps to BIOS Rom
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
+            MemoryMap[2] = BIOS_Memory + 0x4000;
+            MemoryMap[3] = BIOS_Memory + 0x6000;                    
+            break;
+        case 0x01:  // Slot 1:  Maps to our 64K of RAM
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 1;
+            MemoryMap[2] = RAM_Memory+0x4000;
+            MemoryMap[3] = RAM_Memory+0x6000;
+            break;
+        case 0x02:  // Slot 2:  Maps to Game Cart
+            if (msx_mode == 3)  // .dsk based MSX1 game so slide in the FDC Controller ROM
+            {
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
+                
+                MemoryMap[2] = fastdrom_cdx2 + 0x0000;
+                MemoryMap[3] = fastdrom_cdx2 + 0x2000;                
+                
+                break;
+            }
+            else if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
+            {
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
+                MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
+                MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
+            MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
+            MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>4) & 0x03) != ((Port_PPI_A>>4) & 0x03))
+    switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1:  Maps to our 64K of RAM
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 1;
+            MemoryMap[4] = RAM_Memory+0x8000;
+            MemoryMap[5] = RAM_Memory+0xA000;
+            break;
+        case 0x02:  // Slot 2:  Maps to Game Cart
+            if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
+            {
+                bROMInSegment[2] = 1;
+                bRAMInSegment[2] = 0;
+                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
+                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
+            MemoryMap[4] = BIOS_Memory+0x8000;
+            MemoryMap[5] = BIOS_Memory+0x8000;
+            break;
+    }
+
+    if (((Value>>6) & 0x03) != ((Port_PPI_A>>6) & 0x03))
+    switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
+    {
+        case 0x00:  // Slot 0:  Maps to nothing... 0xFF
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
+            break;
+        case 0x01:  // Slot 1 is RAM so we allow RAM writes now
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 1;
+            MemoryMap[6] = RAM_Memory+0xC000;
+            MemoryMap[7] = RAM_Memory+0xE000;
+            break;
+        case 0x02:  // Slot 2:  Maps to Game Cart
+            if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
+            {
+                bROMInSegment[3] = 1;
+                bRAMInSegment[3] = 0;
+                MemoryMap[6] = (u8 *)(MSXCartPtr[6]);
+                MemoryMap[7] = (u8 *)(MSXCartPtr[7]);
+                break;
+            }
+            // Else fall through to the next case and map nothing...
+        case 0x03:  // Slot 3:  Maps to nothing... 0xFF
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
+            MemoryMap[6] = BIOS_Memory+0x8000;
+            MemoryMap[7] = BIOS_Memory+0x8000;
             break;
     }
 }
@@ -570,30 +723,30 @@ void msx_slot_map_cx5m(unsigned char Value)
     switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = BIOS_Memory + 0x0000;
             MemoryMap[1] = BIOS_Memory + 0x2000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[0] = 1;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
-                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                bROMInSegment[0] = 1;
+                bRAMInSegment[0] = 0;
+                MemoryMap[0] = (u8 *)(MSXCartPtr[0]);
+                MemoryMap[1] = (u8 *)(MSXCartPtr[1]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -603,30 +756,30 @@ void msx_slot_map_cx5m(unsigned char Value)
     switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = BIOS_Memory + 0x4000;
             MemoryMap[3] = BIOS_Memory + 0x6000;                    
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[1] = 1;
-                bRAMInSlot[1] = 0;
-                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
+                MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
+                MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -636,30 +789,30 @@ void msx_slot_map_cx5m(unsigned char Value)
     switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to our 32K of Emulated RAM
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 1;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 1;
             MemoryMap[4] = RAM_Memory+0x8000;
             MemoryMap[5] = RAM_Memory+0xA000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[2] = 1;
-                bRAMInSlot[2] = 0;
-                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                bROMInSegment[2] = 1;
+                bRAMInSegment[2] = 0;
+                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
+                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
@@ -669,30 +822,30 @@ void msx_slot_map_cx5m(unsigned char Value)
     switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to our 32K of Emulated RAM
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 1;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 1;
             MemoryMap[6] = RAM_Memory+0xC000;
             MemoryMap[7] = RAM_Memory+0xE000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[3] = 1;
-                bRAMInSlot[3] = 0;
-                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
-                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                bROMInSegment[3] = 1;
+                bRAMInSegment[3] = 0;
+                MemoryMap[6] = (u8 *)(MSXCartPtr[6]);
+                MemoryMap[7] = (u8 *)(MSXCartPtr[7]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3: Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
@@ -714,36 +867,36 @@ void msx_slot_map_hx10(unsigned char Value)
     switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = BIOS_Memory + 0x0000;
             MemoryMap[1] = BIOS_Memory + 0x2000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[0] = 1;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
-                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                bROMInSegment[0] = 1;
+                bRAMInSegment[0] = 0;
+                MemoryMap[0] = (u8 *)(MSXCartPtr[0]);
+                MemoryMap[1] = (u8 *)(MSXCartPtr[1]);
             }
             else    // Maps to nothing
             {
-                bROMInSlot[0] = 0;
-                bRAMInSlot[0] = 0;
+                bROMInSegment[0] = 0;
+                bRAMInSegment[0] = 0;
                 MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
                 MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             }
             break;
         case 0x02:  // Slot 2:  Maps to our 64K of RAM
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 1;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 1;
             MemoryMap[0] = RAM_Memory+0x0000;
             MemoryMap[1] = RAM_Memory+0x2000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -753,36 +906,36 @@ void msx_slot_map_hx10(unsigned char Value)
     switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = BIOS_Memory + 0x4000;
             MemoryMap[3] = BIOS_Memory + 0x6000;                    
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[1] = 1;
-                bRAMInSlot[1] = 0;
-                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
+                MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
+                MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
             }
             else    // Maps to nothing
             {
-                bROMInSlot[1] = 0;
-                bRAMInSlot[1] = 0;
+                bROMInSegment[1] = 0;
+                bRAMInSegment[1] = 0;
                 MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
                 MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             }
             break;
         case 0x02:  // Slot 2:  Maps to our 64K of RAM
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 1;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 1;
             MemoryMap[2] = RAM_Memory+0x4000;
             MemoryMap[3] = RAM_Memory+0x6000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -792,36 +945,36 @@ void msx_slot_map_hx10(unsigned char Value)
     switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[2] = 1;
-                bRAMInSlot[2] = 0;
-                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                bROMInSegment[2] = 1;
+                bRAMInSegment[2] = 0;
+                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
+                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
             }
             else    // Maps to nothing
             {
-                bROMInSlot[2] = 0;
-                bRAMInSlot[2] = 0;
+                bROMInSegment[2] = 0;
+                bRAMInSegment[2] = 0;
                 MemoryMap[4] = (u8 *)BIOS_Memory+0x8000;
                 MemoryMap[5] = (u8 *)BIOS_Memory+0x8000;
             }
             break;
         case 0x02:  // Slot 2:  Maps to our 64K of RAM
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 1;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 1;
             MemoryMap[4] = RAM_Memory+0x8000;
             MemoryMap[5] = RAM_Memory+0xA000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
@@ -831,36 +984,36 @@ void msx_slot_map_hx10(unsigned char Value)
     switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[3] = 1;
-                bRAMInSlot[3] = 0;
-                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
-                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                bROMInSegment[3] = 1;
+                bRAMInSegment[3] = 0;
+                MemoryMap[6] = (u8 *)(MSXCartPtr[6]);
+                MemoryMap[7] = (u8 *)(MSXCartPtr[7]);
             }
             else    // Maps to nothing
             {
-                bROMInSlot[3] = 0;
-                bRAMInSlot[3] = 0;
+                bROMInSegment[3] = 0;
+                bRAMInSegment[3] = 0;
                 MemoryMap[6] = (u8 *)BIOS_Memory+0x8000;
                 MemoryMap[7] = (u8 *)BIOS_Memory+0x8000;
             }
             break;
         case 0x02:  // Slot 2 is RAM so we allow RAM writes now
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 1;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 1;
             MemoryMap[6] = RAM_Memory+0xC000;
             MemoryMap[7] = RAM_Memory+0xE000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
@@ -882,30 +1035,30 @@ void msx_slot_map_hb10(unsigned char Value)
     switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = BIOS_Memory + 0x0000;
             MemoryMap[1] = BIOS_Memory + 0x2000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[0] = 1;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
-                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                bROMInSegment[0] = 1;
+                bRAMInSegment[0] = 0;
+                MemoryMap[0] = (u8 *)(MSXCartPtr[0]);
+                MemoryMap[1] = (u8 *)(MSXCartPtr[1]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -915,30 +1068,30 @@ void msx_slot_map_hb10(unsigned char Value)
     switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = BIOS_Memory + 0x4000;
             MemoryMap[3] = BIOS_Memory + 0x6000;                    
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[1] = 1;
-                bRAMInSlot[1] = 0;
-                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
+                MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
+                MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -948,30 +1101,30 @@ void msx_slot_map_hb10(unsigned char Value)
     switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[2] = 1;
-                bRAMInSlot[2] = 0;
-                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                bROMInSegment[2] = 1;
+                bRAMInSegment[2] = 0;
+                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
+                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
@@ -981,30 +1134,30 @@ void msx_slot_map_hb10(unsigned char Value)
     switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to our 16K of Emulated RAM
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 1;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 1;
             MemoryMap[6] = RAM_Memory+0xC000;
             MemoryMap[7] = RAM_Memory+0xE000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[3] = 1;
-                bRAMInSlot[3] = 0;
-                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
-                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                bROMInSegment[3] = 1;
+                bRAMInSegment[3] = 0;
+                MemoryMap[6] = (u8 *)(MSXCartPtr[6]);
+                MemoryMap[7] = (u8 *)(MSXCartPtr[7]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3: Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
@@ -1026,30 +1179,30 @@ void msx_slot_map_pv7(unsigned char Value)
     switch ((Value>>0) & 0x03)  // [0x0000~0x3FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = BIOS_Memory + 0x0000;
             MemoryMap[1] = BIOS_Memory + 0x2000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[0] = 1;
-                bRAMInSlot[0] = 0;
-                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
-                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                bROMInSegment[0] = 1;
+                bRAMInSegment[0] = 0;
+                MemoryMap[0] = (u8 *)(MSXCartPtr[0]);
+                MemoryMap[1] = (u8 *)(MSXCartPtr[1]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[0] = 0;
-            bRAMInSlot[0] = 0;
+            bROMInSegment[0] = 0;
+            bRAMInSegment[0] = 0;
             MemoryMap[0] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[1] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -1059,30 +1212,30 @@ void msx_slot_map_pv7(unsigned char Value)
     switch ((Value>>2) & 0x03)  // [0x4000~0x7FFF]
     {
         case 0x00:  // Slot 0:  Maps to BIOS Rom
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = BIOS_Memory + 0x4000;
             MemoryMap[3] = BIOS_Memory + 0x6000;                    
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[1] = 1;
-                bRAMInSlot[1] = 0;
-                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                bROMInSegment[1] = 1;
+                bRAMInSegment[1] = 0;
+                MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
+                MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[1] = 0;
-            bRAMInSlot[1] = 0;
+            bROMInSegment[1] = 0;
+            bRAMInSegment[1] = 0;
             MemoryMap[2] = (u8 *)BIOS_Memory+0x8000;
             MemoryMap[3] = (u8 *)BIOS_Memory+0x8000;
             break;
@@ -1092,30 +1245,30 @@ void msx_slot_map_pv7(unsigned char Value)
     switch ((Value>>4) & 0x03)  // [0x8000~0xBFFF]
     {
         case 0x00:  // Slot 0:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[2] = 1;
-                bRAMInSlot[2] = 0;
-                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                bROMInSegment[2] = 1;
+                bRAMInSegment[2] = 0;
+                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
+                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3:  Maps to nothing... 0xFF
-            bROMInSlot[2] = 0;
-            bRAMInSlot[2] = 0;
+            bROMInSegment[2] = 0;
+            bRAMInSegment[2] = 0;
             MemoryMap[4] = BIOS_Memory+0x8000;
             MemoryMap[5] = BIOS_Memory+0x8000;
             break;
@@ -1125,30 +1278,30 @@ void msx_slot_map_pv7(unsigned char Value)
     switch ((Value>>6) & 0x03)  // [0xC000~0xFFFF]
     {
         case 0x00:  // Slot 0:  Maps to our 16K of Emulated RAM
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 2;  // Special value means only 8K mapped here...
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 2;  // Special value means only 8K mapped here...
             MemoryMap[6] = BIOS_Memory+0xC000; // Just BIOS here... 0xFF
             MemoryMap[7] = RAM_Memory+0xE000;
             break;
         case 0x01:  // Slot 1:  Maps to Game Cart
             if (msx_mode == 1)  // msx_mode of 1 is a .ROM cart
             {
-                bROMInSlot[3] = 1;
-                bRAMInSlot[3] = 0;
-                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
-                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                bROMInSegment[3] = 1;
+                bRAMInSegment[3] = 0;
+                MemoryMap[6] = (u8 *)(MSXCartPtr[6]);
+                MemoryMap[7] = (u8 *)(MSXCartPtr[7]);
                 break;
             }
             // Else fall through to the next case and map nothing...
         case 0x02:  // Slot 2:  Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
         case 0x03:  // Slot 3: Maps to nothing... 0xFF
-            bROMInSlot[3] = 0;
-            bRAMInSlot[3] = 0;
+            bROMInSegment[3] = 0;
+            bRAMInSegment[3] = 0;
             MemoryMap[6] = BIOS_Memory+0x8000;
             MemoryMap[7] = BIOS_Memory+0x8000;
             break;
@@ -1181,7 +1334,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             switch (myConfig.msxBios)
             {
                 case 1:  msx_slot_map_generic(Value); break;     // Generic MSX.ROM (64K mapped in slot 3)
-                case 2:  msx_slot_map_generic(Value); break;     // Panasonic CF-2700 (64K mapped in slot 3)
+                case 2:  msx_slot_map_fs2700(Value);  break;     // Panasonic CF-2700 (64K mapped in slot 1, Cart in slot 2)
                 case 3:  msx_slot_map_cx5m(Value);    break;     // Yamaha CX5M (32K mapped in slot 0)
                 case 4:  msx_slot_map_hx10(Value);    break;     // Toshiba HX-10 (64K mapped in slot 2)
                 case 5:  msx_slot_map_hb10(Value);    break;     // Sony HB-10 (16K mapped in slot 0)
@@ -1204,7 +1357,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
             if ((Port_PPI_C & 0x80) == 0) beeperFreq++;
         }
         Port_PPI_C = Value;
-        msx_caps_lock = (Port_PPI_C & 0x40);
+        msx_caps_lock = ((Port_PPI_C & 0x40) ? 0:1);
     }
     else if (Port == 0xAB)  // PPI - Register C Fast Modify
     {
@@ -1218,7 +1371,7 @@ void cpu_writeport_msx(register unsigned short Port,register unsigned char Value
         if (Value & 1) Port_PPI_C |= (1 << bit);
         else Port_PPI_C &= ~(1 << bit);
 
-        msx_caps_lock = (Port_PPI_C & 0x40);
+        msx_caps_lock = ((Port_PPI_C & 0x40) ? 0:1);
     }
     else if (Port >= 0xD0 && Port <= 0xD7)  // Floppy Drive Controller
     {
@@ -1370,11 +1523,11 @@ void MSX_InitialMemoryLayout(u32 romSize)
     // -----------------------------------------
     // Setup RAM/ROM pointers back to defaults
     // -----------------------------------------
-    memset(bRAMInSlot, 0, 4);   // Default to no RAM in slot until told so
-    memset(bROMInSlot, 0, 4);   // Default to no ROM in slot until told so
+    memset(bRAMInSegment, 0, 4);   // Default to no RAM in slot until told so
+    memset(bROMInSegment, 0, 4);   // Default to no ROM in slot until told so
     for (u8 i=0; i<8; i++)
     {
-        Slot1ROMPtr[i] = 0;     // All pages normal until told otherwise by A8 writes
+        MSXCartPtr[i] = 0;     // All pages normal until told otherwise by A8 writes
     }
     
     // ---------------------------------------------
@@ -1388,14 +1541,14 @@ void MSX_InitialMemoryLayout(u32 romSize)
     // ---------------------------------------------
     if (msx_mode >=2) 
     {
-        Slot1ROMPtr[0] = (u8*)BIOS_Memory+0xC000;       // Segment 0
-        Slot1ROMPtr[1] = (u8*)BIOS_Memory+0xC000;       // Segment 1
-        Slot1ROMPtr[2] = (u8*)BIOS_Memory+0xC000;       // Segment 2
-        Slot1ROMPtr[3] = (u8*)BIOS_Memory+0xC000;       // Segment 3
-        Slot1ROMPtr[4] = (u8*)BIOS_Memory+0xC000;       // Segment 4
-        Slot1ROMPtr[5] = (u8*)BIOS_Memory+0xC000;       // Segment 5
-        Slot1ROMPtr[6] = (u8*)BIOS_Memory+0xC000;       // Segment 6
-        Slot1ROMPtr[7] = (u8*)BIOS_Memory+0xC000;       // Segment 7
+        MSXCartPtr[0] = (u8*)BIOS_Memory+0xC000;       // Segment 0
+        MSXCartPtr[1] = (u8*)BIOS_Memory+0xC000;       // Segment 1
+        MSXCartPtr[2] = (u8*)BIOS_Memory+0xC000;       // Segment 2
+        MSXCartPtr[3] = (u8*)BIOS_Memory+0xC000;       // Segment 3
+        MSXCartPtr[4] = (u8*)BIOS_Memory+0xC000;       // Segment 4
+        MSXCartPtr[5] = (u8*)BIOS_Memory+0xC000;       // Segment 5
+        MSXCartPtr[6] = (u8*)BIOS_Memory+0xC000;       // Segment 6
+        MSXCartPtr[7] = (u8*)BIOS_Memory+0xC000;       // Segment 7
         
         mapperType = 0;
         return;
@@ -1408,74 +1561,74 @@ void MSX_InitialMemoryLayout(u32 romSize)
     {
         if (msx_basic)  // Basic Game loads at 0x8000 ONLY
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x8000;        // Segment 0
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x8000;        // Segment 1
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x8000;        // Segment 2
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x8000;        // Segment 3
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 4 - Actual ROM is here
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x8000;        // Segment 5
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x8000;        // Segment 6
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x8000;        // Segment 7
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x8000;        // Segment 0
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x8000;        // Segment 1
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x8000;        // Segment 2
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x8000;        // Segment 3
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 4 - Actual ROM is here
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x8000;        // Segment 5
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x8000;        // Segment 6
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x8000;        // Segment 7
         }
         else            // Mirrors at every 8K
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x0000;        // Segment 1
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 2
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x0000;        // Segment 3
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 4
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x0000;        // Segment 5
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 6
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 7
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x0000;        // Segment 1
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 2
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x0000;        // Segment 3
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 4
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x0000;        // Segment 5
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 6
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 7
         }
     }
     else if (romSize <= (16 * 1024) && (myConfig.msxMapper != SCC8))
     {
         if (myConfig.msxMapper == AT4K)  // Load the 16K rom at 0x4000 without Mirrors
         {
-                Slot1ROMPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
-                Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1
-                Slot1ROMPtr[4] = (u8*)ROM_Memory+0xC000;        // Segment NA 
-                Slot1ROMPtr[5] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA              
+                MSXCartPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
+                MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1
+                MSXCartPtr[4] = (u8*)ROM_Memory+0xC000;        // Segment NA 
+                MSXCartPtr[5] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA              
         }
         else if (myConfig.msxMapper == AT8K) // Load the 16K rom at 0x8000 without Mirrors
         {
-                Slot1ROMPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[2] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[3] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-                Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-                Slot1ROMPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA              
+                MSXCartPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[2] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[3] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+                MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+                MSXCartPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA              
         }
         else
         {
             if (msx_basic)  // Basic Game loads at 0x8000 without Mirrors
             {
-                Slot1ROMPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[2] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[3] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-                Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-                Slot1ROMPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
-                Slot1ROMPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA              
+                MSXCartPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[2] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[3] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+                MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+                MSXCartPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
+                MSXCartPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA              
             }
             else    // Mirrors every 16K
             {
-                Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-                Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-                Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-                Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-                Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-                Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-                Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-                Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1               
+                MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+                MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+                MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+                MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+                MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+                MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+                MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+                MSXCartPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1               
             }
         }
     }
@@ -1490,60 +1643,60 @@ void MSX_InitialMemoryLayout(u32 romSize)
         // ------------------------------------------------------------------------------------------------------
         if (myConfig.msxMapper == AT0K)  // Then the full 32K ROM is mapped here
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3
+            MSXCartPtr[4] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[5] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA
         }
         else  if (myConfig.msxMapper == AT4K)  // Then the full 32K ROM is mapped here
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3
+            MSXCartPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[7] = (u8*)ROM_Memory+0xC000;        // Segment NA
         }
         else if (myConfig.msxMapper == AT8K)  // Then the full 32K ROM is mapped here
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x4000;        // Segment 2
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x6000;        // Segment 3
+            MSXCartPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[2] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[3] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x4000;        // Segment 2
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x6000;        // Segment 3
         }
         else
         {
             if (msx_init >= 0x4000 || msx_basic) // This comes from the .ROM header - if the init address is 0x4000 or higher, we load in bank 1+2
             {
-                Slot1ROMPtr[0] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
-                Slot1ROMPtr[1] = (u8*)ROM_Memory+0x6000;        // Segment 3 Mirror
-                Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
-                Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1
-                Slot1ROMPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2
-                Slot1ROMPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3
-                Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
-                Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
+                MSXCartPtr[0] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
+                MSXCartPtr[1] = (u8*)ROM_Memory+0x6000;        // Segment 3 Mirror
+                MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
+                MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1
+                MSXCartPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2
+                MSXCartPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3
+                MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
+                MSXCartPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
             }
             else  // Otherwise we load in bank 0+1 and mirrors on 2+3
             {
-                Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
-                Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
-                Slot1ROMPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2
-                Slot1ROMPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3
-                Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
-                Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
-                Slot1ROMPtr[6] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
-                Slot1ROMPtr[7] = (u8*)ROM_Memory+0x8000;        // Segment 3 Mirror
+                MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
+                MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
+                MSXCartPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2
+                MSXCartPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3
+                MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
+                MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
+                MSXCartPtr[6] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
+                MSXCartPtr[7] = (u8*)ROM_Memory+0x8000;        // Segment 3 Mirror
             }
         }
     }
@@ -1551,73 +1704,73 @@ void MSX_InitialMemoryLayout(u32 romSize)
     {
         if ((myConfig.msxMapper == KON8) || (myConfig.msxMapper == ZEN8))
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x6000;        // Segment 3 Mirror
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2 
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3 
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x6000;        // Segment 3 Mirror
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2 
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3 
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
             mapperMask = 0x07;
         }
         else if (myConfig.msxMapper == ASC8)
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 0 
             mapperMask = 0x07;
         }
         else if ((myConfig.msxMapper == ASC16) || (myConfig.msxMapper == ZEN16))
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 
             mapperMask = 0x03;
         }
         else if (myConfig.msxMapper == AT4K)
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA 
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2 
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3 
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x8000;        // Segment 4 
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0xA000;        // Segment 5
+            MSXCartPtr[0] = (u8*)ROM_Memory+0xC000;        // Segment NA 
+            MSXCartPtr[1] = (u8*)ROM_Memory+0xC000;        // Segment NA
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2 
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3 
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x8000;        // Segment 4 
+            MSXCartPtr[7] = (u8*)ROM_Memory+0xA000;        // Segment 5
         }
         else // Load the rom at AT0K
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2 
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3 
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x8000;        // Segment 4 
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0xA000;        // Segment 5 
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA 
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0xE000;        // Segment NA
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2 
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3 
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x8000;        // Segment 4 
+            MSXCartPtr[5] = (u8*)ROM_Memory+0xA000;        // Segment 5 
+            MSXCartPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment NA 
+            MSXCartPtr[7] = (u8*)ROM_Memory+0xE000;        // Segment NA
         }
     }
     else if ((romSize == (64 * 1024)) && (myConfig.msxMapper == LIN64))   // 64K Linear ROM
     {
-        Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
-        Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
-        Slot1ROMPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2
-        Slot1ROMPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3
-        Slot1ROMPtr[4] = (u8*)ROM_Memory+0x8000;        // Segment 4
-        Slot1ROMPtr[5] = (u8*)ROM_Memory+0xA000;        // Segment 5
-        Slot1ROMPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment 6
-        Slot1ROMPtr[7] = (u8*)ROM_Memory+0xE000;        // Segment 7
+        MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0
+        MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 1
+        MSXCartPtr[2] = (u8*)ROM_Memory+0x4000;        // Segment 2
+        MSXCartPtr[3] = (u8*)ROM_Memory+0x6000;        // Segment 3
+        MSXCartPtr[4] = (u8*)ROM_Memory+0x8000;        // Segment 4
+        MSXCartPtr[5] = (u8*)ROM_Memory+0xA000;        // Segment 5
+        MSXCartPtr[6] = (u8*)ROM_Memory+0xC000;        // Segment 6
+        MSXCartPtr[7] = (u8*)ROM_Memory+0xE000;        // Segment 7
         
     }
     else if ((romSize >= (16 * 1024)) && (romSize <= (MAX_CART_SIZE * 1024)))   // We'll take anything between these two...
@@ -1633,47 +1786,47 @@ void MSX_InitialMemoryLayout(u32 romSize)
 
         if ((mapperType == KON8) || (mapperType == SCC8) || (mapperType == ZEN8))
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x6000;        // Segment 3 Mirror
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 default
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2 default
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3 default
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x4000;        // Segment 2 Mirror
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x6000;        // Segment 3 Mirror
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 1 default
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x4000;        // Segment 2 default
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x6000;        // Segment 3 default
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 Mirror
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 1 Mirror
         }
         else if (mapperType == ASC8)
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
         }                
         else if (mapperType == ASC16 || mapperType == ZEN16)
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
         }
         else if (mapperType == XBLAM)        // Just for Cross Blaim
         {
-            Slot1ROMPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
-            Slot1ROMPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
-            Slot1ROMPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
-            Slot1ROMPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
-            Slot1ROMPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[0] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[1] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[2] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[3] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[4] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[5] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
+            MSXCartPtr[6] = (u8*)ROM_Memory+0x0000;        // Segment 0 default
+            MSXCartPtr[7] = (u8*)ROM_Memory+0x2000;        // Segment 0 default
         }
 
         // ---------------------------------------------------------------------
