@@ -50,9 +50,9 @@ extern u8 BIOS_Memory[0x10000];
 extern u8 SRAM_Memory[0x4000];
 extern u8 fastdrom_cdx2[0x4000];
 
-extern u8 bROMInSlot[4];
-extern u8 bRAMInSlot[4];
-extern u8 *Slot1ROMPtr[8];
+extern u8 bROMInSegment[4];
+extern u8 bRAMInSegment[4];
+extern u8 *MSXCartPtr[8];
 extern u8 *MemoryMap[8];
 extern u8 msx_slot_dirty[4];
 

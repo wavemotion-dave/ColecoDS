@@ -106,43 +106,43 @@ ITCM_CODE u8 cpu_readmem16_banked(u16 address)
 // -----------------------------------------------------------------------
 void HandleZemina8K(u32* src, u8 block, u16 address)
 {
-    if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x6000))
+    if (bROMInSegment[1] && (address >= 0x4000) && (address < 0x6000))
     {
         if (msx_last_block[0] != block)
         {
-            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[6] = (u8*)src;  // Mirror
-            MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+            MSXCartPtr[2] = (u8*)src;  // Main ROM
+            MSXCartPtr[6] = (u8*)src;  // Mirror
+            MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
             msx_last_block[0] = block;
         }
     }
-    else if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x8000))
+    else if (bROMInSegment[1] && (address >= 0x6000) && (address < 0x8000))
     {
         if (msx_last_block[1] != block)
         {
-            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[7] = (u8*)src;  // Mirror
-            MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+            MSXCartPtr[3] = (u8*)src;  // Main ROM
+            MSXCartPtr[7] = (u8*)src;  // Mirror
+            MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
             msx_last_block[1] = block;
         }
     }
-    else if (bROMInSlot[2] && (address >= 0x8000) && (address < 0xA000))
+    else if (bROMInSegment[2] && (address >= 0x8000) && (address < 0xA000))
     {
         if (msx_last_block[2] != block)
         {
-            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[0] = (u8*)src;  // Mirror                            
-            MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+            MSXCartPtr[4] = (u8*)src;  // Main ROM
+            MSXCartPtr[0] = (u8*)src;  // Mirror                            
+            MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
             msx_last_block[2] = block;
         }
     }
-    else if (bROMInSlot[2] && (address >= 0xA000) && (address < 0xC000))
+    else if (bROMInSegment[2] && (address >= 0xA000) && (address < 0xC000))
     {
         if (msx_last_block[3] != block)
         {
-            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
-            MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+            MSXCartPtr[5] = (u8*)src;  // Main ROM
+            MSXCartPtr[1] = (u8*)src;  // Mirror                            
+            MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
             msx_last_block[3] = block;
         }
     }
@@ -155,43 +155,43 @@ void HandleZemina8K(u32* src, u8 block, u16 address)
 // -------------------------------------------------------------------------
 void HandleZemina16K(u32* src, u8 block, u16 address)
 {
-    if (bROMInSlot[1] && (address >= 0x4000) && (address < 0x8000))
+    if (bROMInSegment[1] && (address >= 0x4000) && (address < 0x8000))
     {
         if (msx_last_block[0] != block)
         {
-            Slot1ROMPtr[2] = (u8*)src;
-            Slot1ROMPtr[3] = (u8*)src+0x2000;
-            MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
-            MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+            MSXCartPtr[2] = (u8*)src;
+            MSXCartPtr[3] = (u8*)src+0x2000;
+            MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
+            MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
             // Mirrors
-            Slot1ROMPtr[6] = (u8*)src;
-            Slot1ROMPtr[7] = (u8*)src+0x2000;
-            if (bROMInSlot[3]) 
+            MSXCartPtr[6] = (u8*)src;
+            MSXCartPtr[7] = (u8*)src+0x2000;
+            if (bROMInSegment[3]) 
             {
-                MemoryMap[6] = (u8 *)(Slot1ROMPtr[6]);
-                MemoryMap[7] = (u8 *)(Slot1ROMPtr[7]);
+                MemoryMap[6] = (u8 *)(MSXCartPtr[6]);
+                MemoryMap[7] = (u8 *)(MSXCartPtr[7]);
             }
             msx_last_block[0] = block;
         }
     }
-    else if (bROMInSlot[1] && (address >= 0x8000) && (address < 0xC000))
+    else if (bROMInSegment[1] && (address >= 0x8000) && (address < 0xC000))
     {
         if (msx_last_block[1] != block)
         {
-            Slot1ROMPtr[4] = (u8*)src;
-            Slot1ROMPtr[5] = (u8*)src+0x2000;
+            MSXCartPtr[4] = (u8*)src;
+            MSXCartPtr[5] = (u8*)src+0x2000;
             // Mirrors
-            Slot1ROMPtr[0] = (u8*)src;
-            Slot1ROMPtr[1] = (u8*)src+0x2000;
-            if (bROMInSlot[2])
+            MSXCartPtr[0] = (u8*)src;
+            MSXCartPtr[1] = (u8*)src+0x2000;
+            if (bROMInSegment[2])
             {
-                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
-                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
+                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
             }
-            if (bROMInSlot[0]) 
+            if (bROMInSegment[0]) 
             {
-                MemoryMap[0] = (u8 *)(Slot1ROMPtr[0]);
-                MemoryMap[1] = (u8 *)(Slot1ROMPtr[1]);
+                MemoryMap[0] = (u8 *)(MSXCartPtr[0]);
+                MemoryMap[1] = (u8 *)(MSXCartPtr[1]);
             }            
             msx_last_block[1] = block;
         }
@@ -207,45 +207,45 @@ ITCM_CODE void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
     //  Bank 3: 8000h - 9FFFh - mapped via writes to 9000h
     //  Bank 4: A000h - BFFFh - mapped via writes to B000h
     // --------------------------------------------------------
-    if (bROMInSlot[1] && (address == 0x5000))
+    if (bROMInSegment[1] && (address == 0x5000))
     {
         if (msx_last_block[0] != block)
         {
-            Slot1ROMPtr[2] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[6] = (u8*)src;  // Mirror
-            MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+            MSXCartPtr[2] = (u8*)src;  // Main ROM
+            MSXCartPtr[6] = (u8*)src;  // Mirror
+            MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
             msx_last_block[0] = block;
         }
     }
-    else if (bROMInSlot[1] && (address == 0x7000))
+    else if (bROMInSegment[1] && (address == 0x7000))
     {
         if (msx_last_block[1] != block)
         {
-            Slot1ROMPtr[3] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[7] = (u8*)src;  // Mirror
-            MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+            MSXCartPtr[3] = (u8*)src;  // Main ROM
+            MSXCartPtr[7] = (u8*)src;  // Mirror
+            MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
             msx_last_block[1] = block;
         }
     }
-    else if (bROMInSlot[2] && (address == 0x9000))
+    else if (bROMInSegment[2] && (address == 0x9000))
     {
         if ((value&0x3F) == 0x3F) {msx_scc_enable=true; return;}       // SCC sound - set a flag so we process this special sound chip
 
         if (msx_last_block[2] != block)
         {
-            Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[0] = (u8*)src;  // Mirror
-            MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+            MSXCartPtr[4] = (u8*)src;  // Main ROM
+            MSXCartPtr[0] = (u8*)src;  // Mirror
+            MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
             msx_last_block[2] = block;
         }
     }
-    else if (bROMInSlot[2] && (address == 0xB000))
+    else if (bROMInSegment[2] && (address == 0xB000))
     {
         if (msx_last_block[3] != block)
         {
-            Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-            Slot1ROMPtr[1] = (u8*)src;  // Mirror
-            MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+            MSXCartPtr[5] = (u8*)src;  // Main ROM
+            MSXCartPtr[1] = (u8*)src;  // Mirror
+            MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
             msx_last_block[3] = block;
         }
     }
@@ -259,26 +259,26 @@ ITCM_CODE void HandleKonamiSCC8(u32* src, u8 block, u16 address, u8 value)
 // -------------------------------------------------------------------------
 ITCM_CODE void HandleAscii16K(u32* src, u8 block, u16 address)
 {
-    if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x7000))
+    if (bROMInSegment[1] && (address >= 0x6000) && (address < 0x7000))
     {
         if (msx_last_block[0] != block)
         {
-            Slot1ROMPtr[2] = (u8*)src;
-            Slot1ROMPtr[3] = (u8*)src+0x2000;
-            MemoryMap[2] = Slot1ROMPtr[2];
-            MemoryMap[3] = Slot1ROMPtr[3];
+            MSXCartPtr[2] = (u8*)src;
+            MSXCartPtr[3] = (u8*)src+0x2000;
+            MemoryMap[2] = MSXCartPtr[2];
+            MemoryMap[3] = MSXCartPtr[3];
             // Mirrors
-            Slot1ROMPtr[6] = (u8*)src;
-            Slot1ROMPtr[7] = (u8*)src+0x2000;
-            if (bROMInSlot[3]) 
+            MSXCartPtr[6] = (u8*)src;
+            MSXCartPtr[7] = (u8*)src+0x2000;
+            if (bROMInSegment[3]) 
             {
-                MemoryMap[6] = Slot1ROMPtr[6];
-                MemoryMap[7] = Slot1ROMPtr[7];
+                MemoryMap[6] = MSXCartPtr[6];
+                MemoryMap[7] = MSXCartPtr[7];
             }
             msx_last_block[0] = block;
         }
     }
-    else if (bROMInSlot[1] && (address >= 0x7000) && (address < 0x8000))
+    else if (bROMInSegment[1] && (address >= 0x7000) && (address < 0x8000))
     {
         if ((file_crc == 0xfea70207) && (address != 0x7000)) return;  // Vaxol writes garbage to 7xxx so we ignore that
         
@@ -295,20 +295,20 @@ ITCM_CODE void HandleAscii16K(u32* src, u8 block, u16 address)
             else
             {
                 msx_sram_at_8000 = false;
-                Slot1ROMPtr[4] = (u8*)src;
-                Slot1ROMPtr[5] = (u8*)src+0x2000;
+                MSXCartPtr[4] = (u8*)src;
+                MSXCartPtr[5] = (u8*)src+0x2000;
                 // Mirrors
-                Slot1ROMPtr[0] = (u8*)src;
-                Slot1ROMPtr[1] = (u8*)src+0x2000;
-                if (bROMInSlot[2]) 
+                MSXCartPtr[0] = (u8*)src;
+                MSXCartPtr[1] = (u8*)src+0x2000;
+                if (bROMInSegment[2]) 
                 {
-                    MemoryMap[4] = Slot1ROMPtr[4];
-                    MemoryMap[5] = Slot1ROMPtr[5];
+                    MemoryMap[4] = MSXCartPtr[4];
+                    MemoryMap[5] = MSXCartPtr[5];
                 }
-                if (bROMInSlot[0])
+                if (bROMInSegment[0])
                 {
-                    MemoryMap[0] = Slot1ROMPtr[0];
-                    MemoryMap[1] = Slot1ROMPtr[1];
+                    MemoryMap[0] = MSXCartPtr[0];
+                    MemoryMap[1] = MSXCartPtr[1];
                 }
             }
             msx_last_block[1] = block;
@@ -390,15 +390,15 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
             // -------------------------------------------------------
             // First see if this is a write to a RAM enabled slot...
             // -------------------------------------------------------
-            if (bRAMInSlot[0] && (address < 0x4000))
+            if (bRAMInSegment[0] && (address < 0x4000))
             {
                 RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
             }
-            else if (bRAMInSlot[1] && (address >= 0x4000) && (address <= 0x7FFF))
+            else if (bRAMInSegment[1] && (address >= 0x4000) && (address <= 0x7FFF))
             {
                 RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
             }
-            else if ((bRAMInSlot[2] || msx_sram_at_8000) && (address >= 0x8000) && (address <= 0xBFFF))
+            else if ((bRAMInSegment[2] || msx_sram_at_8000) && (address >= 0x8000) && (address <= 0xBFFF))
             {
                 if (msx_sram_at_8000) 
                 {
@@ -407,11 +407,11 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                 }
                 else RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
             }
-            else if ((bRAMInSlot[3] == 2) && (address >= 0xE000)) // A value of 2 here means this is an 8K machine
+            else if ((bRAMInSegment[3] == 2) && (address >= 0xE000)) // A value of 2 here means this is an 8K machine
             {
                 RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
             }
-            else if ((bRAMInSlot[3] == 1) && (address >= 0xC000)) // A value of 1 here means we can write to the entire 16K page
+            else if ((bRAMInSegment[3] == 1) && (address >= 0xC000)) // A value of 1 here means we can write to the entire 16K page
             {
                 RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
             }
@@ -437,43 +437,43 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                     // ---------------------------------------------------------------------------------
                     if (mapperType == KON8)
                     {
-                        if (bROMInSlot[1] && (address == 0x4000))
+                        if (bROMInSegment[1] && (address == 0x4000))
                         {
                             if (msx_last_block[0] != block)
                             {
-                                Slot1ROMPtr[2] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[6] = (u8*)src;  // Mirror
-                                MemoryMap[2] = (u8 *)(Slot1ROMPtr[2]);
+                                MSXCartPtr[2] = (u8*)src;  // Main ROM
+                                MSXCartPtr[6] = (u8*)src;  // Mirror
+                                MemoryMap[2] = (u8 *)(MSXCartPtr[2]);
                                 msx_last_block[0] = block;
                             }
                         }
-                        else if (bROMInSlot[1] && (address == 0x6000))
+                        else if (bROMInSegment[1] && (address == 0x6000))
                         {
                             if (msx_last_block[1] != block)
                             {
-                                Slot1ROMPtr[3] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[7] = (u8*)src;  // Mirror
-                                MemoryMap[3] = (u8 *)(Slot1ROMPtr[3]);
+                                MSXCartPtr[3] = (u8*)src;  // Main ROM
+                                MSXCartPtr[7] = (u8*)src;  // Mirror
+                                MemoryMap[3] = (u8 *)(MSXCartPtr[3]);
                                 msx_last_block[1] = block;
                             }
                         }
-                        else if (bROMInSlot[2] && (address == 0x8000))
+                        else if (bROMInSegment[2] && (address == 0x8000))
                         {
                             if (msx_last_block[2] != block)
                             {
-                                Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[0] = (u8*)src;  // Mirror                            
-                                MemoryMap[4] = (u8 *)(Slot1ROMPtr[4]);
+                                MSXCartPtr[4] = (u8*)src;  // Main ROM
+                                MSXCartPtr[0] = (u8*)src;  // Mirror                            
+                                MemoryMap[4] = (u8 *)(MSXCartPtr[4]);
                                 msx_last_block[2] = block;
                             }
                         }
-                        else if (bROMInSlot[2] && (address == 0xA000))
+                        else if (bROMInSegment[2] && (address == 0xA000))
                         {
                             if (msx_last_block[3] != block)
                             {
-                                Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[1] = (u8*)src;  // Mirror       
-                                MemoryMap[5] = (u8 *)(Slot1ROMPtr[5]);
+                                MSXCartPtr[5] = (u8*)src;  // Main ROM
+                                MSXCartPtr[1] = (u8*)src;  // Mirror       
+                                MemoryMap[5] = (u8 *)(MSXCartPtr[5]);
                                 msx_last_block[3] = block;
                             }
                         }
@@ -487,35 +487,35 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                         // 8000h~9FFFh (mirror: 0000h~1FFFh)    7000h (mirrors: 7001h~77FFh)    0
                         // A000h~BFFFh (mirror: 2000h~3FFFh)    7800h (mirrors: 7801h~7FFFh)    0     
                         // -------------------------------------------------------------------------
-                        if (bROMInSlot[1] && (address >= 0x6000) && (address < 0x6800))
+                        if (bROMInSegment[1] && (address >= 0x6000) && (address < 0x6800))
                         {
                             if (msx_last_block[0] != block)
                             {
-                                Slot1ROMPtr[2] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[6] = (u8*)src;  // Mirror
-                                MemoryMap[2] = Slot1ROMPtr[2];
-                                if (bROMInSlot[3])
+                                MSXCartPtr[2] = (u8*)src;  // Main ROM
+                                MSXCartPtr[6] = (u8*)src;  // Mirror
+                                MemoryMap[2] = MSXCartPtr[2];
+                                if (bROMInSegment[3])
                                 {
-                                    MemoryMap[6] = Slot1ROMPtr[6];
+                                    MemoryMap[6] = MSXCartPtr[6];
                                 }
                                 msx_last_block[0] = block;
                             }
                         }
-                        else if (bROMInSlot[1] && (address >= 0x6800)  && (address < 0x7000))
+                        else if (bROMInSegment[1] && (address >= 0x6800)  && (address < 0x7000))
                         {
                             if (msx_last_block[1] != block)
                             {
-                                Slot1ROMPtr[3] = (u8*)src;  // Main ROM
-                                Slot1ROMPtr[7] = (u8*)src;  // Mirror
-                                MemoryMap[3] = Slot1ROMPtr[3];
-                                if (bROMInSlot[3])
+                                MSXCartPtr[3] = (u8*)src;  // Main ROM
+                                MSXCartPtr[7] = (u8*)src;  // Mirror
+                                MemoryMap[3] = MSXCartPtr[3];
+                                if (bROMInSegment[3])
                                 {
-                                    MemoryMap[7] = Slot1ROMPtr[7];
+                                    MemoryMap[7] = MSXCartPtr[7];
                                 }
                                 msx_last_block[1] = block;
                             }
                         }
-                        else if (bROMInSlot[1] && (address >= 0x7000)  && (address < 0x7800))
+                        else if (bROMInSegment[1] && (address >= 0x7000)  && (address < 0x7800))
                         {
                             if (msx_last_block[2] != block)
                             {
@@ -526,21 +526,21 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                                 else
                                 {
                                     msx_sram_at_8000 = false;
-                                    Slot1ROMPtr[4] = (u8*)src;  // Main ROM
-                                    Slot1ROMPtr[0] = (u8*)src;  // Mirror    
-                                    if (bROMInSlot[2])
+                                    MSXCartPtr[4] = (u8*)src;  // Main ROM
+                                    MSXCartPtr[0] = (u8*)src;  // Mirror    
+                                    if (bROMInSegment[2])
                                     {
-                                        MemoryMap[4] = Slot1ROMPtr[4];
+                                        MemoryMap[4] = MSXCartPtr[4];
                                     }
-                                    if (bROMInSlot[0])
+                                    if (bROMInSegment[0])
                                     {
-                                        MemoryMap[0] = Slot1ROMPtr[0];
+                                        MemoryMap[0] = MSXCartPtr[0];
                                     }                            
                                 }
                                 msx_last_block[2] = block;
                             }
                         }
-                        else if (bROMInSlot[1] && (address >= 0x7800) && (address < 0x8000))
+                        else if (bROMInSegment[1] && (address >= 0x7800) && (address < 0x8000))
                         {
                             if (msx_last_block[3] != block)
                             {
@@ -551,15 +551,15 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                                 else
                                 {
                                     msx_sram_at_8000 = false;
-                                    Slot1ROMPtr[5] = (u8*)src;  // Main ROM
-                                    Slot1ROMPtr[1] = (u8*)src;  // Mirror                            
-                                    if (bROMInSlot[2]) 
+                                    MSXCartPtr[5] = (u8*)src;  // Main ROM
+                                    MSXCartPtr[1] = (u8*)src;  // Mirror                            
+                                    if (bROMInSegment[2]) 
                                     {
-                                        MemoryMap[5] = Slot1ROMPtr[5];
+                                        MemoryMap[5] = MSXCartPtr[5];
                                     }
-                                    if (bROMInSlot[0])
+                                    if (bROMInSegment[0])
                                     {
-                                        MemoryMap[1] = Slot1ROMPtr[1];
+                                        MemoryMap[1] = MSXCartPtr[1];
                                     }                            
                                 }
                                 msx_last_block[3] = block;
@@ -597,12 +597,12 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                     {
                         if (address == 0x4045)
                         {
-                            Slot1ROMPtr[4] = (u8*)src;          // Main ROM at 8000
-                            Slot1ROMPtr[5] = (u8*)src+0x2000;   // Main ROM at A000                  
-                            if (bROMInSlot[2]) 
+                            MSXCartPtr[4] = (u8*)src;          // Main ROM at 8000
+                            MSXCartPtr[5] = (u8*)src+0x2000;   // Main ROM at A000                  
+                            if (bROMInSegment[2]) 
                             {
-                                MemoryMap[4] = Slot1ROMPtr[4];
-                                MemoryMap[5] = Slot1ROMPtr[5];
+                                MemoryMap[4] = MSXCartPtr[4];
+                                MemoryMap[5] = MSXCartPtr[5];
                             }
                         }
                     }                

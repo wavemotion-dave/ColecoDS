@@ -123,11 +123,11 @@ For the MSX, we support a number of different (optional) BIOS ROMs. To be honest
 As such, ColecoDS will support additional optional MSX BIOS roms as follows (and you can select them in Configuration and set a global default if you like):
 
 ```
-* 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in slot 3 (normally slot 1)
-* e9ccd789  cx5m.rom    - Yamaha's UK/EU Machine with 32K of RAM
-* 5486b711  hx-10.rom   - Toshiba's UK/EU Machine with 64K of RAM
-* ee229390  hb-10.rom   - Sony HitBit JP Machine with 16K of RAM (uses the Japanese keyboard matrix)
-* 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM (uses the Japanese keyboard matrix)
+* 15e503de  cf-2700.rom - Panasonic CF-2700 UK Machine with 64K of RAM in Slot 1 and Cart in Slot 2
+* e9ccd789  cx5m.rom    - Yamaha's UK/EU Machine with 32K of RAM in Slot 0
+* 5486b711  hx-10.rom   - Toshiba's UK/EU Machine with 64K of RAM in Slot 2
+* ee229390  hb-10.rom   - Sony HitBit JP Machine with 16K of RAM in Slot 0 (uses the Japanese keyboard matrix)
+* 5ad03407  fs-1300.rom - National JP Machine with 64K of RAM in Slot 3 (uses the Japanese keyboard matrix)
 * ee229390  pv-7.rom    - Casio PV-7 with just 8K of RAM! If you can't find this BIOS, use pv-16.rom as there is no difference in the binary.
 ```
 
@@ -164,8 +164,7 @@ MSX1 disks are supported in .DSK format. The files must be raw sector dumps and 
 The MSX memory is based on which MSX rom BIOS you are using:
 ```
 //---------------------------------------------------------------
-// National FS-1300 (JP), Panasonic CF-2700 (UK), 
-// Goldstar FC-200 (EU) or generic C-BIOS or MSX.ROM 64K Slot 3**
+// National FS-1300 (JP) or generic C-BIOS or MSX.ROM 64K Slot 3
 //---------------------------------------------------------------
 // Memory          Slot 0       Slot 1      Slot 2      Slot 3
 // C000h~FFFFh      ---       Cartridge      ---       16K RAM
@@ -173,8 +172,16 @@ The MSX memory is based on which MSX rom BIOS you are using:
 // 4000h~7FFFh    Main-ROM    Cartridge      ---       16K RAM
 // 0000h~3FFFh    Main-ROM    Cartridge      ---       16K RAM
 //---------------------------------------------------------------
-** Note, the Panasonic CF-2700 normally has the RAM in slot 1
-but for the purposes of this emulation, it is moved to slot 3.
+
+//---------------------------------------------------------------
+// Panasonic CF-2700 (UK) with 64K of Memory in Slot 1
+//---------------------------------------------------------------
+// Memory          Slot 0       Slot 1      Slot 2      Slot 3
+// C000h~FFFFh      ---        16K RAM     Cartridge     ---
+// 8000h~BFFFh      ---        16K RAM     Cartridge     ---
+// 4000h~7FFFh    Main-ROM     16K RAM     Cartridge     ---
+// 0000h~3FFFh    Main-ROM     16K RAM     Cartridge     ---
+//---------------------------------------------------------------
 
 //---------------------------------------------------------------
 // Yamaha CX5M with 32K of Memory in Slot 0

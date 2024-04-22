@@ -61,7 +61,7 @@ static char szCh1[32];
 
 void colecoSaveState() 
 {
-  u32 uNbO;
+  size_t retVal;
   long pSvg;
 
   // Return to the original path
@@ -95,16 +95,16 @@ void colecoSaveState()
   {
     // Write Version
     u16 save_ver = COLECODS_SAVE_VER;
-    uNbO = fwrite(&save_ver, sizeof(u16), 1, handle);
+    retVal = fwrite(&save_ver, sizeof(u16), 1, handle);
       
     // Write CZ80 CPU
-    uNbO = fwrite(&CPU, sizeof(CPU), 1, handle);
+    retVal = fwrite(&CPU, sizeof(CPU), 1, handle);
       
     // Deficit Z80 CPU Cycle counter
-    if (uNbO) uNbO = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
+    if (retVal) retVal = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
 
     // Save Coleco Memory (yes, all of it!)
-    if (uNbO) uNbO = fwrite(RAM_Memory, 0x10000,1, handle); 
+    if (retVal) retVal = fwrite(RAM_Memory, 0x10000,1, handle); 
       
     // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
     for (u8 i=0; i<8; i++)
@@ -140,125 +140,144 @@ void colecoSaveState()
             Offsets[i].offset =  (u32)MemoryMap[i];
         }
     }
-    if (uNbO) uNbO = fwrite(Offsets, sizeof(Offsets),1, handle);     
+    if (retVal) retVal = fwrite(Offsets, sizeof(Offsets),1, handle);     
       
     // Write the Super Game Module stuff
-    if (uNbO) uNbO = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-    if (uNbO) uNbO = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
+    if (retVal) retVal = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
+    if (retVal) retVal = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
       
     // A few frame counters
-    if (uNbO) uNbO = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
-    if (uNbO) uNbO = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
+    if (retVal) retVal = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
+    if (retVal) retVal = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
       
     // Some Memotech MTX stuff...
-    if (uNbO) uNbO = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
-    if (uNbO) uNbO = fwrite(&IOBYTE, sizeof(IOBYTE), 1, handle); 
-    if (uNbO) uNbO = fwrite(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
-    if (uNbO) uNbO = fwrite(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
-    if (uNbO) uNbO = fwrite(&tape_pos, sizeof(tape_pos), 1, handle); 
-    if (uNbO) uNbO = fwrite(&tape_len, sizeof(tape_len), 1, handle); 
-    if (uNbO) uNbO = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
+    if (retVal) retVal = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
+    if (retVal) retVal = fwrite(&IOBYTE, sizeof(IOBYTE), 1, handle); 
+    if (retVal) retVal = fwrite(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
+    if (retVal) retVal = fwrite(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
+    if (retVal) retVal = fwrite(&tape_pos, sizeof(tape_pos), 1, handle); 
+    if (retVal) retVal = fwrite(&tape_len, sizeof(tape_len), 1, handle); 
+    if (retVal) retVal = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
       
-    if (uNbO) uNbO = fwrite(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
-    if (uNbO) uNbO = fwrite(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
-    if (uNbO) uNbO = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);       
+    if (retVal) retVal = fwrite(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
+    if (retVal) retVal = fwrite(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
+    if (retVal) retVal = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);       
       
     // Some SVI stuff...
-    if (uNbO) uNbO = fwrite(&svi_RAM, 2, 1, handle); 
+    if (retVal) retVal = fwrite(&svi_RAM, 2, 1, handle); 
       
     // Some SG-1000 / SC-3000 stuff...
-    if (uNbO) uNbO = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
-    if (uNbO) uNbO = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
+    if (retVal) retVal = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
+    if (retVal) retVal = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
 
     // And a few things for the Super Game Cart
-    if (uNbO) uNbO = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
-    if (uNbO) uNbO = fwrite(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
-    if (uNbO) uNbO = fwrite(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+    if (retVal) retVal = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
+    if (retVal) retVal = fwrite(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
+    if (retVal) retVal = fwrite(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
     
     // Some spare memory we can eat into...
-    if (uNbO) uNbO = fwrite(spare, 506, 1, handle);
+    if (retVal) retVal = fwrite(spare, 506, 1, handle);
       
     // Write VDP
-    if (uNbO) uNbO = fwrite(VDP, sizeof(VDP),1, handle); 
-    if (uNbO) uNbO = fwrite(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
-    if (uNbO) uNbO = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle); 
-    if (uNbO) uNbO = fwrite(&FGColor, sizeof(FGColor),1, handle); 
-    if (uNbO) uNbO = fwrite(&BGColor, sizeof(BGColor),1, handle); 
-    if (uNbO) uNbO = fwrite(&OH, sizeof(OH),1, handle); 
-    if (uNbO) uNbO = fwrite(&IH, sizeof(IH),1, handle);       
-    if (uNbO) uNbO = fwrite(&ScrMode, sizeof(ScrMode),1, handle); 
-    if (uNbO) uNbO = fwrite(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
-    if (uNbO) uNbO = fwrite(&VAddr, sizeof(VAddr),1, handle); 
-    if (uNbO) uNbO = fwrite(&CurLine, sizeof(CurLine),1, handle); 
-    if (uNbO) uNbO = fwrite(&ColTabM, sizeof(ColTabM),1, handle); 
-    if (uNbO) uNbO = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle); 
-    if (uNbO) uNbO = fwrite(pVDPVidMem, 0x4000,1, handle); 
+    if (retVal) retVal = fwrite(VDP, sizeof(VDP),1, handle); 
+    if (retVal) retVal = fwrite(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
+    if (retVal) retVal = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle); 
+    if (retVal) retVal = fwrite(&FGColor, sizeof(FGColor),1, handle); 
+    if (retVal) retVal = fwrite(&BGColor, sizeof(BGColor),1, handle); 
+    if (retVal) retVal = fwrite(&OH, sizeof(OH),1, handle); 
+    if (retVal) retVal = fwrite(&IH, sizeof(IH),1, handle);       
+    if (retVal) retVal = fwrite(&ScrMode, sizeof(ScrMode),1, handle); 
+    if (retVal) retVal = fwrite(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
+    if (retVal) retVal = fwrite(&VAddr, sizeof(VAddr),1, handle); 
+    if (retVal) retVal = fwrite(&CurLine, sizeof(CurLine),1, handle); 
+    if (retVal) retVal = fwrite(&ColTabM, sizeof(ColTabM),1, handle); 
+    if (retVal) retVal = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle); 
+    if (retVal) retVal = fwrite(pVDPVidMem, 0x4000,1, handle); 
     pSvg = ChrGen-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
     pSvg = ChrTab-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
     pSvg = ColTab-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
     pSvg = SprGen-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
     pSvg = SprTab-pVDPVidMem;
-    if (uNbO) uNbO = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
 
     // Write PSG SN and AY sound chips...
-    if (uNbO) uNbO = fwrite(&mySN, sizeof(mySN),1, handle);
-    if (uNbO) uNbO = fwrite(&myAY, sizeof(myAY),1, handle);
+    if (retVal) retVal = fwrite(&mySN, sizeof(mySN),1, handle);
+    if (retVal) retVal = fwrite(&myAY, sizeof(myAY),1, handle);
       
     // Write stuff for MSX, SordM5 and SG-1000
-    if (uNbO) fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
-    if (uNbO) fwrite(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
-    if (uNbO) fwrite(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
+    if (retVal) retVal = fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
+    if (retVal) retVal = fwrite(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
+    if (retVal) retVal = fwrite(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
     
-    if (uNbO) fwrite(&mapperType, sizeof(mapperType),1, handle);
-    if (uNbO) fwrite(&mapperMask, sizeof(mapperMask),1, handle);
-    if (uNbO) fwrite(bROMInSlot, sizeof(bROMInSlot),1, handle);
-    if (uNbO) fwrite(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+    if (retVal) retVal = fwrite(&mapperType, sizeof(mapperType),1, handle);
+    if (retVal) retVal = fwrite(&mapperMask, sizeof(mapperMask),1, handle);
+    if (retVal) retVal = fwrite(bROMInSegment, sizeof(bROMInSegment),1, handle);
+    if (retVal) retVal = fwrite(bRAMInSegment, sizeof(bRAMInSegment),1, handle);
     
     // Some systems utilize the Z80 CTC 
-    if (uNbO) fwrite(CTC, sizeof(CTC),1, handle);
-    if (uNbO) fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
+    if (retVal) retVal = fwrite(CTC, sizeof(CTC),1, handle);
+    if (retVal) retVal = fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
     
     // Various ports used in the system
-    if (uNbO) fwrite(&Port53, sizeof(Port53),1, handle);
-    if (uNbO) fwrite(&Port60, sizeof(Port60),1, handle);
-    if (uNbO) fwrite(&Port20, sizeof(Port20),1, handle);
-    if (uNbO) fwrite(&Port42, sizeof(Port42),1, handle);    
+    if (retVal) retVal = fwrite(&Port53, sizeof(Port53),1, handle);
+    if (retVal) retVal = fwrite(&Port60, sizeof(Port60),1, handle);
+    if (retVal) retVal = fwrite(&Port20, sizeof(Port20),1, handle);
+    if (retVal) retVal = fwrite(&Port42, sizeof(Port42),1, handle);    
       
     if (einstein_mode) // Big enough that we will not write this if we are not Einstein
     {
-        if (uNbO) fwrite(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
-        if (uNbO) fwrite(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
-        if (uNbO) fwrite(&keyboard_w, sizeof(keyboard_w),1, handle);      
-        if (uNbO) fwrite(&key_int_mask, sizeof(key_int_mask),1, handle);      
-        if (uNbO) fwrite(&myKeyData, sizeof(myKeyData),1, handle);      
-        if (uNbO) fwrite(&adc_mux, sizeof(adc_mux),1, handle);      
-        if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);
+        if (retVal) retVal = fwrite(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
+        if (retVal) retVal = fwrite(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
+        if (retVal) retVal = fwrite(&keyboard_w, sizeof(keyboard_w),1, handle);      
+        if (retVal) retVal = fwrite(&key_int_mask, sizeof(key_int_mask),1, handle);      
+        if (retVal) retVal = fwrite(&myKeyData, sizeof(myKeyData),1, handle);      
+        if (retVal) retVal = fwrite(&adc_mux, sizeof(adc_mux),1, handle);      
+        if (retVal) retVal = fwrite(&FDC, sizeof(FDC), 1, handle);
     }
     else if (msx_mode)   // Big enough that we will not write this if we are not MSX 
     {
-        if (uNbO) fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
-        if (msx_sram_enabled) if (uNbO) fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
-        if (msx_scc_enable)   if (uNbO) uNbO = fwrite(&mySCC, sizeof(mySCC),1, handle);
-        if (msx_mode == 3)    if (uNbO) uNbO = fwrite(&FDC, sizeof(FDC), 1, handle);
+        // We need to save off the MSX Cart offsets so we can restore them properly...
+        for (u8 i=0; i<8; i++)
+        {
+            if ((MSXCartPtr[i] >= ROM_Memory) && (MSXCartPtr[i] <= ROM_Memory+(sizeof(ROM_Memory))))
+            {
+                Offsets[i].type = TYPE_ROM;
+                Offsets[i].offset = MSXCartPtr[i] - ROM_Memory;
+            }
+            else
+            {
+                Offsets[i].type = TYPE_OTHER;
+                Offsets[i].offset =  (u32)MSXCartPtr[i];
+            }
+        }
+        if (retVal) retVal = fwrite(Offsets, sizeof(Offsets),1, handle);
+        
+        if (retVal) retVal = fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
+        if (msx_sram_enabled) if (retVal) retVal = fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
+        if (msx_scc_enable)   if (retVal) retVal = fwrite(&mySCC, sizeof(mySCC),1, handle);
+        if (msx_mode == 3)    if (retVal) retVal = fwrite(&FDC, sizeof(FDC), 1, handle);
+        
+        if (retVal) retVal = fwrite(MSXCartPtr, sizeof(MSXCartPtr),1, handle);
+        
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
-        if (uNbO) fwrite(PCBTable+0x8000, 0x8000, 1, handle);
+        if (retVal) retVal = fwrite(PCBTable+0x8000, 0x8000, 1, handle);
         
-        if (uNbO) fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);        
-        if (uNbO) fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);        
-        if (uNbO) fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
-        if (uNbO) fwrite(&LastKey, sizeof(LastKey),1, handle);
-        if (uNbO) fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);        
-        if (uNbO) fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);        
-        if (uNbO) fwrite(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
+        if (retVal) retVal = fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);        
+        if (retVal) retVal = fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);        
+        if (retVal) retVal = fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
+        if (retVal) retVal = fwrite(&LastKey, sizeof(LastKey),1, handle);
+        if (retVal) retVal = fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);        
+        if (retVal) retVal = fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);        
+        if (retVal) retVal = fwrite(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
         
-        if (uNbO) fwrite(spare, 32,1, handle);        
-        if (uNbO) fwrite(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
+        if (retVal) retVal = fwrite(spare, 32,1, handle);        
+        if (retVal) retVal = fwrite(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
         if (adam_ext_ram_used)
         {
             // This must be the last thing written so we can compress it...
@@ -284,21 +303,18 @@ void colecoSaveState()
     else if (bActivisionPCB)
     {
         // Write the EEPROM and memory
-        if (uNbO) fwrite(&EEPROM, sizeof(EEPROM),1, handle);      
+        if (retVal) retVal = fwrite(&EEPROM, sizeof(EEPROM),1, handle);      
     }
     else if (creativision_mode)
     {
         // Write some creativision stuff...
         u16 cv_cpu_size=1;
         u8 *mem = creativision_get_cpu(&cv_cpu_size);
-        if (uNbO) fwrite(mem, cv_cpu_size,1, handle);
+        if (retVal) retVal = fwrite(mem, cv_cpu_size,1, handle);
     }
-      
-    if (uNbO) 
-      strcpy(szCh1,"OK ");
-    else
-      strcpy(szCh1,"ERR");
-     DSPrint(15,0,0,szCh1);
+    
+    strcpy(szCh1, (retVal ? "OK ":"ERR"));  
+    DSPrint(15,0,0,szCh1);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
     DSPrint(6,0,0,"             "); 
     DisplayStatusLine(true);
@@ -315,7 +331,7 @@ void colecoSaveState()
  ********************************************************************************/
 void colecoLoadState() 
 {
-    u32 uNbO;
+    size_t retVal;
     long pSvg;
 
     // Return to the original path
@@ -345,21 +361,21 @@ void colecoLoadState()
        
         // Read Version
         u16 save_ver = 0xBEEF;
-        uNbO = fread(&save_ver, sizeof(u16), 1, handle);
+        retVal = fread(&save_ver, sizeof(u16), 1, handle);
         
         if (save_ver == COLECODS_SAVE_VER)
         {
             // Load CZ80 CPU
-            uNbO = fread(&CPU, sizeof(CPU), 1, handle);
+            retVal = fread(&CPU, sizeof(CPU), 1, handle);
        
             // Deficit Z80 CPU Cycle counter
-            if (uNbO) uNbO = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
+            if (retVal) retVal = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
             
             // Load Coleco Memory (yes, all of it!)
-            if (uNbO) uNbO = fread(RAM_Memory, 0x10000,1, handle); 
+            if (retVal) retVal = fread(RAM_Memory, 0x10000,1, handle); 
             
             // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
-            if (uNbO) uNbO = fread(Offsets, sizeof(Offsets),1, handle);     
+            if (retVal) retVal = fread(Offsets, sizeof(Offsets),1, handle);     
             for (u8 i=0; i<8; i++)
             {
                 if (Offsets[i].type == TYPE_ROM)
@@ -389,127 +405,140 @@ void colecoLoadState()
             }
             
             // Load the Super Game Module stuff
-            if (uNbO) uNbO = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-            if (uNbO) uNbO = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
+            if (retVal) retVal = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
+            if (retVal) retVal = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
             
             // A few frame counters
-            if (uNbO) uNbO = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
-            if (uNbO) uNbO = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
+            if (retVal) retVal = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
+            if (retVal) retVal = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
             
             // Some Memotech MTX stuff...
-            if (uNbO) uNbO = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
-            if (uNbO) uNbO = fread(&IOBYTE, sizeof(IOBYTE), 1, handle); 
-            if (uNbO) uNbO = fread(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
-            if (uNbO) uNbO = fread(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
-            if (uNbO) uNbO = fread(&tape_pos, sizeof(tape_pos), 1, handle); 
-            if (uNbO) uNbO = fread(&tape_len, sizeof(tape_len), 1, handle); 
-            if (uNbO) uNbO = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
+            if (retVal) retVal = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
+            if (retVal) retVal = fread(&IOBYTE, sizeof(IOBYTE), 1, handle); 
+            if (retVal) retVal = fread(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
+            if (retVal) retVal = fread(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
+            if (retVal) retVal = fread(&tape_pos, sizeof(tape_pos), 1, handle); 
+            if (retVal) retVal = fread(&tape_len, sizeof(tape_len), 1, handle); 
+            if (retVal) retVal = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
             
-            if (uNbO) uNbO = fread(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
-            if (uNbO) uNbO = fread(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
-            if (uNbO) uNbO = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle); 
+            if (retVal) retVal = fread(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
+            if (retVal) retVal = fread(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
+            if (retVal) retVal = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle); 
             
             // Some SVI stuff...
-            if (uNbO) uNbO = fread(&svi_RAM, 2, 1, handle); 
+            if (retVal) retVal = fread(&svi_RAM, 2, 1, handle); 
             
             // Some SG-1000 / SC-3000 stuff...
-            if (uNbO) uNbO = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
-            if (uNbO) uNbO = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
+            if (retVal) retVal = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
+            if (retVal) retVal = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
             
             // And a few things for the Super Game Cart
-            if (uNbO) uNbO = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
-            if (uNbO) uNbO = fread(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
-            if (uNbO) uNbO = fread(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+            if (retVal) retVal = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
+            if (retVal) retVal = fread(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
+            if (retVal) retVal = fread(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
 
             // Load spare memory for future use
-            if (uNbO) uNbO = fread(spare, 506, 1, handle); 
+            if (retVal) retVal = fread(spare, 506, 1, handle); 
 
             // Load VDP
-            if (uNbO) uNbO = fread(VDP, sizeof(VDP),1, handle); 
-            if (uNbO) uNbO = fread(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
-            if (uNbO) uNbO = fread(&VDPStatus, sizeof(VDPStatus),1, handle); 
-            if (uNbO) uNbO = fread(&FGColor, sizeof(FGColor),1, handle); 
-            if (uNbO) uNbO = fread(&BGColor, sizeof(BGColor),1, handle); 
-            if (uNbO) uNbO = fread(&OH, sizeof(OH),1, handle); 
-            if (uNbO) uNbO = fread(&IH, sizeof(IH),1, handle); 
-            if (uNbO) uNbO = fread(&ScrMode, sizeof(ScrMode),1, handle); 
+            if (retVal) retVal = fread(VDP, sizeof(VDP),1, handle); 
+            if (retVal) retVal = fread(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
+            if (retVal) retVal = fread(&VDPStatus, sizeof(VDPStatus),1, handle); 
+            if (retVal) retVal = fread(&FGColor, sizeof(FGColor),1, handle); 
+            if (retVal) retVal = fread(&BGColor, sizeof(BGColor),1, handle); 
+            if (retVal) retVal = fread(&OH, sizeof(OH),1, handle); 
+            if (retVal) retVal = fread(&IH, sizeof(IH),1, handle); 
+            if (retVal) retVal = fread(&ScrMode, sizeof(ScrMode),1, handle); 
             extern void (*RefreshLine)(u8 uY);  RefreshLine = SCR[ScrMode].Refresh;
-            if (uNbO) uNbO = fread(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
-            if (uNbO) uNbO = fread(&VAddr, sizeof(VAddr),1, handle); 
-            if (uNbO) uNbO = fread(&CurLine, sizeof(CurLine),1, handle); 
-            if (uNbO) uNbO = fread(&ColTabM, sizeof(ColTabM),1, handle); 
-            if (uNbO) uNbO = fread(&ChrGenM, sizeof(ChrGenM),1, handle); 
+            if (retVal) retVal = fread(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
+            if (retVal) retVal = fread(&VAddr, sizeof(VAddr),1, handle); 
+            if (retVal) retVal = fread(&CurLine, sizeof(CurLine),1, handle); 
+            if (retVal) retVal = fread(&ColTabM, sizeof(ColTabM),1, handle); 
+            if (retVal) retVal = fread(&ChrGenM, sizeof(ChrGenM),1, handle); 
             
-            if (uNbO) uNbO = fread(pVDPVidMem, 0x4000,1, handle); 
-            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(pVDPVidMem, 0x4000,1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
             ChrGen = pSvg + pVDPVidMem;
-            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
             ChrTab = pSvg + pVDPVidMem;
-            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
             ColTab = pSvg + pVDPVidMem;
-            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
             SprGen = pSvg + pVDPVidMem;
-            if (uNbO) uNbO = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
             SprTab = pSvg + pVDPVidMem;
             
             // Read PSG SN and AY sound chips...
-            if (uNbO) uNbO = fread(&mySN, sizeof(mySN),1, handle); 
-            if (uNbO) uNbO = fread(&myAY, sizeof(myAY),1, handle);
+            if (retVal) retVal = fread(&mySN, sizeof(mySN),1, handle); 
+            if (retVal) retVal = fread(&myAY, sizeof(myAY),1, handle);
             
             // Load stuff for MSX, SordM5 and SG-1000
-            if (uNbO) fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
-            if (uNbO) fread(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
-            if (uNbO) fread(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
+            if (retVal) retVal = fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
+            if (retVal) retVal = fread(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
+            if (retVal) retVal = fread(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
             
-            if (uNbO) fread(&mapperType, sizeof(mapperType),1, handle);
-            if (uNbO) fread(&mapperMask, sizeof(mapperMask),1, handle);
-            if (uNbO) fread(bROMInSlot, sizeof(bROMInSlot),1, handle);
-            if (uNbO) fread(bRAMInSlot, sizeof(bRAMInSlot),1, handle);
+            if (retVal) retVal = fread(&mapperType, sizeof(mapperType),1, handle);
+            if (retVal) retVal = fread(&mapperMask, sizeof(mapperMask),1, handle);
+            if (retVal) retVal = fread(bROMInSegment, sizeof(bROMInSegment),1, handle);
+            if (retVal) retVal = fread(bRAMInSegment, sizeof(bRAMInSegment),1, handle);
             
             // Some systems utilize the Z80 CTC 
-            if (uNbO) fread(CTC, sizeof(CTC),1, handle);
-            if (uNbO) fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
+            if (retVal) retVal = fread(CTC, sizeof(CTC),1, handle);
+            if (retVal) retVal = fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
             
             // Various ports used in the system
-            if (uNbO) fread(&Port53, sizeof(Port53),1, handle);
-            if (uNbO) fread(&Port60, sizeof(Port60),1, handle);
-            if (uNbO) fread(&Port20, sizeof(Port20),1, handle);
-            if (uNbO) fread(&Port42, sizeof(Port42),1, handle);
+            if (retVal) retVal = fread(&Port53, sizeof(Port53),1, handle);
+            if (retVal) retVal = fread(&Port60, sizeof(Port60),1, handle);
+            if (retVal) retVal = fread(&Port20, sizeof(Port20),1, handle);
+            if (retVal) retVal = fread(&Port42, sizeof(Port42),1, handle);
             
 		    if (einstein_mode) // Big enough that we will not write this if we are not Einstein
 		    {
-	            if (uNbO) fread(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
-                if (uNbO) fread(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
-                if (uNbO) fread(&keyboard_w, sizeof(keyboard_w),1, handle);      
-                if (uNbO) fread(&key_int_mask, sizeof(key_int_mask),1, handle);      
-                if (uNbO) fread(&myKeyData, sizeof(myKeyData),1, handle);      
-                if (uNbO) fread(&adc_mux, sizeof(adc_mux),1, handle);      
-                if (uNbO) uNbO = fread(&FDC, sizeof(FDC), 1, handle);
+	            if (retVal) retVal = fread(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
+                if (retVal) retVal = fread(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
+                if (retVal) retVal = fread(&keyboard_w, sizeof(keyboard_w),1, handle);      
+                if (retVal) retVal = fread(&key_int_mask, sizeof(key_int_mask),1, handle);      
+                if (retVal) retVal = fread(&myKeyData, sizeof(myKeyData),1, handle);      
+                if (retVal) retVal = fread(&adc_mux, sizeof(adc_mux),1, handle);      
+                if (retVal) retVal = fread(&FDC, sizeof(FDC), 1, handle);
     		}
     		else if (msx_mode)   // Big enough that we will not write this if we are not MSX
             {
-                if (uNbO) fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
-                if (msx_sram_enabled) if (uNbO) fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
-                if (msx_scc_enable)   if (uNbO) uNbO = fread(&mySCC, sizeof(mySCC),1, handle);
-                if (msx_mode == 3)    if (uNbO) uNbO = fread(&FDC, sizeof(FDC), 1, handle);
+                if (retVal) fread(Offsets, sizeof(Offsets),1, handle);
+                for (u8 i=0; i<8; i++)
+                {
+                    if (Offsets[i].type == TYPE_ROM)
+                    {
+                        MSXCartPtr[i] = (u8 *) (ROM_Memory + Offsets[i].offset);
+                    }
+                    else
+                    {
+                        MSXCartPtr[i] = (u8 *) (Offsets[i].offset);
+                    }
+                }
                 
-                msx_caps_lock = (Port_PPI_C & 0x40); // Set the caps lock state back to what it should be based on Port C
+                if (retVal) retVal = fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
+                if (msx_sram_enabled) if (retVal) retVal = fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
+                if (msx_scc_enable)   if (retVal) retVal = fread(&mySCC, sizeof(mySCC),1, handle);
+                if (msx_mode == 3)    if (retVal) retVal = fread(&FDC, sizeof(FDC), 1, handle);
+                
+                msx_caps_lock = ((Port_PPI_C & 0x40) ? 0:1); // Set the caps lock state back to what it should be based on Port C
                 msx_last_block[0] = msx_last_block[1] = msx_last_block[2] = msx_last_block[3] = 199; // Ensure bank swaps always happen after a restore                
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {
-                if (uNbO) fread(PCBTable+0x8000, 0x8000, 1, handle);
+                if (retVal) retVal = fread(PCBTable+0x8000, 0x8000, 1, handle);
                 
-                if (uNbO) fread(&PCBAddr, sizeof(PCBAddr),1, handle);
-                if (uNbO) fread(adam_ram_present, sizeof(adam_ram_present),1, handle);                
-                if (uNbO) fread(&KBDStatus, sizeof(KBDStatus),1, handle);
-                if (uNbO) fread(&LastKey, sizeof(LastKey),1, handle);
-                if (uNbO) fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
-                if (uNbO) fread(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
-                if (uNbO) fread(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
+                if (retVal) retVal = fread(&PCBAddr, sizeof(PCBAddr),1, handle);
+                if (retVal) retVal = fread(adam_ram_present, sizeof(adam_ram_present),1, handle);                
+                if (retVal) retVal = fread(&KBDStatus, sizeof(KBDStatus),1, handle);
+                if (retVal) retVal = fread(&LastKey, sizeof(LastKey),1, handle);
+                if (retVal) retVal = fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
+                if (retVal) retVal = fread(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
+                if (retVal) retVal = fread(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
                 
-                if (uNbO) fread(spare, 32,1, handle);                
-                if (uNbO) fread(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
+                if (retVal) retVal = fread(spare, 32,1, handle);                
+                if (retVal) retVal = fread(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
                 
                 if (adam_ext_ram_used)
                 {
@@ -544,14 +573,14 @@ void colecoLoadState()
             else if (bActivisionPCB)
             {
                 // Read the EEPROM and memory
-                if (uNbO) fread(&EEPROM, sizeof(EEPROM),1, handle);      
+                if (retVal) retVal = fread(&EEPROM, sizeof(EEPROM),1, handle);      
             }
             else if (creativision_mode)
             {
                 // Read some Creativision stuff
                 u16 cv_cpu_size=1;
                 u8 *mem = creativision_get_cpu(&cv_cpu_size);
-                if (uNbO) fread(mem, cv_cpu_size,1, handle);
+                if (retVal) retVal = fread(mem, cv_cpu_size,1, handle);
                 creativision_put_cpu(mem);
             }
             
@@ -571,13 +600,10 @@ void colecoLoadState()
             last_mega_bank = 199;   // Force load of bank if needed
             last_tape_pos = 9999;   // Force tape position to show
         }
-        else uNbO = 0;
+        else retVal = 0;
         
-        if (uNbO) 
-          strcpy(szCh1,"OK ");
-        else
-          strcpy(szCh1,"ERR");
-         DSPrint(15,0,0,szCh1);
+        strcpy(szCh1, (retVal ? "OK ":"ERR"));
+        DSPrint(15,0,0,szCh1);
         
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         DSPrint(6,0,0,"             ");  

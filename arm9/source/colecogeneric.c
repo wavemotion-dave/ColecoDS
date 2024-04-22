@@ -2468,7 +2468,8 @@ void colecoDSChangeOptions(void)
 //*****************************************************************************
 // Displays a message on the screen
 //*****************************************************************************
-void DSPrint(int iX,int iY,int iScr,char *szMessage) {
+void DSPrint(int iX,int iY,int iScr,char *szMessage) 
+{
   u16 *pusScreen,*pusMap;
   u16 usCharac;
   char *pTrTxt=szMessage;
