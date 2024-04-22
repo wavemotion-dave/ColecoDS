@@ -83,22 +83,22 @@ typedef union
 
 typedef struct
 {
-  pair AF,BC,DE,HL,IX,IY,PC,SP;       /* Main registers      */
-  pair AF1,BC1,DE1,HL1;               /* Shadow registers    */
-  byte IFF,I;                         /* Interrupt registers */
-  byte R;                             /* Refresh register    */
-
-  int IPeriod,ICount; /* Set IPeriod to number of CPU cycles */
-                      /* between calls to LoopZ80()          */
-  int IBackup;        /* Private, don't touch                */
-  word IRequest;      /* Set to address of pending IRQ       */
-  byte IAutoReset;    /* Set to 1 to autom. reset IRequest   */
-  byte TrapBadOps;    /* Set to 1 to warn of illegal opcodes */
-  word Trap;          /* Set Trap to address to trace from   */
-  byte Trace;         /* Set Trace=1 to start tracing        */
-  byte R_HighBit;     /* Used to preserve the high bit for R */
-  byte Reserved;      /* Future use... */
-  word User;          /* Arbitrary user data (ID,RAM*,etc.)  */
+  pair AF,BC,DE,HL,IX,IY,PC,SP;     /* Main registers                       */
+  pair AF1,BC1,DE1,HL1;             /* Shadow registers                     */
+  byte IFF,I;                       /* Interrupt registers                  */
+  byte R;                           /* Refresh register                     */
+  byte R_HighBit;                   /* Used to preserve the high bit for R  */
+  int  IPeriod,ICount;              /* Set IPeriod to number of CPU cycles  */
+                                    /* between calls to LoopZ80()           */
+  int  CycleDeficit;                /* Cycle deficit from last scanline     */
+  int  IBackup;                     /* Private, don't touch                 */
+  word IRequest;                    /* Set to address of pending IRQ        */
+  byte IAutoReset;                  /* Set to 1 to autom. reset IRequest    */
+  byte TrapBadOps;                  /* Set to 1 to warn of illegal opcodes  */
+  byte Trace;                       /* Set Trace=1 to start tracing         */
+  byte Reserved;                    /* For future use                       */
+  word Trap;                        /* Set Trap to address to trace from    */
+  word User;                        /* Arbitrary user data (ID,RAM*,etc.)   */
 } Z80;
 
 

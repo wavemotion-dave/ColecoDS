@@ -1354,12 +1354,12 @@ void CassetteInsert(char *filename)
 
     fp = fopen(filename, "rb");
     fseek(fp, 0, SEEK_END);
-    LastROMSize = ftell(fp);
+    tape_len = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
     fread(ROM_Memory, tape_len, 1, fp);
     tape_pos = 0;
-    tape_len = LastROMSize;
+    msx_last_rom_size = tape_len;
     fclose(fp);
 }
 

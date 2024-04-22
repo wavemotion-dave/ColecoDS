@@ -34,6 +34,12 @@
 u8 adam_ext_ram_used   = 0;
 u8 sg1000_double_reset = false;
 
+// -----------------------------------------------------------------------
+// Used by various systems such as the ADAM and MSX to point to 
+// different 8K segments of memory as RAM and Carts are swapped in/out.
+// -----------------------------------------------------------------------
+u8 *MemoryMap[8]        __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
+
 // -------------------------------------
 // Some IO Port and Memory Map vars...
 // -------------------------------------
@@ -604,7 +610,7 @@ u8 loadrom(const char *filename, u8 * ptr)
         }
 
         // ------------------------------------------------------------------------------
-        // For the MSX emulation, we will use fast VRAM to hold ROM and mirrors...
+        // For the MSX emulation, we setup the initial memory map based on ROM size
         // ------------------------------------------------------------------------------
         if (msx_mode)
         {
@@ -1142,8 +1148,8 @@ ITCM_CODE u32 LoopZ80()
       }
 
       // Execute 1 scanline worth of CPU instructions
-      u32 cycles_to_process = tms_cpu_line + cycle_deficit;
-      cycle_deficit = ExecZ80(cycles_to_process);
+      u32 cycles_to_process = tms_cpu_line + CPU.CycleDeficit;
+      CPU.CycleDeficit = ExecZ80(cycles_to_process);
       
       // Refresh VDP
       if(Loop9918())

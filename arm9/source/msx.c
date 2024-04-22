@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fat.h>
+#include <dirent.h>
 
 #include "colecoDS.h"
 #include "Adam.h"
@@ -36,8 +37,6 @@ u8 bRAMInSegment[4]     __attribute__((section(".dtcm"))) = {0,0,0,0};
 
 u8 *MSXCartPtr[8]       __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 
-u8 *MemoryMap[8]        __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
-        
 u16 beeperFreq          __attribute__((section(".dtcm"))) = 0;
 u8 msx_beeper_process   __attribute__((section(".dtcm"))) = 0;
 u8 beeperWasOn          __attribute__((section(".dtcm"))) = 0;
@@ -52,7 +51,7 @@ SCC mySCC               __attribute__((section(".dtcm")));          // Declare n
 // --------------------------------------------------------------------------
 u16 msx_init            = 0x4000;
 u16 msx_basic           = 0x0000;
-u32 LastROMSize         = 0;
+u32 msx_last_rom_size   = 0;
 u8  msx_japanese_matrix = 0;        // Default to International keyboard layout. Set to '1' to enable Japanese layout.
 
 static u8 header_MSX[8] = { 0x1f,0xa6,0xde,0xba,0xcc,0x13,0x7d,0x74 };
@@ -1505,7 +1504,7 @@ u8 MSX_GuessROMType(u32 size)
 // -------------------------------------------------------------------------
 void MSX_InitialMemoryLayout(u32 romSize)
 {
-    LastROMSize = romSize;
+    msx_last_rom_size = romSize;
     
     // -------------------------------------
     // Make sure the MSX ports are clear
@@ -2054,7 +2053,7 @@ void msx_reset(void)
     if (msx_mode)
     {
         tape_pos = 0;
-        MSX_InitialMemoryLayout(LastROMSize);
+        MSX_InitialMemoryLayout(msx_last_rom_size);
         if (msx_mode == 3) // .dsk based MSX 
         {
             fdc_init(WD2793, 1, (tape_len/1024 == 360) ? 1:2, 80, 9, 512, 1, ROM_Memory, NULL);
@@ -2079,5 +2078,62 @@ void msx_patch_bios(void)
     BIOS_Memory[0x00f0] = 0xed; BIOS_Memory[0x00f1] = 0xfe; BIOS_Memory[0x00f2] = 0xc9;
     BIOS_Memory[0x00f3] = 0xed; BIOS_Memory[0x00f4] = 0xfe; BIOS_Memory[0x00f5] = 0xc9;
 }
+
+
+extern char szName[];
+void msxSaveEEPROM(void)
+{
+    // Return to the original path
+    chdir(initial_path);    
+
+    // Init filename = romname and SRM (SRAM) in place of ROM
+    DIR* dir = opendir("sav");
+    if (dir) closedir(dir);    // Directory exists... close it out and move on.
+    else mkdir("sav", 0777);   // Otherwise create the directory...
+    sprintf(szName,"sav/%s", initial_file);
+
+    int len = strlen(szName);
+    szName[len-3] = 's';
+    szName[len-2] = 'r';
+    szName[len-1] = 'm';
+    szName[len-0] = 0;
+
+    FILE *handle = fopen(szName, "wb+");  
+    if (handle != NULL) 
+    {
+      fwrite(SRAM_Memory, 0x4000, 1, handle);
+      fclose(handle);
+    }
+}
+
+void msxLoadEEPROM(void)
+{
+    // Return to the original path
+    chdir(initial_path);    
+
+    // Init filename = romname and SRM (SRAM) in place of ROM
+    DIR* dir = opendir("sav");
+    if (dir) closedir(dir);    // Directory exists... close it out and move on.
+    else mkdir("sav", 0777);   // Otherwise create the directory...
+    sprintf(szName,"sav/%s", initial_file);
+
+    int len = strlen(szName);
+    szName[len-3] = 's';
+    szName[len-2] = 'r';
+    szName[len-1] = 'm';
+    szName[len-0] = 0;
+
+    FILE *handle = fopen(szName, "rb+");
+    if (handle != NULL) 
+    {
+      fread(SRAM_Memory, 0x4000, 1, handle);
+      fclose(handle);
+    }
+    else
+    {
+      memset(SRAM_Memory, 0xFF, 0x4000);
+    }
+}
+
 
 // End of file

@@ -25,16 +25,7 @@ extern Z80 CPU;
 
 u32 halt_counter=0;
 
-
-/** INLINE ***************************************************/
-/** C99 standard has "inline", but older compilers used     **/
-/** __inline for the same purpose.                          **/
-/*************************************************************/
-#ifdef __C99__
 #define INLINE static inline
-#else
-#define INLINE static __inline
-#endif
 
 /** System-Dependent Stuff ***********************************/
 /** This is system-dependent code put here to speed things  **/
