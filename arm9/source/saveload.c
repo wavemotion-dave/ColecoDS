@@ -100,9 +100,6 @@ void colecoSaveState()
     // Write CZ80 CPU
     retVal = fwrite(&CPU, sizeof(CPU), 1, handle);
       
-    // Deficit Z80 CPU Cycle counter
-    if (retVal) retVal = fwrite(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
-
     // Save Coleco Memory (yes, all of it!)
     if (retVal) retVal = fwrite(RAM_Memory, 0x10000,1, handle); 
       
@@ -141,43 +138,7 @@ void colecoSaveState()
         }
     }
     if (retVal) retVal = fwrite(Offsets, sizeof(Offsets),1, handle);     
-      
-    // Write the Super Game Module stuff
-    if (retVal) retVal = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-    if (retVal) retVal = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-      
-    // A few frame counters
-    if (retVal) retVal = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
-    if (retVal) retVal = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
-      
-    // Some Memotech MTX stuff...
-    if (retVal) retVal = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
-    if (retVal) retVal = fwrite(&IOBYTE, sizeof(IOBYTE), 1, handle); 
-    if (retVal) retVal = fwrite(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
-    if (retVal) retVal = fwrite(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
-    if (retVal) retVal = fwrite(&tape_pos, sizeof(tape_pos), 1, handle); 
-    if (retVal) retVal = fwrite(&tape_len, sizeof(tape_len), 1, handle); 
-    if (retVal) retVal = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
-      
-    if (retVal) retVal = fwrite(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
-    if (retVal) retVal = fwrite(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
-    if (retVal) retVal = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);       
-      
-    // Some SVI stuff...
-    if (retVal) retVal = fwrite(&svi_RAM, 2, 1, handle); 
-      
-    // Some SG-1000 / SC-3000 stuff...
-    if (retVal) retVal = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
-    if (retVal) retVal = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
-
-    // And a few things for the Super Game Cart
-    if (retVal) retVal = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
-    if (retVal) retVal = fwrite(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
-    if (retVal) retVal = fwrite(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
     
-    // Some spare memory we can eat into...
-    if (retVal) retVal = fwrite(spare, 506, 1, handle);
-      
     // Write VDP
     if (retVal) retVal = fwrite(VDP, sizeof(VDP),1, handle); 
     if (retVal) retVal = fwrite(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
@@ -206,8 +167,42 @@ void colecoSaveState()
 
     // Write PSG SN and AY sound chips...
     if (retVal) retVal = fwrite(&mySN, sizeof(mySN),1, handle);
-    if (retVal) retVal = fwrite(&myAY, sizeof(myAY),1, handle);
+    if (retVal) retVal = fwrite(&myAY, sizeof(myAY),1, handle);    
       
+    // Write the Super Game Module stuff
+    if (retVal) retVal = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
+    if (retVal) retVal = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
+      
+    // A few frame counters
+    if (retVal) retVal = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
+    if (retVal) retVal = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
+
+    // Some Cassette Related stuff...    
+    if (retVal) retVal = fwrite(&tape_pos, sizeof(tape_pos), 1, handle); 
+    if (retVal) retVal = fwrite(&tape_len, sizeof(tape_len), 1, handle); 
+    if (retVal) retVal = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
+      
+    // Some Memotech MTX stuff...
+    if (retVal) retVal = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
+    if (retVal) retVal = fwrite(&IOBYTE, sizeof(IOBYTE), 1, handle); 
+    if (retVal) retVal = fwrite(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
+    if (retVal) retVal = fwrite(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle);      
+    if (retVal) retVal = fwrite(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
+    if (retVal) retVal = fwrite(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
+    if (retVal) retVal = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);       
+      
+    // Some SVI stuff...
+    if (retVal) retVal = fwrite(&svi_RAM, sizeof(svi_RAM), 1, handle); 
+      
+    // Some SG-1000 / SC-3000 stuff...
+    if (retVal) retVal = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
+    if (retVal) retVal = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
+
+    // And a few things for the Super Game Cart
+    if (retVal) retVal = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
+    if (retVal) retVal = fwrite(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
+    if (retVal) retVal = fwrite(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+    
     // Write stuff for MSX, SordM5 and SG-1000
     if (retVal) retVal = fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
     if (retVal) retVal = fwrite(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
@@ -226,7 +221,10 @@ void colecoSaveState()
     if (retVal) retVal = fwrite(&Port53, sizeof(Port53),1, handle);
     if (retVal) retVal = fwrite(&Port60, sizeof(Port60),1, handle);
     if (retVal) retVal = fwrite(&Port20, sizeof(Port20),1, handle);
-    if (retVal) retVal = fwrite(&Port42, sizeof(Port42),1, handle);    
+    if (retVal) retVal = fwrite(&Port42, sizeof(Port42),1, handle);
+    
+    // Some spare memory we can eat into...
+    if (retVal) retVal = fwrite(spare, 512, 1, handle);
       
     if (einstein_mode) // Big enough that we will not write this if we are not Einstein
     {
@@ -240,6 +238,8 @@ void colecoSaveState()
     }
     else if (msx_mode)   // Big enough that we will not write this if we are not MSX 
     {
+        if (retVal) retVal = fwrite(&msx_last_rom_size, sizeof(msx_last_rom_size),1, handle);
+        
         // We need to save off the MSX Cart offsets so we can restore them properly...
         for (u8 i=0; i<8; i++)
         {
@@ -260,9 +260,6 @@ void colecoSaveState()
         if (msx_sram_enabled) if (retVal) retVal = fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
         if (msx_scc_enable)   if (retVal) retVal = fwrite(&mySCC, sizeof(mySCC),1, handle);
         if (msx_mode == 3)    if (retVal) retVal = fwrite(&FDC, sizeof(FDC), 1, handle);
-        
-        if (retVal) retVal = fwrite(MSXCartPtr, sizeof(MSXCartPtr),1, handle);
-        
     }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
@@ -307,7 +304,7 @@ void colecoSaveState()
     }
     else if (creativision_mode)
     {
-        // Write some creativision stuff...
+        // Write some creativision stuff... mostly the non-Z80 CPU
         u16 cv_cpu_size=1;
         u8 *mem = creativision_get_cpu(&cv_cpu_size);
         if (retVal) retVal = fwrite(mem, cv_cpu_size,1, handle);
@@ -368,9 +365,6 @@ void colecoLoadState()
             // Load CZ80 CPU
             retVal = fread(&CPU, sizeof(CPU), 1, handle);
        
-            // Deficit Z80 CPU Cycle counter
-            if (retVal) retVal = fread(&cycle_deficit, sizeof(cycle_deficit), 1, handle); 
-            
             // Load Coleco Memory (yes, all of it!)
             if (retVal) retVal = fread(RAM_Memory, 0x10000,1, handle); 
             
@@ -404,42 +398,6 @@ void colecoLoadState()
                 }
             }
             
-            // Load the Super Game Module stuff
-            if (retVal) retVal = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-            if (retVal) retVal = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-            
-            // A few frame counters
-            if (retVal) retVal = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
-            if (retVal) retVal = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
-            
-            // Some Memotech MTX stuff...
-            if (retVal) retVal = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
-            if (retVal) retVal = fread(&IOBYTE, sizeof(IOBYTE), 1, handle); 
-            if (retVal) retVal = fread(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
-            if (retVal) retVal = fread(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
-            if (retVal) retVal = fread(&tape_pos, sizeof(tape_pos), 1, handle); 
-            if (retVal) retVal = fread(&tape_len, sizeof(tape_len), 1, handle); 
-            if (retVal) retVal = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
-            
-            if (retVal) retVal = fread(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
-            if (retVal) retVal = fread(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
-            if (retVal) retVal = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle); 
-            
-            // Some SVI stuff...
-            if (retVal) retVal = fread(&svi_RAM, 2, 1, handle); 
-            
-            // Some SG-1000 / SC-3000 stuff...
-            if (retVal) retVal = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
-            if (retVal) retVal = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
-            
-            // And a few things for the Super Game Cart
-            if (retVal) retVal = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
-            if (retVal) retVal = fread(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
-            if (retVal) retVal = fread(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
-
-            // Load spare memory for future use
-            if (retVal) retVal = fread(spare, 506, 1, handle); 
-
             // Load VDP
             if (retVal) retVal = fread(VDP, sizeof(VDP),1, handle); 
             if (retVal) retVal = fread(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
@@ -470,8 +428,42 @@ void colecoLoadState()
             
             // Read PSG SN and AY sound chips...
             if (retVal) retVal = fread(&mySN, sizeof(mySN),1, handle); 
-            if (retVal) retVal = fread(&myAY, sizeof(myAY),1, handle);
+            if (retVal) retVal = fread(&myAY, sizeof(myAY),1, handle); 
+                       
+            // Load the Super Game Module stuff
+            if (retVal) retVal = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
+            if (retVal) retVal = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
             
+            // A few frame counters
+            if (retVal) retVal = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
+            if (retVal) retVal = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
+
+            // Some Cassette Related stuff...
+            if (retVal) retVal = fread(&tape_pos, sizeof(tape_pos), 1, handle); 
+            if (retVal) retVal = fread(&tape_len, sizeof(tape_len), 1, handle); 
+            if (retVal) retVal = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
+            
+            // Some Memotech MTX stuff...
+            if (retVal) retVal = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
+            if (retVal) retVal = fread(&IOBYTE, sizeof(IOBYTE), 1, handle); 
+            if (retVal) retVal = fread(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
+            if (retVal) retVal = fread(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
+            if (retVal) retVal = fread(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
+            if (retVal) retVal = fread(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
+            if (retVal) retVal = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle); 
+            
+            // Some SVI stuff...
+            if (retVal) retVal = fread(&svi_RAM, sizeof(svi_RAM), 1, handle); 
+            
+            // Some SG-1000 / SC-3000 stuff...
+            if (retVal) retVal = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
+            if (retVal) retVal = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
+            
+            // And a few things for the Super Game Cart
+            if (retVal) retVal = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
+            if (retVal) retVal = fread(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
+            if (retVal) retVal = fread(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+
             // Load stuff for MSX, SordM5 and SG-1000
             if (retVal) retVal = fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
             if (retVal) retVal = fread(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
@@ -491,6 +483,9 @@ void colecoLoadState()
             if (retVal) retVal = fread(&Port60, sizeof(Port60),1, handle);
             if (retVal) retVal = fread(&Port20, sizeof(Port20),1, handle);
             if (retVal) retVal = fread(&Port42, sizeof(Port42),1, handle);
+
+            // Some spare memory we can eat into...
+            if (retVal) retVal = fread(spare, 512, 1, handle); 
             
 		    if (einstein_mode) // Big enough that we will not write this if we are not Einstein
 		    {
@@ -504,7 +499,9 @@ void colecoLoadState()
     		}
     		else if (msx_mode)   // Big enough that we will not write this if we are not MSX
             {
-                if (retVal) fread(Offsets, sizeof(Offsets),1, handle);
+                if (retVal) retVal = fread(&msx_last_rom_size, sizeof(msx_last_rom_size),1, handle);
+                
+                if (retVal) retVal = fread(Offsets, sizeof(Offsets),1, handle);
                 for (u8 i=0; i<8; i++)
                 {
                     if (Offsets[i].type == TYPE_ROM)
@@ -577,7 +574,7 @@ void colecoLoadState()
             }
             else if (creativision_mode)
             {
-                // Read some Creativision stuff
+                // Read some Creativision stuff... mostly the non-Z80 CPU
                 u16 cv_cpu_size=1;
                 u8 *mem = creativision_get_cpu(&cv_cpu_size);
                 if (retVal) retVal = fread(mem, cv_cpu_size,1, handle);
@@ -668,61 +665,5 @@ void colecoLoadEEPROM(void)
       memset(EEPROM.Data, 0xFF, 0x8000);
     }
 }
-
-
-void msxSaveEEPROM(void)
-{
-    // Return to the original path
-    chdir(initial_path);    
-
-    // Init filename = romname and SRM (SRAM) in place of ROM
-    DIR* dir = opendir("sav");
-    if (dir) closedir(dir);  // Directory exists... close it out and move on.
-    else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szLoadFile,"sav/%s", initial_file);
-
-    int len = strlen(szLoadFile);
-    szLoadFile[len-3] = 's';
-    szLoadFile[len-2] = 'r';
-    szLoadFile[len-1] = 'm';
-    szLoadFile[len-0] = 0;
-
-    FILE *handle = fopen(szLoadFile, "wb+");  
-    if (handle != NULL) 
-    {
-      fwrite(SRAM_Memory, 0x4000, 1, handle);
-      fclose(handle);
-    }
-}
-
-void msxLoadEEPROM(void)
-{
-    // Return to the original path
-    chdir(initial_path);    
-
-    // Init filename = romname and SRM (SRAM) in place of ROM
-    DIR* dir = opendir("sav");
-    if (dir) closedir(dir);  // Directory exists... close it out and move on.
-    else mkdir("sav", 0777);   // Otherwise create the directory...
-    sprintf(szLoadFile,"sav/%s", initial_file);
-
-    int len = strlen(szLoadFile);
-    szLoadFile[len-3] = 's';
-    szLoadFile[len-2] = 'r';
-    szLoadFile[len-1] = 'm';
-    szLoadFile[len-0] = 0;
-
-    FILE *handle = fopen(szLoadFile, "rb+");
-    if (handle != NULL) 
-    {
-      fread(SRAM_Memory, 0x4000, 1, handle);
-      fclose(handle);
-    }
-    else
-    {
-      memset(EEPROM.Data, 0xFF, 0x8000);
-    }
-}
-
 
 // End of file

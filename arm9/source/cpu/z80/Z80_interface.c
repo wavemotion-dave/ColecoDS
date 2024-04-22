@@ -27,7 +27,6 @@
 #include "../scc/SCC.h"
 
 u8  last_mega_bank     __attribute__((section(".dtcm"))) = 199;
-s32 cycle_deficit      __attribute__((section(".dtcm"))) = 0;
 u32 msx_offset         __attribute__((section(".dtcm"))) = 0;
 u8  msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8  msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
@@ -719,7 +718,7 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
 void Z80_Interface_Reset(void) 
 {
   last_mega_bank    = 199;
-  cycle_deficit     = 0;
+  CPU.CycleDeficit  = 0;
   msx_sram_at_8000  = 0;
   msx_scc_enable    = 0;
   msx_last_block[0] = 

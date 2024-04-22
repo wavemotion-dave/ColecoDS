@@ -2167,9 +2167,9 @@ void ReadFileCRCAndConfig(void)
 {    
     u8 checkCOM = 0;
     u8 checkROM = 0;
-    getfile_crc(gpFic[ucGameChoice].szName);
-    
     u8 cas_load = 0;
+    
+    // Reset the mode related vars...
     sg1000_mode = 0;
     pv2000_mode = 0;
     sordm5_mode = 0;
@@ -2181,8 +2181,10 @@ void ReadFileCRCAndConfig(void)
     adam_mode = 0;
     creativision_mode = 0;
     coleco_mode = 0;
-    
     keyMapType = 0;
+
+    // Grab the all-important file CRC
+    getfile_crc(gpFic[ucGameChoice].szName);
     
     if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode

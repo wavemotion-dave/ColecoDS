@@ -117,7 +117,6 @@ extern u8 SGC_EEPROM_CmdPos;
 // A few misc externs needed...
 // -------------------------------
 extern u32* lutTablehh;
-extern s32  cycle_deficit;
 extern u8 msx_sram_at_8000;
 extern u8 svi_RAM[2];
 extern u16 memotech_RAM_start;
@@ -164,7 +163,7 @@ extern u8 key_code;
 extern u8 key_graph;
 extern u8 key_dia;
 extern u32 last_tape_pos;
-extern u32 LastROMSize;
+extern u32 msx_last_rom_size;
 extern u8 OldPortC;
 extern u8 myKeyData;
 extern u8 adc_mux;
