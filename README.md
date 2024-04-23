@@ -407,12 +407,12 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V9.8: ??-???-2024 by wavemotion-dave
+V9.8: 23-Apr-2024 by wavemotion-dave
 * Cleanup of MSX BIOS handling - we now support the Panasonic CF-2700 directly. See MSX BIOS section for details.
 * MSX status line now shows RAM (based on machine chosen) on the status line (was previously showing ROM size which no other machine in ColecoDS did).
 * MSX Caps Lock now has LED indicator on the virtual keyboard.
 * Added ROM/CAS/DSK size and CRC32 on the main screen after choosing a game.
-* Numerous fixes for Save/Load states for the MSX and Einstein.
+* Numerous fixes for Save/Load states especially for the MSX and Einstein.
 * Improved memory handling to free up some DS resources for future expansion.
 
 V9.7: 16-Apr-2024 by wavemotion-dave

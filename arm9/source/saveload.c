@@ -57,7 +57,7 @@ struct RomOffset Offsets[8];
 u8  spare[512] = {0x00};            // We keep some spare bytes so we can use them in the future without changing the structure
 
 static char szLoadFile[256];        // We build the filename out of the base filename and tack on .sav, .ee, etc.
-static char szCh1[32];
+static char tmpStr[32];
 
 void colecoSaveState() 
 {
@@ -87,8 +87,8 @@ void colecoSaveState()
       szLoadFile[len-2] = 'a';
       szLoadFile[len-1] = 'v';
   }
-  strcpy(szCh1,"SAVING...");
-  DSPrint(6,0,0,szCh1);
+  strcpy(tmpStr,"SAVING...");
+  DSPrint(6,0,0,tmpStr);
   
   FILE *handle = fopen(szLoadFile, "wb+");  
   if (handle != NULL) 
@@ -100,33 +100,33 @@ void colecoSaveState()
     // Write CZ80 CPU
     retVal = fwrite(&CPU, sizeof(CPU), 1, handle);
       
-    // Save Coleco Memory (yes, all of it!)
+    // Save Z80 Memory (yes, all of it!)
     if (retVal) retVal = fwrite(RAM_Memory, 0x10000,1, handle); 
       
     // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
     for (u8 i=0; i<8; i++)
     {
-        if ((MemoryMap[i] >= ROM_Memory) && (MemoryMap[i] <= ROM_Memory+(sizeof(ROM_Memory))))
+        if ((MemoryMap[i] >= ROM_Memory) && (MemoryMap[i] < ROM_Memory+(sizeof(ROM_Memory))))
         {
             Offsets[i].type = TYPE_ROM;
             Offsets[i].offset = MemoryMap[i] - ROM_Memory;
         }
-        else if ((MemoryMap[i] >= fastdrom_cdx2) && (MemoryMap[i] <= fastdrom_cdx2+(sizeof(fastdrom_cdx2))))
+        else if ((MemoryMap[i] >= fastdrom_cdx2) && (MemoryMap[i] < fastdrom_cdx2+(sizeof(fastdrom_cdx2))))
         {
             Offsets[i].type = TYPE_FDC;
             Offsets[i].offset = MemoryMap[i] - fastdrom_cdx2;
         }        
-        else if ((MemoryMap[i] >= RAM_Memory) && (MemoryMap[i] <= RAM_Memory+(sizeof(RAM_Memory))))
+        else if ((MemoryMap[i] >= RAM_Memory) && (MemoryMap[i] < RAM_Memory+(sizeof(RAM_Memory))))
         {
             Offsets[i].type = TYPE_RAM;
             Offsets[i].offset = MemoryMap[i] - RAM_Memory;
         }
-        else if ((DSI_RAM_Buffer != 0) && (MemoryMap[i] >= DSI_RAM_Buffer) && (MemoryMap[i] <= DSI_RAM_Buffer+(2*1024*1024)))
+        else if ((DSI_RAM_Buffer != 0) && (MemoryMap[i] >= DSI_RAM_Buffer) && (MemoryMap[i] < DSI_RAM_Buffer+(2*1024*1024)))
         {
             Offsets[i].type = TYPE_EXP;
             Offsets[i].offset = MemoryMap[i] - DSI_RAM_Buffer;
         }
-        else if ((MemoryMap[i] >= BIOS_Memory) && (MemoryMap[i] <= BIOS_Memory+(sizeof(BIOS_Memory))))
+        else if ((MemoryMap[i] >= BIOS_Memory) && (MemoryMap[i] < BIOS_Memory+(sizeof(BIOS_Memory))))
         {
             Offsets[i].type = TYPE_BIOS;
             Offsets[i].offset = MemoryMap[i] - BIOS_Memory;
@@ -243,7 +243,7 @@ void colecoSaveState()
         // We need to save off the MSX Cart offsets so we can restore them properly...
         for (u8 i=0; i<8; i++)
         {
-            if ((MSXCartPtr[i] >= ROM_Memory) && (MSXCartPtr[i] <= ROM_Memory+(sizeof(ROM_Memory))))
+            if ((MSXCartPtr[i] >= ROM_Memory) && (MSXCartPtr[i] < ROM_Memory+(sizeof(ROM_Memory))))
             {
                 Offsets[i].type = TYPE_ROM;
                 Offsets[i].offset = MSXCartPtr[i] - ROM_Memory;
@@ -310,14 +310,14 @@ void colecoSaveState()
         if (retVal) retVal = fwrite(mem, cv_cpu_size,1, handle);
     }
     
-    strcpy(szCh1, (retVal ? "OK ":"ERR"));  
-    DSPrint(15,0,0,szCh1);
+    strcpy(tmpStr, (retVal ? "OK ":"ERR"));  
+    DSPrint(15,0,0,tmpStr);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
     DSPrint(6,0,0,"             "); 
     DisplayStatusLine(true);
   }
   else {
-    strcpy(szCh1,"Error opening SAV file ...");
+    strcpy(tmpStr,"Error opening SAV file ...");
   }
   fclose(handle);
 }
@@ -353,8 +353,8 @@ void colecoLoadState()
     FILE* handle = fopen(szLoadFile, "rb"); 
     if (handle != NULL) 
     {    
-         strcpy(szCh1,"LOADING...");
-         DSPrint(6,0,0,szCh1);
+         strcpy(tmpStr,"LOADING...");
+         DSPrint(6,0,0,tmpStr);
        
         // Read Version
         u16 save_ver = 0xBEEF;
@@ -365,10 +365,10 @@ void colecoLoadState()
             // Load CZ80 CPU
             retVal = fread(&CPU, sizeof(CPU), 1, handle);
        
-            // Load Coleco Memory (yes, all of it!)
+            // Load Z80 Memory (yes, all of it!)
             if (retVal) retVal = fread(RAM_Memory, 0x10000,1, handle); 
             
-            // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
+            // Load back the Memory Map - these were saved as offsets so we must reconstruct actual pointers
             if (retVal) retVal = fread(Offsets, sizeof(Offsets),1, handle);     
             for (u8 i=0; i<8; i++)
             {
@@ -392,7 +392,7 @@ void colecoLoadState()
                 {
                     MemoryMap[i] = (u8 *) (BIOS_Memory + Offsets[i].offset);
                 }
-                else
+                else // TYPE_OTHER - this is just a pointer to memory
                 {
                     MemoryMap[i] = (u8 *) (Offsets[i].offset);
                 }
@@ -599,8 +599,8 @@ void colecoLoadState()
         }
         else retVal = 0;
         
-        strcpy(szCh1, (retVal ? "OK ":"ERR"));
-        DSPrint(15,0,0,szCh1);
+        strcpy(tmpStr, (retVal ? "OK ":"ERR"));
+        DSPrint(15,0,0,tmpStr);
         
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         DSPrint(6,0,0,"             ");  
