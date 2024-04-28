@@ -55,6 +55,7 @@
 #include "quest.h"
 #include "hal2010.h"
 #include "shuttle.h"
+#include "blackjack.h"
 #include "utopia.h"
 #include "cvision.h"
 #include "fdc.h"
@@ -91,7 +92,7 @@ u8 RAM_Memory[0x10000]                ALIGN(32) = {0};        // RAM up to 128K 
 u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K as the BIOS  for various machines ends up in different spots)
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
 
-u8 *DSI_RAM_Buffer = 0; // Used as a large 1MB buffer for ADAM expanded RAM. May have other uses in the future.
+u8 *DSI_RAM_Buffer = 0; // Used as a large 2MB buffer for ADAM expanded RAM. May have other uses in the future.
 u8 io_show_status = 0;  // Used to indicate a RD/WR status for various disk/tape activities
 
 // --------------------------------------------------------------------------
@@ -1009,7 +1010,7 @@ void DisplayStatusLine(bool bForce)
             switch (myConfig.msxBios)
             {
                 case 1: sprintf(tmp, "MSX      64K");    break;     // MSX generic ROM (64K mapped in slot 3)
-                case 2: sprintf(tmp, "CF-2700  64K");    break;     // Panasonic CF-2700 (64K mapped in slot 3)
+                case 2: sprintf(tmp, "CF-2700  64K");    break;     // Panasonic CF-2700 (64K mapped in slot 1)
                 case 3: sprintf(tmp, "CX5M     32K");    break;     // Yamaha CX5M (32K mapped in slot 0)
                 case 4: sprintf(tmp, "HX-10    64K");    break;     // Toshiba HX-10 (64K mapped in slot 2)
                 case 5: sprintf(tmp, "HB-10    16K");    break;     // Sony HB-10 (16K mapped in slot 0)
@@ -3832,6 +3833,14 @@ void BottomScreenKeypad(void)
       decompress(utopiaMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) utopiaPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == 13)  // Blackjack
+    {
+      //  Init bottom screen
+      decompress(blackjackTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(blackjackMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) blackjackPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay (overlay == 0)
     {
