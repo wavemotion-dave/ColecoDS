@@ -56,6 +56,7 @@
 #include "hal2010.h"
 #include "shuttle.h"
 #include "blackjack.h"
+#include "warroom.h"
 #include "utopia.h"
 #include "cvision.h"
 #include "fdc.h"
@@ -3841,6 +3842,14 @@ void BottomScreenKeypad(void)
       decompress(blackjackMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) blackjackPal,(void*) BG_PALETTE_SUB,256*2);
+    }
+    else if (myConfig.overlay == OVL_WARROOM)  // War Room
+    {
+      //  Init bottom screen
+      decompress(warroomTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+      decompress(warroomMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+      dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+      dmaCopy((void*) warroomPal,(void*) BG_PALETTE_SUB,256*2);
     }
     else // Generic Overlay (overlay == 0)
     {

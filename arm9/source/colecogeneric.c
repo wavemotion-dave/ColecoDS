@@ -1325,7 +1325,9 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xbc8320a0) myConfig.maxSprites  = 1;  // Uridium 
     
     
+    // ----------------------------------------------------------------------------------
     // Set some of the common games to use their proper Colecovision Graphical Overlays
+    // ----------------------------------------------------------------------------------
     if (file_crc == 0xc575a831)  myConfig.overlay = OVL_2010;
     if (file_crc == 0x8c7b7803)  myConfig.overlay = OVL_BLACKJACK;
     if (file_crc == 0x9b547ba8)  myConfig.overlay = OVL_BOULDERDASH;
@@ -1337,6 +1339,7 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x0a90ba65)  myConfig.overlay = OVL_UTOPIA;
     if (file_crc == 0xfd25adb3)  myConfig.overlay = OVL_WARGAMES;
     if (file_crc == 0x36478923)  myConfig.overlay = OVL_SPYHUNTER;
+    if (file_crc == 0x261b7d56)  myConfig.overlay = OVL_WARROOM;
     
     
     // -------------------------------------------
@@ -1720,7 +1723,7 @@ const struct options_t Option_Table[3][20] =
 {
     // Page 1
     {
-        {"OVERLAY",        {"GENERIC", "FULL KEYBOARD", "ALPHA KEYBOARD", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "SPACE SHUTTLE", "UTOPIA", "BLACKJACK"}, &myConfig.overlay,    14},
+        {"OVERLAY",        {"GENERIC", "FULL KEYBOARD", "ALPHA KEYBOARD", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "SPACE SHUTTLE", "UTOPIA", "BLACKJACK", "WAR ROOM"}, &myConfig.overlay,  15},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
