@@ -44,7 +44,7 @@
 #define OVL_SPACESHUTTLE            11
 #define OVL_UTOPIA                  12
 #define OVL_BLACKJACK               13
-
+#define OVL_WARROOM                 14
 
 typedef struct {
   char szName[MAX_ROM_NAME+1];
