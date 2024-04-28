@@ -29,6 +29,23 @@
 #define CV_MODE_ACTCART             3
 #define CV_MODE_SUPERCART           4
 
+
+#define OVL_GENERIC                 0
+#define OVL_FULLKBD                 1
+#define OVL_ALPHAKBD                2
+#define OVL_WARGAMES                3
+#define OVL_MOUSETRAP               4
+#define OVL_GATEWAY                 5
+#define OVL_SPYHUNTER               6
+#define OVL_FIXUPMIXUP              7
+#define OVL_BOULDERDASH             8
+#define OVL_QUINTAROO               9
+#define OVL_2010                    10
+#define OVL_SPACESHUTTLE            11
+#define OVL_UTOPIA                  12
+#define OVL_BLACKJACK               13
+
+
 typedef struct {
   char szName[MAX_ROM_NAME+1];
   u8 uType;
