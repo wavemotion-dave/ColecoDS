@@ -1706,7 +1706,7 @@ const struct options_t Option_Table[3][20] =
 {
     // Page 1
     {
-        {"OVERLAY",        {"GENERIC", "FULL KEYBOARD", "ALPHA KEYBOARD", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "SPACE SHUTTLE", "UTOPIA"}, &myConfig.overlay,    13},
+        {"OVERLAY",        {"GENERIC", "FULL KEYBOARD", "ALPHA KEYBOARD", "WARGAMES", "MOUSETRAP", "GATEWAY", "SPY HUNTER", "FIX UP MIX UP", "BOULDER DASH", "QUINTA ROO", "2010", "SPACE SHUTTLE", "UTOPIA", "BLACKJACK"}, &myConfig.overlay,    14},
         {"FRAME SKIP",     {"OFF", "SHOW 3/4", "SHOW 1/2"},                                                                                                                                     &myConfig.frameSkip,  3},
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
