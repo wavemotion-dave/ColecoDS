@@ -3661,7 +3661,7 @@ void BottomScreenKeypad(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) debug_ovlPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 1) // Full Keyboard (based on machine)
+    else if (myConfig.overlay == OVL_FULLKBD) // Full Keyboard (based on machine)
     {
         if (adam_mode)  // ADAM Keyboard
         {
@@ -3746,7 +3746,7 @@ void BottomScreenKeypad(void)
           dmaCopy((void*) alpha_kbdPal,(void*) BG_PALETTE_SUB,256*2);
         }
     }
-    else if (myConfig.overlay == 2) // Alpha Simplified Keyboard
+    else if (myConfig.overlay == OVL_ALPHAKBD) // Alpha Simplified Keyboard
     {
       //  Init bottom screen
       decompress(alpha_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3754,7 +3754,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) alpha_kbdPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 3)  // Wargames
+    else if (myConfig.overlay == OVL_WARGAMES)  // Wargames
     {
       //  Init bottom screen
       decompress(wargamesTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3762,7 +3762,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) wargamesPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 4)  // Mousetrap
+    else if (myConfig.overlay == OVL_MOUSETRAP)  // Mousetrap
     {
       //  Init bottom screen
       decompress(mousetrapTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3770,7 +3770,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) mousetrapPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 5)  // Gateway to Apshai
+    else if (myConfig.overlay == OVL_GATEWAY)  // Gateway to Apshai
     {
       //  Init bottom screen
       decompress(gatewayTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3778,7 +3778,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) gatewayPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 6)  // Spy Hunter
+    else if (myConfig.overlay == OVL_SPYHUNTER)  // Spy Hunter
     {
       //  Init bottom screen
       decompress(spyhunterTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3786,7 +3786,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) spyhunterPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 7)  // Fix Up the Mix Up
+    else if (myConfig.overlay == OVL_FIXUPMIXUP)  // Fix Up the Mix Up
     {
       //  Init bottom screen
       decompress(fixupmixupTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3794,7 +3794,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) fixupmixupPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 8)  // Boulder Dash
+    else if (myConfig.overlay == OVL_BOULDERDASH)  // Boulder Dash
     {
       //  Init bottom screen
       decompress(boulderTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3802,7 +3802,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) boulderPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 9)  // Quest for Quinta Roo
+    else if (myConfig.overlay == OVL_QUINTAROO)  // Quest for Quinta Roo
     {
       //  Init bottom screen
       decompress(questTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3810,7 +3810,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) questPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 10)  // 2010
+    else if (myConfig.overlay == OVL_2010)  // 2010
     {
       //  Init bottom screen
       decompress(hal2010Tiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3818,7 +3818,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) hal2010Pal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 11)  // Space Shuttle
+    else if (myConfig.overlay == OVL_SPACESHUTTLE)  // Space Shuttle
     {
       //  Init bottom screen
       decompress(shuttleTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3826,7 +3826,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) shuttlePal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 12)  // Utopia
+    else if (myConfig.overlay == OVL_UTOPIA)  // Utopia
     {
       //  Init bottom screen
       decompress(utopiaTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
@@ -3834,7 +3834,7 @@ void BottomScreenKeypad(void)
       dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
       dmaCopy((void*) utopiaPal,(void*) BG_PALETTE_SUB,256*2);
     }
-    else if (myConfig.overlay == 13)  // Blackjack
+    else if (myConfig.overlay == OVL_BLACKJACK)  // Blackjack
     {
       //  Init bottom screen
       decompress(blackjackTiles, bgGetGfxPtr(bg0b),  LZ77Vram);

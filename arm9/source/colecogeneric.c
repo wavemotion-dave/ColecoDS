@@ -1325,6 +1325,20 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xbc8320a0) myConfig.maxSprites  = 1;  // Uridium 
     
     
+    // Set some of the common games to use their proper Colecovision Graphical Overlays
+    if (file_crc == 0xc575a831)  myConfig.overlay = OVL_2010;
+    if (file_crc == 0x8c7b7803)  myConfig.overlay = OVL_BLACKJACK;
+    if (file_crc == 0x9b547ba8)  myConfig.overlay = OVL_BOULDERDASH;
+    if (file_crc == 0x109699e2)  myConfig.overlay = OVL_FIXUPMIXUP;
+    if (file_crc == 0xfdb75be6)  myConfig.overlay = OVL_GATEWAY;
+    if (file_crc == 0xde47c29f)  myConfig.overlay = OVL_MOUSETRAP;
+    if (file_crc == 0xeec81c42)  myConfig.overlay = OVL_QUINTAROO;
+    if (file_crc == 0xbb0f6678)  myConfig.overlay = OVL_SPACESHUTTLE;
+    if (file_crc == 0x0a90ba65)  myConfig.overlay = OVL_UTOPIA;
+    if (file_crc == 0xfd25adb3)  myConfig.overlay = OVL_WARGAMES;
+    if (file_crc == 0x36478923)  myConfig.overlay = OVL_SPYHUNTER;
+    
+    
     // -------------------------------------------
     // Turbo needs the Driving Module
     // -------------------------------------------
