@@ -77,7 +77,6 @@ u8 Port42         __attribute__((section(".dtcm"))) = 0x00;
 
 u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
-u8 AY_EnvelopeOn   __attribute__((section(".dtcm"))) = false;
 u8 ctc_enabled     __attribute__((section(".dtcm"))) = false;
 
 u8  JoyMode        __attribute__((section(".dtcm"))) = 0;           // Joystick Mode (1=Keypad, 0=Joystick)
@@ -142,7 +141,6 @@ void sgm_reset(void)
     {
         AY_Enable = false;         // Default to no AY use until accessed
     }
-    AY_EnvelopeOn = false;         // No Envelope mode yet
     bFirstSGMEnable = true;        // First time SGM enable we clear ram
 
     coleco_adam_port_setup();      // Ensure the memory ports are setup properly

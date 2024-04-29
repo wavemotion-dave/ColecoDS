@@ -82,7 +82,6 @@ extern u8 AY_Enable;
 extern u8 last_mega_bank; 
 extern u16 msx_block_size;
 extern u32 file_crc;
-extern u8 AY_EnvelopeOn;
 extern u8 ctc_enabled;
 
 extern u8 adam_ram_lo;
@@ -102,9 +101,6 @@ extern u8 Port20;
 extern u8 Port42;
 
 extern u8 bFirstSGMEnable;
-extern u8 AY_Enable;
-extern u8 AY_EnvelopeOn;
-
 extern u16 einstein_ram_start;
 extern u8 keyboard_w;
 extern u8 key_int_mask;
@@ -222,6 +218,7 @@ extern void MegaCartBankSwitch(u8 bank);
 extern void BufferKey(u8 key);
 extern void BufferKeys(char *str);
 
+extern void MSX_InitialMemoryLayout(u32 romSize);
 extern void MSX_HandleCassette(register Z80 *r);
 extern void MTX_HandleCassette(register Z80 *r);
 extern void SVI_HandleCassette(register Z80 *r);
