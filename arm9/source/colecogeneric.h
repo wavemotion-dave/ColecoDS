@@ -1,21 +1,31 @@
+// =====================================================================================
+// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+//
+// Copying and distribution of this emulator, its source code and associated
+// readme files, with or without modification, are permitted in any medium without
+// royalty provided this copyright notice is used and wavemotion-dave (Phoenix-Edition),
+// Alekmaul (original port) and Marat Fayzullin (ColEM core) are thanked profusely.
+//
+// The ColecoDS emulator is offered as-is, without any warranty. Please see readme.md
+// =====================================================================================
 #ifndef _colecoDS_GENERIC_H_
 #define _colecoDS_GENERIC_H_
 
-#define MAX_ROMS        1500
-#define MAX_ROM_NAME    160
-
-#define MAX_CONFIGS     1950
-#define CONFIG_VER      0x0013
-
-#define COLROM          0x01
-#define DIRECT          0x02
-
-#define ID_SHM_CANCEL   0x00
-#define ID_SHM_YES      0x01
-#define ID_SHM_NO       0x02
-
-#define DPAD_NORMAL     0
-#define DPAD_DIAGONALS  1
+#define MAX_ROMS                    1500
+#define MAX_ROM_NAME                160
+            
+#define MAX_CONFIGS                 1950
+#define CONFIG_VER                  0x0013
+            
+#define COLROM                      0x01
+#define DIRECT                      0x02
+            
+#define ID_SHM_CANCEL               0x00
+#define ID_SHM_YES                  0x01
+#define ID_SHM_NO                   0x02
+            
+#define DPAD_NORMAL                 0
+#define DPAD_DIAGONALS              1
 
 #define CPU_CLEAR_INT_ON_VDP_READ   0
 #define CPU_CLEAR_INT_AUTOMATICALLY 1
@@ -120,31 +130,25 @@ struct __attribute__((__packed__)) Config_t
 };
  
 
-extern struct Config_t myConfig;
+extern struct Config_t       myConfig;
 extern struct GlobalConfig_t myGlobalConfig;
 
 extern u8 last_special_key;
 extern u8 last_special_key_dampen;
-extern char msx_rom_str[];
-extern char msx_rom_str_short[];
-
-extern void LoadConfig(void);
+extern u16 msx_init;
+extern u16 msx_basic;
 
 extern FICcoleco gpFic[MAX_ROMS];  
 extern int uNbRoms;
 extern int ucGameAct;
 extern int ucGameChoice;
 
-extern u16 msx_init;
-extern u16 msx_basic;
-
+extern void LoadConfig(void);
 extern u8 showMessage(char *szCh1, char *szCh2);
 extern void colecoDSModeNormal(void);
 extern void colecoDSInitScreenUp(void);
 extern void colecoDSFindFiles(void);
 extern void colecoDSChangeOptions(void);
-extern void MSX_InitialMemoryLayout(u32 romSize);
-
 extern void DSPrint(int iX,int iY,int iScr,char *szMessage);
 extern unsigned int crc32 (unsigned int crc, const unsigned char *buf, unsigned int len);
 

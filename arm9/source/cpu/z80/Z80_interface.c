@@ -27,7 +27,6 @@
 #include "../scc/SCC.h"
 
 u8  last_mega_bank     __attribute__((section(".dtcm"))) = 199;
-u32 msx_offset         __attribute__((section(".dtcm"))) = 0;
 u8  msx_sram_at_8000   __attribute__((section(".dtcm"))) = 0;
 u8  msx_scc_enable     __attribute__((section(".dtcm"))) = 0;
 u8  msx_last_block[4]  __attribute__((section(".dtcm"))) = {99,99,99,99};
@@ -424,7 +423,7 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                     // moving pointers around and not trying to copy memory blocks.
                     // -------------------------------------------------------------
                     u32 block = (value & mapperMask);
-                    msx_offset = block * msx_block_size;
+                    u32 msx_offset = block * msx_block_size;
                     u32 *src = (u32*)((u8*)ROM_Memory + msx_offset);
 
                     // ---------------------------------------------------------------------------------
