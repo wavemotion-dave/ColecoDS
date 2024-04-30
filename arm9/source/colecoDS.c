@@ -147,6 +147,7 @@ char initial_path[MAX_ROM_NAME] = "";
 // ------------------------------------------
 u8 adam_CapsLock        = 0;
 u8 msx_caps_lock        = 0;
+u8 msx_kana_lock        = 0;
 u8 write_EE_counter     = 0;
 u32 last_tape_pos       = 9999;
 
@@ -661,8 +662,9 @@ void ResetColecovision(void)
   adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
   disk_unsaved_data[0] = 0;             // No unsaved tape/disk data to start
   disk_unsaved_data[1] = 0;             // No unsaved tape/disk data to start
-  msx_caps_lock = 0;                    // MSX caps lock off 
-
+  msx_caps_lock = 0;                    // MSX CAPS lock off 
+  msx_kana_lock = 0;                    // MSX KANA lock off 
+    
   write_EE_counter=0;                   // Nothing to write for EEPROM yet
     
   playingSFX = 0;                       // No sound effects playing yet
@@ -1070,8 +1072,16 @@ void DisplayStatusLine(bool bForce)
         
         if (myConfig.overlay == 1) // Is full keyboard showing?
         {
+            // Caps Lock
             DSPrint(1,23,0, (msx_caps_lock ? "@":" "));
             DSPrint(2,23,(msx_caps_lock ? 2:0), (msx_caps_lock ? "@":" "));
+            
+            // KANA Lock
+            if (msx_japanese_matrix)
+            {
+                msx_kana_lock = (myAY.ayPortBOut & 0x80) ? 0:1;
+                DSPrint(22,23,(msx_kana_lock ? 2:0), (msx_kana_lock ? "^":" "));
+            }            
         }
     }
     else if (svi_mode)
@@ -2165,8 +2175,6 @@ u8 handle_adam_keyboard_press(u16 iTx, u16 iTy)
 
 u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX Keyboard
 {
-    static u8 bKanaShown = 0;
-    
     if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
     {
         if      (iTy < 120)   kbd_key = KBD_KEY_UP;
@@ -2259,15 +2267,14 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX Keyboard
         if      ((iTx >= 1)   && (iTx < 30))   kbd_key = KBD_KEY_CAPS;
         else if ((iTx >= 30)  && (iTx < 53))   {kbd_key = KBD_KEY_GRAPH; last_special_key = KBD_KEY_GRAPH; last_special_key_dampen = 20;}
         else if ((iTx >= 53)  && (iTx < 163))  kbd_key = ' ';
-        else if ((iTx >= 163) && (iTx < 192))  {kbd_key = KBD_KEY_CODE; if (msx_japanese_matrix) {DSPrint(4,0,6,"KANA"); bKanaShown=1;} else {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
+        else if ((iTx >= 163) && (iTx < 192))  {kbd_key = KBD_KEY_CODE; if (!msx_japanese_matrix) {last_special_key = KBD_KEY_CODE; last_special_key_dampen = 20;}}
         else if ((iTx >= 192) && (iTx < 225))  return MENU_CHOICE_CASSETTE;
         else if ((iTx >= 225) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     
-    if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
+    if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE))
     {
         DSPrint(4,0,6,"    ");
-        bKanaShown = 0;
     }
 
     return MENU_CHOICE_NONE;
@@ -2275,8 +2282,6 @@ u8 handle_msx_keyboard_press(u16 iTx, u16 iTy)  // MSX Keyboard
 
 u8 handle_svi_keyboard_press(u16 iTx, u16 iTy)  // SVI Keyboard
 {
-    static u8 bKanaShown = 0;
-    
     if ((iTx > 212) && (iTy >= 102) && (iTy < 162))  // Triangular Arrow Keys... do our best
     {
         if      (iTy < 120)   kbd_key = KBD_KEY_UP;
@@ -2373,10 +2378,9 @@ u8 handle_svi_keyboard_press(u16 iTx, u16 iTy)  // SVI Keyboard
         else if ((iTx >= 212) && (iTx < 255))  return MENU_CHOICE_MENU;
     }
     
-    if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE) && bKanaShown)
+    if ((kbd_key != 0) && (kbd_key != KBD_KEY_CODE))
     {
         DSPrint(4,0,6,"    ");
-        bKanaShown = 0;
     }
 
     return MENU_CHOICE_NONE;

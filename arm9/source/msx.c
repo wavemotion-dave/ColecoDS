@@ -107,6 +107,11 @@ unsigned char cpu_readport_msx(register unsigned short Port)
 
           myAY.ayPortAIn = ~joy1;
       }
+      else if (myAY.ayRegIndex == 15)
+      {
+          // When reading PORTB of the PSG, just echo back the last value written (the MSX BIOS needs this as it will preserve the KANA LED bit)
+          myAY.ayPortBIn = myAY.ayPortBOut;
+      }      
       return ay38910DataR(&myAY);
   }
   else if (Port == 0xA8) return Port_PPI_A;
@@ -150,7 +155,7 @@ unsigned char cpu_readport_msx(register unsigned short Port)
           }
           else if (last_special_key == KBD_KEY_CODE)
           {
-            DSPrint(4,0,6, (msx_japanese_matrix ? "KANA":"CODE"));
+            if (!msx_japanese_matrix) DSPrint(4,0,6, "CODE"); // Japanese Keyboard Matrix has KANA LOCK led handling instead...
             key_code = 1;
           }
           else if (last_special_key == KBD_KEY_GRAPH)
