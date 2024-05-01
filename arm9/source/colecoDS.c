@@ -1232,9 +1232,9 @@ void DisplayStatusLine(bool bForce)
             --write_EE_counter;
             if (write_EE_counter == 0)
             {
-                // Save EE now!
-                if (bSuperGameCart) SuperGameCartWriteEE();
-                else colecoSaveEEPROM();
+                // Save the modified SGC rom now!
+                if (bSuperGameCart) SuperGameCartSaveFlash();
+                else colecoSaveEEPROM(); // else save out the colecovision EE
             }
             
             DSPrint(15,0,6, (write_EE_counter ? "EE":"  "));
@@ -2975,6 +2975,9 @@ void colecoDS_main(void)
   static u8 dampenClick = 0;
   u8 meta_key = 0;
 
+  // Setup the debug buffer for DSi use
+  debug_init();
+  
   // Returns when  user has asked for a game to run...
   BottomScreenOptions();
 
@@ -3353,6 +3356,7 @@ void colecoDS_main(void)
           {
                 DSPrint(5,0,0,"SNAPSHOT");
                 screenshot();
+                debug_save();
                 WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
                 DSPrint(5,0,0,"        ");
           }
@@ -4557,6 +4561,58 @@ int main(int argc, char **argv)
     }
   }
   return(0);
+}
+
+
+#define MAX_DPRINTF_STR_SIZE    256
+u32     MAX_DEBUG_BUF_SIZE = 0;
+
+char *debug_buffer = 0;
+char fstr[MAX_DPRINTF_STR_SIZE] = {0};
+uint32_t debug_len = 0;
+
+void debug_init()
+{
+    if (!debug_buffer)
+    {
+        if (isDSiMode()) 
+        {
+            MAX_DEBUG_BUF_SIZE = (1024*1024*4); // 4MB!!
+            debug_buffer = malloc(MAX_DEBUG_BUF_SIZE);
+        }
+        else
+        {
+            MAX_DEBUG_BUF_SIZE = (1024*16);     // 16K only
+            debug_buffer = (char*)SRAM_Memory;  // Steal the SRAM_Memory[] for debug 
+        }
+    }
+    memset(debug_buffer, 0x00, MAX_DEBUG_BUF_SIZE);
+    debug_len = 0;
+}
+
+void debug_save()
+{
+    if (debug_len > 0)
+    {
+        FILE *fp = fopen("debug.log", "w");
+        if (fp)
+        {
+            fwrite(debug_buffer, 1, debug_len, fp);
+            fclose(fp);
+        }
+    }
+}
+
+void debug_printf(const char * str, ...)
+{
+    va_list ap = {0};
+
+    va_start(ap, str);
+    vsnprintf(fstr, MAX_DPRINTF_STR_SIZE, str, ap);
+    va_end(ap);
+
+    strcat(debug_buffer, fstr);
+    debug_len += strlen(fstr);
 }
 
 // End of file

@@ -200,8 +200,8 @@ void colecoSaveState()
 
     // And a few things for the Super Game Cart
     if (retVal) retVal = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
-    if (retVal) retVal = fwrite(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
-    if (retVal) retVal = fwrite(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+    if (retVal) retVal = fwrite(&SGC_SST_State, sizeof(SGC_SST_State), 1, handle);
+    if (retVal) retVal = fwrite(&SGC_SST_CmdPos, sizeof(SGC_SST_CmdPos), 1, handle);
     
     // Write stuff for MSX, SordM5 and SG-1000
     if (retVal) retVal = fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
@@ -461,8 +461,8 @@ void colecoLoadState()
             
             // And a few things for the Super Game Cart
             if (retVal) retVal = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
-            if (retVal) retVal = fread(&SGC_EEPROM_State, sizeof(SGC_EEPROM_State), 1, handle);
-            if (retVal) retVal = fread(&SGC_EEPROM_CmdPos, sizeof(SGC_EEPROM_CmdPos), 1, handle);
+            if (retVal) retVal = fread(&SGC_SST_State, sizeof(SGC_SST_State), 1, handle);
+            if (retVal) retVal = fread(&SGC_SST_CmdPos, sizeof(SGC_SST_CmdPos), 1, handle);
 
             // Load stuff for MSX, SordM5 and SG-1000
             if (retVal) retVal = fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);

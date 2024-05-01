@@ -107,8 +107,8 @@ extern u8 keyboard_w;
 extern u8 key_int_mask;
 
 extern u8 SGC_Bank[4];
-extern u8 SGC_EEPROM_State;
-extern u8 SGC_EEPROM_CmdPos;
+extern u8 SGC_SST_State;
+extern u8 SGC_SST_CmdPos;
 
 // -------------------------------
 // A few misc externs needed...
@@ -238,8 +238,7 @@ extern void msxLoadEEPROM(void);
 extern void SuperGameCartSetup(int romSize);
 extern void SuperGameCartWrite(u16 address, u8 value);
 extern u8   SuperGameCartRead(u16 address);
-extern void SuperGameCartReadEE(void);
-extern void SuperGameCartWriteEE(void);
+extern void SuperGameCartSaveFlash(void);
 
 extern void BeeperON(u16 beeper_freq);
 extern void BeeperOFF(void);
