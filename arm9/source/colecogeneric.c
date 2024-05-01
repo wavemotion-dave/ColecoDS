@@ -1613,19 +1613,6 @@ void SetDefaultGameConfig(void)
     
     // Acromage is also an Activision PCB and is thought to be 256 bytes of EE
     
-    if (file_crc == 0x30d337e4) 
-    {
-        myConfig.cvMode = CV_MODE_SUPERCART; // Gradius Arcade - Super Game Cart
-        myConfig.cvEESize = EEPROM_1KB;      // Gradius Arcade - 1K of EEPROM
-    }
-    
-    if (file_crc == 0x6831ad48)
-    {
-        myConfig.cvMode = CV_MODE_SUPERCART; // Penguin Adventure - Super Game Cart
-        myConfig.cvEESize = EEPROM_NONE;     // No EEPROM
-    }
-    
-    
     if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
     if (file_crc == 0x011899cf)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max (32K version)
 

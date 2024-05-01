@@ -305,4 +305,9 @@ extern u32  creativision_run(void);
 extern void msx_patch_bios(void);
 extern bool isAdamDDP(u8 disk);
 
+extern void debug_init();
+extern void debug_save();
+extern void debug_printf(const char * str, ...);
+
+
 #endif
