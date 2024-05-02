@@ -148,7 +148,7 @@ char initial_path[MAX_ROM_NAME] = "";
 u8 adam_CapsLock        = 0;
 u8 msx_caps_lock        = 0;
 u8 msx_kana_lock        = 0;
-u8 write_EE_counter     = 0;
+u8 write_NV_counter     = 0;
 u32 last_tape_pos       = 9999;
 
 u8   disk_unsaved_data[3]      = {0,0,0};
@@ -665,7 +665,7 @@ void ResetColecovision(void)
   msx_caps_lock = 0;                    // MSX CAPS lock off 
   msx_kana_lock = 0;                    // MSX KANA lock off 
     
-  write_EE_counter=0;                   // Nothing to write for EEPROM yet
+  write_NV_counter=0;                   // Nothing to write for EEPROM yet
     
   playingSFX = 0;                       // No sound effects playing yet
 
@@ -1042,15 +1042,15 @@ void DisplayStatusLine(bool bForce)
             last_pal_mode = myConfig.isPAL;
             DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
         }
-        if (write_EE_counter > 0)
+        if (write_NV_counter > 0)
         {
-            --write_EE_counter;
-            if (write_EE_counter == 0)
+            --write_NV_counter;
+            if (write_NV_counter == 0)
             {
                 // Save EE now!
                 msxSaveEEPROM();
             }
-            DSPrint(5,0,6, (write_EE_counter ? "EE":"  "));
+            DSPrint(5,0,6, (write_NV_counter ? "EE":"  "));
         }
         if (msx_mode == 3)
         {
@@ -1227,17 +1227,17 @@ void DisplayStatusLine(bool bForce)
             DSPrint(22,0,6, (romBankMask ? (bSuperGameCart ? "SC": (bActivisionPCB ? "AC":"MC")):"  "));
         }
 
-        if (write_EE_counter > 0)
+        if (write_NV_counter > 0)
         {
-            --write_EE_counter;
-            if (write_EE_counter == 0)
+            --write_NV_counter;
+            if (write_NV_counter == 0)
             {
                 // Save the modified SGC rom now!
                 if (bSuperGameCart) SuperGameCartSaveFlash();
                 else colecoSaveEEPROM(); // else save out the colecovision EE
             }
             
-            DSPrint(15,0,6, (write_EE_counter ? "EE":"  "));
+            DSPrint(15,0,6, (write_NV_counter ? (bSuperGameCart ? "SST":"EE"):"   "));
         }
     }
 }
@@ -4564,12 +4564,20 @@ int main(int argc, char **argv)
 }
 
 
-#define MAX_DPRINTF_STR_SIZE    256
-u32     MAX_DEBUG_BUF_SIZE = 0;
+// -----------------------------------------------------------------------
+// The code below is a handy set of debug tools that allows us to 
+// write printf() like strings out to a file. Basically we accumulate
+// the strings into a large RAM buffer and then when the L+R shoulder
+// buttons are pressed and held, we will snapshot out the debug.log file.
+// The DS-Lite only gets a small 16K debug buffer but the DSi gets 4MB!
+// -----------------------------------------------------------------------
+
+#define MAX_DPRINTF_STR_SIZE  256
+u32     MAX_DEBUG_BUF_SIZE  = 0;
 
 char *debug_buffer = 0;
-char fstr[MAX_DPRINTF_STR_SIZE] = {0};
-uint32_t debug_len = 0;
+u32  debug_len = 0;
+extern char szName[]; // Reuse buffer which has no other in-game use
 
 void debug_init()
 {
@@ -4590,9 +4598,21 @@ void debug_init()
     debug_len = 0;
 }
 
+void debug_printf(const char * str, ...)
+{
+    va_list ap = {0};
+
+    va_start(ap, str);
+    vsnprintf(szName, MAX_DPRINTF_STR_SIZE, str, ap);
+    va_end(ap);
+
+    strcat(debug_buffer, szName);
+    debug_len += strlen(szName);
+}
+
 void debug_save()
 {
-    if (debug_len > 0)
+    if (debug_len > 0) // Only if we have debug data to write...
     {
         FILE *fp = fopen("debug.log", "w");
         if (fp)
@@ -4601,18 +4621,6 @@ void debug_save()
             fclose(fp);
         }
     }
-}
-
-void debug_printf(const char * str, ...)
-{
-    va_list ap = {0};
-
-    va_start(ap, str);
-    vsnprintf(fstr, MAX_DPRINTF_STR_SIZE, str, ap);
-    va_end(ap);
-
-    strcat(debug_buffer, fstr);
-    debug_len += strlen(fstr);
 }
 
 // End of file

@@ -15,7 +15,7 @@
 #include <string.h>
 #include "C24XX.h"
 
-#define VERSIONCLDS "9.8"
+#define VERSIONCLDS "9.9"
 
 extern u32 debug[0x10];
 
@@ -276,7 +276,7 @@ extern u32 keyCoresp[MAX_KEY_OPTIONS];
 extern u16 NDS_keyMap[];
 
 extern u8 soundEmuPause;
-extern u8 write_EE_counter;
+extern u8 write_NV_counter;
 extern u8 msx_japanese_matrix;
 
 extern int bg0, bg1, bg0b, bg1b;

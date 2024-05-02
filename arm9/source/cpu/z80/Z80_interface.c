@@ -401,7 +401,7 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
                 if (msx_sram_at_8000) 
                 {
                     SRAM_Memory[address&0x3FFF] = value;   // Write SRAM area
-                    write_EE_counter = 4;                  // This will back the EE in 4 seconds of non-activity on the SRAM
+                    write_NV_counter = 4;                  // This will back the EE in 4 seconds of non-activity on the SRAM
                 }
                 else RAM_Memory[address]=value;  // Allow write - this is a RAM mapped slot
             }
