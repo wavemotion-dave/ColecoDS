@@ -407,10 +407,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V9.9: ??-???-2024 by wavemotion-dave
+V9.9: 02-May-2024 by wavemotion-dave
 * Added overlays for Blackjack and War Room. Improved War Games overlay.
 * Added KANA lock LED indicator for Japanese MSX keyboard layouts.
 * Correctly read-back the PPG Port B (needed to make the KANA lock work but is more accurate overall).
+* Improvements to various Coleco PCB types for more accurate emulation.
 
 V9.8: 23-Apr-2024 by wavemotion-dave
 * Cleanup of MSX BIOS handling - we now support the Panasonic CF-2700 directly. See MSX BIOS section for details.

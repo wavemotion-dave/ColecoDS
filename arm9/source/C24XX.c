@@ -101,7 +101,7 @@ byte Write24XX(C24XX *D,byte V)
     }
     else
     {
-       extern unsigned char write_EE_counter;
+       extern unsigned char write_NV_counter;
       /* Depending on the state... */
       switch(D->State)
       {
@@ -125,7 +125,7 @@ byte Write24XX(C24XX *D,byte V)
           /* Go to the next address inside N-byte page */
           J = PageSize[D->Flags&C24XX_CHIP]-1;
           D->Addr = ((D->Addr+1)&J)|(D->Addr&~J);
-          write_EE_counter = 2;
+          write_NV_counter = 2;
           break;
         case SEND_DATA:
           /* See below */

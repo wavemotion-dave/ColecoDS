@@ -316,7 +316,7 @@ u8 colecoInit(char *szGame)
      dmaFillWords(uVide | (uVide<<16),pVidFlipBuf+uBcl*128,256);
   }
 
-  write_EE_counter=0;
+  write_NV_counter=0;
   spinner_enabled = false;
   ctc_enabled = false;
 
