@@ -900,7 +900,7 @@ void ShowDebugZ80(void)
         }
         else
         {
-            sprintf(tmp, "SVI %s %s", (svi_RAM[0] ? "RAM":"ROM"), (svi_RAM[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
+            sprintf(tmp, "SVI %s %s", (svi_RAMinSegment[0] ? "RAM":"ROM"), (svi_RAMinSegment[1] ? "RAM":"ROM")); DSPrint(19,idx++,7, tmp);
             sprintf(tmp, "PPI A=%02X B=%02X",Port_PPI_A,Port_PPI_B);    DSPrint(19,idx++,7, tmp);
             sprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
         }
@@ -1110,6 +1110,13 @@ void DisplayStatusLine(bool bForce)
         {
             last_adam_mode = adam_mode;
             DSPrint(25,0,6, "ADAM");
+        }
+        
+        // Adam Sound Enhancer allows for AY chip support...
+        if ((last_ay_mode != AY_Enable) || bForce)
+        {
+            last_ay_mode = AY_Enable;
+            DSPrint(22,0,6, (AY_Enable ? "AY":"  "));
         }
 
         // If we are showing the ADAM keyboard, indicate CAPS LOCK
@@ -4624,4 +4631,3 @@ void debug_save()
 }
 
 // End of file
-

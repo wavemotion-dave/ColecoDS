@@ -646,7 +646,7 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
         // ----------------------------------------------------------------------------------
         else if (machine_mode & MODE_SVI)
         {
-            if ( ((address < 0x8000) && svi_RAM[0]) || ((address >= 0x8000) && svi_RAM[1]) )
+            if (svi_RAMinSegment[(address & 0x8000) ? 1:0])  // Is there RAM in this 32K area?
             {
                 RAM_Memory[address]=value;  // Allow pretty much anything above the base ROM area
             }

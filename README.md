@@ -16,9 +16,10 @@ Pencil II, CreatiVision, the Tatung Einstein and the venerable MSX1.
 Features :
 -----------------------
 * Colecovision game support (.rom or .col files). Requires coleco.rom BIOS.
-* Super Game Module support including AY sound chip.
+* Super Game Module support including extra memory and AY sound chip.
 * Megacart Bankswitching support (up to 1024K).
 * Coleco ADAM game support (.ddp or .dsk files). Requires eos.rom and writer.rom
+* Coleco ADAM Sound Enhancer to support additional AY sound channel games (mostly MSX ports)
 * Sega SG-1000 game support (.sg roms)
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
@@ -142,6 +143,7 @@ ADAM Compatibility :
 * The 32K ROM expansion of the Adam is emulated - rename your expansion rom as ".adm" so that the emulator knows it's a special ROM designed to be in the expansion ROM area. You can also rename normal cart .rom files as .adm to load them up with proper Adam emulation (useful if you want to run some of the Adam carts like in-house diagnostics utilities in full Adam emulation mode... normally when you load a .rom it would just load up with standard Colecovision emulation).
 * You can turn on the full ADAM keyboard with the Configuration of Overlays (choose 'ADAM KEYBOARD'). You can also use the keyboard/joystick icons to toggle between the keyboard and the joypad.
 * The tape or disk images do NOT automatically write back to your SD card... you have to hit the little Cassette icon to make that happen (and only when the tape/disk is idle - it won't save if the tape/disk is busy reading/writing).
+* Adam Sound Enhancer support is automatic - if a game tries to utilize the AY sound chip, it will be enabled.
 * Due to screen constraints, the placement of keys on the virtual ADAM keyboard have been repositioned to maximize the 4x3 screen orientation - but all ADAM keys should be present and functional.
 
 MSX Compatibility :
@@ -407,6 +409,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.0: 10-Aug-2024 by wavemotion-dave
+* Adam Sound Enhancer module support to allow AY sound games to play (mostly MSX ports to the ADAM)
+* Ignore files that start with a '.' or '_' (mostly to help filter out clear non-game files).
+* Minor cleanup, tweaks and a bug fixes.
+
 V9.9: 02-May-2024 by wavemotion-dave
 * Added overlays for Blackjack and War Room. Improved War Games overlay.
 * Added KANA lock LED indicator for Japanese MSX keyboard layouts.

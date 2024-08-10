@@ -749,7 +749,8 @@ void colecoDSFindFiles(void)
       }
     }
     else {
-      if ((strlen(szFile)>4) && (strlen(szFile)<(MAX_ROM_NAME-4)) ) {
+      if ((strlen(szFile)>4) && (strlen(szFile)<(MAX_ROM_NAME-4)) && (szFile[0] != '.') && (szFile[0] != '_'))  // For MAC don't allow underscore files
+      {
         if ( (strcasecmp(strrchr(szFile, '.'), ".rom") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
@@ -2331,7 +2332,7 @@ void ReadFileCRCAndConfig(void)
 // --------------------------------------------------------------------
 void colecoDSChangeOptions(void) 
 {
-  u32 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 7, bOK=0;
+  u16 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 7, bOK=0;
   
   // Upper Screen Background
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
@@ -2345,7 +2346,7 @@ void colecoDSChangeOptions(void)
   dmaCopy((void*) topscreenPal,(void*) BG_PALETTE,256*2);
   unsigned short dmaVal =  *(bgGetMapPtr(bg0) + 51*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1),32*24*2);
-  DSPrint(28,23,1,"V");DSPrint(29,23,1,VERSIONCLDS);
+  DSPrint(27,23,1,VERSIONCLDS);
 
   // Lower Screen Background
   BottomScreenOptions();

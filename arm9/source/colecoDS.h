@@ -15,7 +15,7 @@
 #include <string.h>
 #include "C24XX.h"
 
-#define VERSIONCLDS "9.9"
+#define VERSIONCLDS "V10.0"
 
 extern u32 debug[0x10];
 
