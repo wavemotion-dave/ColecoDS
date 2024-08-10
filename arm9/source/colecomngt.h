@@ -115,7 +115,7 @@ extern u8 SGC_SST_CmdPos;
 // -------------------------------
 extern u32* lutTablehh;
 extern u8 msx_sram_at_8000;
-extern u8 svi_RAM[2];
+extern u8 svi_RAMinSegment[2];
 extern u16 memotech_RAM_start;
 
 extern u8 memotech_magrom_present;

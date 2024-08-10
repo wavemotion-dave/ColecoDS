@@ -44,7 +44,7 @@ u8 *MemoryMap[8]        __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
 // Some IO Port and Memory Map vars...
 // -------------------------------------
 u16 memotech_RAM_start  __attribute__((section(".dtcm"))) = 0x4000;
-u8 svi_RAM[2]           __attribute__((section(".dtcm"))) = {0,1};
+u8 svi_RAMinSegment[2]  __attribute__((section(".dtcm"))) = {0,1};
 u8 IOBYTE               __attribute__((section(".dtcm"))) = 0x00;
 u8 MTX_KBD_DRIVE        __attribute__((section(".dtcm"))) = 0x00;
 u8 lastIOBYTE           __attribute__((section(".dtcm"))) = 99;

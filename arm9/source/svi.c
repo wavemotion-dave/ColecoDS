@@ -306,6 +306,11 @@ unsigned char cpu_readport_svi(register unsigned short Port)
 }
 
 
+// ------------------------------------------------------------------------
+// Patch SVI BIOS for Cassette use and point memory map to 32K BIOS in 
+// lower memory and RAM in upper memory ... the running program can 
+// alter this and swap in RAM or ROM in either segment of 32K memory map.
+// ------------------------------------------------------------------------
 void svi_restore_bios(void)
 {
     memcpy(BIOS_Memory, SVIBios, 0x8000);       // Restore SVI BIOS
@@ -327,12 +332,14 @@ void svi_restore_bios(void)
     MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS
     MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS
     MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS
+    
     MemoryMap[4] = (u8 *)(RAM_Memory  + 0x8000);      // RAM here by default
-    MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);      // RAM here by default
-    MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);      // RAM here by default
-    MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);      // RAM here by default
-    svi_RAM[0]  = 0;
-    svi_RAM[1]  = 1;
+    MemoryMap[5] = (u8 *)(RAM_Memory  + 0xA000);      // RAM here by default
+    MemoryMap[6] = (u8 *)(RAM_Memory  + 0xC000);      // RAM here by default
+    MemoryMap[7] = (u8 *)(RAM_Memory  + 0xE000);      // RAM here by default
+    
+    svi_RAMinSegment[0]  = 0;    // ROM in lower 32K segment by default
+    svi_RAMinSegment[1]  = 1;    // RAM in upper 32K segment by default
 }
 
 
@@ -389,7 +396,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     MemoryMap[1] = (u8 *)(BIOS_Memory + 0x2000);      // Restore SVI BIOS
                     MemoryMap[2] = (u8 *)(BIOS_Memory + 0x4000);      // Restore SVI BIOS
                     MemoryMap[3] = (u8 *)(BIOS_Memory + 0x6000);      // Restore SVI BIOS
-                    svi_RAM[0]  = 0;
+                    svi_RAMinSegment[0]  = 0;
                 }
                 else if (lowerBankEnable & 0x01)   // No Game Cart in lower slot
                 {
@@ -407,7 +414,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                         MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                         MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                     }
-                    svi_RAM[0]  = 0;
+                    svi_RAMinSegment[0]  = 0;
                 }
                 else if (lowerBankEnable & 0x02)   // SVI-328 has the other 32K of RAM in lower slot
                 {
@@ -415,7 +422,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     MemoryMap[1] = (u8 *)(RAM_Memory + 0x2000);       // Normal RAM in lower slot
                     MemoryMap[2] = (u8 *)(RAM_Memory + 0x4000);       // Normal RAM in lower slot
                     MemoryMap[3] = (u8 *)(RAM_Memory + 0x6000);       // Normal RAM in lower slot
-                    svi_RAM[0]  = 1;
+                    svi_RAMinSegment[0]  = 1;
                 }
                 else if (lowerBankEnable & 0x08)   // No Expansion RAM in lower slot
                 {
@@ -423,7 +430,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     MemoryMap[1] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                     MemoryMap[2] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                     MemoryMap[3] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                    svi_RAM[0]  = 0;
+                    svi_RAMinSegment[0]  = 0;
                 }
 
 
@@ -435,19 +442,19 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                       MemoryMap[5] = (u8 *)(RAM_Memory + 0xA000);      // Restore RAM
                       MemoryMap[6] = (u8 *)(RAM_Memory + 0xC000);      // Restore RAM
                       MemoryMap[7] = (u8 *)(RAM_Memory + 0xE000);      // Restore RAM
-                      svi_RAM[1] = 1;
+                      svi_RAMinSegment[1] = 1;
                 }
                 else if (((upperBankEnable & 0xC0)==0x40) && (svi_mode == 2))   // Cart in upper slot
                 {
                     MemoryMap[4] = (u8 *)(ROM_Memory + 0x8000);       // Cartridge here
                     MemoryMap[5] = (u8 *)(ROM_Memory + 0xA000);       // Cartridge here
-                    svi_RAM[1]  = 1;
+                    svi_RAMinSegment[1]  = 1;
                 }
                 else if (((upperBankEnable & 0xC0)==0x80) && (svi_mode == 2))   // Cart in upper slot
                 {
                     MemoryMap[6] = (u8 *)(ROM_Memory + 0xC000);       // Cartridge here
                     MemoryMap[7] = (u8 *)(ROM_Memory + 0xE000);       // Cartridge here
-                    svi_RAM[1]  = 1;
+                    svi_RAMinSegment[1]  = 1;
                 }
                 else if (((upperBankEnable & 0xC0)==0xC0) && (svi_mode == 2))   // Cart in upper slot
                 {
@@ -455,7 +462,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     MemoryMap[5] = (u8 *)(ROM_Memory + 0xA000);       // Cartridge here
                     MemoryMap[6] = (u8 *)(ROM_Memory + 0xC000);       // Cartridge here
                     MemoryMap[7] = (u8 *)(ROM_Memory + 0xE000);       // Cartridge here
-                    svi_RAM[1]  = 0;
+                    svi_RAMinSegment[1]  = 0;
                 }
                 else // Nothing lives here...
                 {
@@ -463,7 +470,7 @@ void cpu_writeport_svi(register unsigned short Port,register unsigned char Value
                     MemoryMap[5] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                     MemoryMap[6] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
                     MemoryMap[7] = (u8 *)(BIOS_Memory + 0xC000);       // Nothing here... 0xFF
-                    svi_RAM[1]  = 0;
+                    svi_RAMinSegment[1]  = 0;
                 }
 
                 lastIOBYTE = IOBYTE;
@@ -514,8 +521,8 @@ void svi_reset(void)
         lastIOBYTE = 99;
         tape_pos = 0;
 
-        svi_RAM[0] = 0;
-        svi_RAM[1] = 1;
+        svi_RAMinSegment[0] = 0;
+        svi_RAMinSegment[1] = 1;
 
         Port_PPI_A = 0x00;
         Port_PPI_B = 0x00;

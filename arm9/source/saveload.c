@@ -192,7 +192,7 @@ void colecoSaveState()
     if (retVal) retVal = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);       
       
     // Some SVI stuff...
-    if (retVal) retVal = fwrite(&svi_RAM, sizeof(svi_RAM), 1, handle); 
+    if (retVal) retVal = fwrite(&svi_RAMinSegment, sizeof(svi_RAMinSegment), 1, handle); 
       
     // Some SG-1000 / SC-3000 stuff...
     if (retVal) retVal = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
@@ -453,7 +453,7 @@ void colecoLoadState()
             if (retVal) retVal = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle); 
             
             // Some SVI stuff...
-            if (retVal) retVal = fread(&svi_RAM, sizeof(svi_RAM), 1, handle); 
+            if (retVal) retVal = fread(&svi_RAMinSegment, sizeof(svi_RAMinSegment), 1, handle); 
             
             // Some SG-1000 / SC-3000 stuff...
             if (retVal) retVal = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
