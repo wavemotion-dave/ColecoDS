@@ -13,7 +13,7 @@
 /**     changes to this file.                               **/
 /*************************************************************/
 
-static const byte Cycles[256] =
+static const byte Cycles[256] __attribute__((section(".dtcm"))) =
 {
   7,6,2,8,3,3,5,5,3,2,2,2,4,4,6,6,
   2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7,
@@ -33,7 +33,7 @@ static const byte Cycles[256] =
   2,5,2,8,4,4,6,6,2,4,2,7,5,5,7,7
 };
 
-static const byte ZNTable[256] =
+static const byte ZNTable[256] __attribute__((section(".dtcm"))) =
 {
   Z_FLAG,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
