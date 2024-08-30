@@ -18,38 +18,21 @@
 #include "Tables.h"
 #include <stdio.h>
 
-/** INLINE ***************************************************/
-/** Different compilers inline C functions differently.     **/
-/*************************************************************/
-#ifdef __GNUC__
-#define INLINE inline
-#else
-#define INLINE static
-#endif
-
 /** System-Dependent Stuff ***********************************/
 /** This is system-dependent code put here to speed things  **/
 /** up. It has to stay inlined to be fast.                  **/
 /*************************************************************/
 
 extern byte RAM_Memory[];
+extern unsigned int debug[];
 
-#define FAST_RDOP
-INLINE byte Op6502(register word A) { return(RAM_Memory[A]); }
-
-/** FAST_RDOP ************************************************/
-/** With this #define not present, Rd6502() should perform  **/
-/** the functions of Rd6502().                              **/
-/*************************************************************/
-#ifndef FAST_RDOP
-#define Op6502(A) Rd6502(A)
-#endif
+#define Op6502(A) RAM_Memory[A]
 
 /** Addressing Methods ***************************************/
 /** These macros calculate and return effective addresses.  **/
 /*************************************************************/
 #define MC_Ab(Rg)	M_LDWORD(Rg)
-#define MC_Zp(Rg)	Rg.B.l=Op6502(R->PC.W++);Rg.B.h=0
+#define MC_Zp(Rg)	Rg.W=Op6502(R->PC.W++);
 #define MC_Zx(Rg)	Rg.B.l=Op6502(R->PC.W++)+R->X;Rg.B.h=0
 #define MC_Zy(Rg)	Rg.B.l=Op6502(R->PC.W++)+R->Y;Rg.B.h=0
 #define MC_Ax(Rg)	M_LDWORD(Rg);Rg.W+=R->X
@@ -65,9 +48,9 @@ INLINE byte Op6502(register word A) { return(RAM_Memory[A]); }
 /*************************************************************/
 #define MR_Ab(Rg)	MC_Ab(J);Rg=Rd6502(J.W)
 #define MR_Im(Rg)	Rg=Op6502(R->PC.W++)
-#define	MR_Zp(Rg)	MC_Zp(J);Rg=Rd6502(J.W)
-#define MR_Zx(Rg)	MC_Zx(J);Rg=Rd6502(J.W)
-#define MR_Zy(Rg)	MC_Zy(J);Rg=Rd6502(J.W)
+#define	MR_Zp(Rg)	MC_Zp(J);Rg=Op6502(J.W)
+#define MR_Zx(Rg)	MC_Zx(J);Rg=Op6502(J.W)
+#define MR_Zy(Rg)	MC_Zy(J);Rg=Op6502(J.W)
 #define	MR_Ax(Rg)	MC_Ax(J);Rg=Rd6502(J.W)
 #define MR_Ay(Rg)	MC_Ay(J);Rg=Rd6502(J.W)
 #define MR_Ix(Rg)	MC_Ix(J);Rg=Rd6502(J.W)
@@ -109,6 +92,7 @@ INLINE byte Op6502(register word A) { return(RAM_Memory[A]); }
     K.B.l=(R->A&0x0F)+(Rg&0x0F)+(R->P&C_FLAG); \
     if(K.B.l>9) K.B.l+=6; \
     K.B.h=(R->A>>4)+(Rg>>4)+(K.B.l>15? 1:0); \
+    if(K.B.h>9) K.B.h+=6; \
     R->A=(K.B.l&0x0F)|(K.B.h<<4); \
     R->P=(R->P&~C_FLAG)|(K.B.h>15? C_FLAG:0); \
   } \

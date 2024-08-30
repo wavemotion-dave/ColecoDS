@@ -429,6 +429,7 @@ void Wr6502(register word Addr,register byte Value)
         case 0x3000:    // VDP Writes
             if (Addr & 1) {if (WrCtrl9918(Value)) Int6502(&m6502, INT_IRQ);}
             else WrData9918(Value);
+            break;
 
         // Expanded RAM... very little uses this... but for future homebrews or for CSL bios use.
         // In theory we should guard against writes to areas where ROM is mapped, but we are going to 
