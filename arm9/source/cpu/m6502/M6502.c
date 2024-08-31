@@ -23,6 +23,8 @@
 /** up. It has to stay inlined to be fast.                  **/
 /*************************************************************/
 
+#define CREATIVISION_CYCLES_PER_SCANLINE    128
+
 extern byte RAM_Memory[];
 extern unsigned int debug[];
 
@@ -31,60 +33,60 @@ extern unsigned int debug[];
 /** Addressing Methods ***************************************/
 /** These macros calculate and return effective addresses.  **/
 /*************************************************************/
-#define MC_Ab(Rg)	M_LDWORD(Rg)
-#define MC_Zp(Rg)	Rg.W=Op6502(R->PC.W++);
-#define MC_Zx(Rg)	Rg.B.l=Op6502(R->PC.W++)+R->X;Rg.B.h=0
-#define MC_Zy(Rg)	Rg.B.l=Op6502(R->PC.W++)+R->Y;Rg.B.h=0
-#define MC_Ax(Rg)	M_LDWORD(Rg);Rg.W+=R->X
-#define MC_Ay(Rg)	M_LDWORD(Rg);Rg.W+=R->Y
-#define MC_Ix(Rg)	K.B.l=Op6502(R->PC.W++)+R->X;K.B.h=0; \
-			Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W)
-#define MC_Iy(Rg)	K.B.l=Op6502(R->PC.W++);K.B.h=0; \
-			Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W); \
-			Rg.W+=R->Y
+#define MC_Ab(Rg)   M_LDWORD(Rg)
+#define MC_Zp(Rg)   Rg.W=Op6502(R->PC.W++);
+#define MC_Zx(Rg)   Rg.B.l=Op6502(R->PC.W++)+R->X;Rg.B.h=0
+#define MC_Zy(Rg)   Rg.B.l=Op6502(R->PC.W++)+R->Y;Rg.B.h=0
+#define MC_Ax(Rg)   M_LDWORD(Rg);Rg.W+=R->X
+#define MC_Ay(Rg)   M_LDWORD(Rg);Rg.W+=R->Y
+#define MC_Ix(Rg)   K.B.l=Op6502(R->PC.W++)+R->X;K.B.h=0; \
+            Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W)
+#define MC_Iy(Rg)   K.B.l=Op6502(R->PC.W++);K.B.h=0; \
+            Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W); \
+            Rg.W+=R->Y
 
 /** Reading From Memory **************************************/
 /** These macros calculate address and read from it.        **/
 /*************************************************************/
-#define MR_Ab(Rg)	MC_Ab(J);Rg=Rd6502(J.W)
-#define MR_Im(Rg)	Rg=Op6502(R->PC.W++)
-#define	MR_Zp(Rg)	MC_Zp(J);Rg=Op6502(J.W)
-#define MR_Zx(Rg)	MC_Zx(J);Rg=Op6502(J.W)
-#define MR_Zy(Rg)	MC_Zy(J);Rg=Op6502(J.W)
-#define	MR_Ax(Rg)	MC_Ax(J);Rg=Rd6502(J.W)
-#define MR_Ay(Rg)	MC_Ay(J);Rg=Rd6502(J.W)
-#define MR_Ix(Rg)	MC_Ix(J);Rg=Rd6502(J.W)
-#define MR_Iy(Rg)	MC_Iy(J);Rg=Rd6502(J.W)
+#define MR_Ab(Rg)   MC_Ab(J);Rg=Rd6502(J.W)
+#define MR_Im(Rg)   Rg=Op6502(R->PC.W++)
+#define MR_Zp(Rg)   MC_Zp(J);Rg=Op6502(J.W)
+#define MR_Zx(Rg)   MC_Zx(J);Rg=Op6502(J.W)
+#define MR_Zy(Rg)   MC_Zy(J);Rg=Op6502(J.W)
+#define MR_Ax(Rg)   MC_Ax(J);Rg=Rd6502(J.W)
+#define MR_Ay(Rg)   MC_Ay(J);Rg=Rd6502(J.W)
+#define MR_Ix(Rg)   MC_Ix(J);Rg=Rd6502(J.W)
+#define MR_Iy(Rg)   MC_Iy(J);Rg=Rd6502(J.W)
 
 /** Writing To Memory ****************************************/
 /** These macros calculate address and write to it.         **/
 /*************************************************************/
-#define MW_Ab(Rg)	MC_Ab(J);Wr6502(J.W,Rg)
-#define MW_Zp(Rg)	MC_Zp(J);Wr6502(J.W,Rg)
-#define MW_Zx(Rg)	MC_Zx(J);Wr6502(J.W,Rg)
-#define MW_Zy(Rg)	MC_Zy(J);Wr6502(J.W,Rg)
-#define MW_Ax(Rg)	MC_Ax(J);Wr6502(J.W,Rg)
-#define MW_Ay(Rg)	MC_Ay(J);Wr6502(J.W,Rg)
-#define MW_Ix(Rg)	MC_Ix(J);Wr6502(J.W,Rg)
-#define MW_Iy(Rg)	MC_Iy(J);Wr6502(J.W,Rg)
+#define MW_Ab(Rg)   MC_Ab(J);Wr6502(J.W,Rg)
+#define MW_Zp(Rg)   MC_Zp(J);Wr6502(J.W,Rg)
+#define MW_Zx(Rg)   MC_Zx(J);Wr6502(J.W,Rg)
+#define MW_Zy(Rg)   MC_Zy(J);Wr6502(J.W,Rg)
+#define MW_Ax(Rg)   MC_Ax(J);Wr6502(J.W,Rg)
+#define MW_Ay(Rg)   MC_Ay(J);Wr6502(J.W,Rg)
+#define MW_Ix(Rg)   MC_Ix(J);Wr6502(J.W,Rg)
+#define MW_Iy(Rg)   MC_Iy(J);Wr6502(J.W,Rg)
 
 /** Modifying Memory *****************************************/
 /** These macros calculate address and modify it.           **/
 /*************************************************************/
-#define MM_Ab(Cmd)	MC_Ab(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
-#define MM_Zp(Cmd)	MC_Zp(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
-#define MM_Zx(Cmd)	MC_Zx(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
-#define MM_Ax(Cmd)	MC_Ax(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
+#define MM_Ab(Cmd)  MC_Ab(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
+#define MM_Zp(Cmd)  MC_Zp(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
+#define MM_Zx(Cmd)  MC_Zx(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
+#define MM_Ax(Cmd)  MC_Ax(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
 
 /** Other Macros *********************************************/
 /** Calculating flags, stack, jumps, arithmetics, etc.      **/
 /*************************************************************/
-#define M_FL(Rg)	R->P=(R->P&~(Z_FLAG|N_FLAG))|ZNTable[Rg]
-#define M_LDWORD(Rg)	Rg.B.l=Op6502(R->PC.W++);Rg.B.h=Op6502(R->PC.W++)
+#define M_FL(Rg)        R->P=(R->P&~(Z_FLAG|N_FLAG))|ZNTable[Rg]
+#define M_LDWORD(Rg)    Rg.B.l=Op6502(R->PC.W++);Rg.B.h=Op6502(R->PC.W++)
 
-#define M_PUSH(Rg)	Wr6502(0x0100|R->S,Rg);R->S--
-#define M_POP(Rg)	R->S++;Rg=Op6502(0x0100|R->S)
-#define M_JR		R->PC.W+=(offset)Op6502(R->PC.W)+1;R->ICount--
+#define M_PUSH(Rg)      RAM_Memory[0x0100|R->S]=Rg;R->S--
+#define M_POP(Rg)       R->S++;Rg=RAM_Memory[0x0100|R->S]
+#define M_JR            R->PC.W+=(offset)Op6502(R->PC.W)+1;R->ICount--
 
 #define M_ADC(Rg) \
   if(R->P&D_FLAG) \
@@ -133,20 +135,20 @@ extern unsigned int debug[];
   R->P&=~(N_FLAG|V_FLAG|Z_FLAG); \
   R->P|=(Rg&(N_FLAG|V_FLAG))|(Rg&R->A? 0:Z_FLAG)
 
-#define M_AND(Rg)	R->A&=Rg;M_FL(R->A)
-#define M_ORA(Rg)	R->A|=Rg;M_FL(R->A)
-#define M_EOR(Rg)	R->A^=Rg;M_FL(R->A)
-#define M_INC(Rg)	Rg++;M_FL(Rg)
-#define M_DEC(Rg)	Rg--;M_FL(Rg)
+#define M_AND(Rg)   R->A&=Rg;M_FL(R->A)
+#define M_ORA(Rg)   R->A|=Rg;M_FL(R->A)
+#define M_EOR(Rg)   R->A^=Rg;M_FL(R->A)
+#define M_INC(Rg)   Rg++;M_FL(Rg)
+#define M_DEC(Rg)   Rg--;M_FL(Rg)
 
-#define M_ASL(Rg)	R->P&=~C_FLAG;R->P|=Rg>>7;Rg<<=1;M_FL(Rg)
-#define M_LSR(Rg)	R->P&=~C_FLAG;R->P|=Rg&C_FLAG;Rg>>=1;M_FL(Rg)
-#define M_ROL(Rg)	K.B.l=(Rg<<1)|(R->P&C_FLAG); \
-			R->P&=~C_FLAG;R->P|=Rg>>7;Rg=K.B.l; \
-			M_FL(Rg)
-#define M_ROR(Rg)	K.B.l=(Rg>>1)|(R->P<<7); \
-			R->P&=~C_FLAG;R->P|=Rg&C_FLAG;Rg=K.B.l; \
-			M_FL(Rg)
+#define M_ASL(Rg)   R->P&=~C_FLAG;R->P|=Rg>>7;Rg<<=1;M_FL(Rg)
+#define M_LSR(Rg)   R->P&=~C_FLAG;R->P|=Rg&C_FLAG;Rg>>=1;M_FL(Rg)
+#define M_ROL(Rg)   K.B.l=(Rg<<1)|(R->P&C_FLAG); \
+            R->P&=~C_FLAG;R->P|=Rg>>7;Rg=K.B.l; \
+            M_FL(Rg)
+#define M_ROR(Rg)   K.B.l=(Rg>>1)|(R->P<<7); \
+            R->P&=~C_FLAG;R->P|=Rg&C_FLAG;Rg=K.B.l; \
+            M_FL(Rg)
 
 /** Reset6502() **********************************************/
 /** This function can be used to reset the registers before **/
@@ -160,7 +162,7 @@ void Reset6502(M6502 *R)
   R->S=0xFF;
   R->PC.B.l=Rd6502(0xFFFC);
   R->PC.B.h=Rd6502(0xFFFD);   
-  R->IPeriod = 128;     // This many cycles per scanline
+  R->IPeriod = CREATIVISION_CYCLES_PER_SCANLINE;
   R->ICount = R->IPeriod;
   R->IRequest=INT_NONE;
   R->AfterCLI=0;
@@ -200,7 +202,7 @@ word Exec6502(M6502 *R)
   register pair J,K;
   register byte I = INT_NONE;
 
-  R->ICount+= 128;
+  R->ICount+= R->IPeriod;
   while (R->ICount > 0)
   {
       I=Op6502(R->PC.W++);
@@ -221,8 +223,7 @@ word Exec6502(M6502 *R)
   }
   else
   {
-    I=Loop6502();              /* Call the periodic handler */
-    //R->ICount+=R->IPeriod;    /* Reset the cycle counter   */
+    I=Loop6502();             /* Call the periodic handler */
     if(!I) I=R->IRequest;     /* Realize pending interrupt */
   }
 

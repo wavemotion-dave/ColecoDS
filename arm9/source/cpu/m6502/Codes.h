@@ -28,7 +28,8 @@ case 0x40:
 
 /* RTS */
 case 0x60:
-  M_POP(R->PC.B.l);M_POP(R->PC.B.h);R->PC.W++;break;
+  M_POP(R->PC.B.l);M_POP(R->PC.B.h);R->PC.W++;
+  break;
 
 /* JSR $ssss ABS */
 case 0x20:
