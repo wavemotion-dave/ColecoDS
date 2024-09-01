@@ -228,8 +228,8 @@ extern void memotech_restore_bios(void);
 extern void adam_setup_bios(void);
 extern void creativision_loadrom(int romSize);
 extern void creativision_restore_bios(void);
-extern u8 *creativision_get_cpu(u16 *cv_cpu_size);
-extern void creativision_put_cpu(u8 *mem);
+extern u8  *creativision_get_savestate(u16 *cv_cpu_size);
+extern void creativision_put_savestate(u8 *mem);
 extern void creativision_loadBAS(void);
 
 extern void msxSaveEEPROM(void);

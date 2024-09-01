@@ -63,8 +63,18 @@ typedef struct {
 M6821 pia0 = {0};
 M6821 pia1 = {0};
 
-short  total_cycles = 0; //TODO: hook this into the main CPU emulation cycle counter
+unsigned short int total_cycles = 0; //TODO: hook this into the main CPU emulation cycle counter
 unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
+
+// We use this structure to hold the save state and pass the buffer back to the caller for writing to the .sav file
+struct 
+{
+    M6502 m6502;
+    M6821 pia0;
+    M6821 pia1;
+    unsigned short int total_cycles;
+    u32   spare;
+} CV_SaveState;
 
 /**
  * PIA_Write
@@ -197,15 +207,26 @@ ITCM_CODE unsigned char PIA_Read(word addr)
 
 // Below this point is code not borrowed from the creatiVision emulator...
 
-u8 *creativision_get_cpu(u16 *cv_cpu_size)
+u8 *creativision_get_savestate(u16 *cv_cpu_size)
 {
-    *cv_cpu_size = (u16)sizeof(m6502);
-    return (u8*)&m6502;
+    memcpy(&CV_SaveState.m6502, &m6502, sizeof(m6502));
+    memcpy(&CV_SaveState.pia0,  &pia0,  sizeof(pia0));
+    memcpy(&CV_SaveState.pia1,  &pia1,  sizeof(pia1));
+    CV_SaveState.total_cycles = total_cycles;
+    CV_SaveState.spare = 0;
+    
+    *cv_cpu_size = (u16)sizeof(CV_SaveState);
+    return (u8*)&CV_SaveState;
 }
 
-void creativision_put_cpu(u8 *mem)
+void creativision_put_savestate(u8 *mem)
 {
-    memcpy(&m6502, mem, sizeof(m6502));
+    memcpy(&CV_SaveState, mem, sizeof(CV_SaveState));
+    
+    memcpy(&m6502,  &CV_SaveState.m6502,  sizeof(m6502));
+    memcpy(&pia0,   &CV_SaveState.pia0,   sizeof(pia0));
+    memcpy(&pia1,   &CV_SaveState.pia1,   sizeof(pia1));
+    total_cycles = CV_SaveState.total_cycles;
 }
 
 void creativision_reset(void)
