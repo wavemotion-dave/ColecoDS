@@ -305,9 +305,9 @@ void colecoSaveState()
     else if (creativision_mode)
     {
         // Write some creativision stuff... mostly the non-Z80 CPU
-        u16 cv_cpu_size=1;
-        u8 *mem = creativision_get_cpu(&cv_cpu_size);
-        if (retVal) retVal = fwrite(mem, cv_cpu_size,1, handle);
+        u16 cv_save_size=1;
+        u8 *mem = creativision_get_savestate(&cv_save_size);
+        if (retVal) retVal = fwrite(mem, cv_save_size,1, handle);
     }
     
     strcpy(tmpStr, (retVal ? "OK ":"ERR"));  
@@ -575,10 +575,10 @@ void colecoLoadState()
             else if (creativision_mode)
             {
                 // Read some Creativision stuff... mostly the non-Z80 CPU
-                u16 cv_cpu_size=1;
-                u8 *mem = creativision_get_cpu(&cv_cpu_size);
-                if (retVal) retVal = fread(mem, cv_cpu_size,1, handle);
-                creativision_put_cpu(mem);
+                u16 cv_save_size=1;
+                u8 *mem = creativision_get_savestate(&cv_save_size);
+                if (retVal) retVal = fread(mem, cv_save_size,1, handle);
+                creativision_put_savestate(mem);
             }
             
             // Fix up transparency
