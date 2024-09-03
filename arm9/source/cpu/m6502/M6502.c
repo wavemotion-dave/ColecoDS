@@ -27,6 +27,7 @@
 
 extern byte RAM_Memory[];
 extern unsigned int debug[];
+extern void Trap_Bad_Ops(char *prefix, byte I, word W);
 
 #define Op6502(A) RAM_Memory[A]
 
@@ -40,10 +41,21 @@ extern unsigned int debug[];
 #define MC_Ax(Rg)   M_LDWORD(Rg);Rg.W+=R->X
 #define MC_Ay(Rg)   M_LDWORD(Rg);Rg.W+=R->Y
 #define MC_Ix(Rg)   K.B.l=Op6502(R->PC.W++)+R->X;K.B.h=0; \
-            Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W)
-#define MC_Iy(Rg)   K.B.l=Op6502(R->PC.W++);K.B.h=0; \
-            Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W); \
-            Rg.W+=R->Y
+                    Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W)
+#define MC_Iy(Rg)   K.W=Op6502(R->PC.W++); \
+                    Rg.B.l=Op6502(K.W++);Rg.B.h=Op6502(K.W); \
+                    Rg.W+=R->Y
+
+// ----------------------------------------------------------------------------
+// These versions will compensate for a page boundary crossing and consume the 
+// extra cycle which was not part of the original emulation here for the M6502
+// ----------------------------------------------------------------------------
+static byte hi __attribute__((section(".dtcm"))) = 0;
+#define MC_AxP(Rg)   M_LDWORD(Rg);hi=Rg.B.h; Rg.W+=R->X; if (hi != Rg.B.h) R->ICount--;
+#define MC_AyP(Rg)   M_LDWORD(Rg);hi=Rg.B.h; Rg.W+=R->Y; if (hi != Rg.B.h) R->ICount--;
+#define MC_IyP(Rg)   K.W=Op6502(R->PC.W++); Rg.B.l=Op6502(K.W++); Rg.B.h=Op6502(K.W); \
+                     hi=Rg.B.h; Rg.W+=R->Y; if (hi != Rg.B.h) R->ICount--;
+
 
 /** Reading From Memory **************************************/
 /** These macros calculate address and read from it.        **/
@@ -58,6 +70,12 @@ extern unsigned int debug[];
 #define MR_Ix(Rg)   MC_Ix(J);Rg=Rd6502(J.W)
 #define MR_Iy(Rg)   MC_Iy(J);Rg=Rd6502(J.W)
 
+// These versions check for the page boundary cross
+#define MR_AxP(Rg)  MC_AxP(J);Rg=Rd6502(J.W)
+#define MR_AyP(Rg)  MC_AyP(J);Rg=Rd6502(J.W)
+#define MR_IyP(Rg)  MC_IyP(J);Rg=Rd6502(J.W)
+
+
 /** Writing To Memory ****************************************/
 /** These macros calculate address and write to it.         **/
 /*************************************************************/
@@ -70,6 +88,12 @@ extern unsigned int debug[];
 #define MW_Ix(Rg)   MC_Ix(J);Wr6502(J.W,Rg)
 #define MW_Iy(Rg)   MC_Iy(J);Wr6502(J.W,Rg)
 
+// These versions check for the page boundary cross
+#define MW_AxP(Rg)  MC_AxP(J);Wr6502(J.W,Rg)
+#define MW_AyP(Rg)  MC_AyP(J);Wr6502(J.W,Rg)
+#define MW_IyP(Rg)  MC_IyP(J);Wr6502(J.W,Rg)
+
+
 /** Modifying Memory *****************************************/
 /** These macros calculate address and modify it.           **/
 /*************************************************************/
@@ -77,6 +101,7 @@ extern unsigned int debug[];
 #define MM_Zp(Cmd)  MC_Zp(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
 #define MM_Zx(Cmd)  MC_Zx(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
 #define MM_Ax(Cmd)  MC_Ax(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
+#define MM_Ay(Cmd)  MC_Ay(J);I=Rd6502(J.W);Cmd(I);Wr6502(J.W,I)
 
 /** Other Macros *********************************************/
 /** Calculating flags, stack, jumps, arithmetics, etc.      **/
@@ -131,15 +156,24 @@ extern unsigned int debug[];
   K.W=Rg1-Rg2; \
   R->P&=~(N_FLAG|Z_FLAG|C_FLAG); \
   R->P|=ZNTable[K.B.l]|(K.B.h? 0:C_FLAG)
+
 #define M_BIT(Rg) \
   R->P&=~(N_FLAG|V_FLAG|Z_FLAG); \
   R->P|=(Rg&(N_FLAG|V_FLAG))|(Rg&R->A? 0:Z_FLAG)
+
+#define M_SBX(Rg) \
+  K.W=(R->A & R->X)-Rg; \
+  R->P&=~(N_FLAG|Z_FLAG|C_FLAG); \
+  R->P|=ZNTable[K.B.l]|(K.B.h? 0:C_FLAG); \
+  R->X = K.B.l
+
 
 #define M_AND(Rg)   R->A&=Rg;M_FL(R->A)
 #define M_ORA(Rg)   R->A|=Rg;M_FL(R->A)
 #define M_EOR(Rg)   R->A^=Rg;M_FL(R->A)
 #define M_INC(Rg)   Rg++;M_FL(Rg)
 #define M_DEC(Rg)   Rg--;M_FL(Rg)
+#define M_DCP(Rg)   Rg--;M_CMP(R->A, Rg)
 
 #define M_ASL(Rg)   R->P&=~C_FLAG;R->P|=Rg>>7;Rg<<=1;M_FL(Rg)
 #define M_LSR(Rg)   R->P&=~C_FLAG;R->P|=Rg&C_FLAG;Rg>>=1;M_FL(Rg)
@@ -166,6 +200,7 @@ void Reset6502(M6502 *R)
   R->ICount = R->IPeriod;
   R->IRequest=INT_NONE;
   R->AfterCLI=0;
+  R->TrapBadOps=1;
 }
 
 
@@ -261,6 +296,7 @@ word Run6502(M6502 *R)
     switch(I)
     {
 #include "Codes.h"
+default: if (R->TrapBadOps) Trap_Bad_Ops("NORM", I, R->PC.W-1);
     }
 
     /* If cycle counter expired... */

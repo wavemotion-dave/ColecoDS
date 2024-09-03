@@ -180,50 +180,127 @@ case 0xD6: MM_Zx(M_DEC);break;            /* DEC $ss,x ZP,x */
 case 0xF5: MR_Zx(I);M_SBC(I);break;       /* SBC $ss,x ZP,x */
 case 0xF6: MM_Zx(M_INC);break;            /* INC $ss,x ZP,x */
 
-case 0x19: MR_Ay(I);M_ORA(I);break;       /* ORA $ssss,y ABS,y */
-case 0x1D: MR_Ax(I);M_ORA(I);break;       /* ORA $ssss,x ABS,x */
+case 0x19: MR_AyP(I);M_ORA(I);break;      /* ORA $ssss,y ABS,y */
+case 0x1D: MR_AxP(I);M_ORA(I);break;      /* ORA $ssss,x ABS,x */
 case 0x1E: MM_Ax(M_ASL);break;            /* ASL $ssss,x ABS,x */
-case 0x39: MR_Ay(I);M_AND(I);break;       /* AND $ssss,y ABS,y */
-case 0x3D: MR_Ax(I);M_AND(I);break;       /* AND $ssss,x ABS,x */
+case 0x39: MR_AyP(I);M_AND(I);break;      /* AND $ssss,y ABS,y */
+case 0x3D: MR_AxP(I);M_AND(I);break;      /* AND $ssss,x ABS,x */
 case 0x3E: MM_Ax(M_ROL);break;            /* ROL $ssss,x ABS,x */
-case 0x59: MR_Ay(I);M_EOR(I);break;       /* EOR $ssss,y ABS,y */
-case 0x5D: MR_Ax(I);M_EOR(I);break;       /* EOR $ssss,x ABS,x */
+case 0x59: MR_AyP(I);M_EOR(I);break;      /* EOR $ssss,y ABS,y */
+case 0x5D: MR_AxP(I);M_EOR(I);break;      /* EOR $ssss,x ABS,x */
 case 0x5E: MM_Ax(M_LSR);break;            /* LSR $ssss,x ABS,x */
-case 0x79: MR_Ay(I);M_ADC(I);break;       /* ADC $ssss,y ABS,y */
-case 0x7D: MR_Ax(I);M_ADC(I);break;       /* ADC $ssss,x ABS,x */
+case 0x79: MR_AyP(I);M_ADC(I);break;      /* ADC $ssss,y ABS,y */
+case 0x7D: MR_AxP(I);M_ADC(I);break;      /* ADC $ssss,x ABS,x */
 case 0x7E: MM_Ax(M_ROR);break;            /* ROR $ssss,x ABS,x */
 case 0x99: MW_Ay(R->A);break;             /* STA $ssss,y ABS,y */
 case 0x9D: MW_Ax(R->A);break;             /* STA $ssss,x ABS,x */
-case 0xB9: MR_Ay(R->A);M_FL(R->A);break;  /* LDA $ssss,y ABS,y */
-case 0xBC: MR_Ax(R->Y);M_FL(R->Y);break;  /* LDY $ssss,x ABS,x */
-case 0xBD: MR_Ax(R->A);M_FL(R->A);break;  /* LDA $ssss,x ABS,x */
-case 0xBE: MR_Ay(R->X);M_FL(R->X);break;  /* LDX $ssss,y ABS,y */
-case 0xD9: MR_Ay(I);M_CMP(R->A,I);break;  /* CMP $ssss,y ABS,y */
-case 0xDD: MR_Ax(I);M_CMP(R->A,I);break;  /* CMP $ssss,x ABS,x */
+case 0xB9: MR_AyP(R->A);M_FL(R->A);break; /* LDA $ssss,y ABS,y */
+case 0xBC: MR_AxP(R->Y);M_FL(R->Y);break; /* LDY $ssss,x ABS,x */
+case 0xBD: MR_AxP(R->A);M_FL(R->A);break; /* LDA $ssss,x ABS,x */
+case 0xBE: MR_AyP(R->X);M_FL(R->X);break; /* LDX $ssss,y ABS,y */
+case 0xD9: MR_AyP(I);M_CMP(R->A,I);break; /* CMP $ssss,y ABS,y */
+case 0xDD: MR_AxP(I);M_CMP(R->A,I);break; /* CMP $ssss,x ABS,x */
 case 0xDE: MM_Ax(M_DEC);break;            /* DEC $ssss,x ABS,x */
-case 0xF9: MR_Ay(I);M_SBC(I);break;       /* SBC $ssss,y ABS,y */
-case 0xFD: MR_Ax(I);M_SBC(I);break;       /* SBC $ssss,x ABS,x */
+case 0xF9: MR_AyP(I);M_SBC(I);break;      /* SBC $ssss,y ABS,y */
+case 0xFD: MR_AxP(I);M_SBC(I);break;      /* SBC $ssss,x ABS,x */
 case 0xFE: MM_Ax(M_INC);break;            /* INC $ssss,x ABS,x */
 
 case 0x01: MR_Ix(I);M_ORA(I);break;       /* ORA ($ss,x) INDEXINDIR */
-case 0x11: MR_Iy(I);M_ORA(I);break;       /* ORA ($ss),y INDIRINDEX */
+case 0x11: MR_IyP(I);M_ORA(I);break;      /* ORA ($ss),y INDIRINDEX */
 case 0x21: MR_Ix(I);M_AND(I);break;       /* AND ($ss,x) INDEXINDIR */
-case 0x31: MR_Iy(I);M_AND(I);break;       /* AND ($ss),y INDIRINDEX */
+case 0x31: MR_IyP(I);M_AND(I);break;      /* AND ($ss),y INDIRINDEX */
 case 0x41: MR_Ix(I);M_EOR(I);break;       /* EOR ($ss,x) INDEXINDIR */
-case 0x51: MR_Iy(I);M_EOR(I);break;       /* EOR ($ss),y INDIRINDEX */
+case 0x51: MR_IyP(I);M_EOR(I);break;      /* EOR ($ss),y INDIRINDEX */
 case 0x61: MR_Ix(I);M_ADC(I);break;       /* ADC ($ss,x) INDEXINDIR */
-case 0x71: MR_Iy(I);M_ADC(I);break;       /* ADC ($ss),y INDIRINDEX */
+case 0x71: MR_IyP(I);M_ADC(I);break;      /* ADC ($ss),y INDIRINDEX */
 case 0x81: MW_Ix(R->A);break;             /* STA ($ss,x) INDEXINDIR */
 case 0x91: MW_Iy(R->A);break;             /* STA ($ss),y INDIRINDEX */
 case 0xA1: MR_Ix(R->A);M_FL(R->A);break;  /* LDA ($ss,x) INDEXINDIR */
-case 0xB1: MR_Iy(R->A);M_FL(R->A);break;  /* LDA ($ss),y INDIRINDEX */
+case 0xB1: MR_IyP(R->A);M_FL(R->A);break; /* LDA ($ss),y INDIRINDEX */
 case 0xC1: MR_Ix(I);M_CMP(R->A,I);break;  /* CMP ($ss,x) INDEXINDIR */
-case 0xD1: MR_Iy(I);M_CMP(R->A,I);break;  /* CMP ($ss),y INDIRINDEX */
+case 0xD1: MR_IyP(I);M_CMP(R->A,I);break; /* CMP ($ss),y INDIRINDEX */
 case 0xE1: MR_Ix(I);M_SBC(I);break;       /* SBC ($ss,x) INDEXINDIR */
-case 0xF1: MR_Iy(I);M_SBC(I);break;       /* SBC ($ss),y INDIRINDEX */
+case 0xF1: MR_IyP(I);M_SBC(I);break;      /* SBC ($ss),y INDIRINDEX */
+
 
 case 0x0A: M_ASL(R->A);break;             /* ASL a ACC */
 case 0x2A: M_ROL(R->A);break;             /* ROL a ACC */
 case 0x4A: M_LSR(R->A);break;             /* LSR a ACC */
 case 0x6A: M_ROR(R->A);break;             /* ROR a ACC */
+
+// -------------------------------------------------------------
+// Undocumented "illegal" Opcodes below here... this isn't the
+// full set just the more 'likely to encounter' stable ones...
+// -------------------------------------------------------------
+
+case 0xA3: MR_Ix(R->A);M_FL(R->A);R->X=R->A;break;  /* LAX ($ss,x) INDEXINDIR */
+case 0xA7: MR_Zp(R->A);M_FL(R->A);R->X=R->A;break;  /* LAX $ss ZP */
+case 0xAF: MR_Ab(R->A);M_FL(R->A);R->X=R->A;break;  /* LAX $ssss ABS */
+case 0xB3: MR_IyP(R->A);M_FL(R->A);R->X=R->A;break; /* LAX ($ss),y INDIRINDEX */
+case 0xB7: MR_Zx(R->A);M_FL(R->A);R->X=R->A;break;  /* LAX $ss,x ZP,x */
+case 0xBF: MR_AxP(R->A);M_FL(R->A);R->X=R->A;break; /* LAX $ssss,x ABS,x */
+
+case 0x83: MW_Ix((R->A & R->X));break;              /* SAX ($ss,x) INDEXINDIR */
+case 0x87: MW_Zp((R->A & R->X));break;              /* SAX $ss ZP */
+case 0x8F: MW_Ab((R->A & R->X));break;              /* SAX $ssss ABS */
+case 0x97: MW_Zx((R->A & R->X));break;              /* SAX $ss,x ZP,x */
+
+case 0xC7: MM_Zp(M_DCP);break;                      /* DCP $ss ZP */
+case 0xD7: MM_Zx(M_DCP);break;                      /* DCP $ss,x ZP,x */
+case 0xCF: MM_Ab(M_DCP);break;                      /* DCP $ssss ABS */
+case 0xDF: MM_Ax(M_DCP);break;                      /* DCP $ssss,x ABS,x */
+case 0xDB: MM_Ay(M_DCP);break;                      /* DCP $ssss,y ABS,y */
+
+case 0xCB: MR_Im(I);M_SBX(I);break;                 /* SBX (A AND X) - oper -> X */
+
+case 0x2B:
+case 0x0B: MR_Im(I);M_AND(I);
+           R->P=(R->P&~C_FLAG)|(I & 0x80 ? C_FLAG:0);
+           break;                                   /* ANC #$ss IMM with Carry Flag as bit 7*/
+
+case 0x4B: MR_Im(I);M_AND(I);M_LSR(R->A);break;     /* ALR #$ss IMM with Carry Flag as bit 0*/
+
+// These are 1-byte NOPs consuming 2 cycles
+case 0x1A:
+case 0x3A:
+case 0x5A:
+case 0x7A:
+case 0xDA:
+case 0xFA:
+    break;
+
+// These are 2-byte NOPs consuming 2 cycles
+case 0x80:
+case 0x82:
+case 0x89:
+case 0xC2:
+case 0xE2:
+    R->PC.W++;
+    break;
+
+// These are 2-byte NOPs consuming 3 cycles
+case 0x04:
+case 0x44:
+case 0x64:
+    R->PC.W++;
+    break;
+
+// These are 2-byte NOPs consuming 4 cycles
+case 0x34:    
+case 0x54:
+case 0x74:
+case 0xD4:
+    R->PC.W++;
+    break;
+
+// These are 3-byte NOPs consuming 4 cycles
+case 0x0C:
+case 0x1C:
+case 0x3C:
+case 0x5C:
+case 0x7C:
+case 0xDC:
+case 0xFC:
+    R->PC.W++;R->PC.W++;
+    break;
 

@@ -63,7 +63,7 @@ typedef struct {
 M6821 pia0 = {0};
 M6821 pia1 = {0};
 
-unsigned short int total_cycles = 0; //TODO: hook this into the main CPU emulation cycle counter
+unsigned short int total_cycles = 0; //TODO: maybe hook this into the main CPU emulation cycle counter. In practice this won't matter as well-behaved games read input at proper timing.
 unsigned char KEYBD[8] = { 255, 255, 255, 255, 255, 255, 255, 255 };
 
 // We use this structure to hold the save state and pass the buffer back to the caller for writing to the .sav file
@@ -194,9 +194,9 @@ ITCM_CODE unsigned char PIA_Read(word addr)
         return pia1.DDR;
 
     case 3: /* PIA-1 Control Port */
-        if ( (total_cycles - pia1.prev_cycles) < 36)
+        if ( (total_cycles - pia1.prev_cycles) < 36) 
             return pia1.CR;
-
+        
         pia1.CR &= 0x3f;
         return pia1.CR;
     }
@@ -311,20 +311,24 @@ void creativision_input(void)
             if (JoyState & JST_RIGHT<<16)   KEYBD[PA2] &= 0xfb;  // P2 right (E)
         }
         
-        if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1
-        if (JoyState == JST_2)      KEYBD[PA1] &= 0xcf;  // 2
-        if (JoyState == JST_3)      KEYBD[PA1] &= 0x9f;  // 3
-        if (JoyState == JST_4)      KEYBD[PA1] &= 0xd7;  // 4
-        if (JoyState == JST_5)      KEYBD[PA1] &= 0xb7;  // 5
-        if (JoyState == JST_6)      KEYBD[PA1] &= 0xaf;  // 6
-        if (JoyState == JST_7)      KEYBD[PA3] &= 0xf9;  // 7
+        // See if the onscreen keypad was pressed... All JST_x keypad codes map to the lower nibble...
+        if (JoyState & 0x000F)
+        {
+            if (JoyState == JST_1)      KEYBD[PA0] &= 0xf3;  // 1
+            if (JoyState == JST_2)      KEYBD[PA1] &= 0xcf;  // 2
+            if (JoyState == JST_3)      KEYBD[PA1] &= 0x9f;  // 3
+            if (JoyState == JST_4)      KEYBD[PA1] &= 0xd7;  // 4
+            if (JoyState == JST_5)      KEYBD[PA1] &= 0xb7;  // 5
+            if (JoyState == JST_6)      KEYBD[PA1] &= 0xaf;  // 6
+            if (JoyState == JST_7)      KEYBD[PA3] &= 0xf9;  // 7
 
-        if (JoyState == JST_8)      KEYBD[PA3] &= 0xfa;  // Y
-        if (JoyState == JST_9)      KEYBD[PA3] &= 0xaf;  // N
-        if (JoyState == JST_0)      KEYBD[PA3] &= 0xf6;  // RETURN
+            if (JoyState == JST_8)      KEYBD[PA3] &= 0xfa;  // Y
+            if (JoyState == JST_9)      KEYBD[PA3] &= 0xaf;  // N
+            if (JoyState == JST_0)      KEYBD[PA3] &= 0xf6;  // RETURN
 
-        if (JoyState == JST_STAR)   Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
-        if (JoyState == JST_POUND)  KEYBD[PA1] &= 0xaf;        // 6 but graphic overlay shows ST=START (which is how it works on a real overlay for the CV)
+            if (JoyState == JST_STAR)   Int6502(&m6502, INT_NMI);  // Game Reset (note, this is needed to start games)
+            if (JoyState == JST_POUND)  KEYBD[PA1] &= 0xaf;        // 6 but graphic overlay shows ST=START (which is how it works on a real overlay for the CV)
+        }
     }
 
     // And now the full keyboard maps...

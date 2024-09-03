@@ -316,7 +316,7 @@ enum CodesED
   DB_F8,DB_F9,DB_FA,DB_FB,DB_FC,DB_FD,DB_FE,DB_FF
 };
 
-extern void Z80_Trap_Bad_Ops(char *, byte, word);
+extern void Trap_Bad_Ops(char *, byte, word);
 
 static void CodesCB(register Z80 *R)
 {
@@ -333,7 +333,7 @@ static void CodesCB(register Z80 *R)
   {
 #include "CodesCB.h"
     default:
-      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(" CB ", I, CPU.PC.W-2);
+      if(CPU.TrapBadOps)  Trap_Bad_Ops(" CB ", I, CPU.PC.W-2);
   }
 }
 
@@ -352,7 +352,7 @@ static void CodesDDCB(register Z80 *R)
   {
 #include "CodesXCB.h"
     default:
-      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops("DDCB", I, CPU.PC.W-4);
+      if(CPU.TrapBadOps)  Trap_Bad_Ops("DDCB", I, CPU.PC.W-4);
   }
 #undef XX
 }
@@ -372,7 +372,7 @@ static void CodesFDCB(register Z80 *R)
   {
 #include "CodesXCB.h"
     default:
-      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops("FDCB", I, CPU.PC.W-4);
+      if(CPU.TrapBadOps)  Trap_Bad_Ops("FDCB", I, CPU.PC.W-4);
   }
 #undef XX
 }
@@ -395,7 +395,7 @@ static void CodesED(register Z80 *R)
     case PFX_ED:
       CPU.PC.W--;break;
     default:
-      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(" ED ", I, CPU.PC.W-4);
+      if(CPU.TrapBadOps) Trap_Bad_Ops(" ED ", I, CPU.PC.W-4);
   }
 }
 
@@ -421,7 +421,7 @@ static void CodesDD(register Z80 *R)
     case PFX_CB:
       CodesDDCB(R);break;
     default:
-      if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(" DD ", I, CPU.PC.W-2);
+      if(CPU.TrapBadOps)  Trap_Bad_Ops(" DD ", I, CPU.PC.W-2);
   }
 #undef XX
 }
@@ -448,7 +448,7 @@ static void CodesFD(register Z80 *R)
     case PFX_CB:
       CodesFDCB(R);break;
     default:
-        if(CPU.TrapBadOps)  Z80_Trap_Bad_Ops(" FD ", I, CPU.PC.W-2);
+        if(CPU.TrapBadOps)  Trap_Bad_Ops(" FD ", I, CPU.PC.W-2);
   }
 #undef XX
 }

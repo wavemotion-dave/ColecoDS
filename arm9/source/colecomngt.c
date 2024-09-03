@@ -35,7 +35,7 @@ u8 adam_ext_ram_used   = 0;
 u8 sg1000_double_reset = false;
 
 // -----------------------------------------------------------------------
-// Used by various systems such as the ADAM and MSX to point to 
+// Used by various systems such as the ADAM and MSX to point to
 // different 8K segments of memory as RAM and Carts are swapped in/out.
 // -----------------------------------------------------------------------
 u8 *MemoryMap[8]        __attribute__((section(".dtcm"))) = {0,0,0,0,0,0,0,0};
@@ -111,7 +111,7 @@ AY38910 myAY   __attribute__((section(".dtcm")));
 // ------------------------------------------------------------------------
 void coleco_adam_port_setup(void)
 {
-    if (adam_mode) // ADAM mode requires special handling of Port60 
+    if (adam_mode) // ADAM mode requires special handling of Port60
     {
         Port53 = 0x00;                          // Init the SGM Port 53
         Port60 = (adam_mode == 3) ? 0x0F:0x00;  // Adam/Memory Port 60 is in 'ADAM Mode' (unless mode==3 in which case we are loading a .rom while retaining ADAM emulation)
@@ -124,7 +124,7 @@ void coleco_adam_port_setup(void)
         Port60 = 0x0F;          // Adam/Memory Port 60 is in 'Colecovision Mode'
         Port20 = 0x00;          // Adam Net Port 20 not used for CV/SGM mode
         Port42 = 0x00;          // Not used for CV/SGM mode
-        
+
         if (bSuperGameCart) Port53 = 0x01; // Super Game Carts expect the SGM memory mapped in
     }
 }
@@ -184,17 +184,34 @@ void colecoWipeRAM(void)
   }
   else if (adam_mode)
   {
-      // ----------------------------------------------------------------------------------- ------------
-      // ADAM has special handling for memory clear. Rather than a 0x00 for clearing memory, we use
-      // 0x10 which is a pattern that has been shown to work with 'picky' software like Adam Bomb 2.
-      // ----------------------------------------------------------------------------------- ------------
-      for (int i=0; i< 0x10000; i++)  {RAM_Memory[i] = myConfig.memWipe ? 0x10: (rand() & 0xFF);}
-      
+      // ----------------------------------------------------------------------------------------------
+      // ADAM has special handling for memory clear. Thanks to Shawn Merrick who ran some experiments,
+      // it appears the bulk (but not all) of memory is alternating 0x00 (even) and 0xFF (odd) pattern.
+      // We replicate that here - it's good enough to run "picky" games like Adam Bomb 2. This is also
+      // the pattern that AdamEM uses so it's likely very reasonable to use.
+      // ----------------------------------------------------------------------------------------------
+      if (myConfig.memWipe)
+      {
+          // Alternating 0x00 and 0xFF bytes throughout memory...
+          for (int i=0; i< 0x10000; i+=2)
+          {
+              RAM_Memory[i] = 0x00; RAM_Memory[i+1]=0xFF;
+          }
+      }
+      else
+      {
+          // Randomize all bytes...
+          for (int i=0; i< 0x10000; i++)
+          {
+              RAM_Memory[i] = rand() & 0xFF;
+          }
+      }
+
       // The Expanded MEM is always cleared to zeros (helps with compression on save/load state)
-      memset(EXP_Memory, 0x00, 0x10000);  
+      memset(EXP_Memory, 0x00, 0x10000);
       if (DSI_RAM_Buffer) memset(DSI_RAM_Buffer, 0x00, (2*1024*1024));
-      
-      RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software      
+
+      RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
   }
   else if (einstein_mode)
   {
@@ -374,10 +391,10 @@ u8 colecoInit(char *szGame)
       disk_unsaved_data[BAY_DISK2] = 0;  // No unsaved DISK data to start
       disk_unsaved_data[BAY_TAPE] = 0;   // No unsaved TAPE data to start
       adamnet_init();                    // Initialize the Adam Net and disk drives
-            
-      // Clear existing drives of any disks/tapes and load the new game up      
+
+      // Clear existing drives of any disks/tapes and load the new game up
       for(u8 J=0;J<MAX_DRIVES;++J) adam_drive_eject(J);
-      
+
       // Load the game into memory
       RetFct = loadrom(szGame,RAM_Memory);
 
@@ -550,7 +567,7 @@ u8 loadrom(const char *filename, u8 * ptr)
   u8 bOK = 0;
 
   DSPrint(0,0,6, "LOADING...");
-  
+
   FILE* handle = fopen(filename, "rb");
   if (handle != NULL)
   {
@@ -592,7 +609,7 @@ u8 loadrom(const char *filename, u8 * ptr)
         mapperMask = 0x00;          // No MSX mapper mask
         bActivisionPCB = 0;         // No Activision PCB
         bSuperGameCart = 0;         // No Super Game Cart (aka MegaCart2)
-        
+
         // The SordM5 has one game that needs patching to run...
         if (sordm5_mode)
         {
@@ -629,11 +646,11 @@ u8 loadrom(const char *filename, u8 * ptr)
             strcpy(disk_last_file[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
             strcpy(disk_last_file[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
             strcpy(disk_last_file[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
-            
+
             strcpy(disk_last_path[BAY_DISK1], "");   // Nothing loaded in the DISK drive yet
             strcpy(disk_last_path[BAY_DISK2], "");   // Nothing loaded in the DISK drive yet
             strcpy(disk_last_path[BAY_TAPE], "");    // Nothing loaded in the TAPE drive yet
-            
+
             disk_last_size[BAY_DISK1] = 0;           // Nothing loaded in the DISK drive yet
             disk_last_size[BAY_DISK2] = 0;           // Nothing loaded in the DISK drive yet
             disk_last_size[BAY_TAPE]  = 0;           // Nothing loaded in the TAPE drive yet
@@ -730,7 +747,7 @@ u8 loadrom(const char *filename, u8 * ptr)
                 romBankMask = 0x03;
             }
             else if (myConfig.cvMode == CV_MODE_SUPERCART) // These are the Super Game Cart types... of varying EE sizes
-            { 
+            {
                 bSuperGameCart = 1;
                 SuperGameCartSetup(romSize);
                 memcpy(ptr, ROM_Memory, 0x2000);
@@ -1148,7 +1165,7 @@ ITCM_CODE u32 LoopZ80()
       // Execute 1 scanline worth of CPU instructions
       u32 cycles_to_process = tms_cpu_line + CPU.CycleDeficit;
       CPU.CycleDeficit = ExecZ80(cycles_to_process);
-      
+
       // Refresh VDP
       if(Loop9918())
       {

@@ -601,6 +601,7 @@ void dsInstallSoundEmuFIFO(void)
 //*****************************************************************************
 static u8 last_sgm_mode = false;
 static u8 last_pencil_mode = false;
+static u8 last_creativision_mode = false;
 static u8 last_einstein_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
@@ -624,6 +625,7 @@ void ResetStatusFlags(void)
   last_ay_mode  = false;
   last_mc_mode  = 0;
   last_pencil_mode = 0;
+  last_creativision_mode = 0;
   last_sg1000_mode = 0;
   last_pv2000_mode = 0;
   last_sordm5_mode = 0;
@@ -1172,9 +1174,9 @@ void DisplayStatusLine(bool bForce)
     }
     else if (creativision_mode)
     {
-        if ((creativision_mode != last_pencil_mode) || bForce)
+        if ((creativision_mode != last_creativision_mode) || bForce)
         {
-            last_pencil_mode = creativision_mode;
+            last_creativision_mode = creativision_mode;
             DSPrint(20,0,6, "CREATIVISION");
             last_pal_mode = 99;
         }

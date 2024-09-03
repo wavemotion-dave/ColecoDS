@@ -729,7 +729,7 @@ void Z80_Interface_Reset(void)
 // -----------------------------------------------------------------
 // Trap and report illegal opcodes to the ColecoDS debugger...
 // -----------------------------------------------------------------
-void Z80_Trap_Bad_Ops(char *prefix, byte I, word W)
+void Trap_Bad_Ops(char *prefix, byte I, word W)
 {
     if (myGlobalConfig.debugger)
     {
