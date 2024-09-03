@@ -409,6 +409,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.1: 03-Sep-2024 by wavemotion-dave
+* Fix for the ADC decimal-mode instruction in the 6502 core for the CreatiVision. This fixes a number of problems including hex-digits showing on scores for some games.
+* Tweaks and optimizations for the CreatiVision driver. Added most of the common/stable 'undocumented' opcodes.
+* Improved emulation accuracy for the ADAM with memory now initialized to alternating 0x00 (even bytes) and 0xFF (odd bytes) per AdamEM and experiments from Shawn Merrick.
+
 V10.0: 10-Aug-2024 by wavemotion-dave
 * Adam Sound Enhancer module support to allow AY sound games to play (mostly MSX ports to the ADAM)
 * Ignore files that start with a '.' or '_' (mostly to help filter out clear non-game files).
