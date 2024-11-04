@@ -16,8 +16,9 @@ Pencil II, CreatiVision, the Tatung Einstein and the venerable MSX1.
 Features :
 -----------------------
 * Colecovision game support (.rom or .col files). Requires coleco.rom BIOS.
-* Super Game Module support including extra memory and AY sound chip.
+* Super Game Module (SGM) support including extra memory and AY sound chip.
 * Megacart Bankswitching support (up to 1024K).
+* Super Game Cart (SGC) Bankswitching and flash-write support (up to 1024K).
 * Coleco ADAM game support (.ddp or .dsk files). Requires eos.rom and writer.rom
 * Coleco ADAM Sound Enhancer to support additional AY sound channel games (mostly MSX ports)
 * Sega SG-1000 game support (.sg roms)
@@ -409,6 +410,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.2: 05-Nov-2024 by wavemotion-dave
+* Fix for SGM enable/disable that renders The Castle and Castle Excellent playable.
+* Auto-disable SGM for Cavern Fighter to render it playable.
+* Three year anniversary of the Phoenix Edition - Happy Birthday ColecoDS!
+
 V10.1: 03-Sep-2024 by wavemotion-dave
 * Fix for the ADC decimal-mode instruction in the 6502 core for the CreatiVision. This fixes a number of problems including hex-digits showing on scores for some games.
 * Tweaks and optimizations for the CreatiVision driver. Added most of the common/stable 'undocumented' opcodes.
