@@ -800,19 +800,10 @@ u8 loadrom(const char *filename, u8 * ptr)
 // --------------------------------------------------------------------------
 __attribute__ ((noinline)) void SetupSGM(void)
 {
-    if (adam_mode) return;                          // ADAM has it's own setup handler
+    if (adam_mode) return;                          // ADAM has its own setup handler
     if (myConfig.cvMode == CV_MODE_NOSGM) return;   // There are a couple of games were we don't want to enable the SGM. Most notably Super DK won't play with SGM emulation.
 
     sgm_enable = (Port53 & 0x01) ? true:false;  // Port 53 lowest bit dictates SGM memory support enable.
-
-    // ----------------------------------------------------------------
-    // The first time we enable the SGM expansion RAM, we clear it out
-    // ----------------------------------------------------------------
-    if (sgm_enable && bFirstSGMEnable)
-    {
-        memset(RAM_Memory+0x2000, 0x00, 0x6000);
-        bFirstSGMEnable = false;
-    }
 
     // ------------------------------------------------------
     // And Port 60 will tell us if we want to swap out the
@@ -831,13 +822,21 @@ __attribute__ ((noinline)) void SetupSGM(void)
     }
     else
     {
-      sgm_enable = true;    // Force this if someone disabled the BIOS.... based on reading some comments in the AA forum...
       if (sgm_low_addr != 0x0000)
       {
-          MemoryMap[0] = RAM_Memory + 0x0000;
           sgm_low_addr = 0x0000;
+          MemoryMap[0] = RAM_Memory + 0x0000;
       }
     }
+    
+    // ----------------------------------------------------------------
+    // The first time we enable the SGM expansion RAM, we clear it out
+    // ----------------------------------------------------------------
+    if (sgm_enable && bFirstSGMEnable)
+    {
+        memset(RAM_Memory+0x2000, 0x00, 0x6000);
+        bFirstSGMEnable = false;
+    }    
 }
 
 

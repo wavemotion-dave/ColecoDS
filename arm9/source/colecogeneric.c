@@ -1420,8 +1420,18 @@ void SetDefaultGameConfig(void)
 	// --------------------------------------------------------------------------
 	if (file_crc == 0xef25af90) myConfig.cvMode = CV_MODE_NOSGM; // Super DK Prototype - ignore any SGM/Adam Writes (this disables SGM)
 	if (file_crc == 0xc2e7f0e0) myConfig.cvMode = CV_MODE_NOSGM; // Super DK JR Prototype - ignore any SGM/Adam Writes (this disables SGM)
+    if (file_crc == 0x846faf14) myConfig.cvMode = CV_MODE_NOSGM; // Cavern Fighter - ignore any SGM/Adam Writes (this disables SGM)    
     
     if (file_crc == 0x987491ce) myConfig.memWipe = 1;    // The Heist for Colecovision is touchy about RAM (known issue with game) so force clear
+
+	// --------------------------------------------------------------------------
+	// And a few games that are known to use the Super Cart boards...
+	// --------------------------------------------------------------------------
+    if (file_crc == 0x30d337e4) myConfig.cvMode = CV_MODE_SUPERCART;
+    if (file_crc == 0x6831ad48) myConfig.cvMode = CV_MODE_SUPERCART;
+    if (file_crc == 0xbdae4248) myConfig.cvMode = CV_MODE_SUPERCART;
+    if (file_crc == 0x80586cc5) myConfig.cvMode = CV_MODE_SUPERCART;
+    if (file_crc == 0x6c8113c1) myConfig.cvMode = CV_MODE_SUPERCART;
    
     // -----------------------------------------------------------
     // If we are DS-PHAT or DS-LITE running on slower CPU, we 
