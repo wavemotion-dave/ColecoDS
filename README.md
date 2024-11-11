@@ -410,6 +410,9 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.2a: 11-Nov-2024 by wavemotion-dave
+* Added support for the 31-in-1 and 63-in-1 multicarts.
+
 V10.2: 05-Nov-2024 by wavemotion-dave
 * Fix for SGM enable/disable that renders The Castle and Castle Excellent playable.
 * Auto-disable SGM for Cavern Fighter to render it playable.

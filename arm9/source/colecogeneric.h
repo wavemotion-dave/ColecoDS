@@ -38,6 +38,7 @@
 #define CV_MODE_NOSGM               2
 #define CV_MODE_ACTCART             3
 #define CV_MODE_SUPERCART           4
+#define CV_MODE_31IN1               5
 
 
 #define OVL_GENERIC                 0

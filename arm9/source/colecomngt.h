@@ -77,6 +77,7 @@ extern u8 sRamAtE000_OK;
 extern u8 bMagicMegaCart;
 extern u8 bActivisionPCB;
 extern u8 bSuperGameCart;
+extern u8 b31_in_1;
 extern u8 msx_sram_enabled;
 extern u8 sgm_enable;
 extern u8 AY_Enable;
