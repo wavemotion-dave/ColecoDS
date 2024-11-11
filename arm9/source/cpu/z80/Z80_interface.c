@@ -45,6 +45,21 @@ ITCM_CODE void MegaCartBankSwitch(u8 bank)
     }
 }
 
+// ----------------------------------------------------------------------
+// Here we might have a very large ROM and we don't expect much swapping
+// so we will just re-read the file and pull in the correct 32K bank...
+// ----------------------------------------------------------------------
+void Mega31in1BankSwitch(u8 bank)
+{
+    FILE* handle = fopen(disk_last_file[0], "rb");
+    if (handle != NULL) 
+    {
+        fseek(handle, (0x8000 * (u32)bank), SEEK_SET);          // Seek to the 32K chunk we want to read in
+        fread((void*) RAM_Memory+0x8000, 0x8000, 1, handle);    // Read 32K from that paged block
+        fclose(handle);
+    }
+}
+
 // ----------------------------------------------------------------
 // 8-bit read with bankswitch support... slower, so we only use it 
 // for 'complicated' memory fetches. Otherwise a more direct read 
@@ -79,6 +94,13 @@ ITCM_CODE u8 cpu_readmem16_banked(u16 address)
       {
           // Handle Super Game Cart
           return SuperGameCartRead(address);                
+      }
+      else if (b31_in_1) // Handle 31-in-1 Hot Spots
+      {
+          if (address >= 0xFFC0)
+          {
+              Mega31in1BankSwitch(address & romBankMask);
+          }
       }
       else if (msx_sram_at_8000) // Don't need to check msx_mode as this can only be true in that mode
       {

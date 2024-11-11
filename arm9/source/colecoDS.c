@@ -395,7 +395,7 @@ void SoundUnPause(void)
 // of FluBBa, we've swiched over to the maxmod sound core which performs much better.
 // --------------------------------------------------------------------------------------------
 #define sample_rate  (27965)    // To match the driver in sn76496 - this is good enough quality for the DS
-#define buffer_size  (512+12)     // Enough buffer that we don't have to fill it too often
+#define buffer_size  (512+16)   // Enough buffer that we don't have to fill it too often. Must be multiple of 16.
 
 mm_ds_system sys   __attribute__((section(".dtcm")));
 mm_stream myStream __attribute__((section(".dtcm")));
@@ -517,7 +517,7 @@ void setupStream(void)
   myStream.sampling_rate  = sample_rate;            // sampling rate = (27965)
   myStream.buffer_length  = buffer_size;            // buffer length = (512+16)
   myStream.callback       = OurSoundMixer;          // set callback function
-  myStream.format         = MM_STREAM_16BIT_STEREO;   // format = mono 16-bit
+  myStream.format         = MM_STREAM_16BIT_STEREO; // format = stereo 16-bit
   myStream.timer          = MM_TIMER0;              // use hardware timer 0
   myStream.manual         = false;                  // use automatic filling
   mmStreamOpen(&myStream);

@@ -1163,22 +1163,6 @@ void SaveConfig(bool bShow)
     }
 }
 
-void MapPlayer2(void)
-{
-    myConfig.keymap[0]   = 20;    // NDS D-Pad mapped to CV Joystick UP
-    myConfig.keymap[1]   = 21;    // NDS D-Pad mapped to CV Joystick DOWN
-    myConfig.keymap[2]   = 22;    // NDS D-Pad mapped to CV Joystick LEFT
-    myConfig.keymap[3]   = 23;    // NDS D-Pad mapped to CV Joystick RIGHT
-    myConfig.keymap[4]   = 24;    // NDS A Button mapped to CV Button 1 (Yellow / Left Button)
-    myConfig.keymap[5]   = 25;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
-    myConfig.keymap[6]   = 26;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
-    myConfig.keymap[7]   = 27;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
-    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
-    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
-    myConfig.keymap[10]  = 28;    // NDS Start  mapped to Keypad #1
-    myConfig.keymap[11]  = 29;    // NDS Select mapped to Keypad #2
-}
-
 void MapPlayer1(void)
 {
     myConfig.keymap[0]   = 0;    // NDS D-Pad mapped to CV Joystick UP
@@ -1193,6 +1177,22 @@ void MapPlayer1(void)
     myConfig.keymap[9]   = 80;   // NDS L      mapped to SHIFT
     myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
     myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
+}
+
+void MapPlayer2(void)
+{
+    myConfig.keymap[0]   = 20;    // NDS D-Pad mapped to CV Joystick UP
+    myConfig.keymap[1]   = 21;    // NDS D-Pad mapped to CV Joystick DOWN
+    myConfig.keymap[2]   = 22;    // NDS D-Pad mapped to CV Joystick LEFT
+    myConfig.keymap[3]   = 23;    // NDS D-Pad mapped to CV Joystick RIGHT
+    myConfig.keymap[4]   = 24;    // NDS A Button mapped to CV Button 1 (Yellow / Left Button)
+    myConfig.keymap[5]   = 25;    // NDS B Button mapped to CV Button 2 (Red / Right Button)
+    myConfig.keymap[6]   = 26;    // NDS X Button mapped to CV Button 3 (Purple / Super Action)
+    myConfig.keymap[7]   = 27;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
+    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
+    myConfig.keymap[10]  = 28;    // NDS Start  mapped to Keypad #1
+    myConfig.keymap[11]  = 29;    // NDS Select mapped to Keypad #2
 }
 
 void MapQAOP(void)
@@ -1325,7 +1325,6 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x6af19e75) myConfig.maxSprites  = 1;  // Adventures in the Park    
     if (file_crc == 0xbc8320a0) myConfig.maxSprites  = 1;  // Uridium 
     
-    
     // ----------------------------------------------------------------------------------
     // Set some of the common games to use their proper Colecovision Graphical Overlays
     // ----------------------------------------------------------------------------------
@@ -1432,6 +1431,12 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xbdae4248) myConfig.cvMode = CV_MODE_SUPERCART;
     if (file_crc == 0x80586cc5) myConfig.cvMode = CV_MODE_SUPERCART;
     if (file_crc == 0x6c8113c1) myConfig.cvMode = CV_MODE_SUPERCART;
+    
+    // -----------------------------------------------------------
+    // And two carts that are multicarts for the Colecovision...
+    // -----------------------------------------------------------
+    if (file_crc == 0x3f4ebe58) myConfig.cvMode = CV_MODE_31IN1;        // 31 in 1 multicart
+    if (file_crc == 0xd821cad4) myConfig.cvMode = CV_MODE_31IN1;        // 63 in 1 multicart
    
     // -----------------------------------------------------------
     // If we are DS-PHAT or DS-LITE running on slower CPU, we 
@@ -1451,14 +1456,20 @@ void SetDefaultGameConfig(void)
             idx++;
         }
         
+        // ---------------------------------------------------------------------
+        // Set the spinner configuration automatically for games that want it.
+        // ---------------------------------------------------------------------
         myConfig.spinSpeed = 5;                                                 // Turn off Spinner... except for these games
-        if (file_crc == 0x53d2651c)             myConfig.spinSpeed = 0;         // Slither
-        if (file_crc == 0xbd6ab02a)             myConfig.spinSpeed = 0;         // Turbo
-        if (file_crc == 0xd0110137)             myConfig.spinSpeed = 0;         // Front Line
-        if (file_crc == 0x56c358a6)             myConfig.spinSpeed = 0;         // Destructor
-        if (file_crc == 0x70142655)             myConfig.spinSpeed = 0;         // Victory
+        if (file_crc == 0x53d2651c)                 myConfig.spinSpeed = 0;     // Slither
+        if (file_crc == 0xbd6ab02a)                 myConfig.spinSpeed = 0;     // Turbo
+        if (file_crc == 0xd0110137)                 myConfig.spinSpeed = 0;     // Front Line
+        if (file_crc == 0x56c358a6)                 myConfig.spinSpeed = 0;     // Destructor
+        if (file_crc == 0x70142655)                 myConfig.spinSpeed = 0;     // Victory    
     }
-    
+
+    // --------------------------------------------------------------------
+    // Set various keyboard/keypad overlays for various emulated modes...
+    // --------------------------------------------------------------------
     if (sg1000_mode == 2)                       myConfig.overlay = 1;  // SC-3000 uses the full keyboard
     if (sg1000_mode == 2)                       myConfig.vertSync= 0;  // SC-3000 does not use vertical sync
     if (msx_mode == 1)                          myConfig.overlay = (myGlobalConfig.msxCartOverlay ? 1:0);  // MSX cart-based games follows the global default
@@ -1500,7 +1511,6 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xadb11067)                 myConfig.overlay = 1; // DIAG DEMO
     if (file_crc == 0xc2ba6a99)                 myConfig.overlay = 1; // WERBENE
     if (file_crc == 0xf8383d33)                 myConfig.overlay = 1; // MUSIC MAKER
-    
     
     // ---------------------------------------------------------------
     // Check for CP/M disks which want memory and full keyboard.
@@ -1580,10 +1590,11 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO2 needs diagonals    
     if (file_crc == 0x154702b2)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGS2 needs diagonals    
     if (file_crc == 0x71600e71)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO  needs diagonals    
-    
     if (file_crc == 0xf9934809)                 myConfig.dpad = DPAD_DIAGONALS;  // Reveal needs diagonals    
     
+    // ----------------------------------------------------------
     // Sort out a handful of games that are clearly PAL or NTSC
+    // ----------------------------------------------------------
     if (file_crc == 0x0084b239)                 myConfig.isPAL = 1;     // Survivors Multi-Cart is PAL
     if (file_crc == 0x76a3d2e2)                 myConfig.isPAL = 1;     // Survivors MEGA-Cart is PAL
     
@@ -1601,9 +1612,9 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xca2cd257)                 myConfig.isPAL   = 1;   // Sord M5 Reversi is PAL
 
 
-    // -------------------------------------------------------------------
-    // Some special cart types - for known Activision PCB and Super Carts
-    // -------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // Some special cart types - for known Activision PCB carts...
+    // ------------------------------------------------------------
     if (file_crc == 0xdddd1396)
     {
         myConfig.cvMode = CV_MODE_ACTCART;  // Black Onyx is Activision PCB
@@ -1735,7 +1746,7 @@ const struct options_t Option_Table[3][20] =
         {"MSX BIOS",       {"C-BIOS 64K", "MSX.ROM 64K", "CF2700.ROM 64K", "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7.ROM  8K"},                                 &myConfig.msxBios,    8},
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
-        {"COLECO MODE",    {"NORMAL","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART"},                                                                                                  &myConfig.cvMode, 5},
+        {"COLECO MODE",    {"NORMAL","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART", "31 IN 1"},                                                                                       &myConfig.cvMode,     6},
         {"COLECO NVRAM",   {"128B", "256B", "512B", "1KB", "2KB", "4KB", "8KB", "16KB", "32KB", "NONE"},                                                                                        &myConfig.cvEESize,   10},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },

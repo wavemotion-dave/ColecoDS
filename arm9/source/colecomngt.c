@@ -95,6 +95,7 @@ u8 bMagicMegaCart __attribute__((section(".dtcm"))) = 0;      // Mega Carts supp
 u8 bActivisionPCB __attribute__((section(".dtcm"))) = 0;      // Activision PCB is 64K with EEPROM
 u8 bSuperGameCart __attribute__((section(".dtcm"))) = 0;      // Super Game Cart (aka MegaCart2)
 u8 sRamAtE000_OK  __attribute__((section(".dtcm"))) = 0;      // Lord of the Dungeon is the only game that needs this
+u8 b31_in_1       __attribute__((section(".dtcm"))) = 0;      // 31 in 1 carts are a breed unto themselves
 
 u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
 
@@ -581,6 +582,11 @@ u8 loadrom(const char *filename, u8 * ptr)
     int romSize = ftell(handle);
     sg1000_double_reset = false;
 
+    bMagicMegaCart = false;     // No Mega Cart to start
+    bActivisionPCB = 0;         // No Activision PCB
+    bSuperGameCart = 0;         // No Super Game Cart (aka MegaCart2)
+    b31_in_1 = 0;               // No 31-in-1 Cart
+
     // ----------------------------------------------------------------------
     // Look for the Survivors .sc Multicart  (2MB!) or .sc MegaCart (4MB!)
     // ----------------------------------------------------------------------
@@ -595,7 +601,20 @@ u8 loadrom(const char *filename, u8 * ptr)
         romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
         machine_mode = MODE_SG_1000;
-        return bOK;
+        return 1;
+    }
+    else if (myConfig.cvMode == CV_MODE_31IN1) // These are special 32K mappers for large 31-in-1 or 63-in-1 carts
+    {
+        b31_in_1 = 1;
+        fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
+        fread((void*) RAM_Memory+0x8000, 1, 0x8000, handle);  // Read 32K from that last block directly into the RAM buffer
+        fclose(handle);
+        strcpy(disk_last_file[0], filename);
+        strcpy(disk_last_path[0], initial_path);
+        romBankMask = (romSize == (1024 * 1024) ? 0x1F:0x3F);
+        bIsComplicatedRAM = true;
+        machine_mode = MODE_COLECO;
+        return 1;
     }
     else
     if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB - that's pretty huge...
@@ -605,10 +624,7 @@ u8 loadrom(const char *filename, u8 * ptr)
         fclose(handle);
 
         romBankMask = 0x00;         // No bank mask until proven otherwise
-        bMagicMegaCart = false;     // No Mega Cart to start
         mapperMask = 0x00;          // No MSX mapper mask
-        bActivisionPCB = 0;         // No Activision PCB
-        bSuperGameCart = 0;         // No Super Game Cart (aka MegaCart2)
 
         // The SordM5 has one game that needs patching to run...
         if (sordm5_mode)
@@ -773,7 +789,7 @@ u8 loadrom(const char *filename, u8 * ptr)
     // For some combinations, we have hotspots or other memory stuff that
     // needs to be more complicated than simply returning RAM_Memory[].
     // -------------------------------------------------------------------------
-    bIsComplicatedRAM = (bMagicMegaCart || bActivisionPCB || bSuperGameCart || adam_mode || msx_sram_enabled || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
+    bIsComplicatedRAM = (b31_in_1 || bMagicMegaCart || bActivisionPCB || bSuperGameCart || adam_mode || msx_sram_enabled || pv2000_mode) ? 1:0;  // Set to 1 if we have to do more than just simple memory read...
 
     // -----------------------------------------------------------------------
     // To speed up processing in the memory write functions, we accumulate
