@@ -304,6 +304,7 @@ extern void ResetColecovision(void);
 extern u32  creativision_run(void);
 extern void msx_patch_bios(void);
 extern bool isAdamDDP(u8 disk);
+extern void processDirectAudio(void);
 
 extern void debug_init();
 extern void debug_save();

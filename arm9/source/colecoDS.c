@@ -394,8 +394,8 @@ void SoundUnPause(void)
 // We were using the normal ARM7 sound core but it sounded "scratchy" and so with the help
 // of FluBBa, we've swiched over to the maxmod sound core which performs much better.
 // --------------------------------------------------------------------------------------------
-#define sample_rate  (27965)    // To match the driver in sn76496 - this is good enough quality for the DS
-#define buffer_size  (512+16)   // Enough buffer that we don't have to fill it too often. Must be multiple of 16.
+#define sample_rate         (27965)    // To match the driver in sn76496 - this is good enough quality for the DS
+#define buffer_size         (512+16)   // Enough buffer that we don't have to fill it too often. Must be multiple of 16.
 
 mm_ds_system sys   __attribute__((section(".dtcm")));
 mm_stream myStream __attribute__((section(".dtcm")));
@@ -403,12 +403,19 @@ mm_stream myStream __attribute__((section(".dtcm")));
 s16 mixbuf1[4096+64];      // When we have SN and AY sound we have to mix 3+3 channels
 s16 mixbuf2[4096+64];      // into a single output so we render to mix buffers first.
 
+#define WAVE_DIRECT_BUF_SIZE 4095
+u16 mixer_read=0;
+u16 mixer_write=0;
+s16 mixer[WAVE_DIRECT_BUF_SIZE+1];
+u8 wave_direct_skip=0;
+
 // -------------------------------------------------------------------------------------------
 // maxmod will call this routine when the buffer is half-empty and requests that
 // we fill the sound buffer with more samples. They will request 'len' samples and
 // we will fill exactly that many. If the sound is paused, we fill with 'mute' samples.
 // -------------------------------------------------------------------------------------------
 s16 last_sample __attribute__((section(".dtcm"))) = 0;
+int breather = 0;
 ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 {
     if (soundEmuPause)  // If paused, just "mix" in mute sound chip... all channels are OFF
@@ -418,6 +425,18 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         {
            *p++ = last_sample;      // To prevent pops and clicks... just keep outputting the last sample
         }
+    }
+    else if (myConfig.soundDriver)
+    {
+        s16 *p = (s16*)dest;
+        for (int i=0; i<len*2; i++)
+        {
+            if (breather) {breather--;}
+            if (mixer_read == mixer_write) {wave_direct_skip=0;processDirectAudio();}
+            *p++ = mixer[mixer_read];
+            mixer_read++; mixer_read &= WAVE_DIRECT_BUF_SIZE;
+        }
+        p--; last_sample = *p;
     }
     else
     {
@@ -492,7 +511,54 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
     }
 
     return  len;
-}    
+}
+
+
+u8 wave_direct_skip_table[256] = 
+{
+  1,0,1,1,1,1,0,1,     1,1,0,1,1,1,1,1,
+  1,1,0,1,1,1,0,1,     1,1,1,0,1,1,1,0,
+  1,1,1,0,1,1,1,1,     1,0,1,1,0,1,1,1,
+  1,1,1,1,0,1,1,1,     1,1,1,1,1,0,1,1,
+
+  1,1,0,1,1,0,1,1,     1,1,1,0,1,1,0,1,
+  1,1,1,1,1,1,0,1,     1,0,1,1,1,1,1,0,
+  1,1,1,1,1,1,1,0,     0,1,1,1,1,1,1,1,
+  0,1,1,1,1,1,1,1,     1,0,1,1,1,1,0,1,
+
+  1,0,1,1,1,0,1,1,     1,1,1,1,1,1,0,1,
+  1,1,1,1,1,1,0,1,     1,0,1,1,1,0,1,0,
+  1,1,1,1,1,1,1,0,     0,1,1,0,1,1,1,1,
+  0,1,1,1,1,0,1,1,     1,0,1,1,1,1,1,0,
+
+  1,0,1,1,1,1,1,1,     1,1,0,1,1,1,1,1,
+  1,1,0,1,1,1,1,1,     1,0,1,0,1,1,1,0,
+  1,1,1,0,1,1,1,1,     1,1,1,1,0,1,1,1,
+  1,1,1,1,0,1,1,1,     1,0,1,1,1,0,1,1,
+};
+    
+
+void processDirectAudio(void)
+{
+    int len = 2;
+    if (!wave_direct_skip_table[wave_direct_skip++]) len--;
+    ay38910Mixer(len*2, mixbuf1, &myAY);
+    sn76496Mixer(len*2, mixbuf2, &mySN);
+    if (breather) {return;}
+    s32 combined;
+    for (int i=0; i<len*2; i++)
+    {
+        // ------------------------------------------------------------------------
+        // We normalize the samples and mix them carefully to minimize clipping...
+        // ------------------------------------------------------------------------
+        combined = (mixbuf1[i]) + (mixbuf2[i]) + 32768;
+        if (combined >  32767) combined = 32767;
+        mixer[mixer_write] = (s16)combined;
+        mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
+        if (((mixer_write+1)&WAVE_DIRECT_BUF_SIZE) == mixer_read) {breather = 2048;}
+    }
+}
+
     
 // -------------------------------------------------------------------------------------------
 // Setup the maxmod audio stream - this will be a 16-bit Stereo PCM output at 55KHz which
@@ -514,7 +580,10 @@ void setupStream(void)
   //----------------------------------------------------------------
   //  open stream
   //----------------------------------------------------------------
-  myStream.sampling_rate  = sample_rate;            // sampling rate = (27965)
+  //----------------------------------------------------------------
+  //  open stream
+  //----------------------------------------------------------------
+  myStream.sampling_rate  = sample_rate;            // sample_rate for the CV
   myStream.buffer_length  = buffer_size;            // buffer length = (512+16)
   myStream.callback       = OurSoundMixer;          // set callback function
   myStream.format         = MM_STREAM_16BIT_STEREO; // format = stereo 16-bit
@@ -2995,7 +3064,7 @@ void colecoDS_main(void)
 
   colecoSetPal();
   colecoRun();
-
+  
   // Frame-to-frame timing...
   TIMER1_CR = 0;
   TIMER1_DATA=0;

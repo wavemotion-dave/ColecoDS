@@ -1306,7 +1306,7 @@ void SetDefaultGameConfig(void)
     myConfig.keyMute     = 0;                           // Default is no mute (key click heard)
     myConfig.ein_ctc3    = 0;                           // Default is normal CTC3 handling for Einstein (no fudge factor)
     myConfig.cvMode      = CV_MODE_NORMAL;              // Default is normal detect of Coleco Cart with possible SGM 
-    myConfig.reserved2   = 0;    
+    myConfig.soundDriver = SND_DRV_NORMAL;              // Default is normal sound driver (not Wave Direct)
     myConfig.reserved3   = 0;    
     myConfig.reserved4   = 0;    
     myConfig.reserved5   = 0;    
@@ -1438,6 +1438,16 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x3f4ebe58) myConfig.cvMode = CV_MODE_31IN1;        // 31 in 1 multicart
     if (file_crc == 0xd821cad4) myConfig.cvMode = CV_MODE_31IN1;        // 63 in 1 multicart
    
+    // -----------------------------------------------------------------------------
+    // A few carts want the 'Wave Direct' sound so they can handle digitized speech
+    // -----------------------------------------------------------------------------
+    if (file_crc == 0x4591f393) myConfig.soundDriver = SND_DRV_WAVE;        // Sewer Sam
+    if (file_crc == 0xac92862d) myConfig.soundDriver = SND_DRV_WAVE;        // Squish'em Featuring Sam
+    if (file_crc == 0xd9207f30) myConfig.soundDriver = SND_DRV_WAVE;        // Wizard of Wor SGM
+    if (file_crc == 0x91326103) myConfig.soundDriver = SND_DRV_WAVE;        // Bosconian SGM
+    if (file_crc == 0x6328ffc1) myConfig.soundDriver = SND_DRV_WAVE;        // Berzerk (2022)
+    if (file_crc == 0xa7a8d25e) myConfig.soundDriver = SND_DRV_WAVE;        // Vanguard    
+    
     // -----------------------------------------------------------
     // If we are DS-PHAT or DS-LITE running on slower CPU, we 
     // need to help the processor out a bit by turning off RAM
@@ -1754,6 +1764,7 @@ const struct options_t Option_Table[3][20] =
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
         {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
+        {"SOUND DRIVER",   {"NORMAL", "WAVE DIRECT"},                                                                                                                                           &myConfig.soundDriver,2},
         {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
