@@ -258,7 +258,7 @@ void BufferKeys(char *str)
 // Called every frame... so 1/50th or 1/60th of a second. We will virtually 'press' and
 // hold the key for roughly a tenth of a second and be smart about shift keys...
 // ---------------------------------------------------------------------------------------
-ITCM_CODE void ProcessBufferedKeys(void)
+void ProcessBufferedKeys(void)
 {
     static u8 next_dampen_time = 5;
     static u8 dampen = 0;

@@ -788,6 +788,11 @@ ITCM_CODE byte Loop9918(void)
 {
   extern void colecoUpdateScreen(void);
   register byte bIRQ = 0;  // No IRQ yet
+  
+  if (myConfig.soundDriver)
+  {
+      processDirectAudio();
+  }
 
   /* Increment scanline */
   if (++CurLine >= tms_num_lines) CurLine=0;

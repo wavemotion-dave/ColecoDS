@@ -57,6 +57,10 @@
 #define OVL_BLACKJACK               13
 #define OVL_WARROOM                 14
 
+#define SND_DRV_NORMAL              0
+#define SND_DRV_WAVE                1
+
+
 typedef struct {
   char szName[MAX_ROM_NAME+1];
   u8 uType;
@@ -119,7 +123,7 @@ struct __attribute__((__packed__)) Config_t
     u8  keyMute;
     u8  ein_ctc3;
     u8  cvMode;
-    u8  reserved2;
+    u8  soundDriver;
     u8  reserved3;
     u8  reserved4;
     u8  reserved5;
