@@ -409,6 +409,34 @@ u16 mixer_write=0;
 s16 mixer[WAVE_DIRECT_BUF_SIZE+1];
 u8 wave_direct_skip=0;
 
+// -------------------------------------------------------------------------
+// For direct sampling, this tells us for a given scanline how many samples
+// to process... this gets us to the magic sample_rate. Crude but effective.
+// -------------------------------------------------------------------------
+u8 wave_direct_sample_table[256] = 
+{
+  2,1,2,2,2,2,1,2,     2,2,1,2,2,2,2,2,
+  2,2,1,2,2,2,1,2,     2,2,2,1,2,2,2,1,
+  2,2,2,1,2,2,2,2,     2,1,2,2,1,2,2,2,
+  2,2,2,2,1,2,2,2,     2,2,2,2,2,1,2,2,
+
+  2,2,1,2,2,1,2,2,     2,2,2,1,2,2,1,2,
+  2,2,2,2,2,2,1,2,     2,1,2,2,2,2,2,1,
+  2,2,2,2,2,2,2,1,     1,2,2,2,2,2,2,2,
+  1,2,2,2,2,2,2,2,     2,1,2,2,2,2,1,2,
+
+  2,1,2,2,2,1,2,2,     2,2,2,2,2,2,1,2,
+  2,2,2,2,2,2,1,2,     2,1,2,2,2,1,2,1,
+  2,2,2,2,2,2,2,1,     1,2,2,1,2,2,2,2,
+  1,2,2,2,2,1,2,2,     2,1,2,2,2,2,2,1,
+
+  2,1,2,2,2,2,2,2,     2,2,1,2,2,2,1,2,
+  2,2,1,2,2,2,2,2,     2,1,2,1,2,2,2,1,
+  2,2,2,1,2,2,2,2,     2,2,2,2,1,2,2,2,
+  2,2,2,2,1,2,2,2,     2,1,2,2,2,1,2,2,
+};
+
+
 // -------------------------------------------------------------------------------------------
 // maxmod will call this routine when the buffer is half-empty and requests that
 // we fill the sound buffer with more samples. They will request 'len' samples and
@@ -514,34 +542,15 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
 }
 
 
-u8 wave_direct_skip_table[256] = 
-{
-  1,0,1,1,1,1,0,1,     1,1,0,1,1,1,1,1,
-  1,1,0,1,1,1,0,1,     1,1,1,0,1,1,1,0,
-  1,1,1,0,1,1,1,1,     1,0,1,1,0,1,1,1,
-  1,1,1,1,0,1,1,1,     1,1,1,1,1,0,1,1,
-
-  1,1,0,1,1,0,1,1,     1,1,1,0,1,1,0,1,
-  1,1,1,1,1,1,0,1,     1,0,1,1,1,1,1,0,
-  1,1,1,1,1,1,1,0,     0,1,1,1,1,1,1,1,
-  0,1,1,1,1,1,1,1,     1,0,1,1,1,1,0,1,
-
-  1,0,1,1,1,0,1,1,     1,1,1,1,1,1,0,1,
-  1,1,1,1,1,1,0,1,     1,0,1,1,1,0,1,0,
-  1,1,1,1,1,1,1,0,     0,1,1,0,1,1,1,1,
-  0,1,1,1,1,0,1,1,     1,0,1,1,1,1,1,0,
-
-  1,0,1,1,1,1,1,1,     1,1,0,1,1,1,1,1,
-  1,1,0,1,1,1,1,1,     1,0,1,0,1,1,1,0,
-  1,1,1,0,1,1,1,1,     1,1,1,1,0,1,1,1,
-  1,1,1,1,0,1,1,1,     1,0,1,1,1,0,1,1,
-};
-    
-
+// -------------------------------------------------------------------------------------------------
+// This is called when we are configured for 'Wave Direct' and will process samples to synchronize
+// with the scanline processing. This is not as smooth as the normal sound driver and takes more
+// CPU power but will help render sound those few games that utilize digitize speech techniques.
+// -------------------------------------------------------------------------------------------------
 void processDirectAudio(void)
 {
-    int len = 2;
-    if (!wave_direct_skip_table[wave_direct_skip++]) len--;
+    int len = wave_direct_sample_table[wave_direct_skip++];
+
     ay38910Mixer(len*2, mixbuf1, &myAY);
     sn76496Mixer(len*2, mixbuf2, &mySN);
     if (breather) {return;}
@@ -580,10 +589,7 @@ void setupStream(void)
   //----------------------------------------------------------------
   //  open stream
   //----------------------------------------------------------------
-  //----------------------------------------------------------------
-  //  open stream
-  //----------------------------------------------------------------
-  myStream.sampling_rate  = sample_rate;            // sample_rate for the CV
+  myStream.sampling_rate  = sample_rate;            // sample_rate for the CV to match the SN/AY drivers
   myStream.buffer_length  = buffer_size;            // buffer length = (512+16)
   myStream.callback       = OurSoundMixer;          // set callback function
   myStream.format         = MM_STREAM_16BIT_STEREO; // format = stereo 16-bit

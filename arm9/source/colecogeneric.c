@@ -1447,6 +1447,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x91326103) myConfig.soundDriver = SND_DRV_WAVE;        // Bosconian SGM
     if (file_crc == 0x6328ffc1) myConfig.soundDriver = SND_DRV_WAVE;        // Berzerk (2022)
     if (file_crc == 0xa7a8d25e) myConfig.soundDriver = SND_DRV_WAVE;        // Vanguard    
+    if (file_crc == 0x2e4c28e2) myConfig.soundDriver = SND_DRV_WAVE;        // Side Trak
+    if (file_crc == 0x69e3c673) myConfig.soundDriver = SND_DRV_WAVE;        // Jeepers Creepers - 30th Anniversary Edition    
     
     // -----------------------------------------------------------
     // If we are DS-PHAT or DS-LITE running on slower CPU, we 
