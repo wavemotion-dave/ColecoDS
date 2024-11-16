@@ -99,7 +99,6 @@ Known Issues and Limitations:
 -----------------------
 * No more than 1500 files per directory - split ROM files up as needed.
 * Path and filename to a ROM can't be longer than 160 characters. Keep them on the shorter side.
-* Games that utilize voice samples (Squish Em Sam, Wizard of Wor, etc) will not play the speech due to sound emulation limitations.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
 
@@ -410,8 +409,9 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V10.2a: 11-Nov-2024 by wavemotion-dave
+V10.3: 15-Nov-2024 by wavemotion-dave
 * Added support for the 31-in-1 and 63-in-1 multicarts.
+* Added support for 'Wave Direct' sound driver to render digitized speech in games such as Sewer Sam, Squish-Em, Wizard of Wor, etc.
 
 V10.2: 05-Nov-2024 by wavemotion-dave
 * Fix for SGM enable/disable that renders The Castle and Castle Excellent playable.
