@@ -1447,6 +1447,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0x91326103) myConfig.soundDriver = SND_DRV_WAVE;        // Bosconian SGM
     if (file_crc == 0x6328ffc1) myConfig.soundDriver = SND_DRV_WAVE;        // Berzerk (2022)
     if (file_crc == 0xa7a8d25e) myConfig.soundDriver = SND_DRV_WAVE;        // Vanguard    
+    if (file_crc == 0x2e4c28e2) myConfig.soundDriver = SND_DRV_WAVE;        // Side Trak
+    if (file_crc == 0x69e3c673) myConfig.soundDriver = SND_DRV_WAVE;        // Jeepers Creepers - 30th Anniversary Edition    
     
     // -----------------------------------------------------------
     // If we are DS-PHAT or DS-LITE running on slower CPU, we 
@@ -1647,7 +1649,8 @@ void SetDefaultGameConfig(void)
     
     if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
     if (file_crc == 0x011899cf)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max (32K version)
-
+    
+    if (file_crc == 0x532f61ba)                 myConfig.vertSync = 0;      // Colecovision Q-Bert will struggle with vertical sync on stage clear
     if (myConfig.isPAL)                         myConfig.vertSync = 0;      // If we are PAL, we can't sync to the DS 60Hz
     if (myConfig.gameSpeed)                     myConfig.vertSync = 0;      // If game speed isn't 100%, we can't sync to the DS 60Hz
 }
