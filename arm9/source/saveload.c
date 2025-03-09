@@ -28,7 +28,7 @@
 #include "fdc.h"
 #include "printf.h"
 
-#define COLECODS_SAVE_VER   0x001E        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER   0x001F        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 
 // -----------------------------------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -1850,12 +1850,23 @@ void MSX_InitialMemoryLayout(u32 romSize)
             else
                 mapperMask = (romSize <= (256 * 1024)) ? 0x1F:0x3F;
         }        
-        else // Must be 1024k... 
+        else if (romSize <= (1024 * 1024))
         {
             if (mapperType == ASC16 || mapperType == ZEN16)
                 mapperMask = 0x3F;
             else 
                 mapperMask = 0x7F;
+        }
+        else if (romSize <= (2048 * 1024))
+        {
+            if (mapperType == ASC16 || mapperType == ZEN16)
+                mapperMask = 0x7F;
+            else 
+                mapperMask = 0xFF;
+        }
+        else // Must be 4096K...  really only the 16K banking works here...
+        {
+            mapperMask = 0xFF;
         }
 
         if (msx_sram_enabled) mapperMask = 0x3F;        // Override for SRAM which uses upper bits (4 or 5) to select

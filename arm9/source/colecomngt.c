@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -33,6 +33,7 @@
 // ------------------------------------------------
 u8 adam_ext_ram_used   = 0;
 u8 sg1000_double_reset = false;
+u8 bSuperSimplifiedMemory = 0;
 
 // -----------------------------------------------------------------------
 // Used by various systems such as the ADAM and MSX to point to
@@ -66,9 +67,10 @@ u8 bIsComplicatedRAM __attribute__((section(".dtcm"))) = 0;   // Set to 1 if we 
 
 u8 sg1000_sms_mapper __attribute__((section(".dtcm"))) = 0;   // Set to 1 if this is an SG-1000 game needing the SMS mapper
 
-u8 romBankMask    __attribute__((section(".dtcm"))) = 0x00;
-u8 sgm_enable     __attribute__((section(".dtcm"))) = false;
-u16 sgm_low_addr  __attribute__((section(".dtcm"))) = 0x2000;
+u8 romBankMask          __attribute__((section(".dtcm"))) = 0x00;
+u8 sgm_enable           __attribute__((section(".dtcm"))) = false;
+u16 sgm_low_addr        __attribute__((section(".dtcm"))) = 0x2000;
+u16 simplifed_low_addr  __attribute__((section(".dtcm"))) = 0x6000;
 
 u8 Port53         __attribute__((section(".dtcm"))) = 0x00;
 u8 Port60         __attribute__((section(".dtcm"))) = 0x0F;
@@ -138,6 +140,7 @@ void sgm_reset(void)
 {
     sgm_enable = false;            // Default to no SGM until enabled
     sgm_low_addr = 0x2000;         // And the first 8K is Coleco BIOS
+    simplifed_low_addr = 0x6000;   // Normal CV RAM here
     if (!msx_mode && !svi_mode && !einstein_mode)
     {
         AY_Enable = false;         // Default to no AY use until accessed
@@ -566,6 +569,7 @@ void getfile_crc(const char *filename)
 u8 loadrom(const char *filename, u8 * ptr)
 {
   u8 bOK = 0;
+  int romSize = 0;
 
   DSPrint(0,0,6, "LOADING...");
 
@@ -579,7 +583,7 @@ u8 loadrom(const char *filename, u8 * ptr)
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
 
     fseek(handle, 0, SEEK_END);                             // Figure out how big the file is
-    int romSize = ftell(handle);
+    romSize = ftell(handle);
     sg1000_double_reset = false;
 
     bMagicMegaCart = false;     // No Mega Cart to start
@@ -617,7 +621,7 @@ u8 loadrom(const char *filename, u8 * ptr)
         return 1;
     }
     else
-    if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB - that's pretty huge...
+    if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB/4MB - that's pretty huge...
     {
         fseek(handle, 0, SEEK_SET);
         fread((void*) ROM_Memory, romSize, 1, handle);
@@ -772,13 +776,16 @@ u8 loadrom(const char *filename, u8 * ptr)
             {
                 bMagicMegaCart = 1;
                 memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
+                MegaCartBankSwap(0);                              // Copy Bank 0 into RAM memory in case we're using the optimized driver
                 MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
 
-                if      (romSize <= (64  * 1024)) romBankMask = 0x03;
-                else if (romSize <= (128 * 1024)) romBankMask = 0x07;
-                else if (romSize <= (256 * 1024)) romBankMask = 0x0F;
-                else if (romSize <= (512 * 1024)) romBankMask = 0x1F;
-                else                              romBankMask = 0x3F;    // Up to 1024KB... huge!
+                if      (romSize <= (64  * 1024))  romBankMask = 0x03;
+                else if (romSize <= (128 * 1024))  romBankMask = 0x07;
+                else if (romSize <= (256 * 1024))  romBankMask = 0x0F;
+                else if (romSize <= (512 * 1024))  romBankMask = 0x1F;
+                else if (romSize <= (1024 * 1024)) romBankMask = 0x3F;
+                else if (romSize <= (2048 * 1024)) romBankMask = 0x7F;
+                else                               romBankMask = 0xFF;    // Up to 4096KB... huge!
             }
         }
         bOK = 1;
@@ -807,6 +814,73 @@ u8 loadrom(const char *filename, u8 * ptr)
     else if (creativision_mode) machine_mode = MODE_CREATIVISION;
     else                        machine_mode = MODE_COLECO;
   }
+  
+  // -------------------------------------------------------------
+  // If we are a DS-Lite/Phat, we can swap in a simplified memory 
+  // driver to help speedup games that are 32K or less...
+  // -------------------------------------------------------------
+  bSuperSimplifiedMemory = 0;
+  if (!isDSiMode() && (machine_mode == MODE_COLECO))
+  {
+      u8 *fastROM = (u8*) (0x06860000);
+      memcpy(fastROM, ROM_Memory, (256 * 1024));
+      
+      // Turn on the optimized Colecovision CPU driver for carts less than 32K by default
+      bSuperSimplifiedMemory = ((!bActivisionPCB && !bSuperGameCart && !adam_mode && (romSize <= (32*1024))) ? 1:0);
+      
+    
+      // And then selectively turn on the optimized driver for some of the larger games...       
+      if (file_crc == 0x851efe57) bSuperSimplifiedMemory = 1;  // 1942
+      if (file_crc == 0x91636750) bSuperSimplifiedMemory = 1;  // Adventure Island
+      if (file_crc == 0x6068db13) bSuperSimplifiedMemory = 1;  // Alpharoid SGM
+      if (file_crc == 0xc4f1a85a) bSuperSimplifiedMemory = 1;  // Buck Rogers Super Game
+      if (file_crc == 0x257a2565) bSuperSimplifiedMemory = 1;  // Bull And Mighty's Critical Moment
+      if (file_crc == 0x55b36d53) bSuperSimplifiedMemory = 1;  // Children of the Night SGM
+      if (file_crc == 0x77900970) bSuperSimplifiedMemory = 1;  // Deep Dungeon Adventure
+      if (file_crc == 0x3b434ec2) bSuperSimplifiedMemory = 1;  // Donkey Kong 3
+      if (file_crc == 0x45345709) bSuperSimplifiedMemory = 1;  // Donkey Kong Arcade SGM
+      if (file_crc == 0x12ceee08) bSuperSimplifiedMemory = 1;  // Dragons Lair SGM
+      if (file_crc == 0x2488ca1a) bSuperSimplifiedMemory = 1;  // Eggerland Mystery SGM
+      if (file_crc == 0x652d533e) bSuperSimplifiedMemory = 1;  // Gauntlet
+      if (file_crc == 0xfc935cdd) bSuperSimplifiedMemory = 1;  // Ghostbusters
+      if (file_crc == 0xd55bbb66) bSuperSimplifiedMemory = 1;  // Ghost
+      if (file_crc == 0x01581fa8) bSuperSimplifiedMemory = 1;  // Goonies
+      if (file_crc == 0x2b0bb712) bSuperSimplifiedMemory = 1;  // Guardic SGM
+      if (file_crc == 0x083d13ee) bSuperSimplifiedMemory = 1;  // Gun Fright SGM
+      if (file_crc == 0x01cacd0d) bSuperSimplifiedMemory = 1;  // Knightmare SGM
+      if (file_crc == 0xa078f273) bSuperSimplifiedMemory = 1;  // Kung-Fu Master
+      if (file_crc == 0xb11a6d23) bSuperSimplifiedMemory = 1;  // L'Abbaye des Morts
+      if (file_crc == 0x53da40bc) bSuperSimplifiedMemory = 1;  // Mecha 8      
+      if (file_crc == 0x318d6bcb) bSuperSimplifiedMemory = 1;  // Mobile Planet Styllus
+      if (file_crc == 0x13d53b3c) bSuperSimplifiedMemory = 1;  // Mr. Do! Run Run SGM
+      if (file_crc == 0xd3ea5876) bSuperSimplifiedMemory = 1;  // Mr. Do's Wild Ride
+      if (file_crc == 0x4657bb8c) bSuperSimplifiedMemory = 1;  // Nether Dungeon
+      if (file_crc == 0xf3ccacb3) bSuperSimplifiedMemory = 1;  // Pac-Man Collection
+      if (file_crc == 0xf998b515) bSuperSimplifiedMemory = 1;  // Prisoner of War SGM
+      if (file_crc == 0xee530ad2) bSuperSimplifiedMemory = 1;  // Qbiqs SGM
+      if (file_crc == 0xb6df4148) bSuperSimplifiedMemory = 1;  // Quatre
+      if (file_crc == 0xb9788f47) bSuperSimplifiedMemory = 1;  // Raid On Bungeling Bay
+      if (file_crc == 0xb753a8ca) bSuperSimplifiedMemory = 1;  // Secret of the Moai SGM
+      if (file_crc == 0xbb0f6678) bSuperSimplifiedMemory = 1;  // Space Shuttle
+      if (file_crc == 0x75f84889) bSuperSimplifiedMemory = 1;  // Spelunker SGM
+      if (file_crc == 0x3e7d0520) bSuperSimplifiedMemory = 1;  // Star Soldier SGM
+      if (file_crc == 0x342c73ca) bSuperSimplifiedMemory = 1;  // Stone of Wisdom SGM
+      if (file_crc == 0xeac71b43) bSuperSimplifiedMemory = 1;  // Subroc Super Game SGM
+      if (file_crc == 0x02a600cd) bSuperSimplifiedMemory = 1;  // Suite Macabre
+      if (file_crc == 0x5b96145e) bSuperSimplifiedMemory = 1;  // Tank Mission
+      if (file_crc == 0x09e3fdda) bSuperSimplifiedMemory = 1;  // Thexder SGM
+      if (file_crc == 0xe7e07a70) bSuperSimplifiedMemory = 1;  // Twinbee SGM
+      if (file_crc == 0xbc8320a0) bSuperSimplifiedMemory = 1;  // Uridium
+      if (file_crc == 0xd9207f30) bSuperSimplifiedMemory = 1;  // Wizard of Wor SGM
+      if (file_crc == 0xe290a941) bSuperSimplifiedMemory = 1;  // Zanac SGM
+      if (file_crc == 0xa5a90f63) bSuperSimplifiedMemory = 1;  // Zaxxon Super Game 
+      if (file_crc == 0x8027dad7) bSuperSimplifiedMemory = 1;  // Zombie Incident
+      if (file_crc == 0xc89d281d) bSuperSimplifiedMemory = 1;  // Zombie Near
+      
+      // If the user has enabled mirrors, we can't use the simplified driver
+      if (myConfig.mirrorRAM) bSuperSimplifiedMemory = 0;
+  }
+  
   return bOK;
 }
 
@@ -814,6 +888,7 @@ u8 loadrom(const char *filename, u8 * ptr)
 // Based on writes to Port53 and Port60 we configure the SGM handling of
 // memory... this includes 24K vs 32K of RAM (the latter is BIOS disabled).
 // --------------------------------------------------------------------------
+u8 under_ram[0x2000];
 __attribute__ ((noinline)) void SetupSGM(void)
 {
     if (adam_mode) return;                          // ADAM has its own setup handler
@@ -833,7 +908,14 @@ __attribute__ ((noinline)) void SetupSGM(void)
       if (sgm_low_addr != 0x2000)
       {
           sgm_low_addr = 0x2000;
+          simplifed_low_addr = sgm_low_addr;
           MemoryMap[0] = BIOS_Memory + 0x0000;
+          
+          if (bSuperSimplifiedMemory)
+          {
+              memcpy(under_ram, RAM_Memory, 0x2000);
+              memcpy(RAM_Memory, BIOS_Memory, 0x2000);
+          }
       }
     }
     else
@@ -841,7 +923,13 @@ __attribute__ ((noinline)) void SetupSGM(void)
       if (sgm_low_addr != 0x0000)
       {
           sgm_low_addr = 0x0000;
+          simplifed_low_addr = sgm_low_addr;
           MemoryMap[0] = RAM_Memory + 0x0000;
+          
+          if (bSuperSimplifiedMemory)
+          {
+              memcpy(RAM_Memory, under_ram, 0x2000);
+          }
       }
     }
     
@@ -850,6 +938,7 @@ __attribute__ ((noinline)) void SetupSGM(void)
     // ----------------------------------------------------------------
     if (sgm_enable && bFirstSGMEnable)
     {
+        simplifed_low_addr = sgm_low_addr;
         memset(RAM_Memory+0x2000, 0x00, 0x6000);
         bFirstSGMEnable = false;
     }    
@@ -1039,72 +1128,74 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
   }
 
-  // Colecovision ports are 8-bit
-  Port &= 0x00FF;
-
-  // -----------------------------------------------------------------
-  // Port 53 is used for the Super Game Module to enable SGM mode...
-  // -----------------------------------------------------------------
-  if (Port == 0x53 && !adam_mode) {Port53 = Value; SetupSGM(); return;}
-
-  // -----------------------------------------------
-  // Port 50 is the AY sound chip register index...
-  // -----------------------------------------------
-  else if (Port == 0x50)
+  // VDP access is the most common - handle it first
+  if ((Port&0xE0) == 0xA0)
   {
-      if ((Value & 0x0F) == 0x07) AY_Enable = true;
-      ay38910IndexW(Value&0xF, &myAY);
+      if(!(Port&0x01)) WrData9918(Value);
+      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI;}
       return;
   }
-  // -----------------------------------------------
-  // Port 51 is the AY Sound chip register write...
-  // -----------------------------------------------
-  else if (Port == 0x51)
-  {
-    ay38910DataW(Value, &myAY);
-    return;
-  }
-  else if (Port == 0x42)
-  {
-      if (isDSiMode())
-      {
-          Port42 = Value & 0x1F;        // 2MB worth of banks (32 banks of 64K)
-          if (adam_mode) SetupAdam(false);
-      }
-      else Port42 = 0x00; // No extra banking for DS-Lite/Phat (just the stock 64K plus 64K expansion)
-  }
+  
+  // Colecovision ports are 8-bit
+  Port &= 0x00FF;
 
   // ---------------------------------------------------------------------------
   // Now handle the rest of the CV ports - this handles the mirroring of
   // port writes - for example, a write to port 0x7F will hit 0x60 Memory Port
   // ---------------------------------------------------------------------------
-  bool resetAdamNet = false;
   switch(Port&0xE0)
   {
-    case 0x80:  // Set Joystick Read Mode
+    case 0x80:  // Ports 80-9F: Set Joystick Read Mode
       JoyMode=JOYMODE_JOYSTICK;
       return;
-    case 0xC0:  // Set Keypad Read Mode
+    case 0xC0:  // Ports C0-DF: Set Keypad Read Mode
       JoyMode=JOYMODE_KEYPAD;
       return;
-    case 0xE0:  // The SN Sound port
+    case 0xE0:  // Ports E0-FF: The SN Sound port
       sn76496W(Value, &mySN);
       return;
-    case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
-      if(!(Port&0x01)) WrData9918(Value);
-      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI;}
+    case 0x40:  // Ports 40-5F: SGM/AY port and ADAM expanded memory
+      // -----------------------------------------------
+      // Port 50 is the AY sound chip register index...
+      // -----------------------------------------------
+      if (Port == 0x50)
+      {
+          if (!AY_Enable) AY_Enable = ((Value & 0x0F) == 0x07);
+          ay38910IndexW(Value&0xF, &myAY);
+      }
+      // -----------------------------------------------
+      // Port 51 is the AY Sound chip register write...
+      // -----------------------------------------------
+      else if (Port == 0x51)
+      {
+        ay38910DataW(Value, &myAY);
+      }
+      // -----------------------------------------------
+      // Port 42 is the Expanded Memory for the ADAM
+      // -----------------------------------------------
+      else if (Port == 0x42)
+      {
+          if (isDSiMode())
+          {
+              Port42 = Value & 0x1F;        // 2MB worth of banks (32 banks of 64K)
+              if (adam_mode) SetupAdam(false);
+          }
+          else Port42 = 0x00; // No extra banking for DS-Lite/Phat (just the stock 64K plus 64K expansion)
+      }
+      // -----------------------------------------------------------------
+      // Port 53 is used for the Super Game Module to enable SGM mode...
+      // -----------------------------------------------------------------
+      else if (Port == 0x53 && !adam_mode) {Port53 = Value; SetupSGM(); return;}
+      
       return;
-    case 0x40:  // Printer status and ADAM related stuff...not used
-      return;
-    case 0x20:  // AdamNet port from 0x20 to 0x3F
-      resetAdamNet = (Port20 & 1) && ((Value & 1) == 0);
+    case 0x20:  // Ports 20-3F:  AdamNet port
+      bool resetAdamNet = (Port20 & 1) && ((Value & 1) == 0);
       Port20 = Value;
       if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
       return;
-    case 0x60:  // Adam/Memory port from 0x60 to 0x7F
-      resetAdamNet = false;
+    case 0x60:  // Ports 60-7F: Adam/Memory and SGM setup port
       Port60 = Value;
-      if (adam_mode) SetupAdam(resetAdamNet); else SetupSGM();
+      if (adam_mode) SetupAdam(false); else SetupSGM();
       return;
   }
 }
@@ -1179,7 +1270,9 @@ ITCM_CODE u32 LoopZ80()
 
       // Execute 1 scanline worth of CPU instructions
       u32 cycles_to_process = tms_cpu_line + CPU.CycleDeficit;
-      CPU.CycleDeficit = ExecZ80(cycles_to_process);
+      if (bSuperSimplifiedMemory) CPU.CycleDeficit = ExecZ80_Simplified(cycles_to_process);
+      else CPU.CycleDeficit = ExecZ80(cycles_to_process);
+      
 
       // Refresh VDP
       if(Loop9918())

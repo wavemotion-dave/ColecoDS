@@ -1,3 +1,13 @@
+/******************************************************************************
+*  ColecoDS Z80 CPU 
+*
+* Note: Most of this file is from the ColEm emulator core by Marat Fayzullin
+*       but heavily modified for specific NDS use. If you want to use this
+*       code, you are advised to seek out the much more portable ColEm core
+*       and contact Marat.       
+*
+******************************************************************************/
+
 /** Z80: portable Z80 emulator *******************************/
 /**                                                         **/
 /**                         CodesXX.h                       **/
@@ -11,38 +21,6 @@
 /**     changes to this file.                               **/
 /*************************************************************/
 
-case JR_NZ:   if(CPU.AF.B.l&Z_FLAG) CPU.PC.W++; else { CPU.ICount-=5;M_JR; } break;
-case JR_NC:   if(CPU.AF.B.l&C_FLAG) CPU.PC.W++; else { CPU.ICount-=5;M_JR; } break;
-case JR_Z:    if(CPU.AF.B.l&Z_FLAG) { CPU.ICount-=5;M_JR; } else CPU.PC.W++; break;
-case JR_C:    if(CPU.AF.B.l&C_FLAG) { CPU.ICount-=5;M_JR; } else CPU.PC.W++; break;
-
-case JP_NZ:   if(CPU.AF.B.l&Z_FLAG) CPU.PC.W+=2; else { M_JP; } break;
-case JP_NC:   if(CPU.AF.B.l&C_FLAG) CPU.PC.W+=2; else { M_JP; } break;
-case JP_PO:   if(CPU.AF.B.l&P_FLAG) CPU.PC.W+=2; else { M_JP; } break;
-case JP_P:    if(CPU.AF.B.l&S_FLAG) CPU.PC.W+=2; else { M_JP; } break;
-case JP_Z:    if(CPU.AF.B.l&Z_FLAG) { M_JP; } else CPU.PC.W+=2; break;
-case JP_C:    if(CPU.AF.B.l&C_FLAG) { M_JP; } else CPU.PC.W+=2; break;
-case JP_PE:   if(CPU.AF.B.l&P_FLAG) { M_JP; } else CPU.PC.W+=2; break;
-case JP_M:    if(CPU.AF.B.l&S_FLAG) { M_JP; } else CPU.PC.W+=2; break;
-
-case RET_NZ:  if(!(CPU.AF.B.l&Z_FLAG)) { CPU.ICount-=6;M_RET; } break;
-case RET_NC:  if(!(CPU.AF.B.l&C_FLAG)) { CPU.ICount-=6;M_RET; } break;
-case RET_PO:  if(!(CPU.AF.B.l&P_FLAG)) { CPU.ICount-=6;M_RET; } break;
-case RET_P:   if(!(CPU.AF.B.l&S_FLAG)) { CPU.ICount-=6;M_RET; } break;
-case RET_Z:   if(CPU.AF.B.l&Z_FLAG)    { CPU.ICount-=6;M_RET; } break;
-case RET_C:   if(CPU.AF.B.l&C_FLAG)    { CPU.ICount-=6;M_RET; } break;
-case RET_PE:  if(CPU.AF.B.l&P_FLAG)    { CPU.ICount-=6;M_RET; } break;
-case RET_M:   if(CPU.AF.B.l&S_FLAG)    { CPU.ICount-=6;M_RET; } break;
-
-case CALL_NZ: if(CPU.AF.B.l&Z_FLAG) CPU.PC.W+=2; else { CPU.ICount-=7;M_CALL; } break;
-case CALL_NC: if(CPU.AF.B.l&C_FLAG) CPU.PC.W+=2; else { CPU.ICount-=7;M_CALL; } break;
-case CALL_PO: if(CPU.AF.B.l&P_FLAG) CPU.PC.W+=2; else { CPU.ICount-=7;M_CALL; } break;
-case CALL_P:  if(CPU.AF.B.l&S_FLAG) CPU.PC.W+=2; else { CPU.ICount-=7;M_CALL; } break;
-case CALL_Z:  if(CPU.AF.B.l&Z_FLAG) { CPU.ICount-=7;M_CALL; } else CPU.PC.W+=2; break;
-case CALL_C:  if(CPU.AF.B.l&C_FLAG) { CPU.ICount-=7;M_CALL; } else CPU.PC.W+=2; break;
-case CALL_PE: if(CPU.AF.B.l&P_FLAG) { CPU.ICount-=7;M_CALL; } else CPU.PC.W+=2; break;
-case CALL_M:  if(CPU.AF.B.l&S_FLAG) { CPU.ICount-=7;M_CALL; } else CPU.PC.W+=2; break;
-
 case ADD_B:    M_ADD(CPU.BC.B.h);break;
 case ADD_C:    M_ADD(CPU.BC.B.l);break;
 case ADD_D:    M_ADD(CPU.DE.B.h);break;
@@ -50,8 +28,7 @@ case ADD_E:    M_ADD(CPU.DE.B.l);break;
 case ADD_H:    M_ADD(CPU.XX.B.h);break;
 case ADD_L:    M_ADD(CPU.XX.B.l);break;
 case ADD_A:    M_ADD(CPU.AF.B.h);break;
-case ADD_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_ADD(I);break;
+case ADD_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_ADD(I);break;
 case ADD_BYTE: I=OpZ80(CPU.PC.W++);M_ADD(I);break;
 
 case SUB_B:    M_SUB(CPU.BC.B.h);break;
@@ -61,8 +38,7 @@ case SUB_E:    M_SUB(CPU.DE.B.l);break;
 case SUB_H:    M_SUB(CPU.XX.B.h);break;
 case SUB_L:    M_SUB(CPU.XX.B.l);break;
 case SUB_A:    CPU.AF.B.h=0;CPU.AF.B.l=N_FLAG|Z_FLAG;break;
-case SUB_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_SUB(I);break;
+case SUB_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_SUB(I);break;
 case SUB_BYTE: I=OpZ80(CPU.PC.W++);M_SUB(I);break;
 
 case AND_B:    M_AND(CPU.BC.B.h);break;
@@ -72,8 +48,7 @@ case AND_E:    M_AND(CPU.DE.B.l);break;
 case AND_H:    M_AND(CPU.XX.B.h);break;
 case AND_L:    M_AND(CPU.XX.B.l);break;
 case AND_A:    M_AND(CPU.AF.B.h);break;
-case AND_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_AND(I);break;
+case AND_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_AND(I);break;
 case AND_BYTE: I=OpZ80(CPU.PC.W++);M_AND(I);break;
 
 case OR_B:     M_OR(CPU.BC.B.h);break;
@@ -83,8 +58,7 @@ case OR_E:     M_OR(CPU.DE.B.l);break;
 case OR_H:     M_OR(CPU.XX.B.h);break;
 case OR_L:     M_OR(CPU.XX.B.l);break;
 case OR_A:     M_OR(CPU.AF.B.h);break;
-case OR_xHL:   I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_OR(I);break;
+case OR_xHL:   I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_OR(I);break;
 case OR_BYTE:  I=OpZ80(CPU.PC.W++);M_OR(I);break;
 
 case ADC_B:    M_ADC(CPU.BC.B.h);break;
@@ -94,8 +68,7 @@ case ADC_E:    M_ADC(CPU.DE.B.l);break;
 case ADC_H:    M_ADC(CPU.XX.B.h);break;
 case ADC_L:    M_ADC(CPU.XX.B.l);break;
 case ADC_A:    M_ADC(CPU.AF.B.h);break;
-case ADC_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_ADC(I);break;
+case ADC_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_ADC(I);break;
 case ADC_BYTE: I=OpZ80(CPU.PC.W++);M_ADC(I);break;
 
 case SBC_B:    M_SBC(CPU.BC.B.h);break;
@@ -105,8 +78,7 @@ case SBC_E:    M_SBC(CPU.DE.B.l);break;
 case SBC_H:    M_SBC(CPU.XX.B.h);break;
 case SBC_L:    M_SBC(CPU.XX.B.l);break;
 case SBC_A:    M_SBC(CPU.AF.B.h);break;
-case SBC_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_SBC(I);break;
+case SBC_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_SBC(I);break;
 case SBC_BYTE: I=OpZ80(CPU.PC.W++);M_SBC(I);break;
 
 case XOR_B:    M_XOR(CPU.BC.B.h);break;
@@ -116,8 +88,7 @@ case XOR_E:    M_XOR(CPU.DE.B.l);break;
 case XOR_H:    M_XOR(CPU.XX.B.h);break;
 case XOR_L:    M_XOR(CPU.XX.B.l);break;
 case XOR_A:    CPU.AF.B.h=0;CPU.AF.B.l=P_FLAG|Z_FLAG;break;
-case XOR_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_XOR(I);break;
+case XOR_xHL:  I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_XOR(I);break;
 case XOR_BYTE: I=OpZ80(CPU.PC.W++);M_XOR(I);break;
 
 case CP_B:     M_CP(CPU.BC.B.h);break;
@@ -127,8 +98,7 @@ case CP_E:     M_CP(CPU.DE.B.l);break;
 case CP_H:     M_CP(CPU.XX.B.h);break;
 case CP_L:     M_CP(CPU.XX.B.l);break;
 case CP_A:     CPU.AF.B.l=N_FLAG|Z_FLAG;break;
-case CP_xHL:   I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));
-               M_CP(I);break;
+case CP_xHL:   I=RdZ80(CPU.XX.W+(offset)OpZ80(CPU.PC.W++));M_CP(I);break;
 case CP_BYTE:  I=OpZ80(CPU.PC.W++);M_CP(I);break;
                
 case LD_BC_WORD: M_LDWORD(BC);break;
@@ -218,49 +188,11 @@ case POP_DE:   M_POP(DE);break;
 case POP_HL:   M_POP(XX);break;
 case POP_AF:   M_POP(AF);break;
 
-case DJNZ: if(--CPU.BC.B.h) { CPU.ICount-=5;M_JR; } else CPU.PC.W++;break;
-case JP:   M_JP;break;
-case JR:   M_JR;break;
-case CALL: M_CALL;break;
-case RET:  M_RET;break;
 case SCF:  S(C_FLAG);R(N_FLAG|H_FLAG);break;
 case CPL:  CPU.AF.B.h=~CPU.AF.B.h;S(N_FLAG|H_FLAG);break;
 case NOP:  break;
 case OUTA: I=OpZ80(CPU.PC.W++);OutZ80(I|(CPU.AF.W&0xFF00),CPU.AF.B.h);break;
 case INA:  I=OpZ80(CPU.PC.W++);CPU.AF.B.h=InZ80(I|(CPU.AF.W&0xFF00));break;
-
-case HALT:
-  halt_counter++;
-  CPU.PC.W--;
-  CPU.IFF|=IFF_HALT;
-  CPU.IBackup=0;
-  CPU.ICount=0;
-  break;
-
-case DI:
-  if(CPU.IFF&IFF_EI) CPU.ICount+=CPU.IBackup-1;
-  CPU.IFF&=~(IFF_1|IFF_2|IFF_EI);
-  break;
-
-case EI:
-  if(!(CPU.IFF&(IFF_1|IFF_EI)))
-  {
-    CPU.IFF|=IFF_2|IFF_EI;
-    CPU.IBackup=CPU.ICount;
-    CPU.ICount=1;
-  }
-  break;
-
-case CCF:
-  CPU.AF.B.l^=C_FLAG;R(N_FLAG|H_FLAG);
-  CPU.AF.B.l|=CPU.AF.B.l&C_FLAG? 0:H_FLAG;
-  break;
-
-case EXX:
-  J.W=CPU.BC.W;CPU.BC.W=CPU.BC1.W;CPU.BC1.W=J.W;
-  J.W=CPU.DE.W;CPU.DE.W=CPU.DE1.W;CPU.DE1.W=J.W;
-  J.W=CPU.HL.W;CPU.HL.W=CPU.HL1.W;CPU.HL1.W=J.W;
-  break;
 
 case EX_DE_HL: J.W=CPU.DE.W;CPU.DE.W=CPU.HL.W;CPU.HL.W=J.W;break;
 case EX_AF_AF: J.W=CPU.AF.W;CPU.AF.W=CPU.AF1.W;CPU.AF1.W=J.W;break;  
@@ -386,12 +318,4 @@ case EX_HL_xSP:
   J.B.l=RdZ80(CPU.SP.W);WrZ80(CPU.SP.W++,CPU.XX.B.l);
   J.B.h=RdZ80(CPU.SP.W);WrZ80(CPU.SP.W--,CPU.XX.B.h);
   CPU.XX.W=J.W;
-  break;
-
-case DAA:
-  J.W=CPU.AF.B.h;
-  if(CPU.AF.B.l&C_FLAG) J.W|=256;
-  if(CPU.AF.B.l&H_FLAG) J.W|=512;
-  if(CPU.AF.B.l&N_FLAG) J.W|=1024;
-  CPU.AF.W=DAATable[J.W];
   break;

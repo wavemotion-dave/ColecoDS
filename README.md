@@ -24,7 +24,7 @@ Features :
 * Sega SG-1000 game support (.sg roms)
 * Sega SC-3000 game support (.sc roms)
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
-* MSX1 game support (.msx or .rom or .cas or .dsk) up to 1024K including SCC emulation
+* MSX1 game support (.msx or .rom or .cas or .dsk) up to 4096K including SCC emulation
 * Spectravideo SVI support (.cas or .rom) - requires svi.rom BIOS
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
@@ -42,7 +42,7 @@ Features :
 
 Copyright :
 -----------------------
-ColecoDS Phoenix-Edition is Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+ColecoDS Phoenix-Edition is Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 
 As long as there is no commercial use (i.e. no profit is made),
 copying and distribution of this emulator, it's source code
@@ -409,6 +409,9 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.4: 08-Mar-2025 by wavemotion-dave
+* DSi now supports cart ROMs up to 4MB (4096K). Only a few tech demos and MSX games get anywhere near this.
+
 V10.3: 15-Nov-2024 by wavemotion-dave
 * Added support for the 31-in-1 and 63-in-1 multicarts.
 * Added support for 'Wave Direct' sound driver to render digitized speech in games such as Sewer Sam, Squish-Em, Wizard of Wor, etc.

@@ -15,8 +15,6 @@
 #define M6502_H
 
                                /* Compilation options:       */
-/* #define FAST_RDOP */        /* Separate Op6502()/Rd6502() */
-/* #define DEBUG */            /* Compile debugging version  */
 #define LSB_FIRST              /* Compile for low-endian CPU */
 
                                /* Loop6502() returns:        */
@@ -42,17 +40,9 @@ typedef unsigned char byte;
 typedef unsigned short word;
 typedef signed char offset;
 
-/** Structured Datatypes *************************************/
-/** NOTICE: #define LSB_FIRST for machines where least      **/
-/**         signifcant byte goes first.                     **/
-/*************************************************************/
 typedef union
 {
-#ifdef LSB_FIRST
   struct { byte l,h; } B;
-#else
-  struct { byte h,l; } B;
-#endif
   word W;
 } pair;
 

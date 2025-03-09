@@ -1,3 +1,13 @@
+/******************************************************************************
+*  ColecoDS Z80 CPU 
+*
+* Note: Most of this file is from the ColEm emulator core by Marat Fayzullin
+*       but heavily modified for specific NDS use. If you want to use this
+*       code, you are advised to seek out the much more portable ColEm core
+*       and contact Marat.       
+*
+******************************************************************************/
+
 /** Z80: portable Z80 emulator *******************************/
 /**                                                         **/
 /**                           Z80.h                         **/
@@ -18,9 +28,7 @@ extern "C" {
 #endif
 
                                /* Compilation options:       */
-/* #define DEBUG */            /* Compile debugging version  */
 #define LSB_FIRST              /* Compile for low-endian CPU */
-/* #define MSB_FIRST */        /* Compile for hi-endian CPU  */
 #define EXECZ80                /* Call Z80 each scanline     */
 
                                /* LoopZ80() may return:      */
@@ -67,27 +75,26 @@ typedef unsigned short word;
 #endif
 typedef signed char offset;
 
-/** Structured Datatypes *************************************/
-/** NOTICE: #define LSB_FIRST for machines where least      **/
-/**         signifcant byte goes first.                     **/
-/*************************************************************/
+// We only support LSB_FIRST for the DS hardware
 typedef union
 {
-#ifdef LSB_FIRST
   struct { byte l,h; } B;
-#else
-  struct { byte h,l; } B;
-#endif
   word W;
 } pair;
 
+// For the PC counter, we use a u32 which is the native size on the DS and won't require a mask
+typedef union
+{
+  struct { byte l,h, pa, da; } B;
+  u32 W;
+} pairPC;
+
 typedef struct
 {
-  pair AF,BC,DE,HL,IX,IY,PC,SP;     /* Main registers                       */
+  pairPC PC;                        /* Program Counter                      */
+  pair AF,BC,DE,HL,IX,IY,SP;        /* Main registers                       */
   pair AF1,BC1,DE1,HL1;             /* Shadow registers                     */
   byte IFF,I;                       /* Interrupt registers                  */
-  byte R;                           /* Refresh register                     */
-  byte R_HighBit;                   /* Used to preserve the high bit for R  */
   int  IPeriod,ICount;              /* Set IPeriod to number of CPU cycles  */
                                     /* between calls to LoopZ80()           */
   int  CycleDeficit;                /* Cycle deficit from last scanline     */
@@ -96,7 +103,8 @@ typedef struct
   byte IAutoReset;                  /* Set to 1 to autom. reset IRequest    */
   byte TrapBadOps;                  /* Set to 1 to warn of illegal opcodes  */
   byte Trace;                       /* Set Trace=1 to start tracing         */
-  byte Reserved;                    /* For future use                       */
+  byte R_HighBit;                   /* Used to preserve the high bit for R  */
+  u32  R;                           /* Refresh register - masked on read    */
   word Trap;                        /* Set Trap to address to trace from    */
   word User;                        /* Arbitrary user data (ID,RAM*,etc.)   */
 } Z80;
@@ -116,28 +124,13 @@ void ResetZ80(register Z80 *R);
 /*************************************************************/
 #ifdef EXECZ80
 int ExecZ80(register int RunCycles);
+int ExecZ80_Simplified(register int RunCycles);
 #endif
 
 /** IntZ80() *************************************************/
 /** This function will generate interrupt of given vector.  **/
 /*************************************************************/
 void IntZ80(register Z80 *R,register word Vector);
-
-/** RunZ80() *************************************************/
-/** This function will run Z80 code until an LoopZ80() call **/
-/** returns INT_QUIT. It will return the PC at which        **/
-/** emulation stopped, and current register values in R.    **/
-/*************************************************************/
-#ifndef EXECZ80
-word RunZ80(register Z80 *R);
-#endif
-
-/** RdZ80()/WrZ80() ******************************************/
-/** These functions are called when access to RAM occurs.   **/
-/** They allow to control memory access.                    **/
-/************************************ TO BE WRITTEN BY USER **/
-//void WrZ80(register word Addr,register byte Value);
-//byte RdZ80(register word Addr);
 
 /** InZ80()/OutZ80() *****************************************/
 /** Z80 emulation calls these functions to read/write from  **/
@@ -155,26 +148,6 @@ byte InZ80(register word Port);
 /** macro for no patching.                                  **/
 /************************************ TO BE WRITTEN BY USER **/
 void PatchZ80(register Z80 *R);
-//#define PatchZ80(R)
-
-/** DebugZ80() ***********************************************/
-/** This function should exist if DEBUG is #defined. When   **/
-/** Trace!=0, it is called after each command executed by   **/
-/** the CPU, and given the Z80 registers. Emulation exits   **/
-/** if DebugZ80() returns 0.                                **/
-/*************************************************************/
-#ifdef DEBUG
-byte DebugZ80(register Z80 *R);
-#endif
-
-/** LoopZ80() ************************************************/
-/** Z80 emulation calls this function periodically to check **/
-/** if the system hardware requires any interrupts. This    **/
-/** function must return an address of the interrupt vector **/
-/** (0x0038, 0x0066, etc.) or INT_NONE for no interrupt.    **/
-/** Return INT_QUIT to exit the emulation loop.             **/
-/************************************ TO BE WRITTEN BY USER **/
-//word LoopZ80(register Z80 *R);
 
 /** JumpZ80() ************************************************/
 /** Z80 emulation calls this function when it executes a    **/
