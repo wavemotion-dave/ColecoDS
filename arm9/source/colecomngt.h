@@ -43,9 +43,11 @@ extern u8 msx_kana_lock;
 
 #define MAX_MAPPERS 7   // The most we can guess when examining ROM data
 
-#define MAX_CART_SIZE     1024  // 1MB of ROM Cart... that's pretty big!
+extern u32 MAX_CART_SIZE;
 
-extern u8 ROM_Memory[MAX_CART_SIZE * 1024];
+extern u8 bSuperSimplifiedMemory;
+
+extern u8 *ROM_Memory;
 extern u8 RAM_Memory[0x10000];
 extern u8 BIOS_Memory[0x10000];
 extern u8 SRAM_Memory[0x4000];
@@ -167,14 +169,14 @@ extern u8 myKeyData;
 extern u8 adc_mux;
 
 // And the various SVI and MSX bios flavors...
-extern u8 *SVIBios;
-extern u8 *MSXBios_Generic;
-extern u8 *MSXBios_PanasonicCF2700;
-extern u8 *MSXBios_YamahaCX5M;
-extern u8 *MSXBios_ToshibaHX10;
-extern u8 *MSXBios_SonyHB10;
-extern u8 *MSXBios_NationalFS1300;
-extern u8 *MSXBios_CasioPV7;
+extern u8 SVIBios[];
+extern u8 MSXBios_Generic[];
+extern u8 MSXBios_PanasonicCF2700[];
+extern u8 MSXBios_YamahaCX5M[];
+extern u8 MSXBios_ToshibaHX10[];
+extern u8 MSXBios_SonyHB10[];
+extern u8 MSXBios_NationalFS1300[];
+extern u8 MSXBios_CasioPV7[];
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);
@@ -217,6 +219,7 @@ extern u8 loadrom(const char *path,u8 * ptr);
 
 extern u32 LoopZ80();
 extern void MegaCartBankSwitch(u8 bank);
+extern void MegaCartBankSwap(u8 bank);
 extern void BufferKey(u8 key);
 extern void BufferKeys(char *str);
 

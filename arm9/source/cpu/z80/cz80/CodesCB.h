@@ -1,3 +1,13 @@
+/******************************************************************************
+*  ColecoDS Z80 CPU 
+*
+* Note: Most of this file is from the ColEm emulator core by Marat Fayzullin
+*       but heavily modified for specific NDS use. If you want to use this
+*       code, you are advised to seek out the much more portable ColEm core
+*       and contact Marat.       
+*
+******************************************************************************/
+
 /** Z80: portable Z80 emulator *******************************/
 /**                                                         **/
 /**                         CodesCB.h                       **/

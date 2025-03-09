@@ -32,7 +32,7 @@
 M6502 m6502 __attribute__((section(".dtcm")));        // Our core 6502 CPU in fast NDS memory cache
 
 extern u8 RAM_Memory[];
-extern u8 ROM_Memory[];
+extern u8 *ROM_Memory;
 extern u8 CreativisionBios[];
 extern byte Loop9918(void);
 extern SN76496 mySN;

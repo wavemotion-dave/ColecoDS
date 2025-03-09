@@ -1,3 +1,13 @@
+/******************************************************************************
+*  ColecoDS Z80 CPU 
+*
+* Note: Most of this file is from the ColEm emulator core by Marat Fayzullin
+*       but heavily modified for specific NDS use. If you want to use this
+*       code, you are advised to seek out the much more portable ColEm core
+*       and contact Marat.       
+*
+******************************************************************************/
+
 /** Z80: portable Z80 emulator *******************************/
 /**                                                         **/
 /**                          Codes.h                        **/
@@ -11,10 +21,14 @@
 /**     changes to this file.                               **/
 /*************************************************************/
 
-case JR_NZ:   if(CPU.AF.B.l&Z_FLAG) CPU.PC.W++; else { CPU.ICount-=5;M_JR; } break;
-case JR_NC:   if(CPU.AF.B.l&C_FLAG) CPU.PC.W++; else { CPU.ICount-=5;M_JR; } break;
-case JR_Z:    if(CPU.AF.B.l&Z_FLAG) { CPU.ICount-=5;M_JR; } else CPU.PC.W++; break;
-case JR_C:    if(CPU.AF.B.l&C_FLAG) { CPU.ICount-=5;M_JR; } else CPU.PC.W++; break;
+// ----------------------------------------------------------------------------------------
+// For the jump instructions, the Cycle[] table builds in assuming the jump WILL be taken
+// which is true about 95% of the time. If the jump is not taken, we compensate ICount.
+// ----------------------------------------------------------------------------------------
+case JR_NZ:   if(CPU.AF.B.l&Z_FLAG) {CPU.ICount+=5; CPU.PC.W++;} else { M_JR; } break;
+case JR_NC:   if(CPU.AF.B.l&C_FLAG) {CPU.ICount+=5; CPU.PC.W++;} else { M_JR; } break;
+case JR_Z:    if(CPU.AF.B.l&Z_FLAG) { M_JR; } else {CPU.ICount+=5; CPU.PC.W++;} break;
+case JR_C:    if(CPU.AF.B.l&C_FLAG) { M_JR; } else {CPU.ICount+=5; CPU.PC.W++;} break;
 
 case JP_NZ:   if(CPU.AF.B.l&Z_FLAG) CPU.PC.W+=2; else { M_JP; } break;
 case JP_NC:   if(CPU.AF.B.l&C_FLAG) CPU.PC.W+=2; else { M_JP; } break;
@@ -206,7 +220,7 @@ case POP_DE:   M_POP(DE);break;
 case POP_HL:   M_POP(HL);break;
 case POP_AF:   M_POP(AF);break;
 
-case DJNZ: if(--CPU.BC.B.h) { CPU.ICount-=5;M_JR; } else CPU.PC.W++;break;
+case DJNZ: if(--CPU.BC.B.h) { M_JR; } else {CPU.ICount+=5; CPU.PC.W++;} break;
 case JP:   M_JP;break;
 case JR:   M_JR;break;
 case CALL: M_CALL;break;
@@ -373,9 +387,10 @@ case DAA:
   if(CPU.AF.B.l&C_FLAG) J.W|=256;
   if(CPU.AF.B.l&H_FLAG) J.W|=512;
   if(CPU.AF.B.l&N_FLAG) J.W|=1024;
+  debug[5]++;
   CPU.AF.W=DAATable[J.W];
   break;
 
 default:
-  if(CPU.TrapBadOps) Trap_Bad_Ops("M6502", I, CPU.PC.W-1);
+  if(CPU.TrapBadOps) Trap_Bad_Ops("Z80", I, CPU.PC.W-1);
   break;

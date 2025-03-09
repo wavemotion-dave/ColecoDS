@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -42,6 +42,31 @@ ITCM_CODE void MegaCartBankSwitch(u8 bank)
         MemoryMap[6] = ROM_Memory + ((u32)bank * (u32)0x4000);
         MemoryMap[7] = MemoryMap[6] + 0x2000;
         last_mega_bank = bank;
+    }
+}
+
+
+// ------------------------------------------------------------------------
+// For the DS-Lite/Phat, we use a super simplified coleco driver that only
+// handles the RAM_Memory[] as a flat 64K address space. To make this work
+// for banked games, we must actually swap in the memory by memcpy(). Not
+// the fastest, but fortunately many Megacarts do very little swapping...
+// ------------------------------------------------------------------------
+ITCM_CODE void MegaCartBankSwap(u8 bank)
+{
+    bank &= romBankMask;    
+    if (last_mega_bank != bank)   // Only if the bank was changed...
+    {
+        if (bMagicMegaCart)
+        {
+            MemoryMap[6] = ROM_Memory + ((u32)bank * (u32)0x4000);
+            MemoryMap[7] = MemoryMap[6] + 0x2000;
+            if (bank < 32)
+                memcpy(RAM_Memory + 0xC000, ((u8*)0x06860000) + ((u32)bank * (u32)0x4000), 0x4000);
+            else
+                memcpy(RAM_Memory + 0xC000, ROM_Memory + ((u32)bank * (u32)0x4000), 0x4000);
+            last_mega_bank = bank;
+        }
     }
 }
 
@@ -90,11 +115,13 @@ ITCM_CODE u8 cpu_readmem16_banked(u16 address)
               return(Read24XX(&EEPROM));  // Return EEPROM output bit
           }
       }
+#if 0  // For now, reading a SGC is just a normal memory fetch as handled further below...      
       else if (bSuperGameCart)
       {
           // Handle Super Game Cart
           return SuperGameCartRead(address);                
       }
+#endif      
       else if (b31_in_1) // Handle 31-in-1 Hot Spots
       {
           if (address >= 0xFFC0)

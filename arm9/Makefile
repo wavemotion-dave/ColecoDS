@@ -28,12 +28,12 @@ BACKGRD		:=  gfx_data
 #ARCH	:=	-mthumb -mthumb-interwork
 ARCH	:=
 
-CFLAGS	:= -Wall -Wno-strict-aliasing -O3 -march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math $(ARCH)
+CFLAGS	:= -Wall -Wno-strict-aliasing -O2 -march=armv5te -mtune=arm946e-s -fomit-frame-pointer -ffast-math $(ARCH) -falign-functions=4 -frename-registers -finline-functions
 
 CFLAGS	+=	$(INCLUDE) -DARM9
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions
 
-ASFLAGS	:=	$(ARCH) -march=armv5te -mtune=arm946e-s -DSCCMULT=32 -DAY_UPSHIFT=2 -DSN_UPSHIFT=2
+ASFLAGS	:=	$(ARCH) -march=armv5te -mtune=arm946e-s -DSCCMULT=32 -DAY_UPSHIFT=2 -DSN_UPSHIFT=2 -DNDS
 
 LDFLAGS	=	-specs=ds_arm9.specs $(ARCH) -Wl,-Map,$(notdir $*.map)
 

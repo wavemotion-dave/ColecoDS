@@ -1,12 +1,12 @@
 /******************************************************************************
 *  ColecoDS TMS9918A (video) file
-*  Ver 1.1
 *
 * File: tms9928a.c -- software implementation of the Texas Instruments TMS9918A.
 * 
 * Note: Most of this file is from the ColEm emulator core by Marat Fayzullin
 *       but heavily modified for specific NDS use. If you want to use this
-*       code, you are advised to seek out the ColEm core and contact Marat.
+*       code, you are advised to seek out the much more portable ColEm core
+*       and contact Marat.       
 * 
 *       I've added proper init of the VDP[] registers per findings on real
 *       hardware and the VDP Control Latch reset on data read/write and
@@ -613,6 +613,7 @@ ITCM_CODE byte Write9918(u8 iReg, u8 value)
   u16 VRAMMask;
   byte bIRQ;
     
+  /* There are 8 VDP registers - map down to these 8 and mask off irrelevant bits */
   iReg &= 0x07;
   value &= VDP_RegisterMasks[iReg];
     

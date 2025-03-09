@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <fat.h>
 #include <maxmod9.h>
@@ -88,7 +89,8 @@ u32 debug[0x10]={0};
 // up the memory into the RAM_Memory[] buffer and point into that as a single 64k layout.
 // -------------------------------------------------------------------------------------------
 
-u8 ROM_Memory[MAX_CART_SIZE * 1024]   ALIGN(32) = {0};        // ROM Carts up to 1MB (that's pretty huge in the Z80 world!)
+u32 MAX_CART_SIZE = 1024;                                     // 1MB of ROM Cart... for DSi we will bump this up to 4MB
+u8 *ROM_Memory;                                               // ROM Carts up to 1MB/4MB (that's pretty huge in the Z80 world!)
 u8 RAM_Memory[0x10000]                ALIGN(32) = {0};        // RAM up to 128K (mostly for the ADAM... other systems utilize less)
 u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K as the BIOS  for various machines ends up in different spots)
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
@@ -124,14 +126,14 @@ u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
 // We have enough spare LCD Video Memory available for CPU use that we can store 8x of the 32K BIOS 
 // ROMS. So we pack this memory with the SVI BIOS and a number of different flavors of MSX BIOS roms.
 // ---------------------------------------------------------------------------------------------------
-u8 *SVIBios                     = (u8*) (0x06860000 + 0x00000);
-u8 *MSXBios_Generic             = (u8*) (0x06860000 + 0x08000);
-u8 *MSXBios_PanasonicCF2700     = (u8*) (0x06860000 + 0x10000);
-u8 *MSXBios_YamahaCX5M          = (u8*) (0x06860000 + 0x18000);
-u8 *MSXBios_ToshibaHX10         = (u8*) (0x06860000 + 0x20000);
-u8 *MSXBios_SonyHB10            = (u8*) (0x06860000 + 0x28000);
-u8 *MSXBios_NationalFS1300      = (u8*) (0x06860000 + 0x30000);
-u8 *MSXBios_CasioPV7            = (u8*) (0x06860000 + 0x38000);
+u8 SVIBios[0x8000];
+u8 MSXBios_Generic[0x8000];
+u8 MSXBios_PanasonicCF2700[0x8000];
+u8 MSXBios_YamahaCX5M[0x8000];
+u8 MSXBios_ToshibaHX10[0x8000];
+u8 MSXBios_SonyHB10[0x8000];
+u8 MSXBios_NationalFS1300[0x8000];
+u8 MSXBios_CasioPV7[0x8000];
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -832,8 +834,9 @@ void ResetColecovision(void)
       // Setup the Coleco BIOS and point to it
       memset(BIOS_Memory+0x2000, 0xFF, 0xE000);
       memcpy(BIOS_Memory+0x0000, ColecoBios, 0x2000);
+      memcpy(RAM_Memory,BIOS_Memory,0x2000);
       MemoryMap[0] = BIOS_Memory+0x0000;
-      
+            
       if (bActivisionPCB)
       {
           Reset24XX(&EEPROM, myConfig.cvEESize);
@@ -878,6 +881,23 @@ const char *VModeNames[] =
     "HBIT",
     "----",
 };
+
+extern u8 *fake_heap_end;     // current heap start
+extern u8 *fake_heap_start;   // current heap end
+
+u8* getHeapStart() {return fake_heap_start;}
+u8* getHeapEnd()   {return (u8*)sbrk(0);}
+u8* getHeapLimit() {return fake_heap_end;}
+
+int getMemUsed() { // returns the amount of used memory in bytes
+   struct mallinfo mi = mallinfo();
+   return mi.uordblks;
+}
+
+int getMemFree() { // returns the amount of free memory in bytes
+   struct mallinfo mi = mallinfo();
+   return mi.fordblks + (getHeapLimit() - getHeapEnd());
+}
 
 void ShowDebugZ80(void)
 {
@@ -965,9 +985,10 @@ void ShowDebugZ80(void)
             idx--;
         }
 
-        sprintf(tmp, "Bank %02X [%02X] EX=%d", (last_mega_bank != 199 ? last_mega_bank:0), romBankMask, adam_ext_ram_used);    DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "Bank %02X [%02X] [%02X] EX=%d", (last_mega_bank != 199 ? last_mega_bank:0), romBankMask, mapperMask, adam_ext_ram_used);    DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "VMod %02X %4s %3s", TMS9918_Mode, VModeNames[TMS9918_Mode], ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K")); DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "Port P23=%02X P53=%02X P60=%02X P42=%02X", Port20, Port53, Port60, Port42); DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "MEM Used %d  Free %d", getMemUsed(), getMemFree()); DSPrint(0,idx++,7, tmp);
 
         idx = 1;
         if (einstein_mode || sordm5_mode || memotech_mode)
@@ -985,7 +1006,6 @@ void ShowDebugZ80(void)
             sprintf(tmp, "PPI C=%02X M=%02X",Port_PPI_C,Port_PPI_CTRL); DSPrint(19,idx++,7, tmp);
         }
        
-        idx++;
         for (u8 i=0; i<= ((einstein_mode || (msx_mode == 3)) ? 4:8); i++)
         {
             sprintf(tmp, "D%d %-9lu %04X", i, debug[i], (u16)debug[i]); DSPrint(15,idx++,7, tmp);
@@ -3647,13 +3667,13 @@ void colecoDS_main(void)
 
 
 // ----------------------------------------------------------------------------------------
-// We steal 256K of the VRAM to hold the MSX BIOS flavors and 16K for one look-up table.
+// We steal 256K of the VRAM to hold a shadow copy of the ROM cart for fast swap...
 // ----------------------------------------------------------------------------------------
 void useVRAM(void)
 {
   vramSetBankD(VRAM_D_LCD );        // Not using this for video but 128K of faster RAM always useful!  Mapped at 0x06860000 -   We use this block of 128K and the next block of 128K
-  vramSetBankE(VRAM_E_LCD );        // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   to store various flavors of SVI and MSX BIOS roms
-  vramSetBankF(VRAM_F_LCD );        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   ..
+  vramSetBankE(VRAM_E_LCD );        // Not using this for video but 64K of faster RAM always useful!   Mapped at 0x06880000 -   to store up to 256K of ROM for fast swap with the 
+  vramSetBankF(VRAM_F_LCD );        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06890000 -   Coleco 'super simplified' driver... mostly for DS-Lite/Phat use
   vramSetBankG(VRAM_G_LCD );        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x06894000 -   ..
   vramSetBankH(VRAM_H_LCD );        // Not using this for video but 32K of faster RAM always useful!   Mapped at 0x06898000 -   ..
   vramSetBankI(VRAM_I_LCD );        // Not using this for video but 16K of faster RAM always useful!   Mapped at 0x068A0000 -   16K Used for the VDP Look Up Table
@@ -4134,11 +4154,6 @@ void LoadBIOSFiles(void)
         fclose(fp);
     }
 
-    // ----------------------------------------------------
-    // We are using 256K of DS VRAM for the BIOS stores...
-    // ----------------------------------------------------
-    memset((u8*)0x06860000, 0xFF, 0x40000);
-    
     // -----------------------------------------------------------
     // Next try to load the SVI.ROM
     // -----------------------------------------------------------
@@ -4524,22 +4539,28 @@ int main(int argc, char **argv)
 
   irqSet(IRQ_VBLANK,  irqVBlank);
   irqEnable(IRQ_VBLANK);
-    
-  
-  // -----------------------------------------------------------------
-  // Grab the BIOS before we try to switch any directories around...
-  // -----------------------------------------------------------------
-  useVRAM();
-  LoadBIOSFiles();
-  
+
   // -----------------------------------------------------------------
   // Allocate the Large DSi buffer for expanded RAM banking...
   // -----------------------------------------------------------------
   if (isDSiMode())
   {
       DSI_RAM_Buffer = malloc(2 * 1024*1024); // 2MB of Expanded RAM
+      MAX_CART_SIZE = 4096;
+      ROM_Memory = malloc(MAX_CART_SIZE * 1024);
   }
-
+  else // For older DS units... 1MB max
+  {
+      MAX_CART_SIZE = 1024;
+      ROM_Memory = malloc(MAX_CART_SIZE * 1024);
+  }
+    
+  // -----------------------------------------------------------------
+  // Grab the BIOS before we try to switch any directories around...
+  // -----------------------------------------------------------------
+  useVRAM();
+  LoadBIOSFiles();
+  
   // -----------------------------------------------------------------
   // And do an initial load of configuration... We'll match it up
   // with the game that was selected later...
@@ -4574,6 +4595,8 @@ int main(int argc, char **argv)
   }
 
   SoundPause();
+  
+  srand(time(NULL));
 
   //  ------------------------------------------------------------
   //  We run this loop forever until game exit is selected...
@@ -4672,7 +4695,7 @@ void debug_init()
     {
         if (isDSiMode()) 
         {
-            MAX_DEBUG_BUF_SIZE = (1024*1024*4); // 4MB!!
+            MAX_DEBUG_BUF_SIZE = (1024*1024*2); // 2MB!!
             debug_buffer = malloc(MAX_DEBUG_BUF_SIZE);
         }
         else
