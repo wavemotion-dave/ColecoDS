@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -16,7 +16,7 @@
 
 #define CRC32_POLY 0x04C11DB7
 
-const u32 crc32_table[256] = {
+const u32 crc32_table[256] __attribute__((section(".dtcm"))) = {
     0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA, 0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,  //   0 [0x00 .. 0x07]
     0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988, 0x09B64C2B, 0x7EB17CBD, 0xE7B82D07, 0x90BF1D91,  //   8 [0x08 .. 0x0F]
     0x1DB71064, 0x6AB020F2, 0xF3B97148, 0x84BE41DE, 0x1ADAD47D, 0x6DDDE4EB, 0xF4D4B551, 0x83D385C7,  //  16 [0x10 .. 0x17]
@@ -79,7 +79,7 @@ u32 crcBasedOnFilename(const char *filename)
 // ------------------------------------------------------------------------------------
 // Read the file in and compute CRC... it's a bit slow but good enough and accurate!
 // ------------------------------------------------------------------------------------
-u8 file_crc_buffer[2048];
+u8 file_crc_buffer[4096];
 ITCM_CODE u32 getFileCrc(const char* filename)
 {
     extern u32 file_size;

@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -1155,8 +1155,9 @@ void SetDefaultGameConfig(void)
         // Except for these games that need the Mirror to work...
         if (file_crc == 0xf84622d2) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Super Cobra
         if (file_crc == 0xc48db4ce) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Jump Land
-        if (file_crc == 0x644124f6) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Donkey Kong Junior - Super Game
-        if (file_crc == 0xb3e62471) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Donkey Kong - Super Game
+        if (file_crc == 0x644124f6) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Donkey Kong Junior - Super Game (needs mirrors for SGM detection to work)
+        if (file_crc == 0xb3e62471) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Donkey Kong - Super Game (needs mirrors for SGM detection to work)
+        if (file_crc == 0xeac71b43) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Subroc - Super Game (needs mirrors for SGM detection to work)
         
         // ---------------------------------------------------------------------
         // Set the spinner configuration automatically for games that want it.

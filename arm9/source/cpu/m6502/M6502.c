@@ -28,8 +28,10 @@
 extern byte RAM_Memory[];
 extern unsigned int debug[];
 extern void Trap_Bad_Ops(char *prefix, byte I, word W);
+extern byte Rd6502_full(register word Addr);
 
 #define Op6502(A) RAM_Memory[A]
+inline byte Rd6502(register word Addr) {if (Addr & 0xC000) return RAM_Memory[Addr]; return Rd6502_full(Addr);}
 
 /** Addressing Methods ***************************************/
 /** These macros calculate and return effective addresses.  **/

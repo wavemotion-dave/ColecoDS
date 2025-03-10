@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fat.h>
+#include <sys/stat.h>
 
 #include "printf.h"
 
@@ -572,6 +573,8 @@ u8 loadrom(const char *filename, u8 * ptr)
   int romSize = 0;
 
   DSPrint(0,0,6, "LOADING...");
+  
+  bSuperSimplifiedMemory = 0;   // Assume the normal driver unless proven otherwise further below...
 
   FILE* handle = fopen(filename, "rb");
   if (handle != NULL)
@@ -582,10 +585,11 @@ u8 loadrom(const char *filename, u8 * ptr)
 
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
 
-    fseek(handle, 0, SEEK_END);                             // Figure out how big the file is
-    romSize = ftell(handle);
-    sg1000_double_reset = false;
-
+    // Get file size the 'fast' way - use fstat() instead of fseek() or ftell()
+    struct stat stbuf;
+    (void)fstat(fileno(handle), &stbuf);
+    romSize = stbuf.st_size;
+    
     bMagicMegaCart = false;     // No Mega Cart to start
     bActivisionPCB = 0;         // No Activision PCB
     bSuperGameCart = 0;         // No Super Game Cart (aka MegaCart2)
@@ -594,14 +598,24 @@ u8 loadrom(const char *filename, u8 * ptr)
     // ----------------------------------------------------------------------
     // Look for the Survivors .sc Multicart  (2MB!) or .sc MegaCart (4MB!)
     // ----------------------------------------------------------------------
+    sg1000_double_reset = false;
     if (sg1000_mode && ((romSize == (2048 * 1024)) || (romSize == (4096 * 1024))))
     {
-        fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
-        fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
-        memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
-        fclose(handle);
-        strcpy(disk_last_file[0], filename);
-        strcpy(disk_last_path[0], initial_path);
+        if (isDSiMode())
+        {
+            fread((void*) ROM_Memory, 1, romSize, handle);                 // Read the entire file into the buffer
+            memcpy(RAM_Memory, ROM_Memory + (romSize - 0x8000), 0x8000);   // And put the last block directly into the RAM buffer
+            fclose(handle);
+        }
+        else // For DS-Lite/Phat, we can only read this in smaller chunks - slower
+        {
+            fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
+            fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
+            memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
+            fclose(handle);
+            strcpy(disk_last_file[0], filename);
+            strcpy(disk_last_path[0], initial_path);
+        }
         romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
         machine_mode = MODE_SG_1000;
@@ -623,7 +637,6 @@ u8 loadrom(const char *filename, u8 * ptr)
     else
     if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB/4MB - that's pretty huge...
     {
-        fseek(handle, 0, SEEK_SET);
         fread((void*) ROM_Memory, romSize, 1, handle);
         fclose(handle);
 
@@ -779,13 +792,11 @@ u8 loadrom(const char *filename, u8 * ptr)
                 MegaCartBankSwap(0);                              // Copy Bank 0 into RAM memory in case we're using the optimized driver
                 MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
 
-                if      (romSize <= (64  * 1024))  romBankMask = 0x03;
-                else if (romSize <= (128 * 1024))  romBankMask = 0x07;
-                else if (romSize <= (256 * 1024))  romBankMask = 0x0F;
-                else if (romSize <= (512 * 1024))  romBankMask = 0x1F;
-                else if (romSize <= (1024 * 1024)) romBankMask = 0x3F;
-                else if (romSize <= (2048 * 1024)) romBankMask = 0x7F;
-                else                               romBankMask = 0xFF;    // Up to 4096KB... huge!
+                if      (romSize <= (64  * 1024))  romBankMask = 0x03;    // 64K   Megacart (unlikely this exists in Hardware but it's supported)
+                else if (romSize <= (128 * 1024))  romBankMask = 0x07;    // 128K  Megacart
+                else if (romSize <= (256 * 1024))  romBankMask = 0x0F;    // 256K  Megacart
+                else if (romSize <= (512 * 1024))  romBankMask = 0x1F;    // 512K  Megacart
+                else                               romBankMask = 0x3F;    // 1024K Megacart - this is as big as any MC board supports given that the hotspots are FFC0 to FFFF
             }
         }
         bOK = 1;
@@ -819,7 +830,6 @@ u8 loadrom(const char *filename, u8 * ptr)
   // If we are a DS-Lite/Phat, we can swap in a simplified memory 
   // driver to help speedup games that are 32K or less...
   // -------------------------------------------------------------
-  bSuperSimplifiedMemory = 0;
   if (!isDSiMode() && (machine_mode == MODE_COLECO))
   {
       u8 *fastROM = (u8*) (0x06860000);
@@ -856,7 +866,6 @@ u8 loadrom(const char *filename, u8 * ptr)
       if (file_crc == 0xd3ea5876) bSuperSimplifiedMemory = 1;  // Mr. Do's Wild Ride
       if (file_crc == 0x4657bb8c) bSuperSimplifiedMemory = 1;  // Nether Dungeon
       if (file_crc == 0xf3ccacb3) bSuperSimplifiedMemory = 1;  // Pac-Man Collection
-      if (file_crc == 0xf998b515) bSuperSimplifiedMemory = 1;  // Prisoner of War SGM
       if (file_crc == 0xee530ad2) bSuperSimplifiedMemory = 1;  // Qbiqs SGM
       if (file_crc == 0xb6df4148) bSuperSimplifiedMemory = 1;  // Quatre
       if (file_crc == 0xb9788f47) bSuperSimplifiedMemory = 1;  // Raid On Bungeling Bay
@@ -865,7 +874,6 @@ u8 loadrom(const char *filename, u8 * ptr)
       if (file_crc == 0x75f84889) bSuperSimplifiedMemory = 1;  // Spelunker SGM
       if (file_crc == 0x3e7d0520) bSuperSimplifiedMemory = 1;  // Star Soldier SGM
       if (file_crc == 0x342c73ca) bSuperSimplifiedMemory = 1;  // Stone of Wisdom SGM
-      if (file_crc == 0xeac71b43) bSuperSimplifiedMemory = 1;  // Subroc Super Game SGM
       if (file_crc == 0x02a600cd) bSuperSimplifiedMemory = 1;  // Suite Macabre
       if (file_crc == 0x5b96145e) bSuperSimplifiedMemory = 1;  // Tank Mission
       if (file_crc == 0x09e3fdda) bSuperSimplifiedMemory = 1;  // Thexder SGM

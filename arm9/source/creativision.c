@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -477,7 +477,7 @@ ITCM_CODE void Wr6502(register word Addr,register byte Value)
 // Unused areas should return 0xFF but this is already well handled by pre-filling
 // the unused areas of our 64K memory map with 0xFF so we don't have to do that here.
 // ------------------------------------------------------------------------------------
-ITCM_CODE byte Rd6502(register word Addr)
+ITCM_CODE byte Rd6502_full(register word Addr)
 {
     switch (Addr & 0xF000)
     {
