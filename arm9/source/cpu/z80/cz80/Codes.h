@@ -387,7 +387,6 @@ case DAA:
   if(CPU.AF.B.l&C_FLAG) J.W|=256;
   if(CPU.AF.B.l&H_FLAG) J.W|=512;
   if(CPU.AF.B.l&N_FLAG) J.W|=1024;
-  debug[5]++;
   CPU.AF.W=DAATable[J.W];
   break;
 

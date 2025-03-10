@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2024 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -36,7 +36,10 @@ void sg1000_reset(void)
     Port_PPI_C = 0xFF;
     Port_PPI_CTRL = 0xFF;
     OldPortC=0xFF;
-    memcpy(RAM_Memory, ROM_Memory, 0x8000);
+    if (isDSiMode())
+        memcpy(RAM_Memory, ROM_Memory + (romBankMask * 0x8000), 0x8000);
+    else
+        memcpy(RAM_Memory, ROM_Memory, 0x8000);
 }
 
 
@@ -344,19 +347,33 @@ void cpu_writeport_sg(register unsigned short Port,register unsigned char Value)
             game_no = (Value & 0x80) ? ((Value & 0x1f) | ((Value & 0x40) ? 0x20 : 0x00)) : 0x3F;
         else
             game_no = (Value & 0x1f) | (Value & 0xc0) >> 1;
-        if (game_no == romBankMask)
-        {            
-            memcpy(RAM_Memory, ROM_Memory, 0x8000);        // And place it into the bottom ROM area of our SG-1000 / SC-3000
-        }
-        else
+            
+        // Make sure we're actually switching banks...
+        if (game_no != last_mega_bank)
         {
-            FILE* handle = fopen(disk_last_file[0], "rb");
-            if (handle != NULL) 
+            if (isDSiMode())
             {
-                fseek(handle, (0x8000 * (u32)game_no), SEEK_SET);   // Seek to the 32K chunk we want to read in
-                fread((void*) RAM_Memory, 0x8000, 1, handle);       // Read 32K from that paged block
-                fclose(handle);
+                    memcpy(RAM_Memory, ROM_Memory + (game_no * 0x8000), 0x8000);    // Move the desired bank into the bottom ROM area of our SG-1000 / SC-3000
             }
+            else
+            {
+                if (game_no == romBankMask)
+                {
+                    memcpy(RAM_Memory, ROM_Memory, 0x8000);        // Place starting bank into the bottom ROM area of our SG-1000 / SC-3000
+                }
+                else
+                {
+                    FILE* handle = fopen(disk_last_file[0], "rb");
+                    if (handle != NULL) 
+                    {
+                        fseek(handle, (0x8000 * (u32)game_no), SEEK_SET);   // Seek to the 32K chunk we want to read in
+                        fread((void*) RAM_Memory, 0x8000, 1, handle);       // Read 32K from that paged block
+                        fclose(handle);
+                    }
+                }
+            }
+            
+            last_mega_bank = game_no;
         }
         return;
     }

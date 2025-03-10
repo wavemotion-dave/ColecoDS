@@ -409,8 +409,11 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
-V10.4: 08-Mar-2025 by wavemotion-dave
-* DSi now supports cart ROMs up to 4MB (4096K). Only a few tech demos and MSX games get anywhere near this.
+V10.4: 10-Mar-2025 by wavemotion-dave
+* DSi now supports cart ROMs up to 4MB (4096K). Only a few MSX tech demos / games get anywhere near this.
+* New super-simplified Colecovision CPU driver that is used for most of the well-behaved Colecovision games to render them full speed on the older DS-Lite/Phat.
+* Improved emulation speed of the 6502 core to render all Creativision games at full speed on older DS-Lite/Phat.
+* Corrected a few cycle timings and generally improved accuracy of the Z80 CPU driver.
 
 V10.3: 15-Nov-2024 by wavemotion-dave
 * Added support for the 31-in-1 and 63-in-1 multicarts.
