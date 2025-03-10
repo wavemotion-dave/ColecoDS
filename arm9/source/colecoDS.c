@@ -406,16 +406,17 @@ s16 mixbuf1[4096+64];      // When we have SN and AY sound we have to mix 3+3 ch
 s16 mixbuf2[4096+64];      // into a single output so we render to mix buffers first.
 
 #define WAVE_DIRECT_BUF_SIZE 4095
-u16 mixer_read=0;
-u16 mixer_write=0;
+u16 mixer_read      __attribute__((section(".dtcm"))) = 0;
+u16 mixer_write     __attribute__((section(".dtcm"))) = 0;
+u8 wave_direct_skip __attribute__((section(".dtcm"))) = 0;
+
 s16 mixer[WAVE_DIRECT_BUF_SIZE+1];
-u8 wave_direct_skip=0;
 
 // -------------------------------------------------------------------------
 // For direct sampling, this tells us for a given scanline how many samples
 // to process... this gets us to the magic sample_rate. Crude but effective.
 // -------------------------------------------------------------------------
-u8 wave_direct_sample_table[256] = 
+u8 wave_direct_sample_table[256] __attribute__((section(".dtcm"))) = 
 {
   2,1,2,2,2,2,1,2,     2,2,1,2,2,2,2,2,
   2,2,1,2,2,2,1,2,     2,2,2,1,2,2,2,1,
@@ -445,7 +446,7 @@ u8 wave_direct_sample_table[256] =
 // we will fill exactly that many. If the sound is paused, we fill with 'mute' samples.
 // -------------------------------------------------------------------------------------------
 s16 last_sample __attribute__((section(".dtcm"))) = 0;
-int breather = 0;
+int breather    __attribute__((section(".dtcm"))) = 0;
 ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats format)
 {
     if (soundEmuPause)  // If paused, just "mix" in mute sound chip... all channels are OFF
@@ -461,12 +462,12 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         s16 *p = (s16*)dest;
         for (int i=0; i<len*2; i++)
         {
-            if (breather) {breather--;}
             if (mixer_read == mixer_write) {wave_direct_skip=0;processDirectAudio();}
             *p++ = mixer[mixer_read];
-            mixer_read++; mixer_read &= WAVE_DIRECT_BUF_SIZE;
+            mixer_read = (mixer_read + 1) & WAVE_DIRECT_BUF_SIZE;
         }
         p--; last_sample = *p;
+        if (breather) {breather -= (len*2); if (breather < 0) breather = 0;}
     }
     else
     {
@@ -549,12 +550,14 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
 // with the scanline processing. This is not as smooth as the normal sound driver and takes more
 // CPU power but will help render sound those few games that utilize digitize speech techniques.
 // -------------------------------------------------------------------------------------------------
-void processDirectAudio(void)
+ITCM_CODE void processDirectAudio(void)
 {
+    s16 mixbufA[8];
+    s16 mixbufB[8];
     int len = wave_direct_sample_table[wave_direct_skip++];
 
-    ay38910Mixer(len*2, mixbuf1, &myAY);
-    sn76496Mixer(len*2, mixbuf2, &mySN);
+    ay38910Mixer(len*2, mixbufA, &myAY);
+    sn76496Mixer(len*2, mixbufB, &mySN);
     if (breather) {return;}
     s32 combined;
     for (int i=0; i<len*2; i++)
@@ -562,7 +565,7 @@ void processDirectAudio(void)
         // ------------------------------------------------------------------------
         // We normalize the samples and mix them carefully to minimize clipping...
         // ------------------------------------------------------------------------
-        combined = (mixbuf1[i]) + (mixbuf2[i]) + 32768;
+        combined = (mixbufA[i]) + (mixbufB[i]) + 32768;
         if (combined >  32767) combined = 32767;
         mixer[mixer_write] = (s16)combined;
         mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;

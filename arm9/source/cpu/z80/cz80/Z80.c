@@ -32,6 +32,7 @@ extern u32 JoyState;;
 extern u8 kbd_key;
 
 extern Z80 CPU;
+extern u8 M1_Wait;
 
 u32 halt_counter=0;
 extern u32 debug[];
@@ -336,6 +337,7 @@ static void CodesCB(void)
   /* Read opcode and count cycles */
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesCB[I];
+  if (!M1_Wait) CPU.ICount++;
 
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -396,6 +398,7 @@ static void CodesED(void)
   /* Read opcode and count cycles */
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesED[I];
+  if (!M1_Wait) CPU.ICount++;
   
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -419,6 +422,7 @@ static void CodesDD(void)
   /* Read opcode and count cycles */
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesXX[I];
+  if (!M1_Wait) CPU.ICount++;
 
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -446,6 +450,7 @@ static void CodesFD(void)
   /* Read opcode and count cycles */
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesXX[I];
+  if (!M1_Wait) CPU.ICount++;
 
   /* R register incremented on each M1 cycle */
   INCR(1);
@@ -517,6 +522,7 @@ ITCM_CODE int ExecZ80(register int RunCycles)
       /* Read opcode and count cycles */
       I=OpZ80(CPU.PC.W++);
       CPU.ICount-=Cycles[I];
+      if (!M1_Wait) CPU.ICount++;
 
       /* R register incremented on each M1 cycle */
       INCR(1);
@@ -662,9 +668,6 @@ static void CodesCB_Simplified(void)
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesCB[I];
 
-  /* R register incremented on each M1 cycle */
-  INCR(1);
-
   switch(I)
   {
 #include "CodesCB.h"
@@ -722,9 +725,6 @@ static void CodesED_Simplified(void)
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesED[I];
 
-  /* R register incremented on each M1 cycle */
-  INCR(1);
-
   switch(I)
   {
 #include "CodesED.h"
@@ -744,9 +744,6 @@ static void CodesDD_Simplified(void)
   /* Read opcode and count cycles */
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesXX[I];
-
-  /* R register incremented on each M1 cycle */
-  INCR(1);
 
   switch(I)
   {
@@ -771,9 +768,6 @@ static void CodesFD_Simplified(void)
   /* Read opcode and count cycles */
   I=OpZ80(CPU.PC.W++);
   CPU.ICount-=CyclesXX[I];
-
-  /* R register incremented on each M1 cycle */
-  INCR(1);
 
   switch(I)
   {
@@ -803,9 +797,6 @@ int ExecZ80_Simplified(register int RunCycles)
       I=OpZ80(CPU.PC.W++);
       CPU.ICount-=Cycles[I];
 
-      /* R register incremented on each M1 cycle */
-      INCR(1);
-
       /* Interpret opcode */
       switch(I)
       {
@@ -816,6 +807,9 @@ int ExecZ80_Simplified(register int RunCycles)
         case PFX_DD: CodesDD_Simplified();break;
       }
     }
+    
+    /* Normally the R register would be incremented on every M1 CPU access... but for the optimized driver, we just increment it per scanline */
+    INCR(1);
 
     /* Unless we have come here after EI, exit */
     if(!(CPU.IFF&IFF_EI)) return(CPU.ICount);
