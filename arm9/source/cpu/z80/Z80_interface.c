@@ -62,7 +62,17 @@ ITCM_CODE void MegaCartBankSwap(u8 bank)
             MemoryMap[6] = ROM_Memory + ((u32)bank * (u32)0x4000);
             MemoryMap[7] = MemoryMap[6] + 0x2000;
             if (bank < 32)
-                memcpy(RAM_Memory + 0xC000, ((u8*)0x06860000) + ((u32)bank * (u32)0x4000), 0x4000);
+            {
+                //memcpy(RAM_Memory + 0xC000, ((u8*)0x06860000) + ((u32)bank * (u32)0x4000), 0x4000);
+                u32 *src = (u32 *) (((u8*)0x06860000) + ((u32)bank * (u32)0x4000));
+                u32 *dest = (u32*)(RAM_Memory + 0xC000);
+                for (int i=0; i < 4096/8; i++)
+                {
+                    *dest++ = *src++; *dest++ = *src++; *dest++ = *src++; *dest++ = *src++;
+                    *dest++ = *src++; *dest++ = *src++; *dest++ = *src++; *dest++ = *src++;
+                }
+                
+            }
             else
                 memcpy(RAM_Memory + 0xC000, ROM_Memory + ((u32)bank * (u32)0x4000), 0x4000);
             last_mega_bank = bank;
@@ -363,7 +373,7 @@ ITCM_CODE void HandleAscii16K(u32* src, u8 block, u16 address)
     }
 }
 
-ITCM_CODE void activision_pcb_write(u16 address)
+void activision_pcb_write(u16 address)
 {
   if ((address == 0xFF90) || (address == 0xFFA0) || (address == 0xFFB0))
   {

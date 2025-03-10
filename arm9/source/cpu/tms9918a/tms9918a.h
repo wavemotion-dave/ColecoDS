@@ -94,7 +94,7 @@ extern u16 ColTabM, ChrGenM;                   // Color and Character Masks
 /** WrData9918() *********************************************/
 /** Write a value V to the VDP Data Port.                   **/
 /*************************************************************/
-inline void WrData9918(byte V)  // This one is used frequently so we try to inline it
+inline __attribute__((always_inline)) void WrData9918(byte V)  // This one is used frequently so we always inline it
 {
     VDPDlatch = pVDPVidMem[VAddr] = V;
     VAddr     = (VAddr+1)&0x3FFF;

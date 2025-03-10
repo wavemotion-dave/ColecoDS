@@ -81,6 +81,7 @@ u8 Port42         __attribute__((section(".dtcm"))) = 0x00;
 u8 bFirstSGMEnable __attribute__((section(".dtcm"))) = true;
 u8 AY_Enable       __attribute__((section(".dtcm"))) = false;
 u8 ctc_enabled     __attribute__((section(".dtcm"))) = false;
+u8 M1_Wait         __attribute__((section(".dtcm"))) = false;
 
 u8  JoyMode        __attribute__((section(".dtcm"))) = 0;           // Joystick Mode (1=Keypad, 0=Joystick)
 u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick State for P1 and P2
@@ -341,6 +342,7 @@ u8 colecoInit(char *szGame)
   write_NV_counter=0;
   spinner_enabled = false;
   ctc_enabled = false;
+  M1_Wait = false;
 
   if (sg1000_mode)  // Load SG-1000 cartridge
   {
@@ -378,6 +380,9 @@ u8 colecoInit(char *szGame)
 
       // Wipe RAM area from 0xC000 upwards after ROM is loaded...
       colecoWipeRAM();
+      
+      // MSX machines have an M1 wait state inserted
+      M1_Wait = true;
   }
   else if (svi_mode)  // Load SVI ROM ...
   {
@@ -404,6 +409,9 @@ u8 colecoInit(char *szGame)
       RetFct = loadrom(szGame,RAM_Memory);
 
       RAM_Memory[0x38] = RAM_Memory[0x66] = 0xC9;       // Per AdamEM - put a return at the interrupt locations to solve problems with badly behaving 3rd party software
+      
+      // Coleco ADAM machines have an M1 wait state inserted
+      M1_Wait = true;
   }
   else if (pencil2_mode)
   {
@@ -436,6 +444,10 @@ u8 colecoInit(char *szGame)
 
       RetFct = loadrom(szGame,RAM_Memory+0x8000);
 
+      // Coleco machines have an M1 wait state inserted
+      M1_Wait = true;
+
+      // Flag to let us know we're in simple colecovision mode
       coleco_mode = true;
   }
 
@@ -1136,11 +1148,10 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
   }
 
-  // VDP access is the most common - handle it first
-  if ((Port&0xE0) == 0xA0)
+  // VDP data write is the most common - handle it first
+  if ((Port&0xE1) == 0xA0)
   {
-      if(!(Port&0x01)) WrData9918(Value);
-      else if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI;}
+      WrData9918(Value);
       return;
   }
   
@@ -1161,6 +1172,9 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       return;
     case 0xE0:  // Ports E0-FF: The SN Sound port
       sn76496W(Value, &mySN);
+      return;
+    case 0xA0: // We know it's a VDP control write as data writes are trapped above
+      if (WrCtrl9918(Value)) { CPU.IRequest=INT_NMI;}
       return;
     case 0x40:  // Ports 40-5F: SGM/AY port and ADAM expanded memory
       // -----------------------------------------------
@@ -1193,7 +1207,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       // -----------------------------------------------------------------
       // Port 53 is used for the Super Game Module to enable SGM mode...
       // -----------------------------------------------------------------
-      else if (Port == 0x53 && !adam_mode) {Port53 = Value; SetupSGM(); return;}
+      else if (Port == 0x53 && !adam_mode) {Port53 = Value; SetupSGM();}
       
       return;
     case 0x20:  // Ports 20-3F:  AdamNet port
