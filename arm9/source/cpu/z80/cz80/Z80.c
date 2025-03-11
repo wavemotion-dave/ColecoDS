@@ -294,37 +294,37 @@ enum CodesCB
 
 enum CodesED
 {
-  DB_00,    DB_01,      DB_02,      DB_03,          DB_04,      DB_05,  DB_06,  DB_07,
-  DB_08,    DB_09,      DB_0A,      DB_0B,          DB_0C,      DB_0D,  DB_0E,  DB_0F,
-  DB_10,    DB_11,      DB_12,      DB_13,          DB_14,      DB_15,  DB_16,  DB_17,
-  DB_18,    DB_19,      DB_1A,      DB_1B,          DB_1C,      DB_1D,  DB_1E,  DB_1F,
-  DB_20,    DB_21,      DB_22,      DB_23,          DB_24,      DB_25,  DB_26,  DB_27,
-  DB_28,    DB_29,      DB_2A,      DB_2B,          DB_2C,      DB_2D,  DB_2E,  DB_2F,
-  DB_30,    DB_31,      DB_32,      DB_33,          DB_34,      DB_35,  DB_36,  DB_37,
-  DB_38,    DB_39,      DB_3A,      DB_3B,          DB_3C,      DB_3D,  DB_3E,  DB_3F,
-  IN_B_xC,  OUT_xC_B,   SBC_HL_BC,  LD_xWORDe_BC,   NEG,        RETN,   IM_0,   LD_I_A,
-  IN_C_xC,  OUT_xC_C,   ADC_HL_BC,  LD_BC_xWORDe,   DB_4C,      RETI,   DB_,    LD_R_A,
-  IN_D_xC,  OUT_xC_D,   SBC_HL_DE,  LD_xWORDe_DE,   DB_54,      DB_55,  IM_1,   LD_A_I,
-  IN_E_xC,  OUT_xC_E,   ADC_HL_DE,  LD_DE_xWORDe,   DB_5C,      DB_5D,  IM_2,   LD_A_R,
-  IN_H_xC,  OUT_xC_H,   SBC_HL_HL,  LD_xWORDe_HL,   DB_64,      DB_65,  DB_66,  RRD,
-  IN_L_xC,  OUT_xC_L,   ADC_HL_HL,  LD_HL_xWORDe,   DB_6C,      DB_6D,  DB_6E,  RLD,
-  IN_F_xC,  OUT_xC_F,   SBC_HL_SP,  LD_xWORDe_SP,   DB_74,      DB_75,  DB_76,  DB_77,
-  IN_A_xC,  OUT_xC_A,   ADC_HL_SP,  LD_SP_xWORDe,   DB_7C,      DB_7D,  DB_7E,  DB_7F,
-  DB_80,    DB_81,      DB_82,      DB_83,          DB_84,      DB_85,  DB_86,  DB_87,
+  DB_00,    DB_01,      DB_02,      DB_03,          DB_04,      DB_05,  DB_06,  DB_07,  // 0x00
+  DB_08,    DB_09,      DB_0A,      DB_0B,          DB_0C,      DB_0D,  DB_0E,  DB_0F,  
+  DB_10,    DB_11,      DB_12,      DB_13,          DB_14,      DB_15,  DB_16,  DB_17,  // 0x10
+  DB_18,    DB_19,      DB_1A,      DB_1B,          DB_1C,      DB_1D,  DB_1E,  DB_1F,  
+  DB_20,    DB_21,      DB_22,      DB_23,          DB_24,      DB_25,  DB_26,  DB_27,  // 0x20
+  DB_28,    DB_29,      DB_2A,      DB_2B,          DB_2C,      DB_2D,  DB_2E,  DB_2F,  
+  DB_30,    DB_31,      DB_32,      DB_33,          DB_34,      DB_35,  DB_36,  DB_37,  // 0x30
+  DB_38,    DB_39,      DB_3A,      DB_3B,          DB_3C,      DB_3D,  DB_3E,  DB_3F,  
+  IN_B_xC,  OUT_xC_B,   SBC_HL_BC,  LD_xWORDe_BC,   NEG,        RETN,   IM_0,   LD_I_A, // 0x40
+  IN_C_xC,  OUT_xC_C,   ADC_HL_BC,  LD_BC_xWORDe,   DB_4C,      RETI,   DB_,    LD_R_A, 
+  IN_D_xC,  OUT_xC_D,   SBC_HL_DE,  LD_xWORDe_DE,   DB_54,      DB_55,  IM_1,   LD_A_I, // 0x50
+  IN_E_xC,  OUT_xC_E,   ADC_HL_DE,  LD_DE_xWORDe,   DB_5C,      DB_5D,  IM_2,   LD_A_R, 
+  IN_H_xC,  OUT_xC_H,   SBC_HL_HL,  LD_xWORDe_HL,   DB_64,      DB_65,  DB_66,  RRD,    // 0x60
+  IN_L_xC,  OUT_xC_L,   ADC_HL_HL,  LD_HL_xWORDe,   DB_6C,      DB_6D,  DB_6E,  RLD,    
+  IN_F_xC,  OUT_xC_F,   SBC_HL_SP,  LD_xWORDe_SP,   DB_74,      DB_75,  DB_76,  DB_77,  // 0x70
+  IN_A_xC,  OUT_xC_A,   ADC_HL_SP,  LD_SP_xWORDe,   DB_7C,      DB_7D,  DB_7E,  DB_7F,  
+  DB_80,    DB_81,      DB_82,      DB_83,          DB_84,      DB_85,  DB_86,  DB_87,  // 0x80
   DB_88,    DB_89,      DB_8A,      DB_8B,          DB_8C,      DB_8D,  DB_8E,  DB_8F,
-  DB_90,    DB_91,      DB_92,      DB_93,          DB_94,      DB_95,  DB_96,  DB_97,
+  DB_90,    DB_91,      DB_92,      DB_93,          DB_94,      DB_95,  DB_96,  DB_97,  // 0x90
   DB_98,    DB_99,      DB_9A,      DB_9B,          DB_9C,      DB_9D,  DB_9E,  DB_9F,
-  LDI,      CPI,        INI,        OUTI,           DB_A4,      DB_A5,  DB_A6,  DB_A7,
+  LDI,      CPI,        INI,        OUTI,           DB_A4,      DB_A5,  DB_A6,  DB_A7,  // 0xA0
   LDD,      CPD,        IND,        OUTD,           DB_AC,      DB_AD,  DB_AE,  DB_AF,
-  LDIR,     CPIR,       INIR,       OTIR,           DB_B4,      DB_B5,  DB_B6,  DB_B7,
+  LDIR,     CPIR,       INIR,       OTIR,           DB_B4,      DB_B5,  DB_B6,  DB_B7,  // 0xB0
   LDDR,     CPDR,       INDR,       OTDR,           DB_BC,      DB_BD,  DB_BE,  DB_BF,
-  DB_C0,    DB_C1,      DB_C2,      DB_C3,          DB_C4,      DB_C5,  DB_C6,  DB_C7,
+  DB_C0,    DB_C1,      DB_C2,      DB_C3,          DB_C4,      DB_C5,  DB_C6,  DB_C7,  // 0xC0
   DB_C8,    DB_C9,      DB_CA,      DB_CB,          DB_CC,      DB_CD,  DB_CE,  DB_CF,
-  DB_D0,    DB_D1,      DB_D2,      DB_D3,          DB_D4,      DB_D5,  DB_D6,  DB_D7,
+  DB_D0,    DB_D1,      DB_D2,      DB_D3,          DB_D4,      DB_D5,  DB_D6,  DB_D7,  // 0xD0
   DB_D8,    DB_D9,      DB_DA,      DB_DB,          DB_DC,      DB_DD,  DB_DE,  DB_DF,
-  DB_E0,    DB_E1,      DB_E2,      DB_E3,          DB_E4,      DB_E5,  DB_E6,  DB_E7,
+  DB_E0,    DB_E1,      DB_E2,      DB_E3,          DB_E4,      DB_E5,  DB_E6,  DB_E7,  // 0xE0
   DB_E8,    DB_E9,      DB_EA,      DB_EB,          DB_EC,      DB_ED,  DB_EE,  DB_EF,
-  DB_F0,    DB_F1,      DB_F2,      DB_F3,          DB_F4,      DB_F5,  DB_F6,  DB_F7,
+  DB_F0,    DB_F1,      DB_F2,      DB_F3,          DB_F4,      DB_F5,  DB_F6,  DB_F7,  // 0xF0
   DB_F8,    DB_F9,      DB_FA,      DB_FB,          DB_FC,      DB_FD,  DB_FE,  DB_FF
 };
 

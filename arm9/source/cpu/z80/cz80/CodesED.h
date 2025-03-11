@@ -142,34 +142,38 @@ case OUT_xC_A: OutZ80(CPU.BC.W,CPU.AF.B.h);break;
 case OUT_xC_F: OutZ80(CPU.BC.W,0);break;
 
 case INI:
-  WrZ80(CPU.HL.W++,InZ80(CPU.BC.W));
+  I = InZ80(CPU.BC.W);
+  WrZ80(CPU.HL.W++,I);
   --CPU.BC.B.h;
-  CPU.AF.B.l=N_FLAG|(CPU.BC.B.h? 0:Z_FLAG);
+  CPU.AF.B.l=(I&0x80 ? N_FLAG:0)|(CPU.BC.B.h? 0:Z_FLAG);
   break;
 
 case INIR:
-  WrZ80(CPU.HL.W++,InZ80(CPU.BC.W));
-  if(--CPU.BC.B.h) { CPU.AF.B.l=N_FLAG;CPU.ICount-=21;CPU.PC.W-=2; }
-  else            { CPU.AF.B.l=Z_FLAG|N_FLAG;CPU.ICount-=16; }
+  I = InZ80(CPU.BC.W);
+  WrZ80(CPU.HL.W++,I);
+  if(--CPU.BC.B.h) { CPU.AF.B.l=N_FLAG; CPU.PC.W-=2; }   // N_FLAG is not correct here but will be corrected when loop exits below. Nothing relies on the intermediate value.
+  else            { CPU.AF.B.l=Z_FLAG|(I&0x80 ? N_FLAG:0); CPU.ICount+=5; }
   break;
 
 case IND:
-  WrZ80(CPU.HL.W--,InZ80(CPU.BC.W));
+  I = InZ80(CPU.BC.W);
+  WrZ80(CPU.HL.W--,I);
   --CPU.BC.B.h;
-  CPU.AF.B.l=N_FLAG|(CPU.BC.B.h? 0:Z_FLAG);
+  CPU.AF.B.l=(I&0x80 ? N_FLAG:0)|(CPU.BC.B.h? 0:Z_FLAG);
   break;
 
 case INDR:
-  WrZ80(CPU.HL.W--,InZ80(CPU.BC.W));
-  if(!--CPU.BC.B.h) { CPU.AF.B.l=N_FLAG;CPU.ICount-=21;CPU.PC.W-=2; }
-  else             { CPU.AF.B.l=Z_FLAG|N_FLAG;CPU.ICount-=16; }
+  I = InZ80(CPU.BC.W);
+  WrZ80(CPU.HL.W--,I);
+  if(!--CPU.BC.B.h) { CPU.AF.B.l=N_FLAG; CPU.PC.W-=2; }  // N_FLAG is not correct here but will be corrected when loop exits below. Nothing relies on the intermediate value.
+  else             { CPU.AF.B.l=Z_FLAG|(I&0x80 ? N_FLAG:0); CPU.ICount+=5; }
   break;
 
 case OUTI:
   --CPU.BC.B.h;
   I=RdZ80(CPU.HL.W++);
   OutZ80(CPU.BC.W,I);
-  CPU.AF.B.l=N_FLAG|(CPU.BC.B.h? 0:Z_FLAG)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+  CPU.AF.B.l=(I&0x80 ? N_FLAG:0)|(CPU.BC.B.h? 0:Z_FLAG)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
   break;
 
 case OTIR:
@@ -178,14 +182,13 @@ case OTIR:
   OutZ80(CPU.BC.W,I);
   if(CPU.BC.B.h)
   {
-    CPU.AF.B.l=N_FLAG|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
-    CPU.ICount-=21;
+    CPU.AF.B.l=N_FLAG|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);  // N_FLAG is not correct here but will be corrected when loop exits below. Nothing relies on the intermediate value.
     CPU.PC.W-=2;
   }
   else
   {
-    CPU.AF.B.l=Z_FLAG|N_FLAG|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
-    CPU.ICount-=16;
+    CPU.AF.B.l=Z_FLAG|(I&0x80 ? N_FLAG:0)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+    CPU.ICount+=5;
   }
   break;
 
@@ -193,7 +196,7 @@ case OUTD:
   --CPU.BC.B.h;
   I=RdZ80(CPU.HL.W--);
   OutZ80(CPU.BC.W,I);
-  CPU.AF.B.l=N_FLAG|(CPU.BC.B.h? 0:Z_FLAG)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+  CPU.AF.B.l=(I&0x80 ? N_FLAG:0)|(CPU.BC.B.h? 0:Z_FLAG)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
   break;
 
 case OTDR:
@@ -202,14 +205,13 @@ case OTDR:
   OutZ80(CPU.BC.W,I);
   if(CPU.BC.B.h)
   {
-    CPU.AF.B.l=N_FLAG|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
-    CPU.ICount-=21;
+    CPU.AF.B.l=N_FLAG|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);  // N_FLAG is not correct here but will be corrected when loop exits below. Nothing relies on the intermediate value.
     CPU.PC.W-=2;
   }
   else
   {
-    CPU.AF.B.l=Z_FLAG|N_FLAG|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
-    CPU.ICount-=16;
+    CPU.AF.B.l=Z_FLAG|(I&0x80 ? N_FLAG:0)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+    CPU.ICount+=5;
   }
   break;
 
@@ -224,13 +226,12 @@ case LDIR:
   if(--CPU.BC.W)
   {
     CPU.AF.B.l=(CPU.AF.B.l&~(H_FLAG|P_FLAG))|N_FLAG;
-    CPU.ICount-=21;
     CPU.PC.W-=2;
   }
   else
   {
     CPU.AF.B.l&=~(N_FLAG|H_FLAG|P_FLAG);
-    CPU.ICount-=16;
+    CPU.ICount+=5;
   }
   break;
 
@@ -246,13 +247,12 @@ case LDDR:
   if(--CPU.BC.W)
   {
     CPU.AF.B.l=(CPU.AF.B.l&~(H_FLAG|P_FLAG))|N_FLAG;
-    CPU.ICount-=21;
     CPU.PC.W-=2;
   }
   else
   {
     CPU.AF.B.l&=~(N_FLAG|H_FLAG|P_FLAG);
-    CPU.ICount-=16;
+    CPU.ICount+=5;
   }
   break;
 
@@ -268,7 +268,7 @@ case CPI:
 case CPIR:
   I=RdZ80(CPU.HL.W++);
   J.B.l=CPU.AF.B.h-I;
-  if(--CPU.BC.W&&J.B.l) { CPU.ICount-=21;CPU.PC.W-=2; } else CPU.ICount-=16;
+  if(--CPU.BC.W&&J.B.l) { CPU.PC.W-=2; } else CPU.ICount+=5;
   CPU.AF.B.l =
     N_FLAG|(CPU.AF.B.l&C_FLAG)|ZSTable[J.B.l]|
     ((CPU.AF.B.h^I^J.B.l)&H_FLAG)|(CPU.BC.W? P_FLAG:0);
@@ -286,7 +286,7 @@ case CPD:
 case CPDR:
   I=RdZ80(CPU.HL.W--);
   J.B.l=CPU.AF.B.h-I;
-  if(--CPU.BC.W&&J.B.l) { CPU.ICount-=21;CPU.PC.W-=2; } else CPU.ICount-=16;
+  if(--CPU.BC.W&&J.B.l) { CPU.PC.W-=2; } else CPU.ICount+=5;
   CPU.AF.B.l =
     N_FLAG|(CPU.AF.B.l&C_FLAG)|ZSTable[J.B.l]|
     ((CPU.AF.B.h^I^J.B.l)&H_FLAG)|(CPU.BC.W? P_FLAG:0);
