@@ -801,6 +801,7 @@ ITCM_CODE byte Loop9918(void)
   /* If refreshing display area, call scanline handler */
   if ((CurLine >= tms_start_line) && (CurLine < tms_end_line))
   {
+#ifndef ZEXALL_TEST      
       unsigned int tmp;
       if ((frameSkipIdx & frameSkip[myConfig.frameSkip]) == 0)
           ScanSprites(CurLine - tms_start_line, &tmp);    // Skip rendering - but still scan sprites for the 5th sprite flag
@@ -809,7 +810,7 @@ ITCM_CODE byte Loop9918(void)
           
       // ---------------------------------------------------------------------
       // Some programs require that we handle collisions more frequently
-      // than just end of line. So we check every 64 scanlines (or 255 if 
+      // than just end of frame. So we check every 64 scanlines (or 255 if 
       // we are the older DS-Lite/Phat). This is somewhat CPU intensive so
       // we are careful how often we run it - especially on older hardware.
       // ---------------------------------------------------------------------
@@ -820,6 +821,7 @@ ITCM_CODE byte Loop9918(void)
             if(CheckSprites()) VDPStatus|=TMS9918_STAT_OVRLAP; // Set the collision bit
           }
       }
+#endif      
   }
   /* If time for emulated VBlank... */
   else if (CurLine == tms_end_line)
