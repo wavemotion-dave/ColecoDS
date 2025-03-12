@@ -57,9 +57,21 @@ extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
 extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode;
 extern u16 vdp_int_source, keyboard_interrupt, joystick_interrupt;
+
+#ifndef ZEXALL_TEST // If we're running normally, map in the standard Op/Rd/Wr handlers
+
 inline byte OpZ80(word A)   {return*(MemoryMap[(A)>>13] + ((A)&0x1FFF));}
 inline byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A) : *(MemoryMap[(A)>>13] + ((A)&0x1FFF)));}
 #define     WrZ80(A,V)       cpu_writemem16(V,A)
+
+#else // For ZEXALL_TEST we simplify things...
+
+#define     WrZ80(A,V)       RAM_Memory[A]=V
+inline byte OpZ80(word A)   {return RAM_Memory[A];}
+inline byte RdZ80(word A)   {return RAM_Memory[A];}
+
+#endif // ZEXALL_TEST
+
 #define     OutZ80(P,V)      cpu_writeport16(P,V)
 #define     InZ80(P)         cpu_readport16(P)
 
@@ -107,7 +119,7 @@ inline byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A)
   CPU.AF.B.l=Rg&0x01;Rg>>=1;CPU.AF.B.l|=PZSTable[Rg]
 
 #define M_BIT(Bit,Rg)  \
-  CPU.AF.B.l=(CPU.AF.B.l&C_FLAG)|H_FLAG|PZSTable[Rg&(1<<Bit)]
+  CPU.AF.B.l=(CPU.AF.B.l&C_FLAG)|PZSHTable_BIT[Rg&(1<<Bit)]
 
 #define M_SET(Bit,Rg) Rg|=1<<Bit
 #define M_RES(Bit,Rg) Rg&=~(1<<Bit)
@@ -182,15 +194,13 @@ inline byte RdZ80(word A)   {return (bIsComplicatedRAM ? cpu_readmem16_banked(A)
 
 #define M_INC(Rg)       \
   Rg++;                 \
-  CPU.AF.B.l=            \
-    (CPU.AF.B.l&C_FLAG)|ZSTable[Rg]|           \
-    (Rg==0x80? V_FLAG:0)|(Rg&0x0F? 0:H_FLAG)
+  CPU.AF.B.l=(CPU.AF.B.l&C_FLAG)|ZSTable_INC[Rg];
+    //(Rg==0x80? V_FLAG:0)|(Rg&0x0F? 0:H_FLAG)
 
 #define M_DEC(Rg)       \
   Rg--;                 \
-  CPU.AF.B.l=            \
-    N_FLAG|(CPU.AF.B.l&C_FLAG)|ZSTable[Rg]| \
-    (Rg==0x7F? V_FLAG:0)|((Rg&0x0F)==0x0F? H_FLAG:0)
+  CPU.AF.B.l= (CPU.AF.B.l&C_FLAG)|ZSTable_DEC[Rg];
+    //(Rg==0x7F? V_FLAG:0)|((Rg&0x0F)==0x0F? H_FLAG:0)
 
 #define M_ADDW(Rg1,Rg2) \
   J.W=(CPU.Rg1.W+CPU.Rg2.W)&0xFFFF;                        \
@@ -519,6 +529,10 @@ ITCM_CODE int ExecZ80(register int RunCycles)
   {
     while(CPU.ICount>0)
     {
+#ifdef ZEXALL_TEST        
+      extern void zextrap(void);
+      zextrap();
+#endif      
       /* Read opcode and count cycles */
       I=OpZ80(CPU.PC.W++);
       CPU.ICount-=Cycles[I];
@@ -802,7 +816,18 @@ int ExecZ80_Simplified(register int RunCycles)
       {
 #include "Codes.h"
         case PFX_CB: CodesCB_Simplified();break;
-        case PFX_ED: CodesED_Simplified();break;
+        case PFX_ED: 
+          if (OpZ80(CPU.PC.W) == 0xA3) // This is so common so we trap it here to avoid the slow function call overhead
+          {   //A3 is OUTI
+              CPU.PC.W++;
+              CPU.ICount-=16;
+              --CPU.BC.B.h;
+              I=RdZ80(CPU.HL.W++);
+              OutZ80(CPU.BC.W,I);
+              CPU.AF.B.l=(CPU.BC.B.h? 0:Z_FLAG)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+          }
+          else CodesED_Simplified();
+          break;
         case PFX_FD: CodesFD_Simplified();break;
         case PFX_DD: CodesDD_Simplified();break;
       }

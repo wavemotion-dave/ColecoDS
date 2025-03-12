@@ -27,6 +27,8 @@
 extern "C" {
 #endif
 
+//#define ZEXALL_TEST          /* Uncomment this to run the ZEXALL Z80 instruction test */
+
                                /* Compilation options:       */
 #define LSB_FIRST              /* Compile for low-endian CPU */
 #define EXECZ80                /* Call Z80 each scanline     */

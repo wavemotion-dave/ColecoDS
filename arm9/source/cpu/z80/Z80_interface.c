@@ -61,7 +61,7 @@ ITCM_CODE void MegaCartBankSwap(u8 bank)
         {
             MemoryMap[6] = ROM_Memory + ((u32)bank * (u32)0x4000);
             MemoryMap[7] = MemoryMap[6] + 0x2000;
-            if (bank < 32)
+            if (bank < 16) // First 256K of the ROM is in shadow VRAM for speed
             {
                 //memcpy(RAM_Memory + 0xC000, ((u8*)0x06860000) + ((u32)bank * (u32)0x4000), 0x4000);
                 u32 *src = (u32 *) (((u8*)0x06860000) + ((u32)bank * (u32)0x4000));

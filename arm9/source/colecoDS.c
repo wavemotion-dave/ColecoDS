@@ -591,6 +591,7 @@ void setupStream(void)
   mmLoadEffect(SFX_FLOPPY);
   mmLoadEffect(SFX_ADAM_DDP);
 
+#ifndef ZEXALL_TEST
   //----------------------------------------------------------------
   //  open stream
   //----------------------------------------------------------------
@@ -601,6 +602,7 @@ void setupStream(void)
   myStream.timer          = MM_TIMER0;              // use hardware timer 0
   myStream.manual         = false;                  // use automatic filling
   mmStreamOpen(&myStream);
+#endif  
 
   //----------------------------------------------------------------
   //  when using 'automatic' filling, your callback will be triggered
@@ -3116,6 +3118,11 @@ void colecoDS_main(void)
 
   // Force the sound engine to turn on when we start emulation
   bStartSoundEngine = true;
+  
+#ifdef ZEXALL_TEST  
+  extern void zextest(void);
+  zextest();
+#endif
 
   // -------------------------------------------------------------------
   // Stay in this loop running the Coleco game until the user exits...
@@ -4721,6 +4728,7 @@ void debug_printf(const char * str, ...)
 
     strcat(debug_buffer, szName);
     debug_len += strlen(szName);
+    debug[0]++;
 }
 
 void debug_save()

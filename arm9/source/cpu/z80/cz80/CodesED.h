@@ -173,7 +173,7 @@ case OUTI:
   --CPU.BC.B.h;
   I=RdZ80(CPU.HL.W++);
   OutZ80(CPU.BC.W,I);
-  CPU.AF.B.l=(I&0x80 ? N_FLAG:0)|(CPU.BC.B.h? 0:Z_FLAG)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+  CPU.AF.B.l = (CPU.AF.B.l & S_FLAG) | (I&0x80 ? N_FLAG:0) | (CPU.BC.B.h ? 0 : Z_FLAG) | (CPU.HL.B.l + I > 255 ? (C_FLAG | H_FLAG) : 0);
   break;
 
 case OTIR:
@@ -187,7 +187,7 @@ case OTIR:
   }
   else
   {
-    CPU.AF.B.l=Z_FLAG|(I&0x80 ? N_FLAG:0)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+    CPU.AF.B.l=(CPU.AF.B.l & S_FLAG) | Z_FLAG | (I&0x80 ? N_FLAG:0) | (CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
     CPU.ICount+=5;
   }
   break;
@@ -196,7 +196,7 @@ case OUTD:
   --CPU.BC.B.h;
   I=RdZ80(CPU.HL.W--);
   OutZ80(CPU.BC.W,I);
-  CPU.AF.B.l=(I&0x80 ? N_FLAG:0)|(CPU.BC.B.h? 0:Z_FLAG)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+  CPU.AF.B.l=(CPU.AF.B.l & S_FLAG) | (I&0x80 ? N_FLAG:0) | (CPU.BC.B.h? 0:Z_FLAG) | (CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
   break;
 
 case OTDR:
@@ -210,7 +210,7 @@ case OTDR:
   }
   else
   {
-    CPU.AF.B.l=Z_FLAG|(I&0x80 ? N_FLAG:0)|(CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
+    CPU.AF.B.l=(CPU.AF.B.l & S_FLAG) | Z_FLAG | (I&0x80 ? N_FLAG:0) | (CPU.HL.B.l+I>255? (C_FLAG|H_FLAG):0);
     CPU.ICount+=5;
   }
   break;
