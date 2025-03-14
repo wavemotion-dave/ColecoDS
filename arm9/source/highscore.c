@@ -105,19 +105,14 @@ void highscore_init(void)
 {
     u8 upgrade_database = 0;
     u8 create_defaults = 0;
-    FILE *fp;
     
     strcpy(highscores.last_initials, "   ");
     
     // --------------------------------------------------------------
     // See if the ColecoDS high score file exists... if so, read it!
     // --------------------------------------------------------------
-    fp = fopen("/data/ColecoDS.hi", "rb");
-    if (fp != NULL)
+    if (ReadFileCarefully("/data/ColecoDS.hi", (u8*)&highscores, sizeof(highscores), 0))
     {
-        fread(&highscores, sizeof(highscores), 1, fp);
-        fclose(fp);
-        
         // --------------------------------------------
         // If the high score version is wrong or if 
         // the checksum is wrong, reset to defaults

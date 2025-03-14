@@ -2138,14 +2138,8 @@ void msxLoadEEPROM(void)
     szName[len-2] = 'r';
     szName[len-1] = 'm';
     szName[len-0] = 0;
-
-    FILE *handle = fopen(szName, "rb+");
-    if (handle != NULL) 
-    {
-      fread(SRAM_Memory, 0x4000, 1, handle);
-      fclose(handle);
-    }
-    else
+    
+    if (ReadFileCarefully(szName, SRAM_Memory, 0x4000, 0) == 0)
     {
       memset(SRAM_Memory, 0xFF, 0x4000);
     }
