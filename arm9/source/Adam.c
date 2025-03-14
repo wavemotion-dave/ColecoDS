@@ -835,13 +835,8 @@ void adam_drive_update(u8 drive, u8 device, int cmd)
 // Read a .dsk or .ddp file from the SD card and place into memory
 void adam_drive_insert(u8 drive, char *filename)
 {
-    FILE *fp = fopen(filename, "rb");
-    if (fp)
-    {
-        AdamDrive[drive].image = ROM_Memory + ((drive*320)*1024);
-        AdamDrive[drive].imageSize = fread(AdamDrive[drive].image, 1, AdamDrive[drive].imageSizeMax, fp);
-        fclose(fp);
-    }
+    AdamDrive[drive].image = ROM_Memory + ((drive*320)*1024);
+    AdamDrive[drive].imageSize = ReadFileCarefully(filename, AdamDrive[drive].image, AdamDrive[drive].imageSizeMax, 0);
 }
 
 // Set the disk image for this drive bay back to NULL

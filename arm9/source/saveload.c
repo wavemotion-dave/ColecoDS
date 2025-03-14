@@ -654,13 +654,7 @@ void colecoLoadEEPROM(void)
     szLoadFile[len-2] = 'e';
     szLoadFile[len-1] = 0;
 
-    FILE *handle = fopen(szLoadFile, "rb+");
-    if (handle != NULL) 
-    {
-      fread(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
-      fclose(handle);
-    }
-    else
+    if (ReadFileCarefully(szLoadFile, EEPROM.Data, Size24XX(&EEPROM), 0) == 0)
     {
       memset(EEPROM.Data, 0xFF, 0x8000);
     }

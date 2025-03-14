@@ -409,6 +409,13 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.5: 14-Mar-2025 by wavemotion-dave
+* Update to the Z80 core to improve emulation accuracy. This emulator now passes the ZEXALL test suite.
+* Added proper M1 wait states for the Colecovision, ADAM and MSX emulation for improved CPU handling.
+* A few optimized Z80 lookup-tables brings in some additional speed for both the DSi and DS-Lite/Phat.
+* Improved file loading so that it's more robust - ensuring a higher level of consistency in loading large files into memory.
+* Other minor cleanups as time permitted.
+
 V10.4: 10-Mar-2025 by wavemotion-dave
 * DSi now supports cart ROMs up to 4MB (4096K). Only a few MSX tech demos / games get anywhere near this.
 * New super-simplified Colecovision CPU driver that is used for most of the well-behaved Colecovision games to render them full speed on the older DS-Lite/Phat.
