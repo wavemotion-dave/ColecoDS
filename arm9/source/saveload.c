@@ -28,7 +28,7 @@
 #include "fdc.h"
 #include "printf.h"
 
-#define COLECODS_SAVE_VER   0x001F        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
+#define COLECODS_SAVE_VER   0x0020        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 
 // -----------------------------------------------------------------------------------------------------
@@ -309,6 +309,11 @@ void colecoSaveState()
         u8 *mem = creativision_get_savestate(&cv_save_size);
         if (retVal) retVal = fwrite(mem, cv_save_size,1, handle);
     }
+    else if (bSuperSimplifiedMemory) // For the new optimized driver...
+    {
+        if (retVal) retVal = fwrite(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);      
+        if (retVal) retVal = fwrite(under_ram, sizeof(under_ram),1, handle);      
+    }
     
     strcpy(tmpStr, (retVal ? "OK ":"ERR"));  
     DSPrint(15,0,0,tmpStr);
@@ -580,6 +585,11 @@ void colecoLoadState()
                 if (retVal) retVal = fread(mem, cv_save_size,1, handle);
                 creativision_put_savestate(mem);
             }
+            else if (bSuperSimplifiedMemory) // For the new optimized driver...
+            {
+                if (retVal) retVal = fread(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);      
+                if (retVal) retVal = fread(under_ram, sizeof(under_ram),1, handle);      
+            }           
             
             // Fix up transparency
             if (BGColor)
@@ -654,13 +664,7 @@ void colecoLoadEEPROM(void)
     szLoadFile[len-2] = 'e';
     szLoadFile[len-1] = 0;
 
-    FILE *handle = fopen(szLoadFile, "rb+");
-    if (handle != NULL) 
-    {
-      fread(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
-      fclose(handle);
-    }
-    else
+    if (ReadFileCarefully(szLoadFile, EEPROM.Data, Size24XX(&EEPROM), 0) == 0)
     {
       memset(EEPROM.Data, 0xFF, 0x8000);
     }

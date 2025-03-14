@@ -1352,20 +1352,15 @@ void SetDefaultGameConfig(void)
 // ----------------------------------------------------------
 void LoadConfig(void)
 {
-    FILE *fp;
-    
     // -----------------------------------------------------------------
     // Start with defaults.. if we find a match in our config database
     // below, we will fill in the config with data read from the file.
     // -----------------------------------------------------------------
     SetDefaultGameConfig();
     
-    fp = fopen("/data/ColecoDS.DAT", "rb");
-    if (fp != NULL)
+    if (ReadFileCarefully("/data/ColecoDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), 0))  // Read Global Config
     {
-        fread(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp);  // Read Global Config
-        fread(&AllConfigs, sizeof(AllConfigs), 1, fp);          // Read the full array of game configs
-        fclose(fp);                                             // Close file - we work from memory now
+        ReadFileCarefully("/data/ColecoDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(myGlobalConfig)); // Read the full game array of configs
         
         // We auto-update rev 12 to rev 13 configuration
         if (myGlobalConfig.config_ver == 0x0012)
@@ -1843,54 +1838,47 @@ void NoGameSelected(u32 ucY)
  ********************************************************************************/
 void CheckRomHeaders(char *szGame)
 {
-  FILE* handle = fopen(szGame, "rb");  
-  if (handle)
-  {
-      // ------------------------------------------------------------------------------------------
-      // MSX Header Bytes:
-      //  0 DEFB "AB" ; expansion ROM header
-      //  2 DEFW initcode ; start of the init code, 0 if no initcode
-      //  4 DEFW callstat; pointer to CALL statement handler, 0 if no such handler
-      //  6 DEFW device; pointer to expansion device handler, 0 if no such handler
-      //  8 DEFW basic ; pointer to the start of a tokenized basicprogram, 0 if no basicprogram
-      // ------------------------------------------------------------------------------------------
-      memset(ROM_Memory, 0xFF, 0x400A);
-      fread((void*) ROM_Memory, 0x400A, 1, handle); 
-      fclose(handle);
-      
-      // ---------------------------------------------------------------------
-      // Do some auto-detection for game ROM. MSX games have 'AB' in their
-      // header and we also want to track the INIT address for those ROMs
-      // so we can take a better guess at mapping them into our Slot1 memory
-      // ---------------------------------------------------------------------
-      msx_init = 0x4000;
-      msx_basic = 0x0000;
-      if ((ROM_Memory[0] == 'A') && (ROM_Memory[1] == 'B'))
-      {
-          msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
-          msx_init = ROM_Memory[2] | (ROM_Memory[3]<<8);
-          if (msx_init == 0x0000) msx_basic = ROM_Memory[8] | (ROM_Memory[8]<<8);
-          if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
-          {
-              if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
-              {
-                  msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
-                  if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
-              }
-          }
-      }
-      else if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
-      {
-          msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
-          msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
-          if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
-      }
-      // Check for Spectravideo SVI Cart Header...
-      else if ((ROM_Memory[0] == 0xF3) && (ROM_Memory[1] == 0x31))
-      {
-          if ((strstr(gpFic[ucGameChoice].szName, ".rom")) || (strstr(gpFic[ucGameChoice].szName, ".ROM")))  svi_mode = 2;       // Detected SVI Cartridge header...
-      }
-  }
+    // ------------------------------------------------------------------------------------------
+    // MSX Header Bytes:
+    //  0 DEFB "AB" ; expansion ROM header
+    //  2 DEFW initcode ; start of the init code, 0 if no initcode
+    //  4 DEFW callstat; pointer to CALL statement handler, 0 if no such handler
+    //  6 DEFW device; pointer to expansion device handler, 0 if no such handler
+    //  8 DEFW basic ; pointer to the start of a tokenized basicprogram, 0 if no basicprogram
+    // ------------------------------------------------------------------------------------------
+    
+    // ---------------------------------------------------------------------
+    // Do some auto-detection for game ROM. MSX games have 'AB' in their
+    // header and we also want to track the INIT address for those ROMs
+    // so we can take a better guess at mapping them into our Slot1 memory
+    // ---------------------------------------------------------------------
+    msx_init = 0x4000;
+    msx_basic = 0x0000;
+    if ((ROM_Memory[0] == 'A') && (ROM_Memory[1] == 'B'))
+    {
+        msx_mode = 1;      // MSX roms start with AB (might be in bank 0)
+        msx_init = ROM_Memory[2] | (ROM_Memory[3]<<8);
+        if (msx_init == 0x0000) msx_basic = ROM_Memory[8] | (ROM_Memory[8]<<8);
+        if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
+        {
+            if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
+            {
+                msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
+                if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
+            }
+        }
+    }
+    else if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
+    {
+        msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
+        msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
+        if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
+    }
+    // Check for Spectravideo SVI Cart Header...
+    else if ((ROM_Memory[0] == 0xF3) && (ROM_Memory[1] == 0x31))
+    {
+        if ((strstr(gpFic[ucGameChoice].szName, ".rom")) || (strstr(gpFic[ucGameChoice].szName, ".ROM")))  svi_mode = 2;       // Detected SVI Cartridge header...
+    }
 }
 
 
@@ -1914,7 +1902,12 @@ void ReadFileCRCAndConfig(void)
     coleco_mode = 0;
     keyMapType = 0;
 
-    // Grab the all-important file CRC
+    // ----------------------------------------------------------------------------------
+    // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory
+    // ----------------------------------------------------------------------------------
+    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
+
+    // Grab the all-important file CRC - this also loads the file into ROM_Memory[]
     getfile_crc(gpFic[ucGameChoice].szName);
     
     if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;    // SG-1000 mode
@@ -2000,39 +1993,23 @@ void ReadFileCRCAndConfig(void)
     // --------------------------------------------------------------------------
     if (cas_load)
     {
-        FILE *fp;
-        
-        fp = fopen(gpFic[ucGameChoice].szName, "rb");
-        if (fp != NULL)
+        for (u8 i=0; i<30; i++)
         {
-            static char headerBytes[32];
-            fread(headerBytes, 32, 1, fp);
-            for (u8 i=0; i<30; i++)
+            if ((ROM_Memory[i] == 0x55) && (ROM_Memory[i+2] == 0x55) && (ROM_Memory[i+2] == 0x55))
             {
-                if ((headerBytes[i] == 0x55) && (headerBytes[i+2] == 0x55) && (headerBytes[i+2] == 0x55))
-                {
-                    svi_mode = 1;
-                    break;
-                }
+                svi_mode = 1;
+                break;
             }
-            fclose(fp);
-            if (svi_mode == 0) msx_mode = 2;        // if not SVI, assume MSX
         }
+        if (svi_mode == 0) msx_mode = 2;        // if not SVI, assume MSX
     }
     
     // -----------------------------------------------------------------------
     // If Adam Mode, we need to see if the .ddp or .dsk is a CP/M game so 
-    // we must read in some of the file which is used by the config handler.
+    // we check now in the ROM_Memory[] buffer previously read-in.
     // -----------------------------------------------------------------------
     if (adam_mode)
     {
-        FILE *fp = fopen(gpFic[ucGameChoice].szName, "rb");
-        if (fp != NULL)
-        {
-            fread(ROM_Memory, 1, 0x2000, fp);   // First 8K is enough...
-            fclose(fp);
-        }
-        
         if (adam_mode == 3) // If we are a .adm file, we need to look at the first byte to tell us if we are perhaps an ADAM expansion ROM
         {
             if (ROM_Memory[0] == 0x66) adam_mode = 2; // 0x6699 at the start indicates we are an ADAM expansion ROM. Otherwise assume normal ADAM cart
@@ -2051,6 +2028,49 @@ void ReadFileCRCAndConfig(void)
     // And if the cart type is specifically set to ADAM, force that driver in.
     // ------------------------------------------------------------------------
     if (myConfig.cvMode == CV_MODE_ADAM)  adam_mode = 3;
+}
+
+
+// ----------------------------------------------------------------------
+// Read file twice and ensure we get the same CRC... if not, do it again
+// until we get a clean read. Return the filesize to the caller...
+// ----------------------------------------------------------------------
+u32 ReadFileCarefully(char *filename, u8 *buf, u32 buf_size, u32 buf_offset)
+{
+    u32 crc1 = 0;
+    u32 crc2 = 1;
+    u32 fileSize = 0;
+    
+    // --------------------------------------------------------------------------------------------
+    // I've seen some rare issues with reading files from the SD card on a DSi so we're doing
+    // this slow and careful - we will read twice and ensure that we get the same CRC both times.
+    // --------------------------------------------------------------------------------------------
+    do
+    {
+        // Read #1
+        crc1 = 0xFFFFFFFF;
+        FILE* file = fopen(filename, "rb");
+        if (file)
+        {
+            if (buf_offset) fseek(file, buf_offset, SEEK_SET);
+            fileSize = fread(buf, 1, buf_size, file);
+            crc1 = getCRC32(buf, buf_size);
+            fclose(file);
+        }
+
+        // Read #2
+        crc2 = 0xFFFFFFFF;
+        FILE* file2 = fopen(filename, "rb");
+        if (file2)
+        {
+            if (buf_offset) fseek(file2, buf_offset, SEEK_SET);
+            fread(buf, 1, buf_size, file2);
+            crc2 = getCRC32(buf, buf_size);
+            fclose(file2);
+        }
+   } while (crc1 != crc2); // If the file couldn't be read, file_size will be 0 and the CRCs will both be 0xFFFFFFFF
+   
+   return fileSize;
 }
 
 // --------------------------------------------------------------------

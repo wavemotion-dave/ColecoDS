@@ -76,27 +76,72 @@ u32 crcBasedOnFilename(const char *filename)
     return ~crc;
 }
 
+// -----------------------------------------------------------------------------------------------------------------
+// For disk and data pack games which may write back data, we don't want to base the CRC on the actual contents of
+// the media... so instead we'll just hash the filename as a CRC which is good enough to identify it in the future.
+// -----------------------------------------------------------------------------------------------------------------
+u32 getCRC32(u8 *buf, u32 size)
+{
+    u32 crc = 0xFFFFFFFF;
+
+    for (int i=0; i < size; i++)
+    {
+        crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)buf[i]]; 
+    }
+    
+    return ~crc;
+}
+
+
 // ------------------------------------------------------------------------------------
 // Read the file in and compute CRC... it's a bit slow but good enough and accurate!
+// When this routine finishes, the file will be read into ROM_Memory[]
 // ------------------------------------------------------------------------------------
-u8 file_crc_buffer[2048];
+extern u32 MAX_CART_SIZE;
+extern u8 *ROM_Memory;
+
 ITCM_CODE u32 getFileCrc(const char* filename)
 {
     extern u32 file_size;
-    u32 crc = 0xFFFFFFFF;
-    int bytesRead;
+    u32 crc1 = 0;
+    u32 crc2 = 1;
+    int bytesRead1 = 0;
+    int bytesRead2 = 1;
 
-    FILE* file = fopen(filename, "rb");
-    file_size=0;
-    while ((bytesRead = fread(file_crc_buffer, 1, sizeof(file_crc_buffer), file)) > 0)
+    // --------------------------------------------------------------------------------------------
+    // I've seen some rare issues with reading files from the SD card on a DSi so we're doing
+    // this slow and careful - we will read twice and ensure that we get the same CRC both 
+    // times in order for us to declare that this is a valid read. When we're done, the game
+    // ROM will be placed in the ROM_Memory[] and will be ready for use by the rest of the system.
+    // --------------------------------------------------------------------------------------------
+    do
     {
-        file_size += bytesRead;
-        for (int i=0; i < bytesRead; i++)
+        // Read #1
+        file_size = 0;
+        crc1 = 0xFFFFFFFF;
+        FILE* file = fopen(filename, "rb");
+        while ((bytesRead1 = fread(ROM_Memory, 1, (MAX_CART_SIZE * 1024), file)) > 0)
         {
-            crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ (u8)file_crc_buffer[i]]; 
+            file_size += bytesRead1;
+            for (int i=0; i < bytesRead1; i++)
+            {
+                crc1 = (crc1 >> 8) ^ crc32_table[(crc1 & 0xFF) ^ (u8)ROM_Memory[i]]; 
+            }
         }
-    }
-    fclose(file);
+        fclose(file);
+
+        // Read #2
+        crc2 = 0xFFFFFFFF;
+        FILE* file2 = fopen(filename, "rb");
+        while ((bytesRead2 = fread(ROM_Memory, 1, (MAX_CART_SIZE * 1024), file2)) > 0)
+        {
+            for (int i=0; i < bytesRead2; i++)
+            {
+                crc2 = (crc2 >> 8) ^ crc32_table[(crc2 & 0xFF) ^ (u8)ROM_Memory[i]]; 
+            }
+        }
+        fclose(file2);
+   } while (crc1 != crc2);
 
     // After we compute the size above... we check if this is a .dsk file and return CRC by name
     if (isDiskOrDataPack(filename))
@@ -104,5 +149,5 @@ ITCM_CODE u32 getFileCrc(const char* filename)
         return crcBasedOnFilename(filename);
     }
 
-    return ~crc;
+    return ~crc1;
 }

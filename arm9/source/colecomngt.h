@@ -23,6 +23,8 @@
 
 extern u8 mapperType;
 extern u8 mapperMask;
+extern u16 simplifed_low_addr;
+extern u8  under_ram[0x2000];
 
 extern u8 msx_caps_lock;
 extern u8 msx_kana_lock;

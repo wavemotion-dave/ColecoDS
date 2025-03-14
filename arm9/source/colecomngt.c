@@ -302,11 +302,8 @@ u8 colecoInit(char *szGame)
   // We've got some debug data we can use for development... reset these.
   memset(debug, 0x00, sizeof(debug));
 
-  // ----------------------------------------------------------------------------------
-  // Clear the entire ROM buffer[] - fill with 0xFF to emulate non-responsive memory
-  // ----------------------------------------------------------------------------------
-  memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
 
+  // See if we have forced any specific modes on loading...
   if (bForceMSXLoad) msx_mode = 1;
   if (msx_mode)      AY_Enable=true;
   if (svi_mode)      AY_Enable=true;
@@ -548,7 +545,11 @@ ITCM_CODE void colecoUpdateScreen(void)
  *******************************************************************************/
 void getfile_crc(const char *filename)
 {
+    DSPrint(11,13,6, "LOADING...");
+
     file_crc = getFileCrc(filename);        // The CRC is used as a unique ID to save out High Scores and Configuration...
+    
+    DSPrint(11,13,6, "          ");
 
     // -----------------------------------------------------------------
     // Only Lord of the Dungeon allows SRAM writting in this area...
@@ -584,8 +585,6 @@ u8 loadrom(const char *filename, u8 * ptr)
   u8 bOK = 0;
   int romSize = 0;
 
-  DSPrint(0,0,6, "LOADING...");
-  
   bSuperSimplifiedMemory = 0;   // Assume the normal driver unless proven otherwise further below...
 
   FILE* handle = fopen(filename, "rb");
@@ -594,8 +593,6 @@ u8 loadrom(const char *filename, u8 * ptr)
     // Save the initial filename and file - we need it for save/restore of state
     strcpy(initial_file, filename);
     getcwd(initial_path, MAX_ROM_NAME);
-
-    memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));       // Ensure our rom buffer is clear (0xFF to simulate unused memory on ROM/EE though probably 0x00 would be fine too)
 
     // Get file size the 'fast' way - use fstat() instead of fseek() or ftell()
     struct stat stbuf;
@@ -615,19 +612,17 @@ u8 loadrom(const char *filename, u8 * ptr)
     {
         if (isDSiMode())
         {
-            fread((void*) ROM_Memory, 1, romSize, handle);                 // Read the entire file into the buffer
             memcpy(RAM_Memory, ROM_Memory + (romSize - 0x8000), 0x8000);   // And put the last block directly into the RAM buffer
-            fclose(handle);
         }
         else // For DS-Lite/Phat, we can only read this in smaller chunks - slower
         {
             fseek(handle, romSize-0x8000, SEEK_SET);              // Seek to the last 32K block (this is the menu system)
             fread((void*) RAM_Memory, 1, 0x8000, handle);         // Read 32K from that last block directly into the RAM buffer
             memcpy(ROM_Memory, RAM_Memory, 0x8000);               // And save the last block so we can switch back as needed...
-            fclose(handle);
             strcpy(disk_last_file[0], filename);
             strcpy(disk_last_path[0], initial_path);
         }
+        fclose(handle);
         romBankMask = (romSize == (2048 * 1024) ? 0x3F:0x7F);
         sg1000_double_reset = true;
         machine_mode = MODE_SG_1000;
@@ -649,8 +644,7 @@ u8 loadrom(const char *filename, u8 * ptr)
     else
     if (romSize <= (MAX_CART_SIZE * 1024))  // Max size cart is 1MB/4MB - that's pretty huge...
     {
-        fread((void*) ROM_Memory, romSize, 1, handle);
-        fclose(handle);
+        fclose(handle); // We only need to close the file - the game ROM is now sitting in ROM_Memory[] from the getFileCrc() handler
 
         romBankMask = 0x00;         // No bank mask until proven otherwise
         mapperMask = 0x00;          // No MSX mapper mask

@@ -1474,17 +1474,10 @@ void DigitalInsertTape(char *filename)
 // ------------------------------------------------------------------------
 void CassetteInsert(char *filename)
 {
-    FILE *fp;
-
-    fp = fopen(filename, "rb");
-    fseek(fp, 0, SEEK_END);
-    tape_len = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
     memset(ROM_Memory, 0xFF, (MAX_CART_SIZE * 1024));
-    fread(ROM_Memory, tape_len, 1, fp);
+    tape_len = ReadFileCarefully(filename, ROM_Memory, (MAX_CART_SIZE * 1024), 0);
     tape_pos = 0;
     msx_last_rom_size = tape_len;
-    fclose(fp);
 }
 
 #define MENU_ACTION_END             255 // Always the last sentinal value
@@ -4106,7 +4099,7 @@ void irqVBlank(void)
 // ----------------------------------------------------------------
 void LoadBIOSFiles(void)
 {
-    FILE *fp;
+    int size = 0;
 
     memset(BIOS_Memory, 0xFF, 0x10000); // All of BIOS area is FF until loaded up
 
@@ -4125,58 +4118,35 @@ void LoadBIOSFiles(void)
     bCreativisionBiosFound = false;
 
     // -----------------------------------------------------------
-    // First load Sord M5 bios - don't really care if this fails
+    // Try to load the Japanese Sord M5 BIOS
     // -----------------------------------------------------------
-    fp = fopen("sordm5.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/sordm5.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/sordm5.rom", "rb");
-    if (fp != NULL)
-    {
-        bSordBiosFound = true;
-        fread(SordM5BiosJP, 0x2000, 1, fp);
-        fclose(fp);
-    }
+    size = ReadFileCarefully("sordm5.rom", SordM5BiosJP, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/sordm5.rom", SordM5BiosJP, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/sordm5.rom", SordM5BiosJP, 0x2000, 0);
+    if (size) bSordBiosFound = true;
 
-    fp = fopen("sordm5p.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/sordm5p.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/sordm5p.rom", "rb");
-    if (fp != NULL)
-    {
-        bSordBiosFound = true;
-        fread(SordM5BiosEU, 0x2000, 1, fp);
-        fclose(fp);
-    }
-    else 
-    {
-        memcpy(SordM5BiosEU, SordM5BiosJP, 0x2000); // Otherwise the JP bios will have to do for both
-    }
+    // There is a PAL/EU version as well...
+    size = ReadFileCarefully("sordm5p.rom", SordM5BiosJP, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/sordm5p.rom", SordM5BiosJP, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/sordm5p.rom", SordM5BiosJP, 0x2000, 0);
+    if (size) bSordBiosFound = true;
+    else  memcpy(SordM5BiosEU, SordM5BiosJP, 0x2000); // Otherwise the JP bios will have to do for both
     
     // -----------------------------------------------------------
     // Try to load the Casio PV-2000 ROM BIOS
     // -----------------------------------------------------------
-    fp = fopen("pv2000.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv2000.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv2000.rom", "rb");
-    if (fp != NULL)
-    {
-        bPV2000BiosFound = true;
-        fread(PV2000Bios, 0x4000, 1, fp);
-        fclose(fp);
-    }
+    size = ReadFileCarefully("pv2000.rom", PV2000Bios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/pv2000.rom", PV2000Bios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/pv2000.rom", PV2000Bios, 0x4000, 0);
+    if (size) bPV2000BiosFound = true;
 
     // -----------------------------------------------------------
     // Next try to load the SVI.ROM
     // -----------------------------------------------------------
-    fp = fopen("svi.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/svi.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/svi.rom", "rb");
-    if (fp != NULL)
-    {
-        bSVIBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-        memcpy(SVIBios, BIOS_Memory, 0x8000);
-    }
+    size = ReadFileCarefully("svi.rom", SVIBios, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/svi.rom", SVIBios, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/svi.rom", SVIBios, 0x8000, 0);
+    if (size) bSVIBiosFound = true;
 
     // ---------------------------------------------------------------
     // Next try to load MSX.ROM and any of the other supported
@@ -4185,338 +4155,252 @@ void LoadBIOSFiles(void)
     // with small tweaks by each manufacturer. These are all
     // stored in LCD VRAM and the msx driver will load the right one.
     // ---------------------------------------------------------------    
-    fp = NULL;
     
-    // Load the ubiquitous MSX.ROM - a generic ROM of unknown origin 
-    // for which the user will supply us... it should work but who knows!
-    if (fp == NULL)
-    {
-        if (fp == NULL) fp = fopen("msx.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/msx.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/msx.rom", "rb");
-    }    
-    
-    // First try the Panasonic CF-2700 ROM which is a fairly generic MSX machine
-    if (fp == NULL)
-    {
-        if (fp == NULL) fp = fopen("cf-2700.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/cf-2700.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/cf-2700.rom", "rb");    
-    }
+    // Load the ubiquitous MSX.ROM - a generic ROM of unknown origin for which the user will supply... it should work but who knows!
+    size = ReadFileCarefully("msx.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/msx.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/msx.rom", BIOS_Memory, 0x8000, 0);
 
-    // First try the Panasonic CF-2700 ROM which is a fairly generic MSX machine
-    if (fp == NULL)
-    {
-        if (fp == NULL) fp = fopen("cf2700.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/cf2700.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/cf2700.rom", "rb");    
-    }
-    
-    if (fp == NULL)
-    {
-        if (fp == NULL) fp = fopen("cf-2700_basic-bios1_gb.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/cf-2700_basic-bios1_gb.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/cf-2700_basic-bios1_gb.rom", "rb");    
-    }
-    
-    // Next try the Goldstar FC-200 ROM which is a fairly generic MSX machine
-    if (fp == NULL)
-    {
-        if (fp == NULL) fp = fopen("fc-200.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/fc-200.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/fc-200.rom", "rb");    
-    }
+    // If not found... try some common generic MSX machines...
+    if (!size) size = ReadFileCarefully("msx1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/msx1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/msx1.rom", BIOS_Memory, 0x8000, 0);
 
-    // If msx.rom not found, try the Goldstar FC-200 ROM which is a fairly generic MSX machine
-    if (fp == NULL)
-    {
-        if (fp == NULL) fp = fopen("fc-200_basic-bios1.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/fc-200_basic-bios1.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/fc-200_basic-bios1.rom", "rb");    
-    }
+    // If not found... try some common generic MSX machines...
+    if (!size) size = ReadFileCarefully("cf2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cf2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cf2700.rom", BIOS_Memory, 0x8000, 0);
 
-    // If any of the above not found, try the Casio MX-15 ROM which is a fairly generic MSX machine though we "expand it" to 64K
-    if (fp == NULL)
+    if (!size) size = ReadFileCarefully("cf2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cf2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cf2700.rom", BIOS_Memory, 0x8000, 0);
+        
+    if (!size) size = ReadFileCarefully("cf-2700_basic-bios1_gb.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cf-2700_basic-bios1_gb.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cf-2700_basic-bios1_gb.rom", BIOS_Memory, 0x8000, 0);
+
+    if (!size) size = ReadFileCarefully("fc-200.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/fc-200.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/fc-200.rom", BIOS_Memory, 0x8000, 0);
+
+    if (!size) size = ReadFileCarefully("fc-200_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/fc-200_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/fc-200_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+
+    if (size)
     {
-        if (fp == NULL) fp = fopen("mx-15.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/mx-15.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/mx-15.rom", "rb");    
+         bMSXBiosFound = true;                          // MSX Machines are now available
+         msx_patch_bios();                              // Patch BIOS for cassette use
+         memcpy(MSXBios_Generic, BIOS_Memory, 0x8000);  // Store this BIOS up into memory so we can use it later in msx_restore_bios()
     }
     
-    // --------------------------------------------------
-    // Now store this away as a generic MSX.ROM for use
-    // --------------------------------------------------
-    if (fp != NULL)
-    {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-
-        msx_patch_bios();   // Patch BIOS for cassette use
-
-        // Now store this BIOS up into memory so we can use it later in msx_restore_bios()
-        memcpy(MSXBios_Generic, BIOS_Memory, 0x8000);
-    }
     
     // --------------------------------
     // Panasonic CF-2700
     // --------------------------------
-                    fp = fopen("cf-2700.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/cf-2700.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/cf-2700.rom", "rb");    
+    size = ReadFileCarefully("cf-2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cf-2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cf-2700.rom", BIOS_Memory, 0x8000, 0);
     
-    if (fp == NULL) fp = fopen("cf-2700_basic-bios1_gb.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/cf-2700_basic-bios1_gb.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/cf-2700_basic-bios1_gb.rom", "rb");    
+    if (!size) size = ReadFileCarefully("cf-2700_basic-bios1_gb.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cf-2700_basic-bios1_gb.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cf-2700_basic-bios1_gb.rom", BIOS_Memory, 0x8000, 0);
+
+    if (!size) size = ReadFileCarefully("cf2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cf2700.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cf2700.rom", BIOS_Memory, 0x8000, 0);
     
-    if (fp == NULL) fp = fopen("cf2700.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/cf2700.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/cf2700.rom", "rb");    
-    
-    if (fp != NULL)
+    if (size)
     {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
+         bMSXBiosFound = true;
+         msx_patch_bios();                                      // Patch BIOS for cassette use
+         memcpy(MSXBios_PanasonicCF2700, BIOS_Memory, 0x8000);  // Store this BIOS up into memory so we can use it later in msx_restore_bios()
+    }
 
-        msx_patch_bios();   // Patch BIOS for cassette use
-
-        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        memcpy(MSXBios_PanasonicCF2700, BIOS_Memory, 0x8000);
-    }    
-
+    
     // --------------------------------
     // Yamaha CX5M
     // --------------------------------
-                    fp = fopen("cx5m.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/cx5m.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/cx5m.rom", "rb");
-
-    if (fp == NULL) fp = fopen("cx-5m.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/cx-5m.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/cx-5m.rom", "rb");
-
-    if (fp == NULL) fp = fopen("cx5m_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/cx5m_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/cx5m_basic-bios1.rom", "rb");
+    size = ReadFileCarefully("cx5m.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cx5m.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cx5m.rom", BIOS_Memory, 0x8000, 0);
     
-    if (fp != NULL)
+    if (!size) size = ReadFileCarefully("cx-5m.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cx-5m.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cx-5m.rom", BIOS_Memory, 0x8000, 0);
+
+    if (!size) size = ReadFileCarefully("cx5m_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/cx5m_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/cx5m_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    
+    if (size)
     {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-
-        msx_patch_bios();   // Patch BIOS for cassette use
-
-        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        memcpy(MSXBios_YamahaCX5M, BIOS_Memory, 0x8000);
+         bMSXBiosFound = true;
+         msx_patch_bios();                                 // Patch BIOS for cassette use
+         memcpy(MSXBios_YamahaCX5M, BIOS_Memory, 0x8000);  // Store this BIOS up into memory so we can use it later in msx_restore_bios()
     }
+        
 
     // --------------------------------
     // Toshiba HX-10
     // --------------------------------
-                    fp = fopen("hx-10.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/hx-10.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/hx-10.rom", "rb");
+    size = ReadFileCarefully("hx-10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/hx-10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/hx-10.rom", BIOS_Memory, 0x8000, 0);
+    
+    if (!size) size = ReadFileCarefully("hx10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/hx10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/hx10.rom", BIOS_Memory, 0x8000, 0);
 
-    if (fp == NULL) fp = fopen("hx10.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/hx10.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/hx10.rom", "rb");
+    if (!size) size = ReadFileCarefully("hx-10_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/hx-10_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/hx-10_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
     
-    if (fp == NULL) fp = fopen("hx-10_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/hx-10_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/hx-10_basic-bios1.rom", "rb");
-    
-    if (fp != NULL)
+    if (size)
     {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-
-        msx_patch_bios();   // Patch BIOS for cassette use
-
-        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        memcpy(MSXBios_ToshibaHX10, BIOS_Memory, 0x8000);
+         bMSXBiosFound = true;
+         msx_patch_bios();                                  // Patch BIOS for cassette use
+         memcpy(MSXBios_ToshibaHX10, BIOS_Memory, 0x8000);  // Store this BIOS up into memory so we can use it later in msx_restore_bios()
     }
+
 
     // --------------------------------
     // Sony Hit-Bit HB-10 (Japan)
     // --------------------------------
-                    fp = fopen("hb-10.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/hb-10.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/hb-10.rom", "rb");
+    size = ReadFileCarefully("hb-10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/hb-10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/hb-10.rom", BIOS_Memory, 0x8000, 0);
+    
+    if (!size) size = ReadFileCarefully("hb10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/hb10.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/hb10.rom", BIOS_Memory, 0x8000, 0);
 
-    if (fp == NULL) fp = fopen("hb10.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/hb10.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/hb10.rom", "rb");
+    if (!size) size = ReadFileCarefully("hb-10_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/hb-10_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/hb-10_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
     
-    if (fp == NULL) fp = fopen("hb-10_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/hb-10_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/hb-10_basic-bios1.rom", "rb");
-    
-    if (fp != NULL)
+    if (size)
     {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
+         bMSXBiosFound = true;
+         msx_patch_bios();                               // Patch BIOS for cassette use
+         memcpy(MSXBios_SonyHB10, BIOS_Memory, 0x8000);  // Store this BIOS up into memory so we can use it later in msx_restore_bios()
+    }
 
-        msx_patch_bios();   // Patch BIOS for cassette use
 
-        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        memcpy(MSXBios_SonyHB10, BIOS_Memory, 0x8000);
-    }    
-    
     // --------------------------------------------------------------
     // Casio PV-7 and PV-16 are the exact same BIOS as the HB-10
     // --------------------------------------------------------------
-                    fp = fopen("pv-7.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-7.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-7.rom", "rb");
+    size = ReadFileCarefully("pv-7.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/pv-7.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/pv-7.rom", BIOS_Memory, 0x8000, 0);
+    
+    if (!size) size = ReadFileCarefully("pv7.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/pv7.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/pv7.rom", BIOS_Memory, 0x8000, 0);
 
-    if (fp == NULL) fp = fopen("pv7.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv7.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv7.rom", "rb");
-    
-    if (fp == NULL) fp = fopen("pv-7_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-7_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-7_basic-bios1.rom", "rb");
-    
-    if (fp == NULL) fp = fopen("pv-16.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv-16.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv-16.rom", "rb");        
-    
-    if (fp == NULL) fp = fopen("pv16.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pv16.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pv16.rom", "rb");        
+    if (!size) size = ReadFileCarefully("pv-7_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/pv-7_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/pv-7_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
 
-    if (fp != NULL)
+    if (!size) size = ReadFileCarefully("pv-16.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/pv-16.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/pv-16.rom", BIOS_Memory, 0x8000, 0);
+
+    if (!size) size = ReadFileCarefully("pv16.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/pv16.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/pv16.rom", BIOS_Memory, 0x8000, 0);
+    
+    if (size)
     {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-
-        msx_patch_bios();   // Patch BIOS for cassette use
-
-        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        memcpy(MSXBios_CasioPV7, BIOS_Memory, 0x8000);
+         bMSXBiosFound = true;
+         msx_patch_bios();                               // Patch BIOS for cassette use
+         memcpy(MSXBios_CasioPV7, BIOS_Memory, 0x8000);  // Store this BIOS up into memory so we can use it later in msx_restore_bios()
     }
-
+    
+    
     // --------------------------------
     // National FS-1300 (Japan)
     // --------------------------------
-                    fp = fopen("fs-1300.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/fs-1300.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/fs-1300.rom", "rb");
+    size = ReadFileCarefully("fs-1300.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/fs-1300.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/fs-1300.rom", BIOS_Memory, 0x8000, 0);
     
-    if (fp == NULL) fp = fopen("fs1300.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/fs1300.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/fs1300.rom", "rb");
+    if (!size) size = ReadFileCarefully("fs1300.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/fs1300.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/fs1300.rom", BIOS_Memory, 0x8000, 0);
+
+    if (!size) size = ReadFileCarefully("fs-1300_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/fs-1300_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/fs-1300_basic-bios1.rom", BIOS_Memory, 0x8000, 0);
     
-    if (fp == NULL) fp = fopen("fs-1300_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/fs-1300_basic-bios1.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/fs-1300_basic-bios1.rom", "rb");
-    
-    if (fp != NULL)
+    if (size)
     {
-        bMSXBiosFound = true;
-        fread(BIOS_Memory, 0x8000, 1, fp);
-        fclose(fp);
-
-        msx_patch_bios();   // Patch BIOS for cassette use
-
-        // Now store this BIOS up into VRAM where we can use it later in msx_restore_bios()
-        memcpy(MSXBios_NationalFS1300, BIOS_Memory, 0x8000);
+         bMSXBiosFound = true;
+         msx_patch_bios();                                     // Patch BIOS for cassette use
+         memcpy(MSXBios_NationalFS1300, BIOS_Memory, 0x8000);  // Store this BIOS up into memory so we can use it later in msx_restore_bios()
     }
+
 
     // -----------------------------------------------------------
     // Next try to load the PENCIL2.ROM
     // -----------------------------------------------------------
-    fp = fopen("pencil2.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/pencil2.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/pencil2.rom", "rb");
-    if (fp != NULL)
-    {
-        bPencilBiosFound = true;
-        fread(Pencil2Bios, 0x2000, 1, fp);
-        fclose(fp);
-    }
+    size = ReadFileCarefully("pencil2.rom", Pencil2Bios, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/pencil2.rom", Pencil2Bios, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/pencil2.rom", Pencil2Bios, 0x2000, 0);
+    if (size) bPencilBiosFound = true; else memset(Pencil2Bios, 0xFF, 0x2000);
+    
 
     // -----------------------------------------------------------
     // Next try to load the EINSTIEN.ROM
     // -----------------------------------------------------------
-    fp = fopen("einstein.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/einstein.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/einstein.rom", "rb");
-    if (fp != NULL)
-    {
-        bEinsteinBiosFound = true;
-        fread(EinsteinBios, 0x2000, 1, fp);
-        fclose(fp);
-    }
+    size = ReadFileCarefully("einstein.rom", EinsteinBios, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/einstein.rom", EinsteinBios, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/einstein.rom", EinsteinBios, 0x2000, 0);
+    if (size) bEinsteinBiosFound = true; else memset(EinsteinBios, 0xFF, 0x2000);
+
 
     // -----------------------------------------------------------
     // Next try to load the EINSTIEN2.ROM (diagnostics, etc)
     // -----------------------------------------------------------
-    fp = fopen("einstein2.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/einstein2.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/einstein2.rom", "rb");
-    if (fp != NULL)
-    {
-        fread(EinsteinBios2, 0x2000, 1, fp);
-        fclose(fp);
-    } else memset(EinsteinBios2, 0xFF, 0x2000);
+    size = ReadFileCarefully("einstein2.rom", EinsteinBios2, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/einstein2.rom", EinsteinBios2, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/einstein2.rom", EinsteinBios2, 0x2000, 0);
+    if (!size) memset(EinsteinBios2, 0xFF, 0x2000);
+
     
     // -----------------------------------------------------------
     // Next try to load the bioscv.rom (creativision)
     // -----------------------------------------------------------
-    fp = fopen("bioscv.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/bioscv.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/bioscv.rom", "rb");
-    if (fp != NULL)
-    {
-        bCreativisionBiosFound = true;
-        fread(CreativisionBios, 0x800, 1, fp);
-        fclose(fp);
-    }
+    size = ReadFileCarefully("bioscv.rom", CreativisionBios, 0x800, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/bioscv.rom", CreativisionBios, 0x800, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/bioscv.rom", CreativisionBios, 0x800, 0);
+    if (size) bCreativisionBiosFound = true; else memset(CreativisionBios, 0xFF, 0x800);
 
     // -----------------------------------------------------------
     // Try loading the EOS.ROM and WRITER.ROM Adam files...
     // -----------------------------------------------------------
-    fp = fopen("eos.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/eos.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/eos.rom", "rb");
-    if (fp != NULL)
-    {
-        bAdamBiosFound = true;
-        fread(AdamEOS, 0x2000, 1, fp);
-        fclose(fp);
-    }
+    size = ReadFileCarefully("eos.rom", AdamEOS, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/eos.rom", AdamEOS, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/eos.rom", AdamEOS, 0x2000, 0);
+    if (size) bAdamBiosFound = true; else memset(AdamEOS, 0xFF, 0x2000);
 
     if (bAdamBiosFound)
     {
-        fp = fopen("writer.rom", "rb");
-        if (fp == NULL) fp = fopen("/roms/bios/writer.rom", "rb");
-        if (fp == NULL) fp = fopen("/data/bios/writer.rom", "rb");
-        if (fp != NULL)
-        {
-            bAdamBiosFound = true;
-            fread(AdamWRITER, 0x8000, 1, fp);
-            fclose(fp);
-        }
-        else bAdamBiosFound = false;    // Both EOS and WRITER need to be found...
+        size = ReadFileCarefully("writer.rom", AdamWRITER, 0x8000, 0);
+        if (!size) size = ReadFileCarefully("/roms/bios/writer.rom", AdamWRITER, 0x8000, 0);
+        if (!size) size = ReadFileCarefully("/data/bios/writer.rom", AdamWRITER, 0x8000, 0);
+        if (size) bAdamBiosFound = true; else {bAdamBiosFound = false; memset(AdamWRITER, 0xFF, 0x8000);} // Both EOS and WRITER need to be found...
     }
 
     // -----------------------------------------------------------
     // Coleco ROM BIOS must exist or the show is off!
     // -----------------------------------------------------------
-    fp = fopen("coleco.rom", "rb");
-    if (fp == NULL) fp = fopen("/roms/bios/coleco.rom", "rb");
-    if (fp == NULL) fp = fopen("/data/bios/coleco.rom", "rb");
-    if (fp != NULL)
+    size = ReadFileCarefully("coleco.rom", ColecoBios, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/coleco.rom", ColecoBios, 0x2000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/coleco.rom", ColecoBios, 0x2000, 0);
+    if (size)
     {
         bColecoBiosFound = true;
-        fread(ColecoBios, 0x2000, 1, fp);
-        fclose(fp);
     }
 }
 
