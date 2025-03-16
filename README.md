@@ -134,6 +134,12 @@ As such, ColecoDS will support additional optional MSX BIOS roms as follows (and
 
 Name the BIOS ROMs above exactly as shown (if you find them online, they will have longer names which will also generally work but to be safe, renaming is preferred) - place them into your usual BIOS directory. Once you select one of these optional BIOS roms (in Configuration), you will also enable that specific MSX machine to be emulated. This means RAM and memory slots will be exactly the same as the machine you're trying to emulate. See the MSX section for details on this.
 
+General Compatibility:
+-----------------------
+The Z80 core is solid - it passes the ZEXALL test suite and generally has been quite stable.
+The M6502 core is solid - it passes the 6502 Functional Test Suite from Klaus Dormann and passes the non-illegal Decimal Mode Test Suite from Bruce Clark.
+The TMS9918 core is reasonably solid - it's not cycle accurate but generally good to the scanline level with sprite collision detection happening multiple times per frame. A few heavy-hitting demos will have glitches but games will generally run perfectly.
+
 ADAM Compatibility :
 -----------------------
 * The emulated ADAM will run most tape images (.ddp) or disk images (.dsk) - just pick the .dpp or .dsk image and it should auto boot (make sure you have all the ADAM BIOS files needed!)
