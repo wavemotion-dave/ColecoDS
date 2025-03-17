@@ -716,4 +716,22 @@ void creativision_loadBAS(void)  // Taken from FunnyMU and adapted to reduce mem
   }
 }
 
+int creativision_debug_CPU(int idx)
+{
+    char tmp[34];
+    sprintf(tmp, "6502PC %04X", m6502.PC);
+    DSPrint(0,idx++,7, tmp);
+    sprintf(tmp, "6502-S %04X", m6502.S);
+    DSPrint(0,idx++,7, tmp);
+    sprintf(tmp, "6502-A %04X", m6502.A);
+    DSPrint(0,idx++,7, tmp);
+    sprintf(tmp, "6502-X %04X", m6502.X);
+    DSPrint(0,idx++,7, tmp);
+    sprintf(tmp, "6502-Y %04X", m6502.Y);
+    DSPrint(0,idx++,7, tmp);
+    idx++;
+    idx++;
+  
+    return idx;
+}
 // End of file

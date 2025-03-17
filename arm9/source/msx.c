@@ -1910,7 +1910,7 @@ void BeeperON(u16 beeper_freq)
 {
     if (beeper_freq > 0)
     {
-        if (beeper_freq > 0x1FF) beeper_freq = 0x1FF;
+        if (beeper_freq > 0x2FF) beeper_freq = 0x2FF;
         beeper_freq = 0x3FF - beeper_freq;
         
         sn76496W(0x80 | (beeper_freq & 0xF), &mySN);

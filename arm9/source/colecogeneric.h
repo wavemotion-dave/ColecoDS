@@ -161,5 +161,6 @@ extern void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char
 extern u8 colecoDSLoadFile(void);
 extern void DisplayFileName(void);
 extern u32 ReadFileCarefully(char *filename, u8 *buf, u32 buf_size, u32 buf_offset);
+extern int creativision_debug_CPU(int idx);
 
 #endif

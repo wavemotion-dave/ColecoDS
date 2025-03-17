@@ -921,17 +921,28 @@ void ShowDebugZ80(void)
         sprintf(tmp, "VLatc %02X  %c %c", VDPCtrlLatch, VDP[1]&TMS9918_REG1_IRQ ? 'E':'D', VDPStatus&TMS9918_STAT_VBLANK ? 'V':'-');
         DSPrint(0,idx++,7, tmp);
         idx++;
-        sprintf(tmp, "Z80PC %04X", CPU.PC.W);
-        DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "Z80SP %04X", CPU.SP.W);
-        DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "Z80A  %04X", CPU.AF.W);
-        DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "IRQ   %04X", CPU.IRequest);
-        DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "IREQ  %d", CPU.User);
-        DSPrint(0,idx++,7, tmp);
-        idx++;
+        
+        // Now output some CPU related basics - this is usually Z80 but might be 6502 for Creativision
+        if (creativision_mode)
+        {
+            idx = creativision_debug_CPU(idx);
+        }
+        else
+        {
+            sprintf(tmp, "Z80PC %04X", CPU.PC.W);
+            DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "Z80SP %04X", CPU.SP.W);
+            DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "Z80AF %04X", CPU.AF.W);
+            DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "Z80BC %04X", CPU.BC.W);
+            DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "Z80DE %04X", CPU.DE.W);
+            DSPrint(0,idx++,7, tmp);
+            sprintf(tmp, "IRQ  %04X %d", CPU.IRequest, (CPU.User < 9999 ? CPU.User:9999));
+            DSPrint(0,idx++,7, tmp);
+            idx++;
+        }
 
         if (AY_Enable)
         {
@@ -993,7 +1004,8 @@ void ShowDebugZ80(void)
         sprintf(tmp, "Bank %02X [%02X] [%02X] EX=%d", (last_mega_bank != 199 ? last_mega_bank:0), romBankMask, mapperMask, adam_ext_ram_used);    DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "VMod %02X %4s %3s", TMS9918_Mode, VModeNames[TMS9918_Mode], ((TMS9918_VRAMMask == 0x3FFF) ? "16K":" 4K")); DSPrint(0,idx++,7, tmp);
         sprintf(tmp, "Port P23=%02X P53=%02X P60=%02X P42=%02X", Port20, Port53, Port60, Port42); DSPrint(0,idx++,7, tmp);
-        sprintf(tmp, "MEM Used %d  Free %d", getMemUsed(), getMemFree()); DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "MEM Used %dK", getMemUsed()/1024); DSPrint(0,idx++,7, tmp);
+        sprintf(tmp, "MEM Free %dK", getMemFree()/1024); DSPrint(0,idx++,7, tmp);
 
         idx = 1;
         if (einstein_mode || sordm5_mode || memotech_mode)
@@ -4612,7 +4624,6 @@ void debug_printf(const char * str, ...)
 
     strcat(debug_buffer, szName);
     debug_len += strlen(szName);
-    debug[0]++;
 }
 
 void debug_save()
