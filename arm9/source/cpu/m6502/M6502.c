@@ -247,6 +247,7 @@ word Exec6502(M6502 *R)
       switch(I)
       {
 #include "Codes.h"
+default: if (R->TrapBadOps) Trap_Bad_Ops("6502", I, R->PC.W-1);
       }
   }
     
@@ -280,50 +281,5 @@ word Exec6502(M6502 *R)
 /*************************************************************/
 word Run6502(M6502 *R)
 {
-  register pair J,K;
-  register byte I;
-
-  for(;;)
-  {
-#ifdef DEBUG
-    /* Turn tracing on when reached trap address */
-    if(R->PC.W==R->Trap) R->Trace=1;
-    /* Call single-step debugger, exit if requested */
-    if(R->Trace)
-      if(!Debug6502(R)) return(R->PC.W);
-#endif
-
-    I=Op6502(R->PC.W++);
-    R->ICount-=Cycles[I];
-    switch(I)
-    {
-#include "Codes.h"
-default: if (R->TrapBadOps) Trap_Bad_Ops("NORM", I, R->PC.W-1);
-    }
-
-    /* If cycle counter expired... */
-    if(R->ICount<=0)
-    {
-      /* If we have come after CLI, get INT_? from IRequest */
-      /* Otherwise, get it from the loop handler            */
-      if(R->AfterCLI)
-      {
-        I=R->IRequest;            /* Get pending interrupt     */
-        R->ICount+=R->IBackup-1;  /* Restore the ICount        */
-        R->AfterCLI=0;            /* Done with AfterCLI state  */
-      }
-      else
-      {
-        I=Loop6502();             /* Call the periodic handler */
-        R->ICount+=R->IPeriod;    /* Reset the cycle counter   */
-        if(!I) I=R->IRequest;     /* Realize pending interrupt */
-      }
-
-      if(I==INT_QUIT) return(R->PC.W); /* Exit if INT_QUIT     */
-      if(I) Int6502(R,I);              /* Interrupt if needed  */ 
-    }
-  }
-
-  /* Execution stopped */
-  return(R->PC.W);
+    return 0; // Not used...
 }
