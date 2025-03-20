@@ -188,6 +188,10 @@ void colecoWipeRAM(void)
   {
       for (int i=0x0000; i<0x1000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
+  else if (speccy_mode)
+  {
+      // Do nothing... ZX Spectrum pre-loads RAM
+  }
   else if (adam_mode)
   {
       // ----------------------------------------------------------------------------------------------
@@ -365,6 +369,11 @@ u8 colecoInit(char *szGame)
       colecoWipeRAM();
       RetFct = loadrom(szGame,RAM_Memory+0xC000);      // Load up to 16K
   }
+  else if (speccy_mode)  // ZX Spectrum games are compressed .z80
+  {
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,RAM_Memory+0x4000);      // Load up to 48K
+  }
   else if (memotech_mode)  // Load Memotech MTX file
   {
       ctc_enabled = true;
@@ -481,11 +490,20 @@ void colecoSetPal(void)
   // but maybe in the future we add the PAL color palette for a bit more
   // authenticity.
   // -----------------------------------------------------------------------
-  for (uBcl=0;uBcl<16;uBcl++) {
-    r = (u8) ((float) TMS9918A_palette[uBcl*3+0]*0.121568f);
-    g = (u8) ((float) TMS9918A_palette[uBcl*3+1]*0.121568f);
-    b = (u8) ((float) TMS9918A_palette[uBcl*3+2]*0.121568f);
-
+  for (uBcl=0;uBcl<16;uBcl++) 
+  {
+    if (speccy_mode)
+    {
+        r = (u8) ((float) ZX_Spectrum_palette[uBcl*3+0]*0.121568f);
+        g = (u8) ((float) ZX_Spectrum_palette[uBcl*3+1]*0.121568f);
+        b = (u8) ((float) ZX_Spectrum_palette[uBcl*3+2]*0.121568f);
+    }
+    else
+    {
+        r = (u8) ((float) TMS9918A_palette[uBcl*3+0]*0.121568f);
+        g = (u8) ((float) TMS9918A_palette[uBcl*3+1]*0.121568f);
+        b = (u8) ((float) TMS9918A_palette[uBcl*3+2]*0.121568f);
+    }
     SPRITE_PALETTE[uBcl] = RGB15(r,g,b);
     BG_PALETTE[uBcl] = RGB15(r,g,b);
   }
@@ -744,6 +762,10 @@ u8 loadrom(const char *filename, u8 * ptr)
             strcpy(disk_last_path[0], initial_path);
             creativision_loadrom(romSize);
         }
+        else if (speccy_mode)
+        {
+            speccy_decompress_z80(romSize);
+        }
         else if (sg1000_mode)
         {
             sg1000_sms_mapper = 0;
@@ -829,6 +851,7 @@ u8 loadrom(const char *filename, u8 * ptr)
     else if (sg1000_mode)       machine_mode = MODE_SG_1000;
     else if (adam_mode)         machine_mode = MODE_ADAM;
     else if (creativision_mode) machine_mode = MODE_CREATIVISION;
+    else if (speccy_mode)       machine_mode = MODE_SPECCY;
     else                        machine_mode = MODE_COLECO;
   }
   
@@ -1076,7 +1099,7 @@ unsigned char cpu_readport_pencil2(register unsigned short Port)
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 {
-  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2))
+  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2 | MODE_SPECCY))
   {
       if (machine_mode & MODE_MSX)      {return cpu_readport_msx(Port);}
       if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}
@@ -1086,6 +1109,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
       if (machine_mode & MODE_SVI)      {return cpu_readport_svi(Port);}
       if (machine_mode & MODE_EINSTEIN) {return cpu_readport_einstein(Port);}
       if (machine_mode & MODE_PENCIL2)  {return cpu_readport_pencil2(Port);}
+      if (machine_mode & MODE_SPECCY)   {return cpu_readport_speccy(Port);}
   }
 
   // Colecovision ports are 8-bit
@@ -1131,7 +1155,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 /*************************************************************/
 ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 {
-  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
+  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_SPECCY))
   {
       if (machine_mode & MODE_MSX)      {cpu_writeport_msx(Port, Value);      return;}
       if (machine_mode & MODE_SG_1000)  {cpu_writeport_sg(Port, Value);       return;}
@@ -1140,6 +1164,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       if (machine_mode & MODE_MEMOTECH) {cpu_writeport_memotech(Port, Value); return;}
       if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value);      return;}
       if (machine_mode & MODE_EINSTEIN) {cpu_writeport_einstein(Port, Value); return;}
+      if (machine_mode & MODE_SPECCY)   {cpu_writeport_speccy(Port, Value);   return;}      
   }
 
   // VDP data write is the most common - handle it first
@@ -1241,9 +1266,10 @@ ITCM_CODE u32 LoopZ80()
   // ----------------------------------------------------------------------------
   // Special system as it runs an m6502 CPU core and is different than the Z80
   // ----------------------------------------------------------------------------
-  if (creativision_mode)
+  if (creativision_mode || speccy_mode)
   {
-      creativision_run();
+      if (creativision_mode) creativision_run();
+      else speccy_run(); // Doesn't use the standard TMS99918
   }
   else
   {

@@ -55,7 +55,7 @@ extern byte cpu_readmem16_banked (u16 address);
 extern void cpu_writeport16(unsigned bytePort, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
-extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode;
+extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode, speccy_mode;
 extern u16 vdp_int_source, keyboard_interrupt, joystick_interrupt;
 
 #ifndef ZEXALL_TEST // If we're running normally, map in the standard Op/Rd/Wr handlers
@@ -486,32 +486,35 @@ static void CodesFD(void)
 /*************************************************************/
 void ResetZ80(Z80 *R)
 {
-  CPU.PC.W     = 0x0000;
-  CPU.SP.W     = 0xF000;
-  CPU.AF.W     = 0x0000;
-  CPU.BC.W     = 0x0000;
-  CPU.DE.W     = 0x0000;
-  CPU.HL.W     = 0x0000;
-  CPU.AF1.W    = 0x0000;
-  CPU.BC1.W    = 0x0000;
-  CPU.DE1.W    = 0x0000;
-  CPU.HL1.W    = 0x0000;
-  CPU.IX.W     = 0x0000;
-  CPU.IY.W     = 0x0000;
-  CPU.I        = 0x00;
-  CPU.R        = 0x00;
-  CPU.R_HighBit= 0x00;
-  CPU.IFF      = 0x00;
-  CPU.ICount   = CPU.IPeriod = 0;
-  CPU.IRequest = INT_NONE;
-  CPU.IBackup  = 0;
-  CPU.User     = 0;
-  CPU.Trace    = 0;
-  CPU.Trap     = 0;
-  CPU.TrapBadOps = 1;
-  CPU.IAutoReset = 1;
-
-  JumpZ80(CPU.PC.W);
+  if (!speccy_mode)
+  {
+      CPU.PC.W     = 0x0000;
+      CPU.SP.W     = 0xF000;
+      CPU.AF.W     = 0x0000;
+      CPU.BC.W     = 0x0000;
+      CPU.DE.W     = 0x0000;
+      CPU.HL.W     = 0x0000;
+      CPU.AF1.W    = 0x0000;
+      CPU.BC1.W    = 0x0000;
+      CPU.DE1.W    = 0x0000;
+      CPU.HL1.W    = 0x0000;
+      CPU.IX.W     = 0x0000;
+      CPU.IY.W     = 0x0000;
+      CPU.I        = 0x00;
+      CPU.R        = 0x00;
+      CPU.R_HighBit= 0x00;
+      CPU.IFF      = 0x00;
+      CPU.IBackup  = 0;
+      CPU.ICount   = CPU.IPeriod = 0;
+      CPU.IRequest = INT_NONE;
+      CPU.User     = 0;
+      CPU.Trace    = 0;
+      CPU.Trap     = 0;
+      CPU.TrapBadOps = 1;
+      CPU.IAutoReset = 1;
+      
+      JumpZ80(CPU.PC.W);
+ }
 }
 
 /** ExecZ80() ************************************************/
@@ -529,7 +532,7 @@ ITCM_CODE int ExecZ80(register int RunCycles)
   {
     while(CPU.ICount>0)
     {
-#ifdef ZEXALL_TEST        
+#ifdef ZEXALL_TEST  
       extern void zextrap(void);
       zextrap();
 #endif      
