@@ -545,6 +545,18 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".z80") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
+        if ( (strcasecmp(strrchr(szFile, '.'), ".sna") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }
       }
     }
   }
@@ -867,8 +879,16 @@ void MapPlayer1(void)
     myConfig.keymap[7]   = 7;    // NDS Y Button mapped to CV Button 4 (Blue / Super Action)
     myConfig.keymap[8]   = 81;   // NDS R      mapped to CTRL
     myConfig.keymap[9]   = 80;   // NDS L      mapped to SHIFT
-    myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
-    myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
+    if (speccy_mode)
+    {
+      myConfig.keymap[10]  = 70;    // 0
+      myConfig.keymap[11]  = 71;    // 1
+    }
+    else
+    {
+      myConfig.keymap[10]  = 8;    // NDS Start  mapped to Keypad #1
+      myConfig.keymap[11]  = 9;    // NDS Select mapped to Keypad #2
+    }
 }
 
 void MapPlayer2(void)
@@ -1185,10 +1205,12 @@ void SetDefaultGameConfig(void)
     if (memotech_mode)                          myConfig.overlay = 1;  // Memotech MTX default to full keyboard
     if (einstein_mode)                          myConfig.overlay = 1;  // Tatung Einstein defaults to full keyboard
     if (svi_mode)                               myConfig.overlay = 1;  // SVI default to full keyboard
-    if (sordm5_mode)                            myConfig.overlay = 1;  // Sord M5 defautls to full keyboard
+    if (sordm5_mode)                            myConfig.overlay = 1;  // Sord M5 default to full keyboard
+    if (speccy_mode)                            myConfig.overlay = 1;  // ZX Spectrum default to full keyboard
     
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
+    if (speccy_mode)                            myConfig.isPAL   = 1;  // ZX Spectrum defaults to PAL machine
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     
@@ -1453,7 +1475,7 @@ const struct options_t Option_Table[3][20] =
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
         {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
-        {"SOUND DRIVER",   {"NORMAL", "WAVE DIRECT"},                                                                                                                                           &myConfig.soundDriver,2},
+        {"SOUND DRIVER",   {"NORMAL", "WAVE DIRECT", "BEEPER+AY"},                                                                                                                              &myConfig.soundDriver,3},
         {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
         {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
@@ -1899,6 +1921,7 @@ void ReadFileCRCAndConfig(void)
     svi_mode = 0;
     adam_mode = 0;
     creativision_mode = 0;
+    speccy_mode = 0;
     coleco_mode = 0;
     keyMapType = 0;
 
@@ -1920,6 +1943,10 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".cv") != 0) creativision_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".M5") != 0) sordm5_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".z80") != 0) speccy_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".Z80") != 0) speccy_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".sna") != 0) speccy_mode = 2;
+    if (strstr(gpFic[ucGameChoice].szName, ".SNA") != 0) speccy_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".mtx") != 0) memotech_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".MTX") != 0) memotech_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".run") != 0) memotech_mode = 1;

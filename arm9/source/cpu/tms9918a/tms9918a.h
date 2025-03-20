@@ -5,8 +5,9 @@
 
 #define MAXSCREEN           3   // Highest screen mode supported
 
-#define TMS9918_BASE        10738635
+#define TMS9918_BASE        10738635    // Standard 3.58 Mhz
 #define TMS9918_BASE_MTX    11998475    // Not really but this achieves the "faster" 4MHz clock rate.
+
 
 // ---------------------------------------------------
 // The default NTSC machine time bases 
@@ -27,7 +28,7 @@
 #define TMS9929_LINE        ((TMS9918_BASE/(3*50*313)))
 #define TMS9929_LINE_MTX    ((TMS9918_BASE_MTX/(3*50*313)))
 
-#define TMS9929_LINES       313
+#define TMS9929_LINES       312
 #define TMS9929_START_LINE  (3+13+51)
 #define TMS9929_END_LINE    (TMS9929_START_LINE+192)
 
@@ -67,6 +68,7 @@ extern u8 IH;
 extern u8 bResetVLatch;
 
 extern u8 TMS9918A_palette[16*3];
+extern u8 ZX_Spectrum_palette[16*3];
 extern tScrMode SCR[MAXSCREEN+1];
 
 extern void RefreshLine0(u8 uY);

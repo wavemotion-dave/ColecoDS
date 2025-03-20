@@ -179,6 +179,7 @@ extern u8 MSXBios_ToshibaHX10[];
 extern u8 MSXBios_SonyHB10[];
 extern u8 MSXBios_NationalFS1300[];
 extern u8 MSXBios_CasioPV7[];
+extern u8 SpectrumBios[];
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);
@@ -250,5 +251,12 @@ extern void BeeperON(u16 beeper_freq);
 extern void BeeperOFF(void);
 
 extern void Z80_Interface_Reset(void);
+
+extern unsigned char cpu_readport_speccy(register unsigned short Port);
+extern void cpu_writeport_speccy(register unsigned short Port,register unsigned char Value);
+extern void speccy_render_screen(void);
+extern void speccy_decompress_z80(int romSize);
+extern void speccy_reset(void);
+extern void speccy_run(void);
 
 #endif

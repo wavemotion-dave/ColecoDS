@@ -41,6 +41,7 @@
 #include "sc3000_kbd.h"
 #include "m5_kbd.h"
 #include "pv2000_sm.h"
+#include "speccy_kbd.h"
 #include "debug_ovl.h"
 #include "options.h"
 #include "options_adam.h"
@@ -134,6 +135,7 @@ u8 MSXBios_ToshibaHX10[0x8000];
 u8 MSXBios_SonyHB10[0x8000];
 u8 MSXBios_NationalFS1300[0x8000];
 u8 MSXBios_CasioPV7[0x8000];
+u8 SpectrumBios[0x4000];
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -203,6 +205,7 @@ u8 adam_mode         __attribute__((section(".dtcm"))) = 0;       // Set to 1 wh
 u8 pencil2_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pen Pencil 2 ROM is loaded (only one known to exist!)
 u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
 u8 creativision_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .cv ROM is loaded (Creativision)
+u8 speccy_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .Z80 ROM is loaded (ZX Spectrum 48K)
 u8 coleco_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a Colecovision ROM is loaded
 
 u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0000;  // A faster way to know what type of machine we are. No bits set = COLECO_MODE
@@ -436,7 +439,7 @@ u8 wave_direct_sample_table[256] __attribute__((section(".dtcm"))) =
   2,1,2,2,2,2,2,2,     2,2,1,2,2,2,1,2,
   2,2,1,2,2,2,2,2,     2,1,2,1,2,2,2,1,
   2,2,2,1,2,2,2,2,     2,2,2,2,1,2,2,2,
-  2,2,2,2,1,2,2,2,     2,1,2,2,2,1,2,2,
+  2,2,2,2,1,2,2,2,     2,1,2,2,2,1,2,2
 };
 
 
@@ -457,13 +460,22 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
            *p++ = last_sample;      // To prevent pops and clicks... just keep outputting the last sample
         }
     }
-    else if (myConfig.soundDriver)
+    else if (myConfig.soundDriver) // Sound driver is either SND_DRV_WAVE or SND_DRV_BEEPER
     {
         s16 *p = (s16*)dest;
         for (int i=0; i<len*2; i++)
         {
-            if (mixer_read == mixer_write) {wave_direct_skip=0;processDirectAudio();}
-            *p++ = mixer[mixer_read];
+            if (myConfig.soundDriver == SND_DRV_BEEPER)
+            {
+                extern u8 zx_AY_enabled;
+                if (mixer_read == mixer_write) processDirectBeeper(zx_AY_enabled);
+                *p++ = mixer[mixer_read];
+            }
+            else
+            {
+                if (mixer_read == mixer_write) {wave_direct_skip=0; processDirectAudio();}
+                *p++ = mixer[mixer_read];
+            }
             mixer_read = (mixer_read + 1) & WAVE_DIRECT_BUF_SIZE;
         }
         p--; last_sample = *p;
@@ -573,7 +585,29 @@ ITCM_CODE void processDirectAudio(void)
     }
 }
 
+// -------------------------------------------------------------------------------------------------
+// This is called when we are configured for 'Wave Direct' and will process samples to synchronize
+// with the scanline processing. This is not as smooth as the normal sound driver and takes more
+// CPU power but will help render sound those few games that utilize digitize speech techniques.
+// -------------------------------------------------------------------------------------------------
+ITCM_CODE void processDirectBeeper(u8 ay_enabled)
+{
+    s16 mixbufA[4];
+    extern u8 portFE;  
     
+    if (breather) {return;}
+    
+    s16 combined = (portFE & 0x18) ? 0x900 : 0x000;
+    if (ay_enabled) 
+    {
+        ay38910Mixer(1, mixbufA, &myAY);
+        combined += mixbufA[0];
+    }
+    mixer[mixer_write] = combined;
+    mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
+    if (((mixer_write+1)&WAVE_DIRECT_BUF_SIZE) == mixer_read) {breather = 2048;}
+}
+
 // -------------------------------------------------------------------------------------------
 // Setup the maxmod audio stream - this will be a 16-bit Stereo PCM output at 55KHz which
 // sounds about right for the Colecovision.
@@ -745,6 +779,7 @@ void ResetColecovision(void)
   msx_reset();                          // Reset the MSX specific vars
   pv2000_reset();                       // Reset the PV2000 specific vars
   einstein_reset();                     // Reset the Tatung Einstein specific vars
+  speccy_reset();
 
   adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
   disk_unsaved_data[0] = 0;             // No unsaved tape/disk data to start
@@ -823,6 +858,11 @@ void ResetColecovision(void)
       colecoWipeRAM();                          // Wipe main RAM area
       creativision_restore_bios();              // Put the CreatiVision BIOS into place
       creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
+  }
+  else if (speccy_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area
+      speccy_reset();                           // Reset the ZX Spectrum memory - decompress .z80 and restore BIOS
   }
   else if (adam_mode)
   {
@@ -907,7 +947,7 @@ int getMemFree() { // returns the amount of free memory in bytes
 void ShowDebugZ80(void)
 {
     u8 idx=1;
-
+    
     if (myGlobalConfig.debugger == 3)
     {
         sprintf(tmp, "VDP[] %02X %02X %02X %02X", VDP[0],VDP[1],VDP[2],VDP[3]);
@@ -939,7 +979,7 @@ void ShowDebugZ80(void)
             DSPrint(0,idx++,7, tmp);
             sprintf(tmp, "Z80DE %04X", CPU.DE.W);
             DSPrint(0,idx++,7, tmp);
-            sprintf(tmp, "IRQ  %04X %d", CPU.IRequest, (CPU.User < 9999 ? CPU.User:9999));
+            sprintf(tmp, "IRQ %04X %d", CPU.IRequest, (CPU.User % 99999));
             DSPrint(0,idx++,7, tmp);
             idx++;
         }
@@ -1293,6 +1333,20 @@ void DisplayStatusLine(bool bForce)
         {
             last_creativision_mode = creativision_mode;
             DSPrint(20,0,6, "CREATIVISION");
+            last_pal_mode = 99;
+        }
+        if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
+        {
+            last_pal_mode = myConfig.isPAL;
+            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
+        }
+    }
+    else if (speccy_mode)
+    {
+        if ((creativision_mode != last_creativision_mode) || bForce)
+        {
+            last_creativision_mode = creativision_mode;
+            DSPrint(20,0,6, "SPECCY 48K");
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
@@ -3098,7 +3152,7 @@ void colecoDS_main(void)
   // Returns when  user has asked for a game to run...
   BottomScreenOptions();
 
-  // Get the Coleco Machine Emualtor ready
+  // Get the Coleco Machine Emulator ready
   colecoInit(gpFic[ucGameAct].szName);
 
   colecoSetPal();
@@ -3657,7 +3711,7 @@ void colecoDS_main(void)
       // Accumulate all bits above into the Joystick State var...
       // ---------------------------------------------------------
       JoyState = cvTouchPad | ucDEUX;
-        
+      
       // If we are Sord M5 we need to check if this generates a keyboard interrupt
       if (sordm5_mode)
       {
@@ -3867,6 +3921,14 @@ void BottomScreenKeypad(void)
           decompress(m5_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) m5_kbdPal,(void*) BG_PALETTE_SUB,256*2);
+        }
+        else if (speccy_mode) // ZX Spectrum Keyboard
+        {
+          //  Init bottom screen
+          decompress(speccy_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(speccy_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) speccy_kbdPal,(void*) BG_PALETTE_SUB,256*2);
         }
         else // No custom keyboard for this machine... just use simplified alpha keyboard...
         {
@@ -4160,6 +4222,29 @@ void LoadBIOSFiles(void)
     if (!size) size = ReadFileCarefully("/data/bios/svi.rom", SVIBios, 0x8000, 0);
     if (size) bSVIBiosFound = true;
 
+    // -----------------------------------------------------------
+    // Next try to load the SVI.ROM
+    // -----------------------------------------------------------
+    size = ReadFileCarefully("48.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/48.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/48.rom", SpectrumBios, 0x4000, 0);
+    
+    if (!size) size = ReadFileCarefully("48k.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/48k.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/48k.rom", SpectrumBios, 0x4000, 0);
+
+    if (!size) size = ReadFileCarefully("speccy.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/speccy.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/speccy.rom", SpectrumBios, 0x4000, 0);
+    
+    if (!size) size = ReadFileCarefully("zxs48.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/zxs48.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/zxs48.rom", SpectrumBios, 0x4000, 0);
+    
+    if (!size) size = ReadFileCarefully("spec48.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/spec48.rom", SpectrumBios, 0x4000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/spec48.rom", SpectrumBios, 0x4000, 0);
+    
     // ---------------------------------------------------------------
     // Next try to load MSX.ROM and any of the other supported
     // MSX machine BIOS files - we support a half-dozen or so 

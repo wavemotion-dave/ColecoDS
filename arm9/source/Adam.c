@@ -59,7 +59,7 @@ DriveStatus_t AdamDriveStatus[MAX_DRIVES];
 // large ROM cart buffer for the single bank of 64K expanded RAM.
 // The DSi gets a much larger buffer that is handled elsewhere.
 // -----------------------------------------------------------------
-u8 *EXP_Memory = RAM_Memory + (928*1024);
+u8 *EXP_Memory = 0;
 
 /** PCB Field Offsets ****************************************/
 #define PCB_CMD_STAT   0
@@ -213,6 +213,8 @@ void SetupAdam(bool bResetAdamNet)
 {
     if (!adam_mode) return;
 
+    EXP_Memory = ROM_Memory + (928*1024); // Steal 64K off the back end here...
+    
     // ----------------------------------
     // Configure lower 32K of memory
     // ----------------------------------
