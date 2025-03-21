@@ -169,6 +169,9 @@ extern u32 msx_last_rom_size;
 extern u8 OldPortC;
 extern u8 myKeyData;
 extern u8 adc_mux;
+extern u8 portFE, portFD;
+extern u8 zx_AY_enabled;
+extern u8 zx_128k_mode;
 
 // And the various SVI and MSX bios flavors...
 extern u8 SVIBios[];
@@ -180,6 +183,7 @@ extern u8 MSXBios_SonyHB10[];
 extern u8 MSXBios_NationalFS1300[];
 extern u8 MSXBios_CasioPV7[];
 extern u8 SpectrumBios[];
+extern u8 SpectrumBios128[];
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);

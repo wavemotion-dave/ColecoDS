@@ -122,6 +122,8 @@ u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
 u8 EinsteinBios2[0x2000]  = {0};  // We keep the 8k Einstein diagnostics/peripheral BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
+u8 SpectrumBios[0x4000]   = {0};  // We keep the 16k ZX Spectrum 48K BIOS around
+u8 SpectrumBios128[0x8000]= {0};  // We keep the 32k ZX Spectrum 128K BIOS around
 
 // ---------------------------------------------------------------------------------------------------
 // We have enough spare LCD Video Memory available for CPU use that we can store 8x of the 32K BIOS 
@@ -135,7 +137,6 @@ u8 MSXBios_ToshibaHX10[0x8000];
 u8 MSXBios_SonyHB10[0x8000];
 u8 MSXBios_NationalFS1300[0x8000];
 u8 MSXBios_CasioPV7[0x8000];
-u8 SpectrumBios[0x4000];
 
 // --------------------------------------------------------------------------------
 // For Activision PCBs we have up to 32K of EEPROM (not all games use all 32K)
@@ -189,6 +190,7 @@ u8 bPV2000BiosFound         = false;
 u8 bPencilBiosFound         = false;
 u8 bEinsteinBiosFound       = false;
 u8 bCreativisionBiosFound   = false;
+u8 bSpeccyBiosFound         = false;
 
 u8 soundEmuPause     __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
@@ -597,7 +599,7 @@ ITCM_CODE void processDirectBeeper(u8 ay_enabled)
     
     if (breather) {return;}
     
-    s16 combined = (portFE & 0x18) ? 0x900 : 0x000;
+    s16 combined = (portFE & 0x10) ? 0xA00 : 0x000;
     if (ay_enabled) 
     {
         ay38910Mixer(1, mixbufA, &myAY);
@@ -779,7 +781,6 @@ void ResetColecovision(void)
   msx_reset();                          // Reset the MSX specific vars
   pv2000_reset();                       // Reset the PV2000 specific vars
   einstein_reset();                     // Reset the Tatung Einstein specific vars
-  speccy_reset();
 
   adam_CapsLock = 0;                    // On reset the CAPS lock if OFF
   disk_unsaved_data[0] = 0;             // No unsaved tape/disk data to start
@@ -1346,7 +1347,7 @@ void DisplayStatusLine(bool bForce)
         if ((creativision_mode != last_creativision_mode) || bForce)
         {
             last_creativision_mode = creativision_mode;
-            DSPrint(20,0,6, "SPECCY 48K");
+            DSPrint(20,0,6, zx_128k_mode ? "SPECCY 128K" : "SPECCY 48K ");
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
@@ -4190,6 +4191,7 @@ void LoadBIOSFiles(void)
     bPencilBiosFound = false;
     bEinsteinBiosFound = false;
     bCreativisionBiosFound = false;
+    bSpeccyBiosFound = false;
 
     // -----------------------------------------------------------
     // Try to load the Japanese Sord M5 BIOS
@@ -4223,7 +4225,7 @@ void LoadBIOSFiles(void)
     if (size) bSVIBiosFound = true;
 
     // -----------------------------------------------------------
-    // Next try to load the SVI.ROM
+    // Next try to load the Spectrum BIOS files
     // -----------------------------------------------------------
     size = ReadFileCarefully("48.rom", SpectrumBios, 0x4000, 0);
     if (!size) size = ReadFileCarefully("/roms/bios/48.rom", SpectrumBios, 0x4000, 0);
@@ -4245,6 +4247,22 @@ void LoadBIOSFiles(void)
     if (!size) size = ReadFileCarefully("/roms/bios/spec48.rom", SpectrumBios, 0x4000, 0);
     if (!size) size = ReadFileCarefully("/data/bios/spec48.rom", SpectrumBios, 0x4000, 0);
     
+    if (size) bSpeccyBiosFound = true; else memset(SpectrumBios, 0xFF, 0x4000);
+
+    size = ReadFileCarefully("128.rom", SpectrumBios128, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/128.rom", SpectrumBios128, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/128.rom", SpectrumBios128, 0x8000, 0);
+    
+    if (!size) size = ReadFileCarefully("128k.rom", SpectrumBios128, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/128k.rom", SpectrumBios128, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/128k.rom", SpectrumBios128, 0x8000, 0);
+    
+    if (!size) size = ReadFileCarefully("zxs128.rom", SpectrumBios128, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/roms/bios/zxs128.rom", SpectrumBios128, 0x8000, 0);
+    if (!size) size = ReadFileCarefully("/data/bios/zxs128.rom", SpectrumBios128, 0x8000, 0);
+    
+    if (size) bSpeccyBiosFound = true; else memset(SpectrumBios128, 0xFF, 0x8000);
+
     // ---------------------------------------------------------------
     // Next try to load MSX.ROM and any of the other supported
     // MSX machine BIOS files - we support a half-dozen or so 
@@ -4622,6 +4640,7 @@ int main(int argc, char **argv)
             if (bCreativisionBiosFound) {DSPrint(2,idx++,0,"bioscv.rom     BIOS FOUND"); }
             if (bAdamBiosFound)         {DSPrint(2,idx++,0,"eos.rom        BIOS FOUND"); }
             if (bAdamBiosFound)         {DSPrint(2,idx++,0,"writer.rom     BIOS FOUND"); }
+            if (bSpeccyBiosFound)       {DSPrint(2,idx++,0,"48.rom/128.rom BIOS FOUND"); }
             DSPrint(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
             DSPrint(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
 

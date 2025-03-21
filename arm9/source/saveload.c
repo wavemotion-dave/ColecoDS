@@ -223,8 +223,11 @@ void colecoSaveState()
     if (retVal) retVal = fwrite(&Port20, sizeof(Port20),1, handle);
     if (retVal) retVal = fwrite(&Port42, sizeof(Port42),1, handle);
     
+    if (retVal) retVal = fwrite(&portFE, sizeof(portFE),1, handle);
+    if (retVal) retVal = fwrite(&zx_AY_enabled, sizeof(zx_AY_enabled),1, handle);
+
     // Some spare memory we can eat into...
-    if (retVal) retVal = fwrite(spare, 512, 1, handle);
+    if (retVal) retVal = fwrite(spare, 510, 1, handle);
       
     if (einstein_mode) // Big enough that we will not write this if we are not Einstein
     {
@@ -489,8 +492,11 @@ void colecoLoadState()
             if (retVal) retVal = fread(&Port20, sizeof(Port20),1, handle);
             if (retVal) retVal = fread(&Port42, sizeof(Port42),1, handle);
 
+            if (retVal) retVal = fread(&portFE, sizeof(portFE),1, handle);
+            if (retVal) retVal = fread(&zx_AY_enabled, sizeof(zx_AY_enabled),1, handle);
+
             // Some spare memory we can eat into...
-            if (retVal) retVal = fread(spare, 512, 1, handle); 
+            if (retVal) retVal = fread(spare, 510, 1, handle); 
             
 		    if (einstein_mode) // Big enough that we will not write this if we are not Einstein
 		    {
