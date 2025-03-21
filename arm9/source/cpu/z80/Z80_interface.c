@@ -722,7 +722,14 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
         // ----------------------------------------------------------------------------------
         else if (machine_mode & MODE_SPECCY)
         {
-            if (address & 0xC000) RAM_Memory[address] = value;
+            if (address & 0xC000) // Must be above the 16K BIOS ROM area to allow write...
+            {
+                if (zx_128k_mode) // We might be pointing to expanded memory banks... 
+                {
+                    *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
+                }
+                else RAM_Memory[address] = value; // 48K Spectrum just uses base 64K array
+            }
         }
     }
     else // Colecovision Mode - optimized...

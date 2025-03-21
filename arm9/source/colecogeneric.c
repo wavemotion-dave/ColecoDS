@@ -955,6 +955,23 @@ void MapZCPeriod(void)
     myConfig.keymap[11]  = 72;    // 2
 }
 
+void MapZXSpace(void)
+{
+    myConfig.keymap[0]   = 84;    // Space
+    myConfig.keymap[1]   = 92;    // Period
+    myConfig.keymap[2]   = 69;    // Z
+    myConfig.keymap[3]   = 67;    // X
+    myConfig.keymap[4]   = 84;    // Space
+    myConfig.keymap[5]   = 84;    // Space
+    myConfig.keymap[6]   = 85;    // Return
+    myConfig.keymap[7]   = 85;    // Return
+    myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
+    myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
+    myConfig.keymap[10]  = 71;    // 1
+    myConfig.keymap[11]  = 72;    // 2
+}
+
+
 
 void MapArrows(void)
 {
@@ -1660,7 +1677,7 @@ void DisplayKeymapName(u32 uY)
 u8 keyMapType = 0;
 void SwapKeymap(void)
 {
-    keyMapType = (keyMapType+1) % 6;
+    keyMapType = (keyMapType+1) % 7;
     switch (keyMapType)
     {
         case 0: MapPlayer1();  break;
@@ -1668,7 +1685,8 @@ void SwapKeymap(void)
         case 2: MapQAOP();     break;
         case 3: MapWASD();     break;
         case 4: MapZCPeriod(); break;
-        case 5: MapArrows();   break;
+        case 5: MapZXSpace();  break;
+        case 6: MapArrows();   break;
     }
 }
 

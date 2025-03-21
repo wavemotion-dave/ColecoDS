@@ -134,7 +134,7 @@ void PIA_Write(word addr, byte data)
  *
  * Updated to reflect the disassembly of the PIA diagnostic cart
  */
-ITCM_CODE unsigned char PIA_Read(word addr)
+unsigned char PIA_Read(word addr)
 {
     switch( addr & 3 )
     {
