@@ -283,15 +283,18 @@ ITCM_CODE void speccy_render_screen(void)
             u8 pixels = zx_ScreenPage[offset++];
             
             u8 *pixelPtr = pixelOut;
-            for (int j=0x80; j != 0x00; j=j>>1)
+            if ((attr & 0x80) && bFlash) // Flashing swaps pen/ink
             {
-                if ((attr & 0x80) && bFlash)
+                for (int j=0x80; j != 0x00; j=j>>1)
                 {
-                    if (pixels & j) *pixelPtr = (((attr>>3) & 0x07) << 1) | ((attr & 0x40) ? 1:0); else *pixelPtr = ((attr & 0x07) << 1) | ((attr & 0x40) ? 1:0); pixelPtr++;
+                    if (pixels & j) *pixelPtr = ((attr>>3) & 0x0F); else *pixelPtr = (attr & 0x07) | ((attr & 0x40)>> 3); pixelPtr++;
                 }
-                else
+            }
+            else
+            {
+                for (int j=0x80; j != 0x00; j=j>>1)
                 {
-                    if (pixels & j) *pixelPtr = ((attr & 0x07) << 1) | ((attr & 0x40) ? 1:0); else *pixelPtr = (((attr>>3) & 0x07) << 1) | ((attr & 0x40) ? 1:0); pixelPtr++;
+                    if (pixels & j) *pixelPtr = (attr & 0x07) | ((attr & 0x40)>> 3); else *pixelPtr = ((attr>>3) & 0x0F); pixelPtr++;
                 }
             }
             u32 *ptr32 = (u32*) pixelOut;
@@ -652,8 +655,7 @@ void speccy_run(void)
     if (CurLine == tms_end_line)
     {
         speccy_render_screen();
-        CPU.IRequest = INT_RST38;
-        IntZ80(&CPU, CPU.IRequest);
+        IntZ80(&CPU, INT_RST38);
         tms_num_lines = (zx_128k_mode ? 311:312);
     }
 }
