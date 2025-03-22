@@ -469,8 +469,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         {
             if (myConfig.soundDriver == SND_DRV_BEEPER)
             {
-                extern u8 zx_AY_enabled;
-                if (mixer_read == mixer_write) processDirectBeeper(zx_AY_enabled);
+                if (mixer_read == mixer_write) processDirectBeeperPlusAY();
                 *p++ = mixer[mixer_read];
             }
             else
@@ -587,28 +586,53 @@ ITCM_CODE void processDirectAudio(void)
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// This is called when we are configured for 'Wave Direct' and will process samples to synchronize
-// with the scanline processing. This is not as smooth as the normal sound driver and takes more
-// CPU power but will help render sound those few games that utilize digitize speech techniques.
-// -------------------------------------------------------------------------------------------------
-ITCM_CODE void processDirectBeeper(u8 ay_enabled)
+// --------------------------------------------------------------------------------------------
+// This is called when we are configured for 'Beeper' sound - it's really only useful for the
+// ZX Spectrum handling. We mix in AY samples as well if we are a ZX 128K... however, the AY 
+// doesn't need to be sampled quite as often so we grab 4 fresh samples per scanline and then
+// use those to mix into the beeper processing which is happening at 4x per scanline.
+// --------------------------------------------------------------------------------------------
+s16 mixbufAY[4] __attribute__((section(".dtcm")));
+u8  mixbufAY_idx __attribute__((section(".dtcm"))) = 0;
+ITCM_CODE void processDirectBeeperAY4(u8 num_samples)
 {
-    s16 mixbufA[4];
-    extern u8 portFE;  
+    if (zx_AY_enabled) 
+    {
+        ay38910Mixer(num_samples, mixbufAY, &myAY);
+    } else memset(mixbufAY, 0x00, sizeof(mixbufAY));
     
+    mixbufAY_idx = 0;
+}
+
+ITCM_CODE void processDirectBeeper(void)
+{
     if (breather) {return;}
     
-    s16 combined = (portFE & 0x10) ? 0xA00 : 0x000;
-    if (ay_enabled) 
-    {
-        ay38910Mixer(1, mixbufA, &myAY);
-        combined += mixbufA[0];
-    }
+    s16 combined = mixbufAY[mixbufAY_idx++];
+    if (portFE & 0x10) combined += 0xA00;
     mixer[mixer_write] = combined;
     mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
     if (((mixer_write+1)&WAVE_DIRECT_BUF_SIZE) == mixer_read) {breather = 2048;}
 }
+
+// ------------------------------------------------------------------
+// Call this one only from the OurSoundMixer() handler when we need
+// to process one beeper sample and possibly one AY sample mixed in.
+// ------------------------------------------------------------------
+void processDirectBeeperPlusAY(void)
+{
+    s16 mixbuf[2];
+    s16 combined = (portFE & 0x10) ? 0xA00 : 0x000;
+    if (zx_AY_enabled)
+    {
+        ay38910Mixer(1, mixbuf, &myAY);
+        combined += mixbuf[0];
+    }
+    mixer[mixer_write] = combined;
+    mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
+}
+
+
 
 // -------------------------------------------------------------------------------------------
 // Setup the maxmod audio stream - this will be a 16-bit Stereo PCM output at 55KHz which
@@ -985,7 +1009,7 @@ void ShowDebugZ80(void)
             idx++;
         }
 
-        if (AY_Enable)
+        if (AY_Enable || speccy_mode)
         {
             sprintf(tmp, "AY[] %02X %02X %02X %02X", myAY.ayRegs[0], myAY.ayRegs[1], myAY.ayRegs[2], myAY.ayRegs[3]);
             DSPrint(0,idx++,7, tmp);
