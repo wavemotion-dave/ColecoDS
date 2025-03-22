@@ -29,17 +29,18 @@ u8 portFD               __attribute__((section(".dtcm"))) = 0x00;
 u8 zx_AY_enabled        __attribute__((section(".dtcm"))) = 0;
 u8 zx_AY_index_written  __attribute__((section(".dtcm"))) = 0;
 u32 flash_timer         __attribute__((section(".dtcm"))) = 0;
+u8  bFlash              __attribute__((section(".dtcm"))) = 0;
+u8 *zx_PagedRAM         __attribute__((section(".dtcm"))) = 0;
+u8  zx_128k_mode        __attribute__((section(".dtcm"))) = 0;
+u32 zx_tstates          __attribute__((section(".dtcm"))) = 0;
 
 u8  zx_special_key = 0;
 int last_z80_size  = 0;
-u8  zx_128k_mode   = 0;
-u8 *zx_PagedRAM    = 0;
-u8  bFlash         = 0;
 u8  isCompressed   = 1;
 
-// ---------------------------------------
-// Speculator - Simple translation layer
-// ---------------------------------------
+// ---------------------------------------------
+// ZX Spectrum 48K and 128K Emulation driver...
+// ---------------------------------------------
 
 unsigned char cpu_readport_speccy(register unsigned short Port)
 {
@@ -214,10 +215,25 @@ unsigned char cpu_readport_speccy(register unsigned short Port)
     {
         return ay38910DataR(&myAY);
     }
+    
+    // ---------------------------------------------------------------------------------------------
+    // Check if we are in the Vertical Blank (basically anywhere but the screen drawing 192 pixels)
+    // This is a very crude way of handling the 'floating bus' and is not accurate but is good 
+    // enough for the very rare game that will count on the floating bus to return something other
+    // than 0xFF when the screen is being drawn... 
+    // ---------------------------------------------------------------------------------------------
+    if ((zx_tstates < (zx_128k_mode ? 14364:14338)) || (zx_tstates > (zx_128k_mode ? 58140:57344)))
+    {
+        return rand() % 255; // Something other than 0xFF to roughly simulate the 'floating bus'
+    }
 
-    return 0xFF;  // Not emulating the 'floating bus' - only a few games are known to need it
+    return 0xFF;  // Unused port returns 0xFF when ULA is idle
 }
 
+// --------------------------------------------------------------------------------------
+// For the ZX Spectrum 128K this is the banking routine that will swap the BIOS ROM and
+// swap out the bank of memory that will be visible at 0xC000 in CPU address space.
+// --------------------------------------------------------------------------------------
 void zx_bank(u8 new_bank)
 {
     if (portFD & 0x20) return; // Lock out - no more bank swaps allowed
@@ -273,74 +289,75 @@ u32 zx_colors_extend32[16] __attribute__((section(".dtcm"))) =
 ITCM_CODE void speccy_render_screen(void)
 {
     u8 *zx_ScreenPage = 0;
-    u8 pixelOut[8];
-    u32 *vidBuf = (u32*) (0x06000000);    // Video buffer... write 32-bits at a time
+    u32 *vidBuf = (u32*) (0x06000000);    // Video buffer... write 32-bits at a time for maximum speed
 
-    if (++flash_timer > 16) {flash_timer=0; bFlash ^= 1;} // Same timing as real ULA - 16 frames on and 16 frames off
+    if (++flash_timer & 0x10) {flash_timer=0; bFlash ^= 1;} // Same timing as real ULA - 16 frames on and 16 frames off
 
     if (!isDSiMode() && (flash_timer & 1)) return; // For DS-Lite/Phat, we draw every other frame...
 
+    // For the ZX 128K, we might be using page 7 for video display... it's rare, but possible...
     if (zx_128k_mode) zx_ScreenPage = zx_PagedRAM + ((portFD & 0x08) ? 7:5) * 0x4000;
     else zx_ScreenPage = RAM_Memory + 0x4000;
 
+    // -----------------------------------------------
+    // Now run through the entire screen from top to
+    // bottom and render it into our NDS video memory
+    // -----------------------------------------------
     for (int y=0; y<192; y++)
     {
+        // ----------------------------------------------------------------
+        // The color attribute is stored independently from the pixel data
+        // ----------------------------------------------------------------
         u8 *attrPtr = &zx_ScreenPage[0x1800 + ((y/8)*32)];
-        word offset = 0 | ((y&0x07) << 8) | ((y&0x38) << 2) | ((y&0xC0) << 5);
+        word offset = ((y&0x07) << 8) | ((y&0x38) << 2) | ((y&0xC0) << 5);
+        u8 *pixelPtr = zx_ScreenPage+offset;
+        
+        // ---------------------------------------------------------------------
+        // With 8 pixels per byte, there are 32 bytes of horizontal screen data
+        // ---------------------------------------------------------------------
         for (int x=0; x<32; x++)
         {
-            u8 attr = *attrPtr++;
-            u8 pixels = zx_ScreenPage[offset++];
+            u8 attr = *attrPtr++;           // The color attribute and possible flashing
+            u8 paper = ((attr>>3) & 0x0F);  // Paper is the background
+            u8 pixel = *pixelPtr++;         // And here is 8 pixels to draw
 
-            u8 *pixelPtr = pixelOut;
-            if ((attr & 0x80) && bFlash) // Flashing swaps pen/ink
+            if (attr & 0x80) // Flashing swaps pen/ink
             {
-                for (int j=0x80; j != 0x00; j=j>>1)
-                {
-                    if (pixels & j) *pixelPtr = ((attr>>3) & 0x0F); else *pixelPtr = (attr & 0x07) | ((attr & 0x40)>> 3); pixelPtr++;
-                }
-
-                // Draw to the screen
-                u32 *ptr32 = (u32*) pixelOut;
-                *vidBuf++ = *ptr32++;
-                *vidBuf++ = *ptr32;
+                if (bFlash) pixel = ~pixel; // Faster to just invert the pixel itself...
             }
-            else // Normal drawing... We try to speed this up as much as possible.
+            
+            // ---------------------------------------------------------------
+            // Normal drawing... We try to speed this up as much as possible.
+            // ---------------------------------------------------------------
+            if (pixel) // Is at least one pixel on?
             {
-                u8 paper = ((attr>>3) & 0x0F);
-                if (pixels)
-                {
-                    u8 ink   = (attr & 0x07) | ((attr & 0x40)>> 3);
+                u8 ink   = (attr & 0x07);       // Color
+                if (attr & 0x40) ink |= 0x08;   // Brightness
 
-                    if (pixels & 0x80) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-                    if (pixels & 0x40) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-                    if (pixels & 0x20) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-                    if (pixels & 0x10) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-                    if (pixels & 0x08) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-                    if (pixels & 0x04) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-                    if (pixels & 0x02) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-                    if (pixels & 0x01) *pixelPtr++ = ink; else *pixelPtr++ = paper;
-
-                    // Draw to the screen
-                    u32 *ptr32 = (u32*) pixelOut;
-                    *vidBuf++ = *ptr32++;
-                    *vidBuf++ = *ptr32;
-                }
-                else // Just drawing all background which is common...
-                {
-                    // Draw background directly to the screen
-                    *vidBuf++ = zx_colors_extend32[paper];
-                    *vidBuf++ = zx_colors_extend32[paper];
-                }
+                *vidBuf++ = (((pixel & 0x80) ? ink:paper)) | (((pixel & 0x40) ? ink:paper) << 8) | (((pixel & 0x20) ? ink:paper) << 16) | (((pixel & 0x10) ? ink:paper) << 24);
+                *vidBuf++ = (((pixel & 0x08) ? ink:paper)) | (((pixel & 0x04) ? ink:paper) << 8) | (((pixel & 0x02) ? ink:paper) << 16) | (((pixel & 0x01) ? ink:paper) << 24);
+            }
+            else // Just drawing all background which is common...
+            {
+                // Draw background directly to the screen
+                *vidBuf++ = zx_colors_extend32[paper];
+                *vidBuf++ = zx_colors_extend32[paper];
             }
         }
     }
 }
 
-// Z80 Snapshot v1 is always a 48K game...
+// -----------------------------------------------------
+// Z80 Snapshot v1 is always a 48K game... 
+// The header is 30 bytes long - most of which will be
+// used when we reset the game to set the state of the
+// CPU registers, Stack Pointer and Program Counter.
+// -----------------------------------------------------
 u8 decompress_v1(int romSize)
 {
     int offset = 0; // Current offset into memory
+    
+    isCompressed = (ROM_Memory[12] & 0x20 ? 1:0); // V1 files are usually compressed
 
     for (int i = 30; i < romSize; i++)
     {
@@ -444,7 +461,11 @@ u8 decompress_v2_v3(int romSize)
     return ((ROM_Memory[34] >= 3) ? 1:0); // 128K Spectrum or 48K
 }
 
-// Assumes .z80 file is in ROM_Memory[]
+// ----------------------------------------------------------------------
+// Assumes .z80 file is in ROM_Memory[] - this will determine if we are
+// a version 1, 2 or 3 snapshot and handle the header appropriately to 
+// decompress the data out into emulation memory.
+// ----------------------------------------------------------------------
 void speccy_decompress_z80(int romSize)
 {
     last_z80_size = romSize;
@@ -485,6 +506,13 @@ void speccy_decompress_z80(int romSize)
 }
 
 
+// ----------------------------------------------------------------------
+// Reset the emulation. Freshly decompress the contents of RAM memory
+// and setup the CPU registers exactly as the snapshot indicates. Then
+// we can start the emulation at exactly the point it left off... This
+// works fine so long as the game does not need to go back out to the
+// tape to load another segment of the game.
+// ----------------------------------------------------------------------
 void speccy_reset(void)
 {
     if (speccy_mode)
@@ -495,6 +523,9 @@ void speccy_reset(void)
         zx_AY_index_written = 0;
         zx_special_key = 0;
 
+        // A bit wasteful to decompress again... but 
+        // we want to ensure that the memory is exactly
+        // as it should be when we reset the system.
         speccy_decompress_z80(last_z80_size);
 
         if (speccy_mode == 2) // SNA snapshot
@@ -676,6 +707,12 @@ void speccy_reset(void)
     }
 }
 
+
+// -----------------------------------------------------------------------------
+// Run the emulation for exactly 1 scanline and handle the VDP interrupt if 
+// the emulation has executed the last line of the frame.  This also handles
+// direct beeper and possibly AY sound emulation as well. Crude but effective.
+// -----------------------------------------------------------------------------
 void speccy_run(void)
 {
     if (++CurLine >= tms_num_lines) CurLine=0;
@@ -684,7 +721,6 @@ void speccy_run(void)
     // Execute 1 scanline worth of CPU instructions.
     // The ZX 128K is slightly faster than 48K
     // ----------------------------------------------
-
     int cycles_to_run = (zx_128k_mode ? 228:224);
 
     // -----------------------------------------------
@@ -706,6 +742,9 @@ void speccy_run(void)
     ExecZ80((cycles_to_run>>2)+CPU.CycleDeficit); // Catch up any partial cycles here...
     processDirectBeeper();
 
+    // Track the number of CPU clocks ... we only support scanline resolution here
+    zx_tstates += cycles_to_run;
+
     // ----------------------------------------
     // Generate an interrupt if called for...
     // ----------------------------------------
@@ -716,6 +755,7 @@ void speccy_run(void)
         speccy_render_screen();
         IntZ80(&CPU, INT_RST38);
         tms_num_lines = (zx_128k_mode ? 311:312);
+        zx_tstates = 0;
     }
 }
 
