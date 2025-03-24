@@ -84,16 +84,10 @@ typedef union
   word W;
 } pair;
 
-// For the PC counter, we use a u32 which is the native size on the DS and won't require a mask
-typedef union
-{
-  struct { byte l,h, pa, da; } B;
-  u32 W;
-} pairPC;
 
 typedef struct
 {
-  pairPC PC;                        /* Program Counter                      */
+  pair PC;                          /* Program Counter                      */
   pair AF,BC,DE,HL,IX,IY,SP;        /* Main registers                       */
   pair AF1,BC1,DE1,HL1;             /* Shadow registers                     */
   byte IFF,I;                       /* Interrupt registers                  */
@@ -107,7 +101,7 @@ typedef struct
   byte Trace;                       /* Set Trace=1 to start tracing         */
   byte R_HighBit;                   /* Used to preserve the high bit for R  */
   u32  R;                           /* Refresh register - masked on read    */
-  word Trap;                        /* Set Trap to address to trace from    */
+  u32  TStates;                     /* Mostly for Spectrum - total cycles   */
   word User;                        /* Arbitrary user data (ID,RAM*,etc.)   */
 } Z80;
 
@@ -127,6 +121,7 @@ void ResetZ80(register Z80 *R);
 #ifdef EXECZ80
 int ExecZ80(register int RunCycles);
 int ExecZ80_Simplified(register int RunCycles);
+int ExecZ80_Speccy(register int RunCycles);
 #endif
 
 /** IntZ80() *************************************************/
