@@ -469,7 +469,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         {
             if (myConfig.soundDriver == SND_DRV_BEEPER)
             {
-                if (mixer_read == mixer_write) processDirectBeeperPlusAY();
+                if (mixer_read == mixer_write) {processDirectBeeperPlusAY();}
                 *p++ = mixer[mixer_read];
             }
             else

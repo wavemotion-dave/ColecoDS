@@ -1269,7 +1269,7 @@ ITCM_CODE u32 LoopZ80()
   if (creativision_mode || speccy_mode)
   {
       if (creativision_mode) creativision_run();
-      else speccy_run(); // Doesn't use the standard TMS99918
+      else return speccy_run(); // Doesn't use the standard TMS99918 so we skip it all below
   }
   else
   {

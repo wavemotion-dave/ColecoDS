@@ -32,7 +32,7 @@ u32 flash_timer         __attribute__((section(".dtcm"))) = 0;
 u8  bFlash              __attribute__((section(".dtcm"))) = 0;
 u8 *zx_PagedRAM         __attribute__((section(".dtcm"))) = 0;
 u8  zx_128k_mode        __attribute__((section(".dtcm"))) = 0;
-u32 zx_tstates          __attribute__((section(".dtcm"))) = 0;
+u8  zx_ScreenRendering  __attribute__((section(".dtcm"))) = 0;
 
 u8  zx_special_key = 0;
 int last_z80_size  = 0;
@@ -217,14 +217,23 @@ unsigned char cpu_readport_speccy(register unsigned short Port)
     }
     
     // ---------------------------------------------------------------------------------------------
-    // Check if we are in the Vertical Blank (basically anywhere but the screen drawing 192 pixels)
-    // This is a very crude way of handling the 'floating bus' and is not accurate but is good 
-    // enough for the very rare game that will count on the floating bus to return something other
-    // than 0xFF when the screen is being drawn... 
+    // Poor Man's floating bus. Very few games use this - so we basically handle it very roughly.
+    // If we are not drawing the screen - the ULA will be idle and we will return 0xFF (below).
+    // If we are rending the screen... we will return the Attribute byte mid-scanline which is 
+    // good enough for games like Sidewine and Short Circuit and Cobra, etc.
     // ---------------------------------------------------------------------------------------------
-    if ((zx_tstates < (zx_128k_mode ? 14364:14338)) || (zx_tstates > (zx_128k_mode ? 58140:57344)))
+    if (zx_ScreenRendering)
     {
-        return rand() % 255; // Something other than 0xFF to roughly simulate the 'floating bus'
+        u8 *floatBusPtr;
+        
+        // For the ZX 128K, we might be using page 7 for video display... it's rare, but possible...
+        if (zx_128k_mode) floatBusPtr = zx_PagedRAM + (((portFD & 0x08) ? 7:5) * 0x4000) + 0x1800;
+        else floatBusPtr = RAM_Memory + 0x5800;
+
+        u8 *attrPtr = &floatBusPtr[((CurLine - 64)/8)*32];
+        
+        static u8 floating_fetcher = 0;
+        return attrPtr[floating_fetcher++ % 32]; 
     }
 
     return 0xFF;  // Unused port returns 0xFF when ULA is idle
@@ -286,13 +295,19 @@ u32 zx_colors_extend32[16] __attribute__((section(".dtcm"))) =
     0x0C0C0C0C, 0x0D0D0D0D, 0x0E0E0E0E, 0x0F0F0F0F
 };
 
-ITCM_CODE void speccy_render_screen(void)
+// ----------------------------------------------------------------------------
+// Render one screen line of pixels. This is called on every visible scanline.
+// ----------------------------------------------------------------------------
+ITCM_CODE void speccy_render_screen(u8 line)
 {
     u8 *zx_ScreenPage = 0;
-    u32 *vidBuf = (u32*) (0x06000000);    // Video buffer... write 32-bits at a time for maximum speed
+    u32 *vidBuf = (u32*) (0x06000000 + (line << 8));    // Video buffer... write 32-bits at a time for maximum speed
 
-    if (++flash_timer & 0x10) {flash_timer=0; bFlash ^= 1;} // Same timing as real ULA - 16 frames on and 16 frames off
-
+    if (line == 0) // At start of each new frame, handle the flashing 'timer'
+    {
+        if (++flash_timer & 0x10) {flash_timer=0; bFlash ^= 1;} // Same timing as real ULA - 16 frames on and 16 frames off
+    }
+    
     if (!isDSiMode() && (flash_timer & 1)) return; // For DS-Lite/Phat, we draw every other frame...
 
     // For the ZX 128K, we might be using page 7 for video display... it's rare, but possible...
@@ -303,7 +318,7 @@ ITCM_CODE void speccy_render_screen(void)
     // Now run through the entire screen from top to
     // bottom and render it into our NDS video memory
     // -----------------------------------------------
-    for (int y=0; y<192; y++)
+    int y = line;
     {
         // ----------------------------------------------------------------
         // The color attribute is stored independently from the pixel data
@@ -377,7 +392,7 @@ u8 decompress_v1(int romSize)
             if (ROM_Memory[i] == 0xED && ROM_Memory[i + 1] == 0xED && isCompressed)
             {
                 i += 2;
-                byte repeat = ROM_Memory[i++];
+                word repeat = ROM_Memory[i++];
                 byte value = ROM_Memory[i];
                 for (int j = 0; j < repeat; j++)
                 {
@@ -406,10 +421,10 @@ u8 decompress_v2_v3(int romSize)
     int offset;
 
     word extHeaderLen = 30 + ROM_Memory[30] + 2;
-
+    
     // Uncompress all the data and store into the proper place in our buffers
     int idx = extHeaderLen;
-    while (idx < (romSize-3))
+    while (idx < romSize)
     {
         isCompressed = 1;
         word compressedLen = ROM_Memory[idx] | (ROM_Memory[idx+1] << 8);
@@ -426,7 +441,7 @@ u8 decompress_v2_v3(int romSize)
                 if (ROM_Memory[idx+i] == 0xED && ROM_Memory[idx+i + 1] == 0xED && isCompressed)
                 {
                     i += 2;
-                    byte repeat = ROM_Memory[idx + i++];
+                    u16 repeat = ROM_Memory[idx + i++];
                     byte value = ROM_Memory[idx + i];
                     for (int j = 0; j < repeat; j++)
                     {
@@ -517,12 +532,14 @@ void speccy_reset(void)
 {
     if (speccy_mode)
     {
+        
+        CPU.PC.W = 0;
         portFE = 0x00;
         portFD = 0x00;
         zx_AY_enabled = 0;
         zx_AY_index_written = 0;
         zx_special_key = 0;
-
+        
         // A bit wasteful to decompress again... but 
         // we want to ensure that the memory is exactly
         // as it should be when we reset the system.
@@ -561,7 +578,7 @@ void speccy_reset(void)
 
             CPU.IFF     = (ROM_Memory[19] ? (IFF_2|IFF_EI) : 0x00);
             CPU.IFF    |= ((ROM_Memory[25] & 3) == 1 ? IFF_IM1 : IFF_IM2);
-
+            
             CPU.R      = ROM_Memory[20];
 
             CPU.AF.B.l = ROM_Memory[21];
@@ -620,35 +637,35 @@ void speccy_reset(void)
             CPU.SP.B.l = ROM_Memory[8]; // SP low byte
             CPU.SP.B.h = ROM_Memory[9]; // SP high byte
 
-            CPU.I      = ROM_Memory[10];
-            CPU.R      = ROM_Memory[11];
-            CPU.R_HighBit = (ROM_Memory[12] & 1 ? 0x80:0x00);
+            CPU.I      = ROM_Memory[10]; // Interrupt register
+            CPU.R      = ROM_Memory[11]; // Low 7-bits of Refresh
+            CPU.R_HighBit = (ROM_Memory[12] & 1 ? 0x80:0x00); // High bit of refresh
 
-            CPU.DE.B.l  = ROM_Memory[13];
-            CPU.DE.B.h  = ROM_Memory[14];
+            CPU.DE.B.l  = ROM_Memory[13]; // E
+            CPU.DE.B.h  = ROM_Memory[14]; // D
 
-            CPU.BC1.B.l = ROM_Memory[15];
+            CPU.BC1.B.l = ROM_Memory[15]; // BC'
             CPU.BC1.B.h = ROM_Memory[16];
 
-            CPU.DE1.B.l = ROM_Memory[17];
+            CPU.DE1.B.l = ROM_Memory[17]; // DE'
             CPU.DE1.B.h = ROM_Memory[18];
 
-            CPU.HL1.B.l = ROM_Memory[19];
+            CPU.HL1.B.l = ROM_Memory[19]; // HL'
             CPU.HL1.B.h = ROM_Memory[20];
 
-            CPU.AF1.B.h = ROM_Memory[21];
+            CPU.AF1.B.h = ROM_Memory[21]; // AF'
             CPU.AF1.B.l = ROM_Memory[22];
 
-            CPU.IY.B.l  = ROM_Memory[23];
+            CPU.IY.B.l  = ROM_Memory[23]; // IY
             CPU.IY.B.h  = ROM_Memory[24];
 
-            CPU.IX.B.l  = ROM_Memory[25];
+            CPU.IX.B.l  = ROM_Memory[25]; // IX
             CPU.IX.B.h  = ROM_Memory[26];
 
             CPU.IFF     = (ROM_Memory[27] ? IFF_1 : 0x00);
             CPU.IFF    |= (ROM_Memory[28] ? IFF_2 : 0x00);
             CPU.IFF    |= ((ROM_Memory[29] & 3) == 1 ? IFF_IM1 : IFF_IM2);
-
+            
             MemoryMap[0] = RAM_Memory + 0x0000;
             MemoryMap[1] = RAM_Memory + 0x2000;
             MemoryMap[2] = RAM_Memory + 0x4000;
@@ -659,47 +676,52 @@ void speccy_reset(void)
             MemoryMap[7] = RAM_Memory + 0xE000;
 
             // ------------------------------------------------------------------------------------
-            // If the Z80 snapshot indicated we are a 128K Spectrum, we use the extended header...
+            // If the Z80 snapshot indicated we are v2 or v3 - we use the extended header
             // ------------------------------------------------------------------------------------
-            if (zx_128k_mode)
+            if (CPU.PC.W == 0x0000)
             {
                 CPU.PC.B.l = ROM_Memory[32]; // PC low byte
                 CPU.PC.B.h = ROM_Memory[33]; // PC high byte
 
-                // Now set the memory map to point to the right banks...
-                MemoryMap[2] = zx_PagedRAM + (5 * 0x4000) + 0x0000; // Bank 5
-                MemoryMap[3] = zx_PagedRAM + (5 * 0x4000) + 0x2000; // Bank 5
-
-                MemoryMap[4] = zx_PagedRAM + (2 * 0x4000) + 0x0000; // Bank 2
-                MemoryMap[5] = zx_PagedRAM + (2 * 0x4000) + 0x2000; // Bank 2
-
-                zx_bank(ROM_Memory[35]);     // Last write to 0x7ffd (banking)
-
-                // ---------------------------------------------------------------------------------------
-                // Restore the sound chip exactly as it was... I've seen some cases (Lode Runner) where
-                // the AY in Use flag in byte 37 is not set correctly so we also check to see if the
-                // last AY index has been set or if any of the A,B,C volumes is non-zero to enable here.
-                // ---------------------------------------------------------------------------------------
-                if ((ROM_Memory[37] & 0x04) || (ROM_Memory[38] > 0) || (ROM_Memory[39+8] > 0) || 
-                   (ROM_Memory[39+9] > 0) || (ROM_Memory[39+10] > 0)) // Was the AY enabled? 
+                // ------------------------------------------------------------------------------
+                // And if we are in ZX 128K mode, we need to setup the paging and restore the AY
+                // ------------------------------------------------------------------------------
+                if (zx_128k_mode)
                 {
-                    zx_AY_enabled = 1;
-                    for (u8 k=0; k<16; k++)
+                    // Now set the memory map to point to the right banks...
+                    MemoryMap[2] = zx_PagedRAM + (5 * 0x4000) + 0x0000; // Bank 5
+                    MemoryMap[3] = zx_PagedRAM + (5 * 0x4000) + 0x2000; // Bank 5
+
+                    MemoryMap[4] = zx_PagedRAM + (2 * 0x4000) + 0x0000; // Bank 2
+                    MemoryMap[5] = zx_PagedRAM + (2 * 0x4000) + 0x2000; // Bank 2
+
+                    zx_bank(ROM_Memory[35]);     // Last write to 0x7ffd (banking)
+
+                    // ---------------------------------------------------------------------------------------
+                    // Restore the sound chip exactly as it was... I've seen some cases (Lode Runner) where
+                    // the AY in Use flag in byte 37 is not set correctly so we also check to see if the
+                    // last AY index has been set or if any of the A,B,C volumes is non-zero to enable here.
+                    // ---------------------------------------------------------------------------------------
+                    if ((ROM_Memory[37] & 0x04) || (ROM_Memory[38] > 0) || (ROM_Memory[39+8] > 0) || 
+                       (ROM_Memory[39+9] > 0) || (ROM_Memory[39+10] > 0)) // Was the AY enabled? 
                     {
-                        ay38910IndexW(k, &myAY);
-                        ay38910DataW(ROM_Memory[39+k], &myAY);
+                        zx_AY_enabled = 1;
+                        for (u8 k=0; k<16; k++)
+                        {
+                            ay38910IndexW(k, &myAY);
+                            ay38910DataW(ROM_Memory[39+k], &myAY);
+                        }
+                        ay38910IndexW(ROM_Memory[38], &myAY); // Last write to the AY index register
                     }
-                    ay38910IndexW(ROM_Memory[38], &myAY); // Last write to the AY index register
                 }
             }
         }
 
         // And a few last CPU details before we start the emulation!
-        CPU.IBackup    = (zx_128k_mode ? 228 : 224); // The ZX 128K is slightly faster
+        CPU.IBackup    = 1;
         CPU.IRequest   = INT_NONE;
         CPU.User       = 0;
         CPU.Trace      = 0;
-        CPU.Trap       = 0;
         CPU.TrapBadOps = 1;
         CPU.IAutoReset = 1;
 
@@ -713,10 +735,41 @@ void speccy_reset(void)
 // the emulation has executed the last line of the frame.  This also handles
 // direct beeper and possibly AY sound emulation as well. Crude but effective.
 // -----------------------------------------------------------------------------
-void speccy_run(void)
+u32 speccy_run(void)
 {
+    u32 retVal = 1;
+    static int zzz=1;
+    
+    if (zzz)
+    {
+        debug_printf("CPU.PC  = %04X\n", CPU.PC.W);
+        debug_printf("CPU.SP  = %04X\n", CPU.SP.W);
+        debug_printf("CPU.AF  = %04X\n", CPU.AF.W);
+        debug_printf("CPU.BC  = %04X\n", CPU.BC.W);
+        debug_printf("CPU.DE  = %04X\n", CPU.DE.W);
+        debug_printf("CPU.HL  = %04X\n", CPU.HL.W);
+        debug_printf("CPU.I   = %02X\n", CPU.I);
+        debug_printf("CPU.AF' = %04X\n", CPU.AF1.W);
+        debug_printf("CPU.BC' = %04X\n", CPU.BC1.W);
+        debug_printf("CPU.HL' = %04X\n", CPU.HL1.W);
+        debug_printf("CPU.DE' = %04X\n", CPU.DE1.W);
+        debug_printf("CPU.IY  = %04X\n", CPU.IY.W);
+        debug_printf("CPU.IX  = %04X\n", CPU.IX.W);
+        debug_printf("CPU.IFF = %04X\n", CPU.IFF);
+        debug_printf("CPU.R   = %02X\n", (CPU.R & 0x7F) | CPU.R_HighBit);
+        
+        for (int i=0xFD00; i<0x10000; i += 16)
+        {
+            debug_printf("%04X : %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X\n", i,
+            RAM_Memory[i+0], RAM_Memory[i+1], RAM_Memory[i+2], RAM_Memory[i+3], 
+            RAM_Memory[i+4], RAM_Memory[i+5], RAM_Memory[i+6], RAM_Memory[i+7], 
+            RAM_Memory[i+8], RAM_Memory[i+9], RAM_Memory[i+10], RAM_Memory[i+11], 
+            RAM_Memory[i+12], RAM_Memory[i+13], RAM_Memory[i+14], RAM_Memory[i+15] );
+        }
+        zzz=0;
+    }
     if (++CurLine >= tms_num_lines) CurLine=0;
-
+    
     // ----------------------------------------------
     // Execute 1 scanline worth of CPU instructions.
     // The ZX 128K is slightly faster than 48K
@@ -730,20 +783,19 @@ void speccy_run(void)
     // -----------------------------------------------
     processDirectBeeperAY4((CurLine & 3) ? 4:3); // Grab 3 or 4 samples from AY to mix in...
 
-    CPU.CycleDeficit = ExecZ80(cycles_to_run>>2);
+    CPU.CycleDeficit = ExecZ80_Speccy(cycles_to_run>>2);
     if (CurLine & 3) processDirectBeeper();
 
-    CPU.CycleDeficit += ExecZ80(cycles_to_run>>2);
+    CPU.CycleDeficit += ExecZ80_Speccy(cycles_to_run>>2);
     processDirectBeeper();
 
-    CPU.CycleDeficit += ExecZ80(cycles_to_run>>2);
+    CPU.CycleDeficit += ExecZ80_Speccy(cycles_to_run>>2);
     processDirectBeeper();
 
-    ExecZ80((cycles_to_run>>2)+CPU.CycleDeficit); // Catch up any partial cycles here...
-    processDirectBeeper();
+    zx_ScreenRendering = 0; // On this final chunk we are drawing border and doing a horizontal refresh... no contention
 
-    // Track the number of CPU clocks ... we only support scanline resolution here
-    zx_tstates += cycles_to_run;
+    ExecZ80_Speccy((cycles_to_run>>2)+CPU.CycleDeficit); // Catch up any partial cycles here...
+    processDirectBeeper();
 
     // ----------------------------------------
     // Generate an interrupt if called for...
@@ -752,11 +804,27 @@ void speccy_run(void)
 
     if (CurLine == tms_end_line)
     {
-        speccy_render_screen();
-        IntZ80(&CPU, INT_RST38);
+        CPU.IRequest = INT_RST38;
+        IntZ80(&CPU, CPU.IRequest);
         tms_num_lines = (zx_128k_mode ? 311:312);
-        zx_tstates = 0;
+        CPU.TStates = 0;
+        retVal = 0;
     }
+    
+    // -----------------------------------------------------------
+    // Render one line if we're in the visible area of the screen
+    // -----------------------------------------------------------
+    if (CurLine & 0xC0)
+    {
+        if ((CurLine & 0x100) == 0)
+        {
+            // Render one scanline... 
+            speccy_render_screen(CurLine - 64);
+            zx_ScreenRendering = 1;
+        }
+    }
+    
+    return retVal;
 }
 
 // End of file

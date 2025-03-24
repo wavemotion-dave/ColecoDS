@@ -172,6 +172,7 @@ extern u8 adc_mux;
 extern u8 portFE, portFD;
 extern u8 zx_AY_enabled;
 extern u8 zx_128k_mode;
+extern u8 zx_ScreenRendering;
 
 // And the various SVI and MSX bios flavors...
 extern u8 SVIBios[];
@@ -258,9 +259,8 @@ extern void Z80_Interface_Reset(void);
 
 extern unsigned char cpu_readport_speccy(register unsigned short Port);
 extern void cpu_writeport_speccy(register unsigned short Port,register unsigned char Value);
-extern void speccy_render_screen(void);
 extern void speccy_decompress_z80(int romSize);
 extern void speccy_reset(void);
-extern void speccy_run(void);
+extern u32  speccy_run(void);
 
 #endif
