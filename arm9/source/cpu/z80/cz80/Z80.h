@@ -101,7 +101,7 @@ typedef struct
   byte Trace;                       /* Set Trace=1 to start tracing         */
   byte R_HighBit;                   /* Used to preserve the high bit for R  */
   u32  R;                           /* Refresh register - masked on read    */
-  u32  TStates;                     /* Mostly for Spectrum - total cycles   */
+  u32  TStates;                     /* Total CPU cycles                     */
   word User;                        /* Arbitrary user data (ID,RAM*,etc.)   */
 } Z80;
 
@@ -121,7 +121,6 @@ void ResetZ80(register Z80 *R);
 #ifdef EXECZ80
 int ExecZ80(register int RunCycles);
 int ExecZ80_Simplified(register int RunCycles);
-int ExecZ80_Speccy(register int RunCycles);
 #endif
 
 /** IntZ80() *************************************************/

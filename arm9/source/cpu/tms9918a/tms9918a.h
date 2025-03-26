@@ -68,7 +68,6 @@ extern u8 IH;
 extern u8 bResetVLatch;
 
 extern u8 TMS9918A_palette[16*3];
-extern u8 ZX_Spectrum_palette[16*3];
 extern tScrMode SCR[MAXSCREEN+1];
 
 extern void RefreshLine0(u8 uY);

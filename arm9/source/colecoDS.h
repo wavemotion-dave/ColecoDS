@@ -241,7 +241,6 @@ extern u8 adam_mode;
 extern u8 coleco_mode;
 extern u8 adam_CapsLock;
 extern u8 creativision_mode;
-extern u8 speccy_mode;
 
 extern u16 machine_mode;
 
@@ -266,7 +265,6 @@ extern u32 tape_pos, tape_len;
 #define MODE_MSX            0x0100
 #define MODE_PENCIL2        0x0200
 #define MODE_CREATIVISION   0x0400
-#define MODE_SPECCY         0x0800
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 

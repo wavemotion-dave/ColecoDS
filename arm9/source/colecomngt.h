@@ -169,10 +169,6 @@ extern u32 msx_last_rom_size;
 extern u8 OldPortC;
 extern u8 myKeyData;
 extern u8 adc_mux;
-extern u8 portFE, portFD;
-extern u8 zx_AY_enabled;
-extern u8 zx_128k_mode;
-extern u8 zx_ScreenRendering;
 
 // And the various SVI and MSX bios flavors...
 extern u8 SVIBios[];
@@ -183,8 +179,6 @@ extern u8 MSXBios_ToshibaHX10[];
 extern u8 MSXBios_SonyHB10[];
 extern u8 MSXBios_NationalFS1300[];
 extern u8 MSXBios_CasioPV7[];
-extern u8 SpectrumBios[];
-extern u8 SpectrumBios128[];
 
 extern u8 colecoInit(char *szGame);
 extern void colecoSetPal(void);
@@ -256,11 +250,5 @@ extern void BeeperON(u16 beeper_freq);
 extern void BeeperOFF(void);
 
 extern void Z80_Interface_Reset(void);
-
-extern unsigned char cpu_readport_speccy(register unsigned short Port);
-extern void cpu_writeport_speccy(register unsigned short Port,register unsigned char Value);
-extern void speccy_decompress_z80(int romSize);
-extern void speccy_reset(void);
-extern u32  speccy_run(void);
 
 #endif

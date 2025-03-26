@@ -717,16 +717,6 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
         {
             RAM_Memory[address] = value;
         }
-        // ----------------------------------------------------------------------------------
-        // For the ZX Spectrum we allow writes to any address that isn't in the BIOS area...
-        // ----------------------------------------------------------------------------------
-        else if (machine_mode & MODE_SPECCY)
-        {
-            if (address & 0xC000) // Must be above the 16K BIOS ROM area to allow write...
-            {
-                *(MemoryMap[address>>13] + (address&0x1FFF)) = value;
-            }
-        }
     }
     else // Colecovision Mode - optimized...
     {
