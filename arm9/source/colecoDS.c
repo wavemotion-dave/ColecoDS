@@ -41,7 +41,6 @@
 #include "sc3000_kbd.h"
 #include "m5_kbd.h"
 #include "pv2000_sm.h"
-#include "speccy_kbd.h"
 #include "debug_ovl.h"
 #include "options.h"
 #include "options_adam.h"
@@ -122,8 +121,6 @@ u8 Pencil2Bios[0x2000]    = {0};  // We keep the 8K Pencil 2 BIOS around to swap
 u8 EinsteinBios[0x2000]   = {0};  // We keep the 8k Einstein BIOS around
 u8 EinsteinBios2[0x2000]  = {0};  // We keep the 8k Einstein diagnostics/peripheral BIOS around
 u8 CreativisionBios[0x800]= {0};  // We keep the 2k Creativision BIOS around
-u8 SpectrumBios[0x4000]   = {0};  // We keep the 16k ZX Spectrum 48K BIOS around
-u8 SpectrumBios128[0x8000]= {0};  // We keep the 32k ZX Spectrum 128K BIOS around
 
 // ---------------------------------------------------------------------------------------------------
 // We have enough spare LCD Video Memory available for CPU use that we can store 8x of the 32K BIOS 
@@ -190,7 +187,6 @@ u8 bPV2000BiosFound         = false;
 u8 bPencilBiosFound         = false;
 u8 bEinsteinBiosFound       = false;
 u8 bCreativisionBiosFound   = false;
-u8 bSpeccyBiosFound         = false;
 
 u8 soundEmuPause     __attribute__((section(".dtcm"))) = 1;       // Set to 1 to pause (mute) sound, 0 is sound unmuted (sound channels active)
 
@@ -207,7 +203,6 @@ u8 adam_mode         __attribute__((section(".dtcm"))) = 0;       // Set to 1 wh
 u8 pencil2_mode      __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pen Pencil 2 ROM is loaded (only one known to exist!)
 u8 einstein_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .com Einstien ROM is loaded
 u8 creativision_mode __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .cv ROM is loaded (Creativision)
-u8 speccy_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .Z80 ROM is loaded (ZX Spectrum 48K)
 u8 coleco_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a Colecovision ROM is loaded
 
 u16 machine_mode     __attribute__((section(".dtcm"))) = 0x0000;  // A faster way to know what type of machine we are. No bits set = COLECO_MODE
@@ -467,16 +462,8 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         s16 *p = (s16*)dest;
         for (int i=0; i<len*2; i++)
         {
-            if (myConfig.soundDriver == SND_DRV_BEEPER)
-            {
-                if (mixer_read == mixer_write) {processDirectBeeperPlusAY();}
-                *p++ = mixer[mixer_read];
-            }
-            else
-            {
-                if (mixer_read == mixer_write) {wave_direct_skip=0; processDirectAudio();}
-                *p++ = mixer[mixer_read];
-            }
+            if (mixer_read == mixer_write) {wave_direct_skip=0; processDirectAudio();}
+            *p++ = mixer[mixer_read];
             mixer_read = (mixer_read + 1) & WAVE_DIRECT_BUF_SIZE;
         }
         p--; last_sample = *p;
@@ -585,53 +572,6 @@ ITCM_CODE void processDirectAudio(void)
         if (((mixer_write+1)&WAVE_DIRECT_BUF_SIZE) == mixer_read) {breather = 2048;}
     }
 }
-
-// --------------------------------------------------------------------------------------------
-// This is called when we are configured for 'Beeper' sound - it's really only useful for the
-// ZX Spectrum handling. We mix in AY samples as well if we are a ZX 128K... however, the AY 
-// doesn't need to be sampled quite as often so we grab 4 fresh samples per scanline and then
-// use those to mix into the beeper processing which is happening at 4x per scanline.
-// --------------------------------------------------------------------------------------------
-s16 mixbufAY[4] __attribute__((section(".dtcm")));
-u8  mixbufAY_idx __attribute__((section(".dtcm"))) = 0;
-ITCM_CODE void processDirectBeeperAY4(u8 num_samples)
-{
-    if (zx_AY_enabled) 
-    {
-        ay38910Mixer(num_samples, mixbufAY, &myAY);
-    } else memset(mixbufAY, 0x00, sizeof(mixbufAY));
-    
-    mixbufAY_idx = 0;
-}
-
-ITCM_CODE void processDirectBeeper(void)
-{
-    if (breather) {return;}
-    
-    s16 combined = mixbufAY[mixbufAY_idx++];
-    if (portFE & 0x10) combined += 0xA00;
-    mixer[mixer_write] = combined;
-    mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
-    if (((mixer_write+1)&WAVE_DIRECT_BUF_SIZE) == mixer_read) {breather = 2048;}
-}
-
-// ------------------------------------------------------------------
-// Call this one only from the OurSoundMixer() handler when we need
-// to process one beeper sample and possibly one AY sample mixed in.
-// ------------------------------------------------------------------
-void processDirectBeeperPlusAY(void)
-{
-    s16 mixbuf[2];
-    s16 combined = (portFE & 0x10) ? 0xA00 : 0x000;
-    if (zx_AY_enabled)
-    {
-        ay38910Mixer(1, mixbuf, &myAY);
-        combined += mixbuf[0];
-    }
-    mixer[mixer_write] = combined;
-    mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
-}
-
 
 
 // -------------------------------------------------------------------------------------------
@@ -884,11 +824,6 @@ void ResetColecovision(void)
       creativision_restore_bios();              // Put the CreatiVision BIOS into place
       creativision_reset();                     // Reset the Creativision and 6502 CPU - must be done after BIOS is loaded to get reset vector properly loaded
   }
-  else if (speccy_mode)
-  {
-      colecoWipeRAM();                          // Wipe main RAM area
-      speccy_reset();                           // Reset the ZX Spectrum memory - decompress .z80 and restore BIOS
-  }
   else if (adam_mode)
   {
       colecoWipeRAM();                          // Wipe the RAM area
@@ -1009,7 +944,7 @@ void ShowDebugZ80(void)
             idx++;
         }
 
-        if (AY_Enable || speccy_mode)
+        if (AY_Enable)
         {
             sprintf(tmp, "AY[] %02X %02X %02X %02X", myAY.ayRegs[0], myAY.ayRegs[1], myAY.ayRegs[2], myAY.ayRegs[3]);
             DSPrint(0,idx++,7, tmp);
@@ -1358,20 +1293,6 @@ void DisplayStatusLine(bool bForce)
         {
             last_creativision_mode = creativision_mode;
             DSPrint(20,0,6, "CREATIVISION");
-            last_pal_mode = 99;
-        }
-        if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
-        {
-            last_pal_mode = myConfig.isPAL;
-            DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
-        }
-    }
-    else if (speccy_mode)
-    {
-        if ((creativision_mode != last_creativision_mode) || bForce)
-        {
-            last_creativision_mode = creativision_mode;
-            DSPrint(20,0,6, zx_128k_mode ? "SPECCY 128K" : "SPECCY 48K ");
             last_pal_mode = 99;
         }
         if (last_pal_mode != myConfig.isPAL  && !myGlobalConfig.showFPS)
@@ -3947,14 +3868,6 @@ void BottomScreenKeypad(void)
           dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
           dmaCopy((void*) m5_kbdPal,(void*) BG_PALETTE_SUB,256*2);
         }
-        else if (speccy_mode) // ZX Spectrum Keyboard
-        {
-          //  Init bottom screen
-          decompress(speccy_kbdTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
-          decompress(speccy_kbdMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
-          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
-          dmaCopy((void*) speccy_kbdPal,(void*) BG_PALETTE_SUB,256*2);
-        }
         else // No custom keyboard for this machine... just use simplified alpha keyboard...
         {
           //  Init bottom screen
@@ -4215,7 +4128,6 @@ void LoadBIOSFiles(void)
     bPencilBiosFound = false;
     bEinsteinBiosFound = false;
     bCreativisionBiosFound = false;
-    bSpeccyBiosFound = false;
 
     // -----------------------------------------------------------
     // Try to load the Japanese Sord M5 BIOS
@@ -4247,45 +4159,6 @@ void LoadBIOSFiles(void)
     if (!size) size = ReadFileCarefully("/roms/bios/svi.rom", SVIBios, 0x8000, 0);
     if (!size) size = ReadFileCarefully("/data/bios/svi.rom", SVIBios, 0x8000, 0);
     if (size) bSVIBiosFound = true;
-
-    // -----------------------------------------------------------
-    // Next try to load the Spectrum BIOS files
-    // -----------------------------------------------------------
-    size = ReadFileCarefully("48.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/48.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/48.rom", SpectrumBios, 0x4000, 0);
-    
-    if (!size) size = ReadFileCarefully("48k.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/48k.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/48k.rom", SpectrumBios, 0x4000, 0);
-
-    if (!size) size = ReadFileCarefully("speccy.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/speccy.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/speccy.rom", SpectrumBios, 0x4000, 0);
-    
-    if (!size) size = ReadFileCarefully("zxs48.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/zxs48.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/zxs48.rom", SpectrumBios, 0x4000, 0);
-    
-    if (!size) size = ReadFileCarefully("spec48.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/spec48.rom", SpectrumBios, 0x4000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/spec48.rom", SpectrumBios, 0x4000, 0);
-    
-    if (size) bSpeccyBiosFound = true; else memset(SpectrumBios, 0xFF, 0x4000);
-
-    size = ReadFileCarefully("128.rom", SpectrumBios128, 0x8000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/128.rom", SpectrumBios128, 0x8000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/128.rom", SpectrumBios128, 0x8000, 0);
-    
-    if (!size) size = ReadFileCarefully("128k.rom", SpectrumBios128, 0x8000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/128k.rom", SpectrumBios128, 0x8000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/128k.rom", SpectrumBios128, 0x8000, 0);
-    
-    if (!size) size = ReadFileCarefully("zxs128.rom", SpectrumBios128, 0x8000, 0);
-    if (!size) size = ReadFileCarefully("/roms/bios/zxs128.rom", SpectrumBios128, 0x8000, 0);
-    if (!size) size = ReadFileCarefully("/data/bios/zxs128.rom", SpectrumBios128, 0x8000, 0);
-    
-    if (size) bSpeccyBiosFound = true; else memset(SpectrumBios128, 0xFF, 0x8000);
 
     // ---------------------------------------------------------------
     // Next try to load MSX.ROM and any of the other supported
@@ -4664,7 +4537,6 @@ int main(int argc, char **argv)
             if (bCreativisionBiosFound) {DSPrint(2,idx++,0,"bioscv.rom     BIOS FOUND"); }
             if (bAdamBiosFound)         {DSPrint(2,idx++,0,"eos.rom        BIOS FOUND"); }
             if (bAdamBiosFound)         {DSPrint(2,idx++,0,"writer.rom     BIOS FOUND"); }
-            if (bSpeccyBiosFound)       {DSPrint(2,idx++,0,"48.rom/128.rom BIOS FOUND"); }
             DSPrint(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
             DSPrint(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
 

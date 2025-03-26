@@ -59,7 +59,6 @@
 
 #define SND_DRV_NORMAL              0
 #define SND_DRV_WAVE                1
-#define SND_DRV_BEEPER              2
 
 typedef struct {
   char szName[MAX_ROM_NAME+1];

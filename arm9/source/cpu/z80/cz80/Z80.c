@@ -55,9 +55,7 @@ extern byte cpu_readmem16_banked (u16 address);
 extern void cpu_writeport16(unsigned bytePort, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
-extern unsigned char cpu_readport_speccy(register unsigned short Port);
-extern void cpu_writeport_speccy(register unsigned short Port,register unsigned char Value);
-extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode, speccy_mode;
+extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode;
 extern u16 vdp_int_source, keyboard_interrupt, joystick_interrupt;
 
 #ifndef ZEXALL_TEST // If we're running normally, map in the standard Op/Rd/Wr handlers
@@ -484,34 +482,31 @@ static void CodesFD(void)
 /*************************************************************/
 void ResetZ80(Z80 *R)
 {
-  if (!speccy_mode)
-  {
-      CPU.PC.W     = 0x0000;
-      CPU.SP.W     = 0xF000;
-      CPU.AF.W     = 0x0000;
-      CPU.BC.W     = 0x0000;
-      CPU.DE.W     = 0x0000;
-      CPU.HL.W     = 0x0000;
-      CPU.AF1.W    = 0x0000;
-      CPU.BC1.W    = 0x0000;
-      CPU.DE1.W    = 0x0000;
-      CPU.HL1.W    = 0x0000;
-      CPU.IX.W     = 0x0000;
-      CPU.IY.W     = 0x0000;
-      CPU.I        = 0x00;
-      CPU.R        = 0x00;
-      CPU.R_HighBit= 0x00;
-      CPU.IFF      = 0x00;
-      CPU.IBackup  = 0;
-      CPU.ICount   = CPU.IPeriod = 0;
-      CPU.IRequest = INT_NONE;
-      CPU.User     = 0;
-      CPU.Trace    = 0;
-      CPU.TrapBadOps = 1;
-      CPU.IAutoReset = 1;
-      
-      JumpZ80(CPU.PC.W);
- }
+  CPU.PC.W     = 0x0000;
+  CPU.SP.W     = 0xF000;
+  CPU.AF.W     = 0x0000;
+  CPU.BC.W     = 0x0000;
+  CPU.DE.W     = 0x0000;
+  CPU.HL.W     = 0x0000;
+  CPU.AF1.W    = 0x0000;
+  CPU.BC1.W    = 0x0000;
+  CPU.DE1.W    = 0x0000;
+  CPU.HL1.W    = 0x0000;
+  CPU.IX.W     = 0x0000;
+  CPU.IY.W     = 0x0000;
+  CPU.I        = 0x00;
+  CPU.R        = 0x00;
+  CPU.R_HighBit= 0x00;
+  CPU.IFF      = 0x00;
+  CPU.IBackup  = 0;
+  CPU.ICount   = CPU.IPeriod = 0;
+  CPU.IRequest = INT_NONE;
+  CPU.User     = 0;
+  CPU.Trace    = 0;
+  CPU.TrapBadOps = 1;
+  CPU.IAutoReset = 1;
+  
+  JumpZ80(CPU.PC.W);
 }
 
 /** ExecZ80() ************************************************/
@@ -582,7 +577,7 @@ ITCM_CODE void IntZ80(Z80 *R,word Vector)
     M_PUSH(PC);
 
     /* Automatically reset IRequest if needed */
-    if (memotech_mode || speccy_mode) CPU.IRequest=INT_NONE;
+    if (memotech_mode) CPU.IRequest=INT_NONE;
     else
     if (CPU.IAutoReset && (Vector==CPU.IRequest))
     {
@@ -836,223 +831,6 @@ int ExecZ80_Simplified(register int RunCycles)
     
     /* Normally the R register would be incremented on every M1 CPU access... but for the optimized driver, we just increment it per scanline */
     INCR(1);
-
-    /* Unless we have come here after EI, exit */
-    if(!(CPU.IFF&IFF_EI)) return(CPU.ICount);
-    else
-    {
-      /* Done with AfterEI state */
-      CPU.IFF=(CPU.IFF&~IFF_EI)|IFF_1;
-      /* Restore the ICount */
-      CPU.ICount+=CPU.IBackup-1;
-      /* Interrupt CPU if needed */
-      if((CPU.IRequest!=INT_NONE)&&(CPU.IRequest!=INT_QUIT)) IntZ80(&CPU,CPU.IRequest);
-    }
-  }
-}
-
-
-// zzzzzzzzzzzzzzzzzzzzzzzz
-
-#undef   OpZ80
-#undef   RdZ80
-#undef   WrZ80
-#undef   OutZ80
-#undef   InZ80
-
-inline byte RdZ80_Speccy(word A)  {return *(MemoryMap[(A)>>13] + ((A)&0x1FFF));}
-
-inline void WrZ80_Speccy(word A, byte value)
-{
-    // ----------------------------------------------------------------------------------
-    // For the ZX Spectrum we allow writes to any address that isn't in the BIOS area...
-    // ----------------------------------------------------------------------------------
-    if (A & 0xC000) // Must be above the 16K BIOS ROM area to allow write...
-    {
-        *(MemoryMap[A>>13] + (A&0x1FFF)) = value;
-    }
-}
-
-#define OpZ80           RdZ80_Speccy
-#define RdZ80           RdZ80_Speccy
-#define WrZ80           WrZ80_Speccy
-
-#define OutZ80(P,V)     cpu_writeport_speccy(P,V)
-#define InZ80(P)        cpu_readport_speccy(P)
-
-static void CodesCB_Speccy(void)
-{
-  register byte I;
-
-  /* Read opcode and count cycles */
-  I=OpZ80(CPU.PC.W++);
-  CPU.ICount-=CyclesCB[I];
-
-  /* R register incremented on each M1 cycle */
-  INCR(1);
-
-  switch(I)
-  {
-#include "CodesCB.h"
-    default:
-      if(CPU.TrapBadOps)  Trap_Bad_Ops(" CB ", I, CPU.PC.W-2);
-  }
-}
-
-static void CodesDDCB_Speccy(void)
-{
-  register pair J;
-  register byte I;
-
-#define XX IX
-  /* Get offset, read opcode and count cycles */
-  J.W=CPU.XX.W+(offset)OpZ80(CPU.PC.W++);
-  I=OpZ80(CPU.PC.W++);
-  CPU.ICount-=CyclesXXCB[I];
-
-  switch(I)
-  {
-#include "CodesXCB.h"
-    default:
-      if(CPU.TrapBadOps)  Trap_Bad_Ops("DDCB", I, CPU.PC.W-4);
-  }
-#undef XX
-}
-
-static void CodesFDCB_Speccy(void)
-{
-  register pair J;
-  register byte I;
-
-#define XX IY
-  /* Get offset, read opcode and count cycles */
-  J.W=CPU.XX.W+(offset)OpZ80(CPU.PC.W++);
-  I=OpZ80(CPU.PC.W++);
-  CPU.ICount-=CyclesXXCB[I];
-
-  switch(I)
-  {
-#include "CodesXCB.h"
-    default:
-      if(CPU.TrapBadOps)  Trap_Bad_Ops("FDCB", I, CPU.PC.W-4);
-  }
-#undef XX
-}
-
-static void CodesED_Speccy(void)
-{
-  register byte I;
-  register pair J;
-
-  /* Read opcode and count cycles */
-  I=OpZ80(CPU.PC.W++);
-  CPU.ICount-=CyclesED[I];
-  
-  /* R register incremented on each M1 cycle */
-  INCR(1);
-
-  switch(I)
-  {
-#include "CodesED.h"
-    case PFX_ED:
-      CPU.PC.W--;break;
-    default:
-      if(CPU.TrapBadOps) Trap_Bad_Ops(" ED ", I, CPU.PC.W-4);
-  }
-}
-
-static void CodesDD_Speccy(void)
-{
-  register byte I;
-  register pair J;
-
-#define XX IX
-  /* Read opcode and count cycles */
-  I=OpZ80(CPU.PC.W++);
-  CPU.ICount-=CyclesXX[I];
-
-  /* R register incremented on each M1 cycle */
-  INCR(1);
-
-  switch(I)
-  {
-#include "CodesXX.h"
-    case PFX_FD:
-    case PFX_DD:
-      CPU.PC.W--;break;
-    case PFX_CB:
-      CodesDDCB_Speccy();break;
-    default:
-      if(CPU.TrapBadOps)  Trap_Bad_Ops(" DD ", I, CPU.PC.W-2);
-  }
-#undef XX
-}
-
-static void CodesFD_Speccy(void)
-{
-  register byte I;
-  register pair J;
-
-#define XX IY
-  /* Read opcode and count cycles */
-  I=OpZ80(CPU.PC.W++);
-  CPU.ICount-=CyclesXX[I];
-
-  /* R register incremented on each M1 cycle */
-  INCR(1);
-
-  switch(I)
-  {
-#include "CodesXX.h"
-    case PFX_FD:
-    case PFX_DD:
-      CPU.PC.W--;break;
-    case PFX_CB:
-      CodesFDCB_Speccy();break;
-    default:
-        if(CPU.TrapBadOps)  Trap_Bad_Ops(" FD ", I, CPU.PC.W-2);
-  }
-#undef XX
-}
-
-int ExecZ80_Speccy(register int RunCycles)
-{
-  register byte I;
-  register pair J;
-
-  for(CPU.ICount=RunCycles;;)
-  {
-    while(CPU.ICount>0)
-    {
-      /* Read opcode and count cycles */
-      I=OpZ80(CPU.PC.W++);
-      CPU.ICount  -= Cycles_NoM1Wait[I];
-      
-      // ----------------------------------------------------------------------------------------
-      // If we are in contended memory - add penalty. This is not cycle accurate - this is not a
-      // Spectrum emulator but we want to at least make an attempt to get closer on the cycle
-      // timing. So we simply use an 'average' penalty of 6/4 cycles if we are in contended memory
-      // while the screen is rendering. It's rough but gets us close enough to play games.
-      // ----------------------------------------------------------------------------------------
-      extern u8 zx_ScreenRendering;
-      if (zx_ScreenRendering)
-      {
-         if ((CPU.PC.W & 0xC000) == 0x4000) {CPU.ICount  -= ((I == 0xCB) || (I == 0xED) || (I == 0xFD) || (I == 0xDD)) ? 6:4;}
-      }
-            
-      /* R register incremented on each M1 cycle */
-      INCR(1);
-
-      /* Interpret opcode */
-      switch(I)
-      {
-#include "Codes.h"
-        case PFX_CB: CodesCB_Speccy();break;
-        case PFX_ED: CodesED_Speccy();break;
-        case PFX_FD: CodesFD_Speccy();break;
-        case PFX_DD: CodesDD_Speccy();break;
-      }
-    }
 
     /* Unless we have come here after EI, exit */
     if(!(CPU.IFF&IFF_EI)) return(CPU.ICount);
