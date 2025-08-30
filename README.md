@@ -414,6 +414,12 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.6: 30-Aug-2025 by wavemotion-dave
+* Minor cleanup and refactor - added 6502 debugger.
+* Tweaks to MSX beeper.
+* Updated README.md after Z80 and 6502 compatibility tests run.
+* Reduced the max ADAM RAM extended memory to 1MB for compatibility reasons.
+
 V10.5: 14-Mar-2025 by wavemotion-dave
 * Update to the Z80 core to improve emulation accuracy. This emulator now passes the ZEXALL test suite.
 * Added proper M1 wait states for the Colecovision, ADAM and MSX emulation for improved CPU handling.
