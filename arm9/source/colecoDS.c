@@ -95,7 +95,7 @@ u8 RAM_Memory[0x10000]                ALIGN(32) = {0};        // RAM up to 128K 
 u8 BIOS_Memory[0x10000]               ALIGN(32) = {0};        // To hold our BIOS and related OS memory (64K as the BIOS  for various machines ends up in different spots)
 u8 SRAM_Memory[0x4000]                ALIGN(32) = {0};        // SRAM up to 16K for the few carts which use it (e.g. MSX Deep Dungeon II, Hydlide II, etc)
 
-u8 *DSI_RAM_Buffer = 0; // Used as a large 2MB buffer for ADAM expanded RAM. May have other uses in the future.
+u8 *DSI_RAM_Buffer = 0; // Used as a large 1MB buffer for ADAM expanded RAM. May have other uses in the future.
 u8 io_show_status = 0;  // Used to indicate a RD/WR status for various disk/tape activities
 
 // --------------------------------------------------------------------------

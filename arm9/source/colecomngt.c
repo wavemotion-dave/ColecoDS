@@ -1193,7 +1193,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       {
           if (isDSiMode())
           {
-              Port42 = Value & 0x1F;        // 2MB worth of banks (32 banks of 64K)
+              Port42 = Value & 0x0F;        // 1MB worth of banks (16 banks of 64K)
               if (adam_mode) SetupAdam(false);
           }
           else Port42 = 0x00; // No extra banking for DS-Lite/Phat (just the stock 64K plus 64K expansion)
