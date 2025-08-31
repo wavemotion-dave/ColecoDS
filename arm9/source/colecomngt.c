@@ -787,9 +787,12 @@ u8 loadrom(const char *filename, u8 * ptr)
             }
             else if (myConfig.cvMode == CV_MODE_SUPERCART) // These are the Super Game Cart types... of varying EE sizes
             {
+// SGC Removed - and without the full supercart.c even enabling this and rebuilding won't work                
+#if 0                
                 bSuperGameCart = 1;
                 SuperGameCartSetup(romSize);
                 memcpy(ptr, ROM_Memory, 0x2000);
+#endif                
             }
             else    // We will assume Megacart for everything else...
             {
