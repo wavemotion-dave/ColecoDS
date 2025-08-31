@@ -11,3 +11,4 @@ void SuperGameCartSetup(int romSize) {}
 void SuperGameCartWrite(u16 address, u8 value) {}
 u8   SuperGameCartRead(u16 address) {return 0x00;}
 void SuperGameCartSaveFlash(void) {}
+u8   IsSuperGameCart(u32 crc) {return 0x00;}

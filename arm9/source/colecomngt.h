@@ -245,6 +245,7 @@ extern void SuperGameCartSetup(int romSize);
 extern void SuperGameCartWrite(u16 address, u8 value);
 extern u8   SuperGameCartRead(u16 address);
 extern void SuperGameCartSaveFlash(void);
+extern u8   IsSuperGameCart(u32 crc);
 
 extern void BeeperON(u16 beeper_freq);
 extern void BeeperOFF(void);

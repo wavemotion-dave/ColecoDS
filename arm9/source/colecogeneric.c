@@ -1135,12 +1135,10 @@ void SetDefaultGameConfig(void)
 	// --------------------------------------------------------------------------
 	// And a few games that are known to use the Super Cart boards...
 	// --------------------------------------------------------------------------
-    if (file_crc == 0x30d337e4) myConfig.cvMode = CV_MODE_SUPERCART;
-    if (file_crc == 0x6831ad48) myConfig.cvMode = CV_MODE_SUPERCART;
-    if (file_crc == 0xbdae4248) myConfig.cvMode = CV_MODE_SUPERCART;
-    if (file_crc == 0x80586cc5) myConfig.cvMode = CV_MODE_SUPERCART;
-    if (file_crc == 0x6c8113c1) myConfig.cvMode = CV_MODE_SUPERCART;
-    if (file_crc == 0xcf803ddc) myConfig.cvMode = CV_MODE_SUPERCART;
+    if (IsSuperGameCart(file_crc))
+    {
+        myConfig.cvMode = CV_MODE_SUPERCART;
+    }
     
     // -----------------------------------------------------------
     // And two carts that are multicarts for the Colecovision...
