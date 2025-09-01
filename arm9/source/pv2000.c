@@ -323,7 +323,7 @@ unsigned char cpu_readport_pv2000(register unsigned short Port)
 // ----------------------------------------------------------------------
 void cpu_writeport_pv2000(register unsigned short Port,register unsigned char Value) 
 {
-    // SG-1000 ports are 8-bit
+    // PV-2000 ports are 8-bit
     Port &= 0x00FF;
     
     if (Port == 0x20)

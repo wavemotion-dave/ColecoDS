@@ -55,7 +55,7 @@ extern byte cpu_readmem16_banked (u16 address);
 extern void cpu_writeport16(unsigned bytePort, unsigned char Value);
 extern void cpu_writeport_msx(unsigned short Port, unsigned char Value);
 extern byte cpu_readport16(unsigned short Port);
-extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode;
+extern u8 bIsComplicatedRAM, my_config_clear_int, einstein_mode, memotech_mode, pv1000_mode;
 extern u16 vdp_int_source, keyboard_interrupt, joystick_interrupt;
 
 #ifndef ZEXALL_TEST // If we're running normally, map in the standard Op/Rd/Wr handlers
@@ -589,7 +589,7 @@ ITCM_CODE void IntZ80(Z80 *R,word Vector)
         {
             // Don't clear it... will be cleared when program reads the keyboard or Joystick in einstein.c
         }
-        else
+        else if (!pv1000_mode) // PV-1000 program will clear it...
         {
             CPU.IRequest=INT_NONE;
         }

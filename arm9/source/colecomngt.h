@@ -200,6 +200,8 @@ extern void sordm5_reset(void);
 extern void memotech_reset(void);
 extern void einstein_reset(void);
 extern void svi_reset(void);
+extern void pv1000_reset(void);
+extern u32  pv1000_run(void);
 extern void pv2000_reset(void);
 extern void msx_reset(void);
 extern void msx_restore_bios(void);

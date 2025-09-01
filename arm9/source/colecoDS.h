@@ -232,6 +232,7 @@ extern u8  kbd_key;
 extern u8 sg1000_mode;
 extern u8 sordm5_mode;
 extern u8 einstein_mode;
+extern u8 pv1000_mode;
 extern u8 pv2000_mode;
 extern u8 memotech_mode;
 extern u8 pencil2_mode;
@@ -265,6 +266,7 @@ extern u32 tape_pos, tape_len;
 #define MODE_MSX            0x0100
 #define MODE_PENCIL2        0x0200
 #define MODE_CREATIVISION   0x0400
+#define MODE_PV1000         0x0800
 
 #define WAITVBL swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank(); swiWaitForVBlank();
 

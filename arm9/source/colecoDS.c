@@ -195,7 +195,8 @@ u8 soundEmuPause     __attribute__((section(".dtcm"))) = 1;       // Set to 1 to
 // -----------------------------------------------------------------------------------------------
 u8 sg1000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support
 u8 sordm5_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .m5 game is loaded for Sord M5 support
-u8 pv2000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .sg game is loaded for Sega SG-1000 support
+u8 pv1000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pv1 game is loaded for Casio PV-1000 support
+u8 pv2000_mode       __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .pv game is loaded for Casio PV-2000 support
 u8 memotech_mode     __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .mtx or .run game is loaded for Memotech MTX support
 u8 msx_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .msx game is loaded for basic MSX support
 u8 svi_mode          __attribute__((section(".dtcm"))) = 0;       // Set to 1 when a .svi game is loaded for basic SVI-3x8 support
@@ -691,6 +692,7 @@ static u8 last_einstein_mode = false;
 static u8 last_ay_mode = false;
 static u8 last_mc_mode = 0;
 static u8 last_sg1000_mode = 0;
+static u8 last_pv1000_mode = 0;
 static u8 last_pv2000_mode = 0;
 static u8 last_sordm5_mode = 0;
 static u8 last_memotech_mode = 0;
@@ -713,6 +715,7 @@ void ResetStatusFlags(void)
   last_creativision_mode = 0;
   last_sg1000_mode = 0;
   last_pv2000_mode = 0;
+  last_pv1000_mode = 0;
   last_sordm5_mode = 0;
   last_memotech_mode = 0;
   last_msx_mode = 0;
@@ -730,7 +733,10 @@ void ResetColecovision(void)
   JoyMode=JOYMODE_JOYSTICK;             // Joystick mode key
   JoyState = 0x00000000;                // Nothing pressed to start
 
-  Reset9918();                          // Reset video chip
+  if (!pv1000_mode)
+  {
+      Reset9918();                      // Reset video chip
+  }
 
   sgm_reset();                          // Reset Super Game Module
 
@@ -776,9 +782,14 @@ void ResetColecovision(void)
   // ----------------------------------------------------------------------
   if (sg1000_mode)
   {
-      colecoWipeRAM();                          // Wipe main RAM area
+      colecoWipeRAM();                          // Wipe main RAM area - no BIOS needed
       sg1000_reset();                           // Reset the SG-1000 to restore memory
   }
+  else if (pv1000_mode)
+  {
+      colecoWipeRAM();                          // Wipe main RAM area - no BIOS needed
+      pv1000_reset();                           // Reset the PV1000 specific vars
+  } 
   else if (pv2000_mode)
   {
       colecoWipeRAM();                          // Wipe main RAM area
@@ -1077,6 +1088,14 @@ void DisplayStatusLine(bool bForce)
         {
             last_pal_mode = myConfig.isPAL;
             DSPrint(0,0,6, myConfig.isPAL ? "PAL":"   ");
+        }
+    }
+    else if (pv1000_mode)
+    {
+        if ((last_pv1000_mode != pv1000_mode) || bForce)
+        {
+            last_pv1000_mode = pv1000_mode;
+            DSPrint(23,0,6, "PV-1000");
         }
     }
     else if (pv2000_mode)
@@ -3101,7 +3120,10 @@ void colecoDS_main(void)
   // Get the Coleco Machine Emulator ready
   colecoInit(gpFic[ucGameAct].szName);
 
-  colecoSetPal();
+  if (!pv1000_mode)
+  {
+    colecoSetPal();
+  }
   colecoRun();
   
   // Frame-to-frame timing...
@@ -4008,6 +4030,14 @@ void BottomScreenKeypad(void)
           dmaCopy((void*) adam_smPal,(void*) BG_PALETTE_SUB,256*2);
       }
       else if (pv2000_mode)
+      {
+          //  Init bottom screen
+          decompress(pv2000_smTiles, bgGetGfxPtr(bg0b),  LZ77Vram);
+          decompress(pv2000_smMap, (void*) bgGetMapPtr(bg0b),  LZ77Vram);
+          dmaCopy((void*) bgGetMapPtr(bg0b)+32*30*2,(void*) bgGetMapPtr(bg1b),32*24*2);
+          dmaCopy((void*) pv2000_smPal,(void*) BG_PALETTE_SUB,256*2);
+      }
+      else if (pv1000_mode) //TODO: new overlay?
       {
           //  Init bottom screen
           decompress(pv2000_smTiles, bgGetGfxPtr(bg0b),  LZ77Vram);

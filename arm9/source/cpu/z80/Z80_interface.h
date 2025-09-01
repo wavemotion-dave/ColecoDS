@@ -21,6 +21,9 @@ extern unsigned char cpu_readport_sg(register unsigned short Port);
 extern void cpu_writeport_m5(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport_m5(register unsigned short Port);
 
+extern void cpu_writeport_pv1000(register unsigned short Port,register unsigned char Value);
+extern unsigned char cpu_readport_pv1000(register unsigned short Port);
+
 extern void cpu_writeport_pv2000(register unsigned short Port,register unsigned char Value);
 extern unsigned char cpu_readport_pv2000(register unsigned short Port);
 

@@ -992,9 +992,9 @@ void Reset9918(void)
     if (msx_mode || adam_mode || svi_mode || einstein_mode) vdp_16k_mode_only = 1;
     else vdp_16k_mode_only = 0;
     
-    if (msx_mode || svi_mode || sg1000_mode)
+    if (msx_mode || svi_mode || sg1000_mode || pv1000_mode)
     {
-        vdp_int_source = INT_RST38; 
+        vdp_int_source = INT_RST38;
     }
     else if (sordm5_mode || memotech_mode)
     {

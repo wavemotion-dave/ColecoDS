@@ -467,13 +467,18 @@ void colecoDSFindFiles(void)
           uNbFile++;
           countCV++;
         }
-        if ( (strcasecmp(strrchr(szFile, '.'), ".pv") == 0) )  {
+        if ( (strcasecmp(strrchr(szFile, '.'), ".pv1") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
           uNbFile++;
           countCV++;
         }
-        if ( (strcasecmp(strrchr(szFile, '.'), ".m5") == 0) )  {
+        if ( (strcasecmp(strrchr(szFile, '.'), ".pv") == 0) )  {
+          strcpy(gpFic[uNbFile].szName,szFile);
+          gpFic[uNbFile].uType = COLROM;
+          uNbFile++;
+          countCV++;
+        }        if ( (strcasecmp(strrchr(szFile, '.'), ".m5") == 0) )  {
           strcpy(gpFic[uNbFile].szName,szFile);
           gpFic[uNbFile].uType = COLROM;
           uNbFile++;
@@ -1206,6 +1211,7 @@ void SetDefaultGameConfig(void)
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
+    if (pv1000_mode)                            myConfig.vertSync= 0;  // PV-1000 does not use vertical sync
     
     // ----------------------------------------------------
     // Some special BASIC carts that want full keyboards
@@ -1906,6 +1912,7 @@ void ReadFileCRCAndConfig(void)
     
     // Reset the mode related vars...
     sg1000_mode = 0;
+    pv1000_mode = 0;
     pv2000_mode = 0;
     sordm5_mode = 0;
     memotech_mode = 0;
@@ -1930,8 +1937,13 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 2;    // SC-3000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".SC") != 0) sg1000_mode = 2;    // SC-3000 mode
-    if (strstr(gpFic[ucGameChoice].szName, ".pv") != 0) pv2000_mode = 2;    // PV-2000 mode
-    if (strstr(gpFic[ucGameChoice].szName, ".PV") != 0) pv2000_mode = 2;    // PV-2000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".pv1") != 0) pv1000_mode = 1;   // PV-1000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".PV1") != 0) pv1000_mode = 1;   // PV-1000 mode
+    if (!pv1000_mode)
+    {
+      if (strstr(gpFic[ucGameChoice].szName, ".pv") != 0) pv2000_mode = 2;    // PV-2000 mode
+      if (strstr(gpFic[ucGameChoice].szName, ".PV") != 0) pv2000_mode = 2;    // PV-2000 mode
+    }
     if (strstr(gpFic[ucGameChoice].szName, ".CV") != 0) creativision_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".cv") != 0) creativision_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;

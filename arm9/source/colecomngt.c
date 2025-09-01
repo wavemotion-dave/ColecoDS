@@ -162,6 +162,11 @@ void colecoWipeRAM(void)
   {
       for (int i=0xC000; i<0x10000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
   }
+  else if (pv1000_mode)
+  {
+      memset(RAM_Memory+0x8000, 0xFF, 0x8000);
+      for (int i=0xB000; i<0xC000; i++) RAM_Memory[i] = (myConfig.memWipe ? 0x00:  (rand() & 0xFF));
+  }
   else if (pv2000_mode)
   {
       memset(RAM_Memory+0x4000, 0xFF, 0x8000);
@@ -354,6 +359,12 @@ u8 colecoInit(char *szGame)
       if (file_crc == 0xa2edc01d)  ctc_enabled = 0;    // Sord M5 Mahjong (Jong Kyo) only works without CTC processing (unsure why)
       colecoWipeRAM();
       RetFct = loadrom(szGame,RAM_Memory+0x2000);      // Load up to 20K
+  }
+  else if (pv1000_mode)  // Casio PV-1000 cartridge loads at 0x0000 (up to 32K)
+  {
+      colecoWipeRAM();
+      RetFct = loadrom(szGame,RAM_Memory+0x0000);      // Load up to 32K at 0x0000
+      pv1000_reset();                                  // Reset the PV-1000
   }
   else if (pv2000_mode)  // Casio PV-2000 cartridge loads at C000
   {
@@ -744,6 +755,12 @@ u8 loadrom(const char *filename, u8 * ptr)
             strcpy(disk_last_path[0], initial_path);
             creativision_loadrom(romSize);
         }
+        else if (pv1000_mode)
+        {
+            strcpy(disk_last_file[0], filename);
+            strcpy(disk_last_path[0], initial_path);
+            memcpy(RAM_Memory, ROM_Memory, romSize);     // Copy up to 32K flat into our memory map...
+        }
         else if (sg1000_mode)
         {
             sg1000_sms_mapper = 0;
@@ -827,6 +844,7 @@ u8 loadrom(const char *filename, u8 * ptr)
     else if (svi_mode)          machine_mode = MODE_SVI;
     else if (einstein_mode)     machine_mode = MODE_EINSTEIN;
     else if (memotech_mode)     machine_mode = MODE_MEMOTECH;
+    else if (pv1000_mode)       machine_mode = MODE_PV1000;
     else if (pv2000_mode)       machine_mode = MODE_PV2000;
     else if (sordm5_mode)       machine_mode = MODE_SORDM5;
     else if (sg1000_mode)       machine_mode = MODE_SG_1000;
@@ -1079,11 +1097,12 @@ unsigned char cpu_readport_pencil2(register unsigned short Port)
 /*************************************************************/
 ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 {
-  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2))
+  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV1000 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN | MODE_PENCIL2))
   {
       if (machine_mode & MODE_MSX)      {return cpu_readport_msx(Port);}
       if (machine_mode & MODE_SG_1000)  {return cpu_readport_sg(Port);}
       if (machine_mode & MODE_SORDM5)   {return cpu_readport_m5(Port);}
+      if (machine_mode & MODE_PV1000)   {return cpu_readport_pv1000(Port);}
       if (machine_mode & MODE_PV2000)   {return cpu_readport_pv2000(Port);}
       if (machine_mode & MODE_MEMOTECH) {return cpu_readport_memotech(Port);}
       if (machine_mode & MODE_SVI)      {return cpu_readport_svi(Port);}
@@ -1134,11 +1153,12 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
 /*************************************************************/
 ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned char Value)
 {
-  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
+  if (machine_mode & (MODE_MSX | MODE_SG_1000 | MODE_SORDM5 | MODE_PV1000 | MODE_PV2000 | MODE_MEMOTECH | MODE_SVI | MODE_EINSTEIN))
   {
       if (machine_mode & MODE_MSX)      {cpu_writeport_msx(Port, Value);      return;}
       if (machine_mode & MODE_SG_1000)  {cpu_writeport_sg(Port, Value);       return;}
       if (machine_mode & MODE_SORDM5)   {cpu_writeport_m5(Port, Value);       return;}
+      if (machine_mode & MODE_PV1000)   {cpu_writeport_pv1000(Port, Value);   return;}
       if (machine_mode & MODE_PV2000)   {cpu_writeport_pv2000(Port, Value);   return;}
       if (machine_mode & MODE_MEMOTECH) {cpu_writeport_memotech(Port, Value); return;}
       if (machine_mode & MODE_SVI)      {cpu_writeport_svi(Port, Value);      return;}
@@ -1247,6 +1267,10 @@ ITCM_CODE u32 LoopZ80()
   if (creativision_mode)
   {
       creativision_run();
+  }
+  else if (pv1000_mode)
+  {
+      return pv1000_run();
   }
   else
   {

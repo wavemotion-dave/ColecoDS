@@ -677,6 +677,16 @@ ITCM_CODE void cpu_writemem16(u8 value,u16 address)
             }
         }
         // ----------------------------------------------------------------------------------
+        // For the Casio PV-1000, we allow anything above 0x8000 (not accurate but fast)
+        // ----------------------------------------------------------------------------------
+        else if (machine_mode & MODE_PV1000)
+        {
+            if (address & 0x8000)
+            {
+                RAM_Memory[address]=value;  // Allow pretty much anything above the base ROM area
+            }
+        }
+        // ----------------------------------------------------------------------------------
         // For the Casio PV-2000, we call into a special routine to handle memory writes.
         // ----------------------------------------------------------------------------------
         else if (machine_mode & MODE_PV2000)
