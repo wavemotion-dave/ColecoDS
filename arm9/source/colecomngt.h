@@ -148,6 +148,16 @@ extern u8 BufferedKeysReadIdx;
 extern u16 keyboard_interrupt;
 extern u16 joystick_interrupt;
 
+extern uint8_t* pv1000_vram;
+extern uint8_t* pv1000_pcg;
+extern uint8_t* pv1000_pattern;
+extern uint8_t  pv1000_force_pattern;
+extern uint8_t  pv1000_column;
+extern uint8_t  pv1000_status;
+extern uint8_t  pv1000_enable;
+extern uint16_t pv1000_scanline;
+extern uint8_t  pv1000_bg_color;
+
 // --------------------------------------------------
 // Some CPU and VDP and SGM stuff that we need
 // --------------------------------------------------

@@ -59,14 +59,14 @@ u8  spare[512] = {0x00};            // We keep some spare bytes so we can use th
 static char szLoadFile[256];        // We build the filename out of the base filename and tack on .sav, .ee, etc.
 static char tmpStr[32];
 
-void colecoSaveState() 
+void colecoSaveState()
 {
   size_t retVal;
   long pSvg;
 
   // Return to the original path
-  chdir(initial_path);    
-  
+  chdir(initial_path);
+
   // Init filename = romname and SAV in place of ROM
   DIR* dir = opendir("sav");
   if (dir) closedir(dir);    // Directory exists... close it out and move on.
@@ -89,20 +89,20 @@ void colecoSaveState()
   }
   strcpy(tmpStr,"SAVING...");
   DSPrint(6,0,0,tmpStr);
-  
-  FILE *handle = fopen(szLoadFile, "wb+");  
-  if (handle != NULL) 
+
+  FILE *handle = fopen(szLoadFile, "wb+");
+  if (handle != NULL)
   {
     // Write Version
     u16 save_ver = COLECODS_SAVE_VER;
     retVal = fwrite(&save_ver, sizeof(u16), 1, handle);
-      
+
     // Write CZ80 CPU
     retVal = fwrite(&CPU, sizeof(CPU), 1, handle);
-      
+
     // Save Z80 Memory (yes, all of it!)
-    if (retVal) retVal = fwrite(RAM_Memory, 0x10000,1, handle); 
-      
+    if (retVal) retVal = fwrite(RAM_Memory, 0x10000,1, handle);
+
     // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
     for (u8 i=0; i<8; i++)
     {
@@ -115,7 +115,7 @@ void colecoSaveState()
         {
             Offsets[i].type = TYPE_FDC;
             Offsets[i].offset = MemoryMap[i] - fastdrom_cdx2;
-        }        
+        }
         else if ((MemoryMap[i] >= RAM_Memory) && (MemoryMap[i] < RAM_Memory+(sizeof(RAM_Memory))))
         {
             Offsets[i].type = TYPE_RAM;
@@ -137,109 +137,109 @@ void colecoSaveState()
             Offsets[i].offset =  (u32)MemoryMap[i];
         }
     }
-    if (retVal) retVal = fwrite(Offsets, sizeof(Offsets),1, handle);     
-    
+    if (retVal) retVal = fwrite(Offsets, sizeof(Offsets),1, handle);
+
     // Write VDP
-    if (retVal) retVal = fwrite(VDP, sizeof(VDP),1, handle); 
-    if (retVal) retVal = fwrite(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
-    if (retVal) retVal = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle); 
-    if (retVal) retVal = fwrite(&FGColor, sizeof(FGColor),1, handle); 
-    if (retVal) retVal = fwrite(&BGColor, sizeof(BGColor),1, handle); 
-    if (retVal) retVal = fwrite(&OH, sizeof(OH),1, handle); 
-    if (retVal) retVal = fwrite(&IH, sizeof(IH),1, handle);       
-    if (retVal) retVal = fwrite(&ScrMode, sizeof(ScrMode),1, handle); 
-    if (retVal) retVal = fwrite(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
-    if (retVal) retVal = fwrite(&VAddr, sizeof(VAddr),1, handle); 
-    if (retVal) retVal = fwrite(&CurLine, sizeof(CurLine),1, handle); 
-    if (retVal) retVal = fwrite(&ColTabM, sizeof(ColTabM),1, handle); 
-    if (retVal) retVal = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle); 
-    if (retVal) retVal = fwrite(pVDPVidMem, 0x4000,1, handle); 
+    if (retVal) retVal = fwrite(VDP, sizeof(VDP),1, handle);
+    if (retVal) retVal = fwrite(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle);
+    if (retVal) retVal = fwrite(&VDPStatus, sizeof(VDPStatus),1, handle);
+    if (retVal) retVal = fwrite(&FGColor, sizeof(FGColor),1, handle);
+    if (retVal) retVal = fwrite(&BGColor, sizeof(BGColor),1, handle);
+    if (retVal) retVal = fwrite(&OH, sizeof(OH),1, handle);
+    if (retVal) retVal = fwrite(&IH, sizeof(IH),1, handle);
+    if (retVal) retVal = fwrite(&ScrMode, sizeof(ScrMode),1, handle);
+    if (retVal) retVal = fwrite(&VDPDlatch, sizeof(VDPDlatch),1, handle);
+    if (retVal) retVal = fwrite(&VAddr, sizeof(VAddr),1, handle);
+    if (retVal) retVal = fwrite(&CurLine, sizeof(CurLine),1, handle);
+    if (retVal) retVal = fwrite(&ColTabM, sizeof(ColTabM),1, handle);
+    if (retVal) retVal = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle);
+    if (retVal) retVal = fwrite(pVDPVidMem, 0x4000,1, handle);
     pSvg = ChrGen-pVDPVidMem;
-    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle);
     pSvg = ChrTab-pVDPVidMem;
-    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle);
     pSvg = ColTab-pVDPVidMem;
-    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle);
     pSvg = SprGen-pVDPVidMem;
-    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle);
     pSvg = SprTab-pVDPVidMem;
-    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle); 
+    if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle);
 
     // Write PSG SN and AY sound chips...
     if (retVal) retVal = fwrite(&mySN, sizeof(mySN),1, handle);
-    if (retVal) retVal = fwrite(&myAY, sizeof(myAY),1, handle);    
-      
-    // Write the Super Game Module stuff
-    if (retVal) retVal = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-    if (retVal) retVal = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-      
-    // A few frame counters
-    if (retVal) retVal = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle); 
-    if (retVal) retVal = fwrite(&timingFrames, sizeof(timingFrames), 1, handle); 
+    if (retVal) retVal = fwrite(&myAY, sizeof(myAY),1, handle);
 
-    // Some Cassette Related stuff...    
-    if (retVal) retVal = fwrite(&tape_pos, sizeof(tape_pos), 1, handle); 
-    if (retVal) retVal = fwrite(&tape_len, sizeof(tape_len), 1, handle); 
-    if (retVal) retVal = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
-      
+    // Write the Super Game Module stuff
+    if (retVal) retVal = fwrite(&sgm_enable, sizeof(sgm_enable), 1, handle);
+    if (retVal) retVal = fwrite(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle);
+
+    // A few frame counters
+    if (retVal) retVal = fwrite(&emuActFrames, sizeof(emuActFrames), 1, handle);
+    if (retVal) retVal = fwrite(&timingFrames, sizeof(timingFrames), 1, handle);
+
+    // Some Cassette Related stuff...
+    if (retVal) retVal = fwrite(&tape_pos, sizeof(tape_pos), 1, handle);
+    if (retVal) retVal = fwrite(&tape_len, sizeof(tape_len), 1, handle);
+    if (retVal) retVal = fwrite(&last_tape_pos, sizeof(last_tape_pos), 1, handle);
+
     // Some Memotech MTX stuff...
-    if (retVal) retVal = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
-    if (retVal) retVal = fwrite(&IOBYTE, sizeof(IOBYTE), 1, handle); 
-    if (retVal) retVal = fwrite(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
-    if (retVal) retVal = fwrite(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle);      
-    if (retVal) retVal = fwrite(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
-    if (retVal) retVal = fwrite(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
-    if (retVal) retVal = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);       
-      
+    if (retVal) retVal = fwrite(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle);
+    if (retVal) retVal = fwrite(&IOBYTE, sizeof(IOBYTE), 1, handle);
+    if (retVal) retVal = fwrite(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle);
+    if (retVal) retVal = fwrite(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle);
+    if (retVal) retVal = fwrite(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle);
+    if (retVal) retVal = fwrite(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle);
+    if (retVal) retVal = fwrite(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);
+
     // Some SVI stuff...
-    if (retVal) retVal = fwrite(&svi_RAMinSegment, sizeof(svi_RAMinSegment), 1, handle); 
-      
+    if (retVal) retVal = fwrite(&svi_RAMinSegment, sizeof(svi_RAMinSegment), 1, handle);
+
     // Some SG-1000 / SC-3000 stuff...
-    if (retVal) retVal = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
-    if (retVal) retVal = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);                        
+    if (retVal) retVal = fwrite(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);
+    if (retVal) retVal = fwrite(&OldPortC, sizeof(OldPortC), 1, handle);
 
     // And a few things for the Super Game Cart
     if (retVal) retVal = fwrite(SGC_Bank, sizeof(SGC_Bank), 1, handle);
     if (retVal) retVal = fwrite(&SGC_SST_State, sizeof(SGC_SST_State), 1, handle);
     if (retVal) retVal = fwrite(&SGC_SST_CmdPos, sizeof(SGC_SST_CmdPos), 1, handle);
-    
+
     // Write stuff for MSX, SordM5 and SG-1000
     if (retVal) retVal = fwrite(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
     if (retVal) retVal = fwrite(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
     if (retVal) retVal = fwrite(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
-    
+
     if (retVal) retVal = fwrite(&mapperType, sizeof(mapperType),1, handle);
     if (retVal) retVal = fwrite(&mapperMask, sizeof(mapperMask),1, handle);
     if (retVal) retVal = fwrite(bROMInSegment, sizeof(bROMInSegment),1, handle);
     if (retVal) retVal = fwrite(bRAMInSegment, sizeof(bRAMInSegment),1, handle);
-    
-    // Some systems utilize the Z80 CTC 
+
+    // Some systems utilize the Z80 CTC
     if (retVal) retVal = fwrite(CTC, sizeof(CTC),1, handle);
     if (retVal) retVal = fwrite(&vdp_int_source, sizeof(vdp_int_source),1, handle);
-    
+
     // Various ports used in the system
     if (retVal) retVal = fwrite(&Port53, sizeof(Port53),1, handle);
     if (retVal) retVal = fwrite(&Port60, sizeof(Port60),1, handle);
     if (retVal) retVal = fwrite(&Port20, sizeof(Port20),1, handle);
     if (retVal) retVal = fwrite(&Port42, sizeof(Port42),1, handle);
-    
+
     // Some spare memory we can eat into...
     if (retVal) retVal = fwrite(spare, 510, 1, handle);
-      
+
     if (einstein_mode) // Big enough that we will not write this if we are not Einstein
     {
-        if (retVal) retVal = fwrite(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
-        if (retVal) retVal = fwrite(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
-        if (retVal) retVal = fwrite(&keyboard_w, sizeof(keyboard_w),1, handle);      
-        if (retVal) retVal = fwrite(&key_int_mask, sizeof(key_int_mask),1, handle);      
-        if (retVal) retVal = fwrite(&myKeyData, sizeof(myKeyData),1, handle);      
-        if (retVal) retVal = fwrite(&adc_mux, sizeof(adc_mux),1, handle);      
+        if (retVal) retVal = fwrite(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);
+        if (retVal) retVal = fwrite(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);
+        if (retVal) retVal = fwrite(&keyboard_w, sizeof(keyboard_w),1, handle);
+        if (retVal) retVal = fwrite(&key_int_mask, sizeof(key_int_mask),1, handle);
+        if (retVal) retVal = fwrite(&myKeyData, sizeof(myKeyData),1, handle);
+        if (retVal) retVal = fwrite(&adc_mux, sizeof(adc_mux),1, handle);
         if (retVal) retVal = fwrite(&FDC, sizeof(FDC), 1, handle);
     }
-    else if (msx_mode)   // Big enough that we will not write this if we are not MSX 
+    else if (msx_mode)   // Big enough that we will not write this if we are not MSX
     {
         if (retVal) retVal = fwrite(&msx_last_rom_size, sizeof(msx_last_rom_size),1, handle);
-        
+
         // We need to save off the MSX Cart offsets so we can restore them properly...
         for (u8 i=0; i<8; i++)
         {
@@ -255,7 +255,7 @@ void colecoSaveState()
             }
         }
         if (retVal) retVal = fwrite(Offsets, sizeof(Offsets),1, handle);
-        
+
         if (retVal) retVal = fwrite(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
         if (msx_sram_enabled) if (retVal) retVal = fwrite(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
         if (msx_scc_enable)   if (retVal) retVal = fwrite(&mySCC, sizeof(mySCC),1, handle);
@@ -264,16 +264,16 @@ void colecoSaveState()
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
         if (retVal) retVal = fwrite(PCBTable+0x8000, 0x8000, 1, handle);
-        
-        if (retVal) retVal = fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);        
-        if (retVal) retVal = fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);        
+
+        if (retVal) retVal = fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);
+        if (retVal) retVal = fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);
         if (retVal) retVal = fwrite(&KBDStatus, sizeof(KBDStatus),1, handle);
         if (retVal) retVal = fwrite(&LastKey, sizeof(LastKey),1, handle);
-        if (retVal) retVal = fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);        
-        if (retVal) retVal = fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);        
+        if (retVal) retVal = fwrite(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
+        if (retVal) retVal = fwrite(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
         if (retVal) retVal = fwrite(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
-        
-        if (retVal) retVal = fwrite(spare, 32,1, handle);        
+
+        if (retVal) retVal = fwrite(spare, 32,1, handle);
         if (retVal) retVal = fwrite(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
         if (adam_ext_ram_used)
         {
@@ -283,7 +283,7 @@ void colecoSaveState()
             for (u32 i=0; i<len; i++)
             {
                 fwrite(ptr, 1, sizeof(u32), handle); // Write 32-bits at a time...
-                
+
                 u32 zero_count = 0;
                 while ((*ptr == 0x00000000) && (i<len)) // Compress
                 {
@@ -291,7 +291,7 @@ void colecoSaveState()
                     ptr++;
                     i++;
                 }
-                
+
                 if (zero_count) fwrite(&zero_count, 1, sizeof(zero_count), handle); // Write the zero count
                 else ptr++;
             }
@@ -300,7 +300,7 @@ void colecoSaveState()
     else if (bActivisionPCB)
     {
         // Write the EEPROM and memory
-        if (retVal) retVal = fwrite(&EEPROM, sizeof(EEPROM),1, handle);      
+        if (retVal) retVal = fwrite(&EEPROM, sizeof(EEPROM),1, handle);
     }
     else if (creativision_mode)
     {
@@ -309,16 +309,36 @@ void colecoSaveState()
         u8 *mem = creativision_get_savestate(&cv_save_size);
         if (retVal) retVal = fwrite(mem, cv_save_size,1, handle);
     }
+    else if (pv1000_mode)
+    {
+        u32 offset = 0;
+
+        offset = pv1000_vram - RAM_Memory;
+        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
+        
+        offset = pv1000_pcg - RAM_Memory;
+        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
+
+        offset = pv1000_pattern - RAM_Memory;
+        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
+
+        if (retVal) retVal = fwrite(&pv1000_force_pattern,  sizeof(pv1000_force_pattern), 1, handle);
+        if (retVal) retVal = fwrite(&pv1000_column,         sizeof(pv1000_column),        1, handle);
+        if (retVal) retVal = fwrite(&pv1000_status,         sizeof(pv1000_status),        1, handle);
+        if (retVal) retVal = fwrite(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
+        if (retVal) retVal = fwrite(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
+        if (retVal) retVal = fwrite(&pv1000_bg_color,       sizeof(pv1000_bg_color),      1, handle);
+    }
     else if (bSuperSimplifiedMemory) // For the new optimized driver...
     {
-        if (retVal) retVal = fwrite(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);      
-        if (retVal) retVal = fwrite(under_ram, sizeof(under_ram),1, handle);      
+        if (retVal) retVal = fwrite(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);
+        if (retVal) retVal = fwrite(under_ram, sizeof(under_ram),1, handle);
     }
-    
-    strcpy(tmpStr, (retVal ? "OK ":"ERR"));  
+
+    strcpy(tmpStr, (retVal ? "OK ":"ERR"));
     DSPrint(15,0,0,tmpStr);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-    DSPrint(6,0,0,"             "); 
+    DSPrint(6,0,0,"             ");
     DisplayStatusLine(true);
   }
   else {
@@ -331,13 +351,13 @@ void colecoSaveState()
 /*********************************************************************************
  * Load the current state - read everything back from the .sav file.
  ********************************************************************************/
-void colecoLoadState() 
+void colecoLoadState()
 {
     size_t retVal;
     long pSvg;
 
     // Return to the original path
-    chdir(initial_path);    
+    chdir(initial_path);
 
     // Init filename = romname and .SAV in place of ROM
     sprintf(szLoadFile,"sav/%s", initial_file);
@@ -355,26 +375,26 @@ void colecoLoadState()
       szLoadFile[len-2] = 'a';
       szLoadFile[len-1] = 'v';
     }
-    FILE* handle = fopen(szLoadFile, "rb"); 
-    if (handle != NULL) 
-    {    
+    FILE* handle = fopen(szLoadFile, "rb");
+    if (handle != NULL)
+    {
          strcpy(tmpStr,"LOADING...");
          DSPrint(6,0,0,tmpStr);
-       
+
         // Read Version
         u16 save_ver = 0xBEEF;
         retVal = fread(&save_ver, sizeof(u16), 1, handle);
-        
+
         if (save_ver == COLECODS_SAVE_VER)
         {
             // Load CZ80 CPU
             retVal = fread(&CPU, sizeof(CPU), 1, handle);
-       
+
             // Load Z80 Memory (yes, all of it!)
-            if (retVal) retVal = fread(RAM_Memory, 0x10000,1, handle); 
-            
+            if (retVal) retVal = fread(RAM_Memory, 0x10000,1, handle);
+
             // Load back the Memory Map - these were saved as offsets so we must reconstruct actual pointers
-            if (retVal) retVal = fread(Offsets, sizeof(Offsets),1, handle);     
+            if (retVal) retVal = fread(Offsets, sizeof(Offsets),1, handle);
             for (u8 i=0; i<8; i++)
             {
                 if (Offsets[i].type == TYPE_ROM)
@@ -402,68 +422,68 @@ void colecoLoadState()
                     MemoryMap[i] = (u8 *) (Offsets[i].offset);
                 }
             }
-            
+
             // Load VDP
-            if (retVal) retVal = fread(VDP, sizeof(VDP),1, handle); 
-            if (retVal) retVal = fread(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle); 
-            if (retVal) retVal = fread(&VDPStatus, sizeof(VDPStatus),1, handle); 
-            if (retVal) retVal = fread(&FGColor, sizeof(FGColor),1, handle); 
-            if (retVal) retVal = fread(&BGColor, sizeof(BGColor),1, handle); 
-            if (retVal) retVal = fread(&OH, sizeof(OH),1, handle); 
-            if (retVal) retVal = fread(&IH, sizeof(IH),1, handle); 
-            if (retVal) retVal = fread(&ScrMode, sizeof(ScrMode),1, handle); 
+            if (retVal) retVal = fread(VDP, sizeof(VDP),1, handle);
+            if (retVal) retVal = fread(&VDPCtrlLatch, sizeof(VDPCtrlLatch),1, handle);
+            if (retVal) retVal = fread(&VDPStatus, sizeof(VDPStatus),1, handle);
+            if (retVal) retVal = fread(&FGColor, sizeof(FGColor),1, handle);
+            if (retVal) retVal = fread(&BGColor, sizeof(BGColor),1, handle);
+            if (retVal) retVal = fread(&OH, sizeof(OH),1, handle);
+            if (retVal) retVal = fread(&IH, sizeof(IH),1, handle);
+            if (retVal) retVal = fread(&ScrMode, sizeof(ScrMode),1, handle);
             extern void (*RefreshLine)(u8 uY);  RefreshLine = SCR[ScrMode].Refresh;
-            if (retVal) retVal = fread(&VDPDlatch, sizeof(VDPDlatch),1, handle); 
-            if (retVal) retVal = fread(&VAddr, sizeof(VAddr),1, handle); 
-            if (retVal) retVal = fread(&CurLine, sizeof(CurLine),1, handle); 
-            if (retVal) retVal = fread(&ColTabM, sizeof(ColTabM),1, handle); 
-            if (retVal) retVal = fread(&ChrGenM, sizeof(ChrGenM),1, handle); 
-            
-            if (retVal) retVal = fread(pVDPVidMem, 0x4000,1, handle); 
-            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&VDPDlatch, sizeof(VDPDlatch),1, handle);
+            if (retVal) retVal = fread(&VAddr, sizeof(VAddr),1, handle);
+            if (retVal) retVal = fread(&CurLine, sizeof(CurLine),1, handle);
+            if (retVal) retVal = fread(&ColTabM, sizeof(ColTabM),1, handle);
+            if (retVal) retVal = fread(&ChrGenM, sizeof(ChrGenM),1, handle);
+
+            if (retVal) retVal = fread(pVDPVidMem, 0x4000,1, handle);
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle);
             ChrGen = pSvg + pVDPVidMem;
-            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle);
             ChrTab = pSvg + pVDPVidMem;
-            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle);
             ColTab = pSvg + pVDPVidMem;
-            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle);
             SprGen = pSvg + pVDPVidMem;
-            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle); 
+            if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle);
             SprTab = pSvg + pVDPVidMem;
-            
+
             // Read PSG SN and AY sound chips...
-            if (retVal) retVal = fread(&mySN, sizeof(mySN),1, handle); 
-            if (retVal) retVal = fread(&myAY, sizeof(myAY),1, handle); 
-                       
+            if (retVal) retVal = fread(&mySN, sizeof(mySN),1, handle);
+            if (retVal) retVal = fread(&myAY, sizeof(myAY),1, handle);
+
             // Load the Super Game Module stuff
-            if (retVal) retVal = fread(&sgm_enable, sizeof(sgm_enable), 1, handle); 
-            if (retVal) retVal = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle); 
-            
+            if (retVal) retVal = fread(&sgm_enable, sizeof(sgm_enable), 1, handle);
+            if (retVal) retVal = fread(&sgm_low_addr, sizeof(sgm_low_addr), 1, handle);
+
             // A few frame counters
-            if (retVal) retVal = fread(&emuActFrames, sizeof(emuActFrames), 1, handle); 
-            if (retVal) retVal = fread(&timingFrames, sizeof(timingFrames), 1, handle); 
+            if (retVal) retVal = fread(&emuActFrames, sizeof(emuActFrames), 1, handle);
+            if (retVal) retVal = fread(&timingFrames, sizeof(timingFrames), 1, handle);
 
             // Some Cassette Related stuff...
-            if (retVal) retVal = fread(&tape_pos, sizeof(tape_pos), 1, handle); 
-            if (retVal) retVal = fread(&tape_len, sizeof(tape_len), 1, handle); 
-            if (retVal) retVal = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle); 
-            
+            if (retVal) retVal = fread(&tape_pos, sizeof(tape_pos), 1, handle);
+            if (retVal) retVal = fread(&tape_len, sizeof(tape_len), 1, handle);
+            if (retVal) retVal = fread(&last_tape_pos, sizeof(last_tape_pos), 1, handle);
+
             // Some Memotech MTX stuff...
-            if (retVal) retVal = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle); 
-            if (retVal) retVal = fread(&IOBYTE, sizeof(IOBYTE), 1, handle); 
-            if (retVal) retVal = fread(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle); 
-            if (retVal) retVal = fread(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle); 
-            if (retVal) retVal = fread(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle); 
-            if (retVal) retVal = fread(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle); 
-            if (retVal) retVal = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle); 
-            
+            if (retVal) retVal = fread(&memotech_RAM_start, sizeof(memotech_RAM_start), 1, handle);
+            if (retVal) retVal = fread(&IOBYTE, sizeof(IOBYTE), 1, handle);
+            if (retVal) retVal = fread(&MTX_KBD_DRIVE, sizeof(MTX_KBD_DRIVE), 1, handle);
+            if (retVal) retVal = fread(&lastIOBYTE, sizeof(lastIOBYTE), 1, handle);
+            if (retVal) retVal = fread(&memotech_magrom_present, sizeof(memotech_magrom_present), 1, handle);
+            if (retVal) retVal = fread(&memotech_mtx_500_only, sizeof(memotech_mtx_500_only), 1, handle);
+            if (retVal) retVal = fread(&memotech_lastMagROMPage, sizeof(memotech_lastMagROMPage), 1, handle);
+
             // Some SVI stuff...
-            if (retVal) retVal = fread(&svi_RAMinSegment, sizeof(svi_RAMinSegment), 1, handle); 
-            
+            if (retVal) retVal = fread(&svi_RAMinSegment, sizeof(svi_RAMinSegment), 1, handle);
+
             // Some SG-1000 / SC-3000 stuff...
-            if (retVal) retVal = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);       
-            if (retVal) retVal = fread(&OldPortC, sizeof(OldPortC), 1, handle);                  
-            
+            if (retVal) retVal = fread(&Port_PPI_CTRL, sizeof(Port_PPI_CTRL), 1, handle);
+            if (retVal) retVal = fread(&OldPortC, sizeof(OldPortC), 1, handle);
+
             // And a few things for the Super Game Cart
             if (retVal) retVal = fread(SGC_Bank, sizeof(SGC_Bank), 1, handle);
             if (retVal) retVal = fread(&SGC_SST_State, sizeof(SGC_SST_State), 1, handle);
@@ -473,16 +493,16 @@ void colecoLoadState()
             if (retVal) retVal = fread(&Port_PPI_A, sizeof(Port_PPI_A),1, handle);
             if (retVal) retVal = fread(&Port_PPI_B, sizeof(Port_PPI_B),1, handle);
             if (retVal) retVal = fread(&Port_PPI_C, sizeof(Port_PPI_C),1, handle);
-            
+
             if (retVal) retVal = fread(&mapperType, sizeof(mapperType),1, handle);
             if (retVal) retVal = fread(&mapperMask, sizeof(mapperMask),1, handle);
             if (retVal) retVal = fread(bROMInSegment, sizeof(bROMInSegment),1, handle);
             if (retVal) retVal = fread(bRAMInSegment, sizeof(bRAMInSegment),1, handle);
-            
-            // Some systems utilize the Z80 CTC 
+
+            // Some systems utilize the Z80 CTC
             if (retVal) retVal = fread(CTC, sizeof(CTC),1, handle);
             if (retVal) retVal = fread(&vdp_int_source, sizeof(vdp_int_source),1, handle);
-            
+
             // Various ports used in the system
             if (retVal) retVal = fread(&Port53, sizeof(Port53),1, handle);
             if (retVal) retVal = fread(&Port60, sizeof(Port60),1, handle);
@@ -490,22 +510,22 @@ void colecoLoadState()
             if (retVal) retVal = fread(&Port42, sizeof(Port42),1, handle);
 
             // Some spare memory we can eat into...
-            if (retVal) retVal = fread(spare, 510, 1, handle); 
-            
+            if (retVal) retVal = fread(spare, 510, 1, handle);
+
 		    if (einstein_mode) // Big enough that we will not write this if we are not Einstein
 		    {
-	            if (retVal) retVal = fread(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);      
-                if (retVal) retVal = fread(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);      
-                if (retVal) retVal = fread(&keyboard_w, sizeof(keyboard_w),1, handle);      
-                if (retVal) retVal = fread(&key_int_mask, sizeof(key_int_mask),1, handle);      
-                if (retVal) retVal = fread(&myKeyData, sizeof(myKeyData),1, handle);      
-                if (retVal) retVal = fread(&adc_mux, sizeof(adc_mux),1, handle);      
+	            if (retVal) retVal = fread(&keyboard_interrupt, sizeof(keyboard_interrupt),1, handle);
+                if (retVal) retVal = fread(&einstein_ram_start, sizeof(einstein_ram_start),1, handle);
+                if (retVal) retVal = fread(&keyboard_w, sizeof(keyboard_w),1, handle);
+                if (retVal) retVal = fread(&key_int_mask, sizeof(key_int_mask),1, handle);
+                if (retVal) retVal = fread(&myKeyData, sizeof(myKeyData),1, handle);
+                if (retVal) retVal = fread(&adc_mux, sizeof(adc_mux),1, handle);
                 if (retVal) retVal = fread(&FDC, sizeof(FDC), 1, handle);
     		}
     		else if (msx_mode)   // Big enough that we will not write this if we are not MSX
             {
                 if (retVal) retVal = fread(&msx_last_rom_size, sizeof(msx_last_rom_size),1, handle);
-                
+
                 if (retVal) retVal = fread(Offsets, sizeof(Offsets),1, handle);
                 for (u8 i=0; i<8; i++)
                 {
@@ -518,30 +538,30 @@ void colecoLoadState()
                         MSXCartPtr[i] = (u8 *) (Offsets[i].offset);
                     }
                 }
-                
+
                 if (retVal) retVal = fread(&msx_sram_at_8000, sizeof(msx_sram_at_8000),1, handle);
                 if (msx_sram_enabled) if (retVal) retVal = fread(SRAM_Memory, 0x4000,1, handle);    // No game uses more than 16K
                 if (msx_scc_enable)   if (retVal) retVal = fread(&mySCC, sizeof(mySCC),1, handle);
                 if (msx_mode == 3)    if (retVal) retVal = fread(&FDC, sizeof(FDC), 1, handle);
-                
+
                 msx_caps_lock = ((Port_PPI_C & 0x40) ? 0:1); // Set the caps lock state back to what it should be based on Port C
-                msx_last_block[0] = msx_last_block[1] = msx_last_block[2] = msx_last_block[3] = 199; // Ensure bank swaps always happen after a restore                
+                msx_last_block[0] = msx_last_block[1] = msx_last_block[2] = msx_last_block[3] = 199; // Ensure bank swaps always happen after a restore
             }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {
                 if (retVal) retVal = fread(PCBTable+0x8000, 0x8000, 1, handle);
-                
+
                 if (retVal) retVal = fread(&PCBAddr, sizeof(PCBAddr),1, handle);
-                if (retVal) retVal = fread(adam_ram_present, sizeof(adam_ram_present),1, handle);                
+                if (retVal) retVal = fread(adam_ram_present, sizeof(adam_ram_present),1, handle);
                 if (retVal) retVal = fread(&KBDStatus, sizeof(KBDStatus),1, handle);
                 if (retVal) retVal = fread(&LastKey, sizeof(LastKey),1, handle);
                 if (retVal) retVal = fread(&adam_CapsLock, sizeof(adam_CapsLock),1, handle);
                 if (retVal) retVal = fread(&disk_unsaved_data, sizeof(disk_unsaved_data),1, handle);
                 if (retVal) retVal = fread(AdamDriveStatus, sizeof(AdamDriveStatus),1, handle);
-                
-                if (retVal) retVal = fread(spare, 32,1, handle);                
+
+                if (retVal) retVal = fread(spare, 32,1, handle);
                 if (retVal) retVal = fread(&adam_ext_ram_used, sizeof(adam_ext_ram_used),1, handle);
-                
+
                 if (adam_ext_ram_used)
                 {
                     // This must be the last thing written so we can compress it...
@@ -550,13 +570,13 @@ void colecoLoadState()
                     for (u32 i=0; i<len; i++)
                     {
                         fread(ptr, 1, sizeof(u32), handle); // Read 32-bits at a time...
-                        
+
                         u32 zero_count = 0;
                         if (*ptr == 0x00000000) // UnCompress zeros...
                         {
                             fread(&zero_count, 1, sizeof(u32), handle);
                         }
-                        
+
                         if (zero_count)
                         {
                             for (u32 j=0; j<zero_count; j++)
@@ -575,7 +595,7 @@ void colecoLoadState()
             else if (bActivisionPCB)
             {
                 // Read the EEPROM and memory
-                if (retVal) retVal = fread(&EEPROM, sizeof(EEPROM),1, handle);      
+                if (retVal) retVal = fread(&EEPROM, sizeof(EEPROM),1, handle);
             }
             else if (creativision_mode)
             {
@@ -585,12 +605,32 @@ void colecoLoadState()
                 if (retVal) retVal = fread(mem, cv_save_size,1, handle);
                 creativision_put_savestate(mem);
             }
+            else if (pv1000_mode)
+            {
+                u32 offset = 0;
+
+                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
+                pv1000_vram = RAM_Memory + offset;
+                
+                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
+                pv1000_pcg = RAM_Memory + offset;
+
+                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
+                pv1000_pattern = RAM_Memory + offset;
+                
+                if (retVal) retVal = fread(&pv1000_force_pattern,  sizeof(pv1000_force_pattern), 1, handle);
+                if (retVal) retVal = fread(&pv1000_column,         sizeof(pv1000_column),        1, handle);
+                if (retVal) retVal = fread(&pv1000_status,         sizeof(pv1000_status),        1, handle);
+                if (retVal) retVal = fread(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
+                if (retVal) retVal = fread(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
+                if (retVal) retVal = fread(&pv1000_bg_color,       sizeof(pv1000_bg_color),      1, handle);
+            }
             else if (bSuperSimplifiedMemory) // For the new optimized driver...
             {
-                if (retVal) retVal = fread(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);      
-                if (retVal) retVal = fread(under_ram, sizeof(under_ram),1, handle);      
-            }           
-            
+                if (retVal) retVal = fread(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);
+                if (retVal) retVal = fread(under_ram, sizeof(under_ram),1, handle);
+            }
+
             // Fix up transparency
             if (BGColor)
             {
@@ -603,31 +643,31 @@ void colecoLoadState()
             {
                BG_PALETTE[0] = RGB15(0x00,0x00,0x00);
             }
-            
+
             last_mega_bank = 199;   // Force load of bank if needed
             last_tape_pos = 9999;   // Force tape position to show
         }
         else retVal = 0;
-        
+
         strcpy(tmpStr, (retVal ? "OK ":"ERR"));
         DSPrint(15,0,0,tmpStr);
-        
+
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        DSPrint(6,0,0,"             ");  
+        DSPrint(6,0,0,"             ");
         DisplayStatusLine(true);
       }
       else
       {
         DSPrint(6,0,0,"NO SAVED GAME");
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
-        DSPrint(6,0,0,"             ");  
+        DSPrint(6,0,0,"             ");
       }
 
     fclose(handle);
 }
 
 
-void colecoSaveEEPROM(void) 
+void colecoSaveEEPROM(void)
 {
     // Init filename = romname and EE in place of ROM
     DIR* dir = opendir("sav");
@@ -640,8 +680,8 @@ void colecoSaveEEPROM(void)
     szLoadFile[len-2] = 'e';
     szLoadFile[len-1] = 0;
 
-    FILE *handle = fopen(szLoadFile, "wb+");  
-    if (handle != NULL) 
+    FILE *handle = fopen(szLoadFile, "wb+");
+    if (handle != NULL)
     {
       fwrite(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
       fclose(handle);
@@ -651,8 +691,8 @@ void colecoSaveEEPROM(void)
 void colecoLoadEEPROM(void)
 {
     // Return to the original path
-    chdir(initial_path);    
-    
+    chdir(initial_path);
+
     // Init filename = romname and EE in place of ROM
     DIR* dir = opendir("sav");
     if (dir) closedir(dir);  // Directory exists... close it out and move on.

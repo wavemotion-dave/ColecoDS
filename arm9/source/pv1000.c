@@ -24,16 +24,15 @@
 #include "printf.h"
 
 uint8_t  bg[192][256];
-uint8_t* vram = RAM_Memory+0xB800;
-uint8_t* pcg = RAM_Memory+0xBC00;
-uint8_t* pattern = RAM_Memory;
-uint8_t* base = RAM_Memory;
-uint8_t  force_pattern = 0;
-uint8_t  column = 0x00;
-uint8_t  status = 0x00;
-uint8_t  enable = 0x00;
+uint8_t* pv1000_vram = RAM_Memory+0xB800;
+uint8_t* pv1000_pcg = RAM_Memory+0xBC00;
+uint8_t* pv1000_pattern = RAM_Memory;
+uint8_t  pv1000_force_pattern = 0;
+uint8_t  pv1000_column = 0x00;
+uint8_t  pv1000_status = 0x00;
+uint8_t  pv1000_enable = 0x00;
 uint16_t pv1000_scanline = 0;
-uint8_t  bg_color = 0x00;
+uint8_t  pv1000_bg_color = 0x00;
 
 u8 pv1000_palette[8*3] = {
   0x00,0x00,0x00,   // Black
@@ -76,14 +75,13 @@ void pv1000_reset(void)
         
     pv1000_scanline = 0;
 
-    vram = RAM_Memory+0xB800;
-    pcg = RAM_Memory+0xBC00;
-    pattern = RAM_Memory;
-    base = RAM_Memory;
-    force_pattern = 0;
-    column = 0x00;
-    status = 0x00;
-    bg_color = 0x00;
+    pv1000_vram = RAM_Memory+0xB800;
+    pv1000_pcg = RAM_Memory+0xBC00;
+    pv1000_pattern = RAM_Memory;
+    pv1000_force_pattern = 0;
+    pv1000_column = 0x00;
+    pv1000_status = 0x00;
+    pv1000_bg_color = 0x00;
     
     vdp_int_source = INT_RST38;
 
@@ -103,33 +101,33 @@ unsigned char cpu_readport_pv1000(register unsigned short Port)
   switch (Port)
   {
     case 0xfc:
-        val = status | 0x80;
+        val = pv1000_status | 0x80;
         break;
 
     case 0xfd:
         val = 0x80;
-        if(column & 1)
+        if(pv1000_column & 1)
         {
             if(JoyState == JST_STAR)     val |= 1;    // #1 select
             if(JoyState == JST_0)        val |= 2;    // #1 start
             if(JoyState == JST_STAR<<16) val |= 4;    // #2 select
             if(JoyState == JST_0<<16)    val |= 8;    // #2 start
         }
-        if(column & 2)
+        if(pv1000_column & 2)
         {
             if(JoyState & JST_DOWN)      val |= 1;     // #1 down
             if(JoyState & JST_RIGHT)     val |= 2;     // #1 right
             if(JoyState & JST_DOWN<<16)  val |= 4;     // #2 down
             if(JoyState & JST_RIGHT<<16) val |= 8;     // #2 right
         }
-        if(column & 4)
+        if(pv1000_column & 4)
         {
             if(JoyState & JST_LEFT)      val |= 1;     // #1 left
             if(JoyState & JST_UP)        val |= 2;     // #1 up
             if(JoyState & JST_LEFT<<16)  val |= 4;     // #2 left
             if(JoyState & JST_UP<<16)    val |= 8;     // #2 up
         }
-        if(column & 8)
+        if(pv1000_column & 8)
         {
             if(JoyState & JST_FIREL)     val |= 1;  // #1 trig1
             if(JoyState & JST_FIRER)     val |= 2;  // #1 trig2
@@ -137,9 +135,9 @@ unsigned char cpu_readport_pv1000(register unsigned short Port)
             if(JoyState & JST_FIRER<<16) val |= 8;  // #2 trig2
         }
         
-        if (status & 2)
+        if (pv1000_status & 2)
         {
-            status &= ~2;
+            pv1000_status &= ~2;
             CPU.IRequest = INT_NONE; // Acknowledge interrupt.
         }
         break;
@@ -153,10 +151,10 @@ unsigned char cpu_readport_pv1000(register unsigned short Port)
 // ---------------------------------------------------------------------------------------------
 uint16_t freq_table[] =
 {
-    0,    32,    64,    96,    128,    160,    192,    224,    256,    288,    320,    352,    384,    416,    448,    480,
-    512,  544,   576,   608,   642,    672,    704,    736,    768,    800,    832,    864,    896,    928,    930,    935,
-    940,  945,   950,   955,   960,    965,    970,    975,    980,    985,    990,    995,    1000,   1002,   1005,   1007,
-    1010, 1012,  1014,  1016,  1018,   1020,   1020,   1020,   1021,   1022,   1022,   1022,   1022,   1022,   1023,   1023
+    0,      13,     26,     38,     51,     64,     77,     90,     102,    115,    128,    141,    154,    166,    179,    192,
+    205,    218,    230,    243,    256,    269,    282,    294,    307,    320,    333,    346,    358,    371,    384,    397,
+    410,    422,    435,    448,    461,    474,    486,    499,    512,    525,    538,    550,    563,    576,    589,    602,
+    614,    627,    640,    653,    666,    678,    691,    704,    717,    730,    743,    755,    768,    781,    794,    810
 };
 
 // ----------------------------------------------------------------------
@@ -197,27 +195,27 @@ void cpu_writeport_pv1000(register unsigned short Port,register unsigned char da
             break;
             
         case 0xFC:
-            enable = data;
+            pv1000_enable = data;
             break;
 
         case 0xFD:
-            column = data;
-            if (status & 1)
+            pv1000_column = data;
+            if (pv1000_status & 1)
             {
-                status &= ~1;
+                pv1000_status &= ~1;
                 CPU.IRequest = INT_NONE; // Acknowledge interrupt.
             }
             break;
 
         case 0xFE:
-            vram = base + (data << 8);
-            pcg = base + (data << 8) + 0x400;
+            pv1000_vram = RAM_Memory + (data << 8);
+            pv1000_pcg = RAM_Memory + (data << 8) + 0x400;
             break;
             
         case 0xFF:
-            pattern = base + ((data & 0x20) << 8);
-            force_pattern = ((data & 0x10) != 0);
-            bg_color = data & 7;
+            pv1000_pattern = RAM_Memory + ((data & 0x20) << 8);
+            pv1000_force_pattern = ((data & 0x10) != 0);
+            pv1000_bg_color = data & 7;
             break;
     }
 }
@@ -226,7 +224,7 @@ ITCM_CODE void draw_pattern(int x8, int y8, uint16_t top)
 {
     uint8_t  plane[4] = {0, 1, 2, 4};
     
-    // draw pattern on rom
+    // draw pv1000_pattern on rom
     for(int p = 1; p < 4; p++) 
     {
         uint8_t col = plane[p];
@@ -239,7 +237,7 @@ ITCM_CODE void draw_pattern(int x8, int y8, uint16_t top)
                 uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
                *dest32++ = 0; *dest32=0;
             }
-            uint8_t pat = pattern[p8 + l];
+            uint8_t pat = pv1000_pattern[p8 + l];
 
             if (pat)
             {
@@ -262,7 +260,7 @@ ITCM_CODE void draw_pcg(int x8, int y8, uint16_t top)
 {
     uint8_t  plane[4] = {0, 1, 2, 4};
     
-    // draw pattern on ram
+    // draw pv1000_pattern on ram
     for(int p = 1; p < 4; p++) 
     {
         uint8_t col = plane[p];
@@ -275,7 +273,7 @@ ITCM_CODE void draw_pcg(int x8, int y8, uint16_t top)
                 uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
                *dest32++ = 0; *dest32=0;
             }
-            uint8_t pat = pcg[p8 + l];
+            uint8_t pat = pv1000_pcg[p8 + l];
 
             if (pat)
             {
@@ -311,9 +309,9 @@ ITCM_CODE void pv1000_drawscreen(void)
         for(int x = 2; x < 30; x++)
         {
             int x8 = x << 3;
-            uint8_t code = vram[y32 + x];
+            uint8_t code = pv1000_vram[y32 + x];
 
-            if(code < 0xe0 || force_pattern)
+            if(code < 0xe0 || pv1000_force_pattern)
             {
                 draw_pattern(x8, y8, code << 5);
             }
@@ -324,7 +322,7 @@ ITCM_CODE void pv1000_drawscreen(void)
         }
     }
 
-    // Now copy the pattern to the DS LCD screen memory...
+    // Now copy the pv1000_pattern to the DS LCD screen memory...
     uint8_t *dest = (uint8_t*) (0x06000000 );
     memcpy(dest, bg, 192*256);
 }
@@ -333,8 +331,9 @@ u32 pv1000_run(void)
 {
     // ---------------------------------------------------------------------------------------------------
     // For the Casio PV-1000, the CPU only gets to do work on the Horizontal Blank and the Vertical Blank
+    // A full scanline is 228 clocks - so we only get those when we are in the Vertical Blank.
     // ---------------------------------------------------------------------------------------------------
-    u32 cycles_to_process = (pv1000_scanline >= 192 ? 220:32) + CPU.CycleDeficit;
+    u32 cycles_to_process = (pv1000_scanline >= 192 ? 228:32) + CPU.CycleDeficit;
     CPU.CycleDeficit = ExecZ80(cycles_to_process);
     
     if (myConfig.soundDriver)
@@ -352,20 +351,20 @@ u32 pv1000_run(void)
             case 211: case 215: case 219: case 223:
             case 227: case 231: case 235: case 239:
             case 243: case 247: case 251:
-                if (enable & 2)
+                if (pv1000_enable & 2)
                 {
                     CPU.IRequest = vdp_int_source;
                     IntZ80(&CPU, CPU.IRequest);
-                    status |= 2;
+                    pv1000_status |= 2;
                 }
                 break;
             
             case 255:
-                if (enable & 3)
+                if (pv1000_enable & 3)
                 {
                     CPU.IRequest = vdp_int_source;
                     IntZ80(&CPU, CPU.IRequest);
-                    status = enable;
+                    pv1000_status = pv1000_enable;
                 }
                 break;
         }
