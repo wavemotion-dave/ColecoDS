@@ -70,7 +70,6 @@ void pv1000_SetPalette(void)
 // ------------------------------------------------------------------
 void pv1000_reset(void)
 {
-    Port_PPI_CTRL = 0x00;
     memcpy(RAM_Memory, ROM_Memory, 0x8000);
     
     memset(bg, 0, sizeof(bg));
@@ -85,6 +84,8 @@ void pv1000_reset(void)
     column = 0x00;
     status = 0x00;
     bg_color = 0x00;
+    
+    vdp_int_source = INT_RST38;
 
     pv1000_SetPalette();
 }
@@ -235,8 +236,8 @@ ITCM_CODE void draw_pattern(int x8, int y8, uint16_t top)
         {
             if (p==1)
             {
-              uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
-             *dest32++ = 0; *dest32=0;
+                uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
+               *dest32++ = 0; *dest32=0;
             }
             uint8_t pat = pattern[p8 + l];
 
@@ -271,8 +272,8 @@ ITCM_CODE void draw_pcg(int x8, int y8, uint16_t top)
         {
             if (p==1)
             {
-              uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
-             *dest32++ = 0; *dest32=0;
+                uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
+               *dest32++ = 0; *dest32=0;
             }
             uint8_t pat = pcg[p8 + l];
 
