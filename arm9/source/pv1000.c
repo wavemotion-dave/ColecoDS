@@ -177,13 +177,13 @@ void cpu_writeport_pv1000(register unsigned short Port,register unsigned char da
         case 0xF8:
             sn76496W(0x80 | (freq & 0x0F),      &mySN);    // Write new Frequency for Channel A
             sn76496W(0x00 | ((freq >> 4) & 0x3F),&mySN);   // Write new Frequency for Channel A
-            sn76496W(0x90 | (freq ? 0x07:0x0F), &mySN);    // Write new Volume for Channel A
+            sn76496W(0x90 | (freq ? 0x0A:0x0F), &mySN);    // Write new Volume for Channel A
             break;
         
         case 0xF9:
             sn76496W(0xA0 | (freq & 0x0F),      &mySN);    // Write new Frequency for Channel B
             sn76496W(0x00 | ((freq >> 4) & 0x3F),&mySN);   // Write new Frequency for Channel B
-            sn76496W(0xB0 | (freq ? 0x06:0x0F), &mySN);    // Write new Volume for Channel B
+            sn76496W(0xB0 | (freq ? 0x07:0x0F), &mySN);    // Write new Volume for Channel B
             break;
 
         case 0xFA:
@@ -193,11 +193,9 @@ void cpu_writeport_pv1000(register unsigned short Port,register unsigned char da
             break;
         
         case 0xFB:
-            debug[0] = data;
             break;
             
         case 0xFC:
-            debug[1] = data;
             enable = data;
             break;
 
@@ -335,8 +333,13 @@ u32 pv1000_run(void)
     // ---------------------------------------------------------------------------------------------------
     // For the Casio PV-1000, the CPU only gets to do work on the Horizontal Blank and the Vertical Blank
     // ---------------------------------------------------------------------------------------------------
-    u32 cycles_to_process = (pv1000_scanline >= 192 ? 312:78) + CPU.CycleDeficit;
+    u32 cycles_to_process = (pv1000_scanline >= 192 ? 220:32) + CPU.CycleDeficit;
     CPU.CycleDeficit = ExecZ80(cycles_to_process);
+    
+    if (myConfig.soundDriver)
+    {
+        processDirectAudioSN();
+    }
 
     // There are 16 VSYNC interrupts... See https://obscure.nesdev.org/wiki/Casio_PV-1000/ASIC_registers
     // 195, 199, 203, 207, 211, 215, 219, 223, 227, 231, 235, 239, 243, 247, 251, 255
@@ -352,7 +355,7 @@ u32 pv1000_run(void)
                 {
                     CPU.IRequest = vdp_int_source;
                     IntZ80(&CPU, CPU.IRequest);
-                    status = 2;
+                    status |= 2;
                 }
                 break;
             

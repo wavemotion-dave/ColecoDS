@@ -10,8 +10,8 @@ or else in /roms/bios or /data/bios
 Because the chips used in the Colecovision Hardware were so common in that era, other systems tended
 to be very close to the CV in terms of hardware. Often only the IO/Memory was different. As such,
 ColecoDS also allows cartridge and sometimes tape/disk games from "cousin" systems to be played - namely 
-the Sord M5, the Memotech MTX, the SG-1000/3000, the Spectravision 3x8 SVI, Casio PV-2000, Hanimex 
-Pencil II, CreatiVision, the Tatung Einstein and the venerable MSX1.
+the Sord M5, the Memotech MTX, the SG-1000/3000, the Spectravision 3x8 SVI, Casio PV-1000, Casio PV-2000,
+Hanimex Pencil II, CreatiVision, the Tatung Einstein and the venerable MSX1.
 
 Features :
 -----------------------
@@ -25,6 +25,7 @@ Features :
 * Sord M5 game support (.m5 roms) - requires sordm5.rom BIOS
 * MSX1 game support (.msx or .rom or .cas or .dsk) up to 4096K including SCC emulation
 * Spectravideo SVI support (.cas or .rom) - requires svi.rom BIOS
+* Casio PV-1000 support (.pv1 roms) - no BIOS needed
 * Casio PV-2000 support (.pv roms) - requires pv2000.rom BIOS
 * Hanimex Pencil II support (.pen roms) - requires pencil2.rom BIOS
 * Tatung Einstein support (.dsk files or .com run-time files) - requires einstein.rom BIOS
@@ -100,6 +101,7 @@ Known Issues and Limitations:
 * Path and filename to a ROM can't be longer than 160 characters. Keep them on the shorter side.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
+* Casio PV-1000 sound is emulated using the SN sound chip driver and so is not accurate (good enough for the small library that exists).
 
 BIOS Files :
 -----------------------
@@ -255,6 +257,10 @@ This emulator supports .sg files as ROM loads up to 48K plus the few SMS mapper 
 Sega SC-3000 Compatibility :
 -----------------------
 This emulator supports .sc files as ROM only (not cassettes) but ColecoDS will support the amazing SC-3000 Survivors Multi-Cart and MEGA-Cart. Strongly prefer the Multi-Cart as it's smaller and contains the same selection of tape games. Just rename the 2MB or 4MB binary as .sc to load in ColecoDS.  The emulation handles 32K of RAM in the upper memory area (so anything like Basic IIIb will work fine).
+
+Casio PV-1000 Compatibility :
+-----------------------
+This emulator supports .pv1 files as ROM carts  Rename any .bin files you find as .pv1 so the emulator will load them correctly.
 
 Casio PV-2000 Compatibility :
 -----------------------

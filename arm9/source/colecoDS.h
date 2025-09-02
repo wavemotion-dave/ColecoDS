@@ -307,6 +307,7 @@ extern u32  creativision_run(void);
 extern void msx_patch_bios(void);
 extern bool isAdamDDP(u8 disk);
 extern void processDirectAudio(void);
+extern void processDirectAudioSN(void);
 extern void processDirectBeeper(void);
 extern void processDirectBeeperAY4(u8 samples);
 extern void processDirectBeeperPlusAY(void);

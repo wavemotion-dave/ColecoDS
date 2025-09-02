@@ -463,7 +463,7 @@ ITCM_CODE mm_word OurSoundMixer(mm_word len, mm_addr dest, mm_stream_formats for
         s16 *p = (s16*)dest;
         for (int i=0; i<len*2; i++)
         {
-            if (mixer_read == mixer_write) {wave_direct_skip=0; processDirectAudio();}
+            if (mixer_read == mixer_write) {wave_direct_skip=0; if (pv1000_mode) processDirectAudioSN(); else processDirectAudio();}
             *p++ = mixer[mixer_read];
             mixer_read = (mixer_read + 1) & WAVE_DIRECT_BUF_SIZE;
         }
@@ -569,6 +569,26 @@ ITCM_CODE void processDirectAudio(void)
         combined = (mixbufA[i]) + (mixbufB[i]) + 32768;
         if (combined >  32767) combined = 32767;
         mixer[mixer_write] = (s16)combined;
+        mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
+        if (((mixer_write+1)&WAVE_DIRECT_BUF_SIZE) == mixer_read) {breather = 2048;}
+    }
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// This is called when we are configured for 'Wave Direct' and will process samples to synchronize
+// with the scanline processing. This particular routine only deals with the SN sound (not AY).
+// -------------------------------------------------------------------------------------------------
+ITCM_CODE void processDirectAudioSN(void)
+{
+    s16 mixbufA[8];
+    int len = wave_direct_sample_table[wave_direct_skip++];
+
+    sn76496Mixer(len*2, mixbufA, &mySN);
+    if (breather) {return;}
+    for (int i=0; i<len*2; i++)
+    {
+        mixer[mixer_write] = mixbufA[i];
         mixer_write++; mixer_write &= WAVE_DIRECT_BUF_SIZE;
         if (((mixer_write+1)&WAVE_DIRECT_BUF_SIZE) == mixer_read) {breather = 2048;}
     }

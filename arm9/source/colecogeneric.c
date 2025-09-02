@@ -1213,6 +1213,8 @@ void SetDefaultGameConfig(void)
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     if (pv1000_mode)                            myConfig.vertSync= 0;  // PV-1000 does not use vertical sync
     
+    if (pv1000_mode)                            myConfig.soundDriver= SND_DRV_WAVE;  // PV-1000 always wants direct wave sound
+    
     // ----------------------------------------------------
     // Some special BASIC carts that want full keyboards
     // ----------------------------------------------------
