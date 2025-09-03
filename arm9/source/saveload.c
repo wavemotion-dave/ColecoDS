@@ -328,6 +328,9 @@ void colecoSaveState()
         if (retVal) retVal = fwrite(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
         if (retVal) retVal = fwrite(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
         if (retVal) retVal = fwrite(&pv1000_bg_color,       sizeof(pv1000_bg_color),      1, handle);
+        if (retVal) retVal = fwrite(&pv1000_freqA,          sizeof(pv1000_freqA),         1, handle);
+        if (retVal) retVal = fwrite(&pv1000_freqB,          sizeof(pv1000_freqB),         1, handle);
+        if (retVal) retVal = fwrite(&pv1000_freqC,          sizeof(pv1000_freqC),         1, handle);
     }
     else if (bSuperSimplifiedMemory) // For the new optimized driver...
     {
@@ -624,6 +627,9 @@ void colecoLoadState()
                 if (retVal) retVal = fread(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
                 if (retVal) retVal = fread(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
                 if (retVal) retVal = fread(&pv1000_bg_color,       sizeof(pv1000_bg_color),      1, handle);
+                if (retVal) retVal = fread(&pv1000_freqA,          sizeof(pv1000_freqA),         1, handle);
+                if (retVal) retVal = fread(&pv1000_freqB,          sizeof(pv1000_freqB),         1, handle);
+                if (retVal) retVal = fread(&pv1000_freqC,          sizeof(pv1000_freqC),         1, handle);
             }
             else if (bSuperSimplifiedMemory) // For the new optimized driver...
             {
