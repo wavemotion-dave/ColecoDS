@@ -419,6 +419,9 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.8: 04-Sep-2025 by wavemotion-dave
+* Added support for the PV-1000. No BIOS needed - rename PV-1000 roms to .PV1 so they load properly.
+
 V10.7: 31-Aug-2025 by wavemotion-dave
 * Removed proprietary cart handing by request.
 
