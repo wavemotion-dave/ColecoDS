@@ -38,6 +38,7 @@ Features :
 * LCD Screen Swap (press and hold L+R+X during gameplay).
 * Overlay support for the few games that need them.
 * Super Action Controller, Spinner and Roller Controller (Trackball) mapping.
+* In-game screen snapshot (press and hold L+R+Y).
 * Full speed, full sound and full frame-rate even on older hardware.
 
 Copyright :
@@ -101,7 +102,7 @@ Known Issues and Limitations:
 * Path and filename to a ROM can't be longer than 160 characters. Keep them on the shorter side.
 * The original 2011 release of StarForce will crash - this is a known bug. There is a patched version of the game StarForce on Atariage.
 * MSX envelope, Einstein and Sord M5 CTC sound and noise emulation is not perfectly accurate (but close enough).
-* Casio PV-1000 sound is emulated using the SN sound chip driver and so is not accurate (good enough for the small library that exists).
+* Casio PV-1000 sound is emulated using the SN sound chip driver and so is not perfectly accurate (good enough for the small library that exists).
 
 BIOS Files :
 -----------------------
@@ -419,6 +420,10 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V10.8: 04-Sep-2025 by wavemotion-dave
+* Added support for the PV-1000. No BIOS needed - rename PV-1000 roms to .pv1 so they load properly.
+* Screenshot is now pressing L+R+Y.
+
 V10.7: 31-Aug-2025 by wavemotion-dave
 * Removed proprietary cart handing by request.
 
@@ -589,7 +594,7 @@ V8.1: 22-Jul-2023 by wavemotion-dave
 * Major rework of the CreatiVision driver for much improved compatibility and loading of BASIC listings.
 * New CreatiVision keypad/keyboard overlay with stylings from 1981!
 * Swap out bloated printf/sprintf for embedded versions.
-* Added screen snapshot by holding L+R buttons while in-game.
+* Added screen snapshot by holding L+R+Y buttons while in-game.
 * Other cleanups as time permitted.
 
 V8.0: 28-Jun-2023 by wavemotion-dave

@@ -3516,7 +3516,7 @@ void colecoDS_main(void)
                 lcdSwap();
                 WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
           }
-          else if ((nds_key & KEY_L) && (nds_key & KEY_R))
+          else if ((nds_key & KEY_L) && (nds_key & KEY_R) && (nds_key & KEY_Y))
           {
                 DSPrint(5,0,0,"SNAPSHOT");
                 screenshot();

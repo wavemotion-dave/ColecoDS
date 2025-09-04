@@ -156,7 +156,7 @@ extern uint8_t  pv1000_column;
 extern uint8_t  pv1000_status;
 extern uint8_t  pv1000_enable;
 extern uint16_t pv1000_scanline;
-extern uint8_t  pv1000_bg_color;
+extern uint8_t  pv1000_bd_color;
 extern uint16_t pv1000_freqA;
 extern uint16_t pv1000_freqB;
 extern uint16_t pv1000_freqC;

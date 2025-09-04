@@ -23,24 +23,27 @@
 #include "colecogeneric.h"
 #include "printf.h"
 
-// ======================================================================================
-// The best information about the PV-1000 memory map, registers, interrupt handling 
-// and sound handling come from this site: https://obscure.nesdev.org/wiki/Casio_PV-1000
-// ======================================================================================
+// ===========================================================================================
+// The best information about the PV-1000 memory map, registers, interrupt handling and
+// sound handling come from this site: https://obscure.nesdev.org/wiki/Casio_PV-1000
+//
+// The screen rendering is adapted from the ePV-1000 Common Source Emulator by TAKEDA Toshiya
+// ===========================================================================================
 
 uint8_t  bg[192][256];
-uint8_t* pv1000_vram = RAM_Memory+0xB800;
-uint8_t* pv1000_pcg = RAM_Memory+0xBC00;
-uint8_t* pv1000_pattern = RAM_Memory;
-uint8_t  pv1000_force_pattern = 0;
-uint8_t  pv1000_column = 0x00;
-uint8_t  pv1000_status = 0x00;
-uint8_t  pv1000_enable = 0x00;
-uint16_t pv1000_scanline = 0;
-uint8_t  pv1000_bg_color = 0x00;
-uint16_t pv1000_freqA = 0;
-uint16_t pv1000_freqB = 0;
-uint16_t pv1000_freqC = 0;
+uint8_t* pv1000_vram            __attribute__((section(".dtcm"))) = RAM_Memory+0xB800;
+uint8_t* pv1000_pcg             __attribute__((section(".dtcm"))) = RAM_Memory+0xBC00;
+uint8_t* pv1000_pattern         __attribute__((section(".dtcm"))) = RAM_Memory;
+uint8_t  pv1000_force_pattern   __attribute__((section(".dtcm"))) = 0;
+uint8_t  pv1000_column          __attribute__((section(".dtcm"))) = 0x00;
+uint8_t  pv1000_status          __attribute__((section(".dtcm"))) = 0x00;
+uint8_t  pv1000_enable          __attribute__((section(".dtcm"))) = 0x00;
+uint16_t pv1000_scanline        __attribute__((section(".dtcm"))) = 0;
+uint8_t  pv1000_bd_color        __attribute__((section(".dtcm"))) = 0x00;
+uint8_t  pv1000_vid_disable     __attribute__((section(".dtcm"))) = 0;
+uint16_t pv1000_freqA           __attribute__((section(".dtcm"))) = 0;
+uint16_t pv1000_freqB           __attribute__((section(".dtcm"))) = 0;
+uint16_t pv1000_freqC           __attribute__((section(".dtcm"))) = 0;
 
 u8 pv1000_palette[8*3] = {
   0x00,0x00,0x00,   // Black
@@ -53,6 +56,8 @@ u8 pv1000_palette[8*3] = {
   0x00,0xFF,0xFF,   // Yellow
   0xFF,0xFF,0xFF,   // White
 };
+
+uint32_t pv1000_pattern_table[3][16] __attribute__((section(".dtcm")));
 
 /*********************************************************************************
  * Set Spectrum color palette... 8 colors in 2 intensities
@@ -89,14 +94,48 @@ void pv1000_reset(void)
     pv1000_force_pattern = 0;
     pv1000_column = 0x00;
     pv1000_status = 0x00;
-    pv1000_bg_color = 0x00;
+    pv1000_bd_color = 0x00;
+    pv1000_vid_disable = 0;
     pv1000_freqA = 0;
     pv1000_freqB = 0;
-    pv1000_freqC = 0;    
+    pv1000_freqC = 0;
 
     vdp_int_source = INT_RST38;
 
     pv1000_SetPalette();
+
+    // ---------------------------------------------------------------------------------------
+    // Build the PV1000 pattern look-up table. This helps us render the screen almost 15%
+    // faster as we can basically handle 32 bits at a time when rendering the pixel planes.
+    // ---------------------------------------------------------------------------------------
+    uint8_t  plane[4] = {0, 1, 2, 4};
+    uint32_t col = 0;
+    for (int i=0; i<16; i++)
+    {
+        for (int j=0; j<4; j++)
+        {
+            switch (i)
+            {
+                case 0x0:   col = (plane[0]<<0) | (plane[0]<<8) | (plane[0]<<16) | (plane[0]<<24); break;
+                case 0x1:   col = (plane[0]<<0) | (plane[0]<<8) | (plane[0]<<16) | (plane[j]<<24); break;
+                case 0x2:   col = (plane[0]<<0) | (plane[0]<<8) | (plane[j]<<16) | (plane[0]<<24); break;
+                case 0x3:   col = (plane[0]<<0) | (plane[0]<<8) | (plane[j]<<16) | (plane[j]<<24); break;
+                case 0x4:   col = (plane[0]<<0) | (plane[j]<<8) | (plane[0]<<16) | (plane[0]<<24); break;
+                case 0x5:   col = (plane[0]<<0) | (plane[j]<<8) | (plane[0]<<16) | (plane[j]<<24); break;
+                case 0x6:   col = (plane[0]<<0) | (plane[j]<<8) | (plane[j]<<16) | (plane[0]<<24); break;
+                case 0x7:   col = (plane[0]<<0) | (plane[j]<<8) | (plane[j]<<16) | (plane[j]<<24); break;
+                case 0x8:   col = (plane[j]<<0) | (plane[0]<<8) | (plane[0]<<16) | (plane[0]<<24); break;
+                case 0x9:   col = (plane[j]<<0) | (plane[0]<<8) | (plane[0]<<16) | (plane[j]<<24); break;
+                case 0xA:   col = (plane[j]<<0) | (plane[0]<<8) | (plane[j]<<16) | (plane[0]<<24); break;
+                case 0xB:   col = (plane[j]<<0) | (plane[0]<<8) | (plane[j]<<16) | (plane[j]<<24); break;
+                case 0xC:   col = (plane[j]<<0) | (plane[j]<<8) | (plane[0]<<16) | (plane[0]<<24); break;
+                case 0xD:   col = (plane[j]<<0) | (plane[j]<<8) | (plane[0]<<16) | (plane[j]<<24); break;
+                case 0xE:   col = (plane[j]<<0) | (plane[j]<<8) | (plane[j]<<16) | (plane[0]<<24); break;
+                case 0xF:   col = (plane[j]<<0) | (plane[j]<<8) | (plane[j]<<16) | (plane[j]<<24); break;
+            }
+            if (j) pv1000_pattern_table[j-1][i] = col;
+        }
+    }
 }
 
 // ------------------------------------------------------------------
@@ -113,7 +152,7 @@ unsigned char cpu_readport_pv1000(register unsigned short Port)
   {
     case 0xFC:
         val = pv1000_status | 0x80; // High bit always set by pull-up near Z80
-        
+
         // Port FC also returns the P2 input bits same as 0xFD
         if(pv1000_column & 1)
         {
@@ -139,7 +178,7 @@ unsigned char cpu_readport_pv1000(register unsigned short Port)
 
     case 0xFD:
         val = 0x80;     // High bit always set by pull-up near Z80
-        
+
         if(pv1000_column & 1)
         {
             if(JoyState == JST_STAR)     val |= 1;    // #1 select
@@ -193,6 +232,16 @@ static const uint16_t freq_table[] =
 
 // ----------------------------------------------------------------------
 // Casio PV-1000 IO Port Write
+//
+// Note the sound emulation here is double-emulated. That is, we take the
+// frequency divider provided for the PV-1000 sound chip and we make an
+// approximation to the SN-76496 sound chip. Turns out the sound frequencies
+// are not that different and we can reasonably approximate the PV-1000 sound
+// using the 'Coleco' SN sound driver. One thing we can't get quite right
+// is that the PV-1000 has 3 sound channels at three different volume levels
+// of +0dB (Channel A), +3dB (Channel B) and +6dB (Channel C) and since we
+// don't have quite that resolution of sound levels, we end up with +4dB and
+// +8dB which in practice is good enough.
 // ----------------------------------------------------------------------
 void cpu_writeport_pv1000(register unsigned short Port,register unsigned char data)
 {
@@ -205,27 +254,27 @@ void cpu_writeport_pv1000(register unsigned short Port,register unsigned char da
             pv1000_freqA = freq_table[0x3f - (data & 0x3f)];
             sn76496W(0x80 | (pv1000_freqA & 0x0F),       &mySN);    // Write new Frequency for Channel A
             sn76496W(0x00 | ((pv1000_freqA >> 4) & 0x3F),&mySN);    // Write new Frequency for Channel A
-            sn76496W(0x90 | (pv1000_freqA ? 0x0A:0x0F),  &mySN);    // Write new Volume for Channel A
+            sn76496W(0x90 | (pv1000_freqA ? 0x09:0x0F),  &mySN);    // Write new Volume for Channel A
             break;
 
         case 0xF9:
             pv1000_freqB = freq_table[0x3f - (data & 0x3f)];
             sn76496W(0xA0 | (pv1000_freqB & 0x0F),       &mySN);    // Write new Frequency for Channel B
             sn76496W(0x00 | ((pv1000_freqB >> 4) & 0x3F),&mySN);    // Write new Frequency for Channel B
-            sn76496W(0xB0 | (pv1000_freqB ? 0x07:0x0F),  &mySN);    // Write new Volume for Channel B
+            sn76496W(0xB0 | (pv1000_freqB ? 0x07:0x0F),  &mySN);    // Write new Volume for Channel B (louder than A)
             break;
 
         case 0xFA:
             pv1000_freqC = freq_table[0x3f - (data & 0x3f)];
             sn76496W(0xC0 | (pv1000_freqC & 0x0F),       &mySN);    // Write new Frequency for Channel C
             sn76496W(0x00 | ((pv1000_freqC >> 4) & 0x3F),&mySN);    // Write new Frequency for Channel C
-            sn76496W(0xD0 | (pv1000_freqC ? 0x05:0x0F),  &mySN);    // Write new Volume for Channel C
+            sn76496W(0xD0 | (pv1000_freqC ? 0x05:0x0F),  &mySN);    // Write new Volume for Channel C (louder than A or B)
             break;
 
         case 0xFB:
             if (data & 2) // Sound Enable
             {
-                sn76496W(0x90 | (pv1000_freqA ? 0x0A:0x0F),  &mySN); // Write new Volume for Channel A
+                sn76496W(0x90 | (pv1000_freqA ? 0x09:0x0F),  &mySN); // Write new Volume for Channel A
                 sn76496W(0xB0 | (pv1000_freqB ? 0x07:0x0F),  &mySN); // Write new Volume for Channel B
                 sn76496W(0xD0 | (pv1000_freqC ? 0x05:0x0F),  &mySN); // Write new Volume for Channel C
             }
@@ -235,16 +284,16 @@ void cpu_writeport_pv1000(register unsigned short Port,register unsigned char da
                 sn76496W(0xB0 | 0x0F,  &mySN);    // Write new Volume for Channel B (sound off)
                 sn76496W(0xD0 | 0x0F,  &mySN);    // Write new Volume for Channel C (sound off)
             }
-            
-            // We don't support XOR/Ring (bit 0) - though no game known uses this 'feature'
+
+            // We don't support XOR/Ring (bit 0) - Fighting Bug makes use of this so the sound there won't be perfect
             break;
 
         case 0xFC:
-            pv1000_enable = data;
+            pv1000_enable = data;   // Only bits 0, 1 are used to indicate which IRQs are enabled
             break;
 
         case 0xFD:
-            pv1000_column = data;
+            pv1000_column = data;   // This tells us which joystick columns to "light up" for input scanning
             if (pv1000_status & 1)
             {
                 pv1000_status &= ~1;     // Clear Prerender IRQ
@@ -259,44 +308,39 @@ void cpu_writeport_pv1000(register unsigned short Port,register unsigned char da
             break;
 
         case 0xFF:
-            pv1000_pattern = RAM_Memory + ((data & 0x20) << 8);
+            pv1000_pattern = RAM_Memory + ((data & 0xE0) << 8);
             pv1000_force_pattern = ((data & 0x10) != 0);
-            pv1000_bg_color = data & 7; // We're not using this right now as we don't have any real spare LCD drawing to render a border
+            pv1000_vid_disable = ((data & 0x08) != 0);
+            pv1000_bd_color = data & 7; // We're not using this right now as we don't have any real spare LCD drawing to render a border
             break;
     }
 }
 
+// ------------------------------------------------------------------------------
+// These drawing routines were adapted from the ePV-1000 Common Source Emulator
+// by TAKEDA Toshiya and were modified for improved 32-bit rendering via look-up
+// table to gain us the speed we need for the venerable DS handhelds.
+// ------------------------------------------------------------------------------
 ITCM_CODE void draw_pattern(int x8, int y8, uint16_t top)
 {
-    uint8_t  plane[4] = {0, 1, 2, 4};
-
     // draw pv1000_pattern on rom
-    for(int p = 1; p < 4; p++)
+    for(int p = 0; p < 3; p++)
     {
-        uint8_t col = plane[p];
-        uint16_t p8 = top + (p << 3);
+        uint16_t p8 = top + ((p+1) << 3);
 
         for(int l = 0; l < 8; l++)
         {
-            if (p==1)
-            {
-                uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
-               *dest32++ = 0; *dest32=0;
-            }
             uint8_t pat = pv1000_pattern[p8 + l];
-
-            if (pat)
+            uint32_t* dest = (uint32_t*)(&bg[y8 + l][x8]);
+            if (!p) // This saves us from having to zero the bg[] array
             {
-                uint8_t* dest = &bg[y8 + l][x8];
-
-                if(pat & 0x80) dest[0] |= col;
-                if(pat & 0x40) dest[1] |= col;
-                if(pat & 0x20) dest[2] |= col;
-                if(pat & 0x10) dest[3] |= col;
-                if(pat & 0x08) dest[4] |= col;
-                if(pat & 0x04) dest[5] |= col;
-                if(pat & 0x02) dest[6] |= col;
-                if(pat & 0x01) dest[7] |= col;
+                *dest++ = pv1000_pattern_table[0][pat >> 4];
+                *dest   = pv1000_pattern_table[0][pat & 0xF];
+            }
+            else if (pat)
+            {
+                *dest++ |= pv1000_pattern_table[p][pat >> 4];
+                *dest   |= pv1000_pattern_table[p][pat & 0xF];
             }
         }
     }
@@ -304,35 +348,24 @@ ITCM_CODE void draw_pattern(int x8, int y8, uint16_t top)
 
 ITCM_CODE void draw_pcg(int x8, int y8, uint16_t top)
 {
-    uint8_t  plane[4] = {0, 1, 2, 4};
-
     // draw pv1000_pattern on ram
-    for(int p = 1; p < 4; p++)
+    for(int p = 0; p < 3; p++)
     {
-        uint8_t col = plane[p];
-        uint16_t p8 = top + (p << 3);
+        uint16_t p8 = top + ((p+1) << 3);
 
         for(int l = 0; l < 8; l++)
         {
-            if (p==1)
-            {
-                uint32_t* dest32 = (uint32_t*) (&bg[y8+l][x8]);
-               *dest32++ = 0; *dest32=0;
-            }
             uint8_t pat = pv1000_pcg[p8 + l];
-
-            if (pat)
+            uint32_t* dest = (uint32_t*)(&bg[y8 + l][x8]);
+            if (!p) // This saves us from having to zero the bg[] array
             {
-                uint8_t* dest = &bg[y8 + l][x8];
-
-                if(pat & 0x80) dest[0] |= col;
-                if(pat & 0x40) dest[1] |= col;
-                if(pat & 0x20) dest[2] |= col;
-                if(pat & 0x10) dest[3] |= col;
-                if(pat & 0x08) dest[4] |= col;
-                if(pat & 0x04) dest[5] |= col;
-                if(pat & 0x02) dest[6] |= col;
-                if(pat & 0x01) dest[7] |= col;
+                *dest++ = pv1000_pattern_table[0][pat >> 4];
+                *dest   = pv1000_pattern_table[0][pat & 0xF];
+            }
+            else if (pat)
+            {
+                *dest++ |= pv1000_pattern_table[p][pat >> 4];
+                *dest   |= pv1000_pattern_table[p][pat & 0xF];
             }
         }
     }
@@ -341,14 +374,20 @@ ITCM_CODE void draw_pcg(int x8, int y8, uint16_t top)
 
 ITCM_CODE void pv1000_drawscreen(void)
 {
-    static int ds_lite_fameskip =0;
-
-    if (ds_lite_fameskip++ & 1)
+    // --------------------------------------------------------------
+    // If the display is disabled, we simply output the border color
+    // --------------------------------------------------------------
+    if (pv1000_vid_disable)
     {
-        if (!isDSiMode()) return;
+        memset((uint8_t*) (0x06000000), pv1000_bd_color, 192*256);
+        return;
     }
 
-    for(int y = 0; y < 24; y++)
+    // -------------------------------------------------------------------
+    // Otherwise we render... the first two and last two columns are
+    // not displayed on a PV-1000 so we only get 244 pixels (out of 256).
+    // -------------------------------------------------------------------
+    for (int y = 0; y < 24; y++)
     {
         int y8 = y << 3, y32 = y << 5;
 
@@ -368,8 +407,12 @@ ITCM_CODE void pv1000_drawscreen(void)
         }
     }
 
-    // Now copy the pv1000_pattern to the DS LCD screen memory...
-    uint8_t *dest = (uint8_t*) (0x06000000 );
+    // -----------------------------------------------------------------------------
+    // Now copy the pv1000_pattern to the DS LCD screen memory... I would have
+    // preferred to use an Async copy here but due to the rendering above, some
+    // of the data will be in ARM fast data cache and an async copy can get glitchy.
+    // -----------------------------------------------------------------------------
+    uint8_t *dest = (uint8_t*) (0x06000000);
     memcpy(dest, bg, 192*256);
 }
 
@@ -379,11 +422,14 @@ ITCM_CODE void pv1000_drawscreen(void)
 // -------------------------------------------------------------------------------------------
 ITCM_CODE u32 pv1000_run(void)
 {
-    // ---------------------------------------------------------------------------------------------------
-    // For the Casio PV-1000, the CPU only gets to do work on the Horizontal Blank and the Vertical Blank
-    // A full scanline is 228 clocks - so we only get those when we are in the Vertical Blank.
-    // ---------------------------------------------------------------------------------------------------
-    u32 cycles_to_process = (pv1000_scanline >= 192 ? 228:32) + CPU.CycleDeficit;
+    // --------------------------------------------------------------------------------------
+    // For the Casio PV-1000, the CPU only gets to do work on the Horizontal Blank and the
+    // Vertical Blank. A full scanline is 230 clocks - so we only get those when we are in
+    // the Vertical Blank. The one exception here is that if the video display output is
+    // disabled (by write to port FF), we gain the full speed of the Z80 for every scanline.
+    // --------------------------------------------------------------------------------------
+    u32 cycles_to_process = (pv1000_scanline >= 192 ? 230:32) + CPU.CycleDeficit;
+    if (pv1000_vid_disable) cycles_to_process = 230 + CPU.CycleDeficit;
     CPU.CycleDeficit = ExecZ80(cycles_to_process);
 
     if (myConfig.soundDriver)
@@ -391,9 +437,15 @@ ITCM_CODE u32 pv1000_run(void)
         processDirectAudioSN();
     }
 
-    // There are 16 VSYNC interrupts...
-    // 195, 199, 203, 207, 211, 215, 219, 223, 227, 231, 235, 239, 243, 247, 251, 255
+    // -------------------------------------------------------------------------------------
+    // There are either 1 or 16 VSYNC interrupts depending on the value written to the
+    // Interrupt Enable port FC.  The 'Matrix Scan' interrupts happen every 4 scanlines
+    // from 195 to 255 and the 'Prerender' interrupt only happens at scanline 255.
+    //
+    // IRQs: 195, 199, 203, 207, 211, 215, 219, 223, 227, 231, 235, 239, 243, 247, 251, 255
+    //
     // See https://obscure.nesdev.org/wiki/Casio_PV-1000/ASIC_registers
+    // -------------------------------------------------------------------------------------
     if (++pv1000_scanline >= 195)
     {
         switch (pv1000_scanline)
@@ -420,6 +472,12 @@ ITCM_CODE u32 pv1000_run(void)
                 break;
         }
 
+        // -------------------------------------------------------------------------------
+        // Check if we are done rendering the full screen... better emulation would
+        // render the screen 1 scanline at a time but for efficiency we draw the
+        // entire screen once at the end of VSYNC. Not truly accurate but it's good
+        // enough for all of the commercial games and the tiny bit of homebrew available.
+        // -------------------------------------------------------------------------------
         if (pv1000_scanline == 262)
         {
             pv1000_scanline = 0;
