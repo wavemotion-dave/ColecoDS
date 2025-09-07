@@ -383,6 +383,13 @@ So my recommendation is as follows:
 
 To enable this new blend mode, pick your game and go into the "Game Options" sub-menu and turn it on.
 
+Joystick Options :
+-----------------------
+In addition to remapping the DS keys to any combination of joystick/keyboard keys, there are two other special configurations
+you can try. One is to map the DS d-pad to "diagnonals" which will help with any games that need to press the diagonals for
+movement (which is notoriously difficult with a d-pad). The other options is called Slide-n-Glide to make corning in maze-games
+or climbing ladders in games like Chuckie-Egg more forgiving (try it - you'll like it!).
+
 Vertical Sync :
 -----------------------
 Vertical sync will force the update (refresh) of the screen when the DS goes into the vertical blank.
