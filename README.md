@@ -359,7 +359,7 @@ Configuration Optics :
 -----------------------
 There are numerous configuration options that can be applied globally or to individual games. Most are fairly obvious - but a few of the more complex settings are described further below.
 
-![Key Mapping](images/joycfg.png) ![Options Page 1](images/opt1.png) ![Options Page 2](images/opt2.png) ![Options Global](images/optglobal.png)
+![Key Mapping](images/joycfg.png) ![Options Page 1](images/opt1.png) ![Options Page 2](images/opt2.png)
 
 Blend Mode (DSi) :
 -----------------------
