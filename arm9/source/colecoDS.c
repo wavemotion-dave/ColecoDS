@@ -363,8 +363,8 @@ u32 keyCoresp[MAX_KEY_OPTIONS] __attribute__((section(".dtcm"))) = {
 // ----------------------------------------------
 // Game speeds constants... first entry is 100%
 // ----------------------------------------------
-u16 GAME_SPEED_NTSC[] __attribute__((section(".dtcm"))) = {546, 497, 455, 420, 607 };
-u16 GAME_SPEED_PAL[]  __attribute__((section(".dtcm"))) = {656, 596, 547, 505, 729 };
+u16 GAME_SPEED_NTSC[] __attribute__((section(".dtcm"))) = {546, 497, 455, 420, 607, 679 };
+u16 GAME_SPEED_PAL[]  __attribute__((section(".dtcm"))) = {656, 596, 547, 505, 729, 818 };
 
 // --------------------------------------------------------------------------------
 // Spinners! X and Y taken together will actually replicate the roller controller.
@@ -2126,6 +2126,7 @@ void MiniMenuShow(bool bClearScreen, u8 sel)
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " RESET  GAME   ");  mini_menu_items++;
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " QUIT   GAME   ");  mini_menu_items++;
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " HIGH   SCORE  ");  mini_menu_items++;
+    DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " DEFINE KEYS   ");  mini_menu_items++;
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " SAVE   STATE  ");  mini_menu_items++;
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " LOAD   STATE  ");  mini_menu_items++;
     DSPrint(8,9+mini_menu_items,(sel==mini_menu_items)?2:0,  " EXIT   MENU   ");  mini_menu_items++;
@@ -2164,9 +2165,10 @@ u8 MiniMenu(void)
             if      (menuSelection == 0) retVal = MENU_CHOICE_RESET_GAME;
             else if (menuSelection == 1) retVal = MENU_CHOICE_END_GAME;
             else if (menuSelection == 2) retVal = MENU_CHOICE_HI_SCORE;
-            else if (menuSelection == 3) retVal = MENU_CHOICE_SAVE_GAME;
-            else if (menuSelection == 4) retVal = MENU_CHOICE_LOAD_GAME;
-            else if (menuSelection == 5) retVal = MENU_CHOICE_NONE;
+            else if (menuSelection == 3) retVal = MENU_CHOICE_DEFINE_KEYS;
+            else if (menuSelection == 4) retVal = MENU_CHOICE_SAVE_GAME;
+            else if (menuSelection == 5) retVal = MENU_CHOICE_LOAD_GAME;
+            else if (menuSelection == 6) retVal = MENU_CHOICE_NONE;
             else retVal = MENU_CHOICE_NONE;
             break;
         }
@@ -3119,6 +3121,15 @@ u8 handle_normal_virtual_keypad(u16 iTx, u16 iTy)  // All other normal overlays 
     return MENU_CHOICE_NONE;
 }
 
+// ----------------------------------------------------------------------------
+// Slide-n-Glide D-pad keeps moving in the last known direction for a few more
+// frames to help make those hairpin turns up and off ladders much easier...
+// ----------------------------------------------------------------------------
+u8 slide_n_glide_key_up = 0;
+u8 slide_n_glide_key_down = 0;
+u8 slide_n_glide_key_left = 0;
+u8 slide_n_glide_key_right = 0;
+
 // ------------------------------------------------------------------------
 // The main emulation loop is here... call into the Z80, VDP and PSG
 // ------------------------------------------------------------------------
@@ -3393,6 +3404,15 @@ void colecoDS_main(void)
                         SoundUnPause();
                         break;
 
+                    case MENU_CHOICE_DEFINE_KEYS:
+                        SoundPause();
+                        BottomScreenOptions();
+                        colecoDSChangeKeymap();
+                        BottomScreenKeypad();
+                        DisplayStatusLine(true);
+                        SoundUnPause();
+                        break;
+
                     case MENU_CHOICE_SAVE_GAME:
                         if  (!SaveNow)
                         {
@@ -3526,6 +3546,54 @@ void colecoDS_main(void)
           }
           else if  (nds_key & (KEY_UP | KEY_DOWN | KEY_LEFT | KEY_RIGHT | KEY_A | KEY_B | KEY_START | KEY_SELECT | KEY_R | KEY_L | KEY_X | KEY_Y))
           {
+              if (myConfig.dpad == DPAD_SLIDE_N_GLIDE) // CHUCKIE-EGG Style... hold left/right or up/down for a few frames
+              {
+                    if (nds_key & KEY_UP)
+                    {
+                        slide_n_glide_key_up    = 12;
+                        slide_n_glide_key_down  = 0;
+                    }
+                    if (nds_key & KEY_DOWN)
+                    {
+                        slide_n_glide_key_down  = 12;
+                        slide_n_glide_key_up    = 0;
+                    }
+                    if (nds_key & KEY_LEFT)
+                    {
+                        slide_n_glide_key_left  = 12;
+                        slide_n_glide_key_right = 0;
+                    }
+                    if (nds_key & KEY_RIGHT)
+                    {
+                        slide_n_glide_key_right = 12;
+                        slide_n_glide_key_left  = 0;
+                    }
+
+                    if (slide_n_glide_key_up)
+                    {
+                        slide_n_glide_key_up--;
+                        nds_key |= KEY_UP;
+                    }
+
+                    if (slide_n_glide_key_down)
+                    {
+                        slide_n_glide_key_down--;
+                        nds_key |= KEY_DOWN;
+                    }
+
+                    if (slide_n_glide_key_left)
+                    {
+                        slide_n_glide_key_left--;
+                        nds_key |= KEY_LEFT;
+                    }
+
+                    if (slide_n_glide_key_right)
+                    {
+                        slide_n_glide_key_right--;
+                        nds_key |= KEY_RIGHT;
+                    }
+              }
+
               if (einstein_mode && (nds_key & KEY_START)) // Load .COM file directly
               {
                   if (einstein_mode == 2) // .dsk file
@@ -3666,7 +3734,7 @@ void colecoDS_main(void)
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F6)        kbd_key = (adam_mode ? ADAM_KEY_F6 : KBD_KEY_F6);
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F7)        kbd_key = KBD_KEY_F7;
                           else if (keyCoresp[myConfig.keymap[i]] == META_KBD_F8)        kbd_key = KBD_KEY_F8;                      
-
+                          
                           if (adam_mode)
                           {
                               if (kbd_key != last_mapped_key && (kbd_key != 0) && (last_mapped_key != 255))
@@ -3686,6 +3754,10 @@ void colecoDS_main(void)
           }
           else
           {
+              if (slide_n_glide_key_up)    slide_n_glide_key_up--;
+              if (slide_n_glide_key_down)  slide_n_glide_key_down--;
+              if (slide_n_glide_key_left)  slide_n_glide_key_left--;
+              if (slide_n_glide_key_right) slide_n_glide_key_right--;
               last_mapped_key = 0;
           }
       }
@@ -4479,6 +4551,21 @@ int main(int argc, char **argv)
      return -1;
   }
 
+  // -----------------------------------------------------------------
+  // Allocate the Large DSi buffer for expanded RAM banking...
+  // -----------------------------------------------------------------
+  if (isDSiMode())
+  {
+      DSI_RAM_Buffer = malloc(2 * 1024*1024); // 2MB of Expanded RAM
+      MAX_CART_SIZE = 4096;
+      ROM_Memory = malloc(MAX_CART_SIZE * 1024);
+  }
+  else // For older DS units... 1MB max
+  {
+      MAX_CART_SIZE = 1024;
+      ROM_Memory = malloc(MAX_CART_SIZE * 1024);
+  }
+  
   highscore_init();
 
   lcdMainOnTop();
@@ -4496,21 +4583,6 @@ int main(int argc, char **argv)
   irqSet(IRQ_VBLANK,  irqVBlank);
   irqEnable(IRQ_VBLANK);
 
-  // -----------------------------------------------------------------
-  // Allocate the Large DSi buffer for expanded RAM banking...
-  // -----------------------------------------------------------------
-  if (isDSiMode())
-  {
-      DSI_RAM_Buffer = malloc(2 * 1024*1024); // 2MB of Expanded RAM
-      MAX_CART_SIZE = 4096;
-      ROM_Memory = malloc(MAX_CART_SIZE * 1024);
-  }
-  else // For older DS units... 1MB max
-  {
-      MAX_CART_SIZE = 1024;
-      ROM_Memory = malloc(MAX_CART_SIZE * 1024);
-  }
-    
   // -----------------------------------------------------------------
   // Grab the BIOS before we try to switch any directories around...
   // -----------------------------------------------------------------
@@ -4587,7 +4659,8 @@ int main(int argc, char **argv)
             if (bCreativisionBiosFound) {DSPrint(2,idx++,0,"bioscv.rom     BIOS FOUND"); }
             if (bAdamBiosFound)         {DSPrint(2,idx++,0,"eos.rom        BIOS FOUND"); }
             if (bAdamBiosFound)         {DSPrint(2,idx++,0,"writer.rom     BIOS FOUND"); }
-            DSPrint(2,idx++,0,"SG-1000/3000 AND MTX BUILT-IN"); idx++;
+            idx++;
+            DSPrint(2,idx++,0,"SG-3000,PV-1000,MTX BUILT-IN"); idx++;
             DSPrint(2,idx++,0,"TOUCH SCREEN / KEY TO BEGIN"); idx++;
 
             while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_DOWN | KEY_UP | KEY_A | KEY_B | KEY_L | KEY_R))!=0);
@@ -4597,10 +4670,10 @@ int main(int argc, char **argv)
     }
     else
     {
-        DSPrint(2,10,0,"ERROR: coleco.rom NOT FOUND");
+        DSPrint(2,10,0,"ERROR: COLECO.ROM NOT FOUND");
         DSPrint(2,12,0,"ERROR: CANT RUN WITHOUT BIOS");
-        DSPrint(2,14,0,"Put coleco.rom in same dir");
-        DSPrint(2,15,0,"as EMULATOR or /ROMS/BIOS");
+        DSPrint(2,14,0,"PUT COLECO.ROM IN SAME DIR");
+        DSPrint(2,15,0,"AS EMULATOR OR /ROMS/BIOS");
         while(1) ;  // We're done... Need a coleco bios to run a CV emulator
     }
 

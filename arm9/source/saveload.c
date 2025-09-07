@@ -26,10 +26,10 @@
 #include "colecogeneric.h"
 #include "MTX_BIOS.h"
 #include "fdc.h"
+#include "lzav.h"
 #include "printf.h"
 
-#define COLECODS_SAVE_VER   0x0021        // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
-
+#define COLECODS_SAVE_VER   0x0022  // Change this if the basic format of the .SAV file changes. Invalidates older .sav files.
 
 // -----------------------------------------------------------------------------------------------------
 // Since the main MemoryMap[] can point to differt things (RAM, ROM, BIOS, etc) and since we can't rely
@@ -59,10 +59,28 @@ u8  spare[512] = {0x00};            // We keep some spare bytes so we can use th
 static char szLoadFile[256];        // We build the filename out of the base filename and tack on .sav, .ee, etc.
 static char tmpStr[32];
 
-void colecoSaveState()
+// --------------------------------------------------------------------------------------
+// We use a 128K buffer on the back-end of the ROM_Memory to use for lzav compression.
+// So we move that 128K block out to an unused VRAM area temporarily while we save/load.
+// This saves us from having to allocate a large 128K buffer just for save/load use.
+// --------------------------------------------------------------------------------------
+void allocateCompressedMem(void)
+{
+    memcpy((u8*)0x6820000, COMPRESS_BUFFER, 128*1024);
+}
+
+void restoreCompressedMem(void)
+{
+    memcpy(COMPRESS_BUFFER, (u8*)0x6820000, 128*1024);
+}
+
+void colecoSaveState(void)
 {
   size_t retVal;
   long pSvg;
+
+  // Get the 128K buffer needed for compression
+  allocateCompressedMem();
 
   // Return to the original path
   chdir(initial_path);
@@ -100,8 +118,15 @@ void colecoSaveState()
     // Write CZ80 CPU
     retVal = fwrite(&CPU, sizeof(CPU), 1, handle);
 
-    // Save Z80 Memory (yes, all of it!)
-    if (retVal) retVal = fwrite(RAM_Memory, 0x10000,1, handle);
+    // -----------------------------------------------------------------------
+    // Compress the 64K RAM data using 'high' compression ratio... it's
+    // still quite fast for such small memory buffers and gets us under 32K
+    // -----------------------------------------------------------------------
+    int max_len = lzav_compress_bound_hi( 0x10000 );
+    int comp_len = lzav_compress_hi( RAM_Memory, COMPRESS_BUFFER, 0x10000, max_len );
+
+    if (retVal) retVal = fwrite(&comp_len,          sizeof(comp_len), 1, handle);
+    if (retVal) retVal = fwrite(COMPRESS_BUFFER,     comp_len,         1, handle);
 
     // And the Memory Map - we must only save offsets so that this is generic when we change code and memory shifts...
     for (u8 i=0; i<8; i++)
@@ -153,7 +178,14 @@ void colecoSaveState()
     if (retVal) retVal = fwrite(&CurLine, sizeof(CurLine),1, handle);
     if (retVal) retVal = fwrite(&ColTabM, sizeof(ColTabM),1, handle);
     if (retVal) retVal = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle);
-    if (retVal) retVal = fwrite(pVDPVidMem, 0x4000,1, handle);
+
+    // Write the VDP video buffer... large enough that we compress it
+    max_len = lzav_compress_bound_hi( 0x4000 );
+    comp_len = lzav_compress_hi( pVDPVidMem, COMPRESS_BUFFER, 0x4000, max_len );
+
+    if (retVal) retVal = fwrite(&comp_len,          sizeof(comp_len), 1, handle);
+    if (retVal) retVal = fwrite(COMPRESS_BUFFER,     comp_len,         1, handle);
+
     pSvg = ChrGen-pVDPVidMem;
     if (retVal) retVal = fwrite(&pSvg, sizeof(pSvg),1, handle);
     pSvg = ChrTab-pVDPVidMem;
@@ -223,6 +255,10 @@ void colecoSaveState()
     if (retVal) retVal = fwrite(&Port20, sizeof(Port20),1, handle);
     if (retVal) retVal = fwrite(&Port42, sizeof(Port42),1, handle);
 
+    // A few vars for the simplified memory driver
+    if (retVal) retVal = fwrite(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);
+    if (retVal) retVal = fwrite(under_ram, sizeof(under_ram),1, handle);
+
     // Some spare memory we can eat into...
     if (retVal) retVal = fwrite(spare, 510, 1, handle);
 
@@ -261,9 +297,48 @@ void colecoSaveState()
         if (msx_scc_enable)   if (retVal) retVal = fwrite(&mySCC, sizeof(mySCC),1, handle);
         if (msx_mode == 3)    if (retVal) retVal = fwrite(&FDC, sizeof(FDC), 1, handle);
     }
+    else if (bActivisionPCB)
+    {
+        // Write the EEPROM and memory
+        if (retVal) retVal = fwrite(&EEPROM, sizeof(EEPROM),1, handle);
+    }
+    else if (creativision_mode)
+    {
+        // Write some creativision stuff... mostly the non-Z80 CPU
+        u16 cv_save_size=1;
+        u8 *mem = creativision_get_savestate(&cv_save_size);
+        if (retVal) retVal = fwrite(mem, cv_save_size,1, handle);
+    }
+    else if (pv1000_mode)
+    {
+        u32 offset = 0;
+
+        offset = pv1000_vram - RAM_Memory;
+        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
+
+        offset = pv1000_pcg - RAM_Memory;
+        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
+
+        offset = pv1000_pattern - RAM_Memory;
+        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
+
+        if (retVal) retVal = fwrite(&pv1000_force_pattern,  sizeof(pv1000_force_pattern), 1, handle);
+        if (retVal) retVal = fwrite(&pv1000_column,         sizeof(pv1000_column),        1, handle);
+        if (retVal) retVal = fwrite(&pv1000_status,         sizeof(pv1000_status),        1, handle);
+        if (retVal) retVal = fwrite(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
+        if (retVal) retVal = fwrite(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
+        if (retVal) retVal = fwrite(&pv1000_bd_color,       sizeof(pv1000_bd_color),      1, handle);
+        if (retVal) retVal = fwrite(&pv1000_freqA,          sizeof(pv1000_freqA),         1, handle);
+        if (retVal) retVal = fwrite(&pv1000_freqB,          sizeof(pv1000_freqB),         1, handle);
+        if (retVal) retVal = fwrite(&pv1000_freqC,          sizeof(pv1000_freqC),         1, handle);
+    }
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
-        if (retVal) retVal = fwrite(PCBTable+0x8000, 0x8000, 1, handle);
+        // The PCBTable[] is large enough that we compress it...
+        max_len = lzav_compress_bound_hi( 0x8000 );
+        comp_len = lzav_compress_hi( PCBTable+0x8000, COMPRESS_BUFFER, 0x8000, max_len );
+        if (retVal) retVal = fwrite(&comp_len,          sizeof(comp_len), 1, handle);
+        if (retVal) retVal = fwrite(COMPRESS_BUFFER,     comp_len,         1, handle);
 
         if (retVal) retVal = fwrite(&PCBAddr, sizeof(PCBAddr),1, handle);
         if (retVal) retVal = fwrite(adam_ram_present, sizeof(adam_ram_present),1, handle);
@@ -297,47 +372,6 @@ void colecoSaveState()
             }
         }
     }
-    else if (bActivisionPCB)
-    {
-        // Write the EEPROM and memory
-        if (retVal) retVal = fwrite(&EEPROM, sizeof(EEPROM),1, handle);
-    }
-    else if (creativision_mode)
-    {
-        // Write some creativision stuff... mostly the non-Z80 CPU
-        u16 cv_save_size=1;
-        u8 *mem = creativision_get_savestate(&cv_save_size);
-        if (retVal) retVal = fwrite(mem, cv_save_size,1, handle);
-    }
-    else if (pv1000_mode)
-    {
-        u32 offset = 0;
-
-        offset = pv1000_vram - RAM_Memory;
-        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
-        
-        offset = pv1000_pcg - RAM_Memory;
-        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
-
-        offset = pv1000_pattern - RAM_Memory;
-        if (retVal) retVal = fwrite(&offset,                sizeof(offset),               1, handle);
-
-        if (retVal) retVal = fwrite(&pv1000_force_pattern,  sizeof(pv1000_force_pattern), 1, handle);
-        if (retVal) retVal = fwrite(&pv1000_column,         sizeof(pv1000_column),        1, handle);
-        if (retVal) retVal = fwrite(&pv1000_status,         sizeof(pv1000_status),        1, handle);
-        if (retVal) retVal = fwrite(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
-        if (retVal) retVal = fwrite(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
-        if (retVal) retVal = fwrite(&pv1000_bd_color,       sizeof(pv1000_bd_color),      1, handle);
-        if (retVal) retVal = fwrite(&pv1000_freqA,          sizeof(pv1000_freqA),         1, handle);
-        if (retVal) retVal = fwrite(&pv1000_freqB,          sizeof(pv1000_freqB),         1, handle);
-        if (retVal) retVal = fwrite(&pv1000_freqC,          sizeof(pv1000_freqC),         1, handle);
-    }
-    else if (bSuperSimplifiedMemory) // For the new optimized driver...
-    {
-        if (retVal) retVal = fwrite(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);
-        if (retVal) retVal = fwrite(under_ram, sizeof(under_ram),1, handle);
-    }
-
     strcpy(tmpStr, (retVal ? "OK ":"ERR"));
     DSPrint(15,0,0,tmpStr);
     WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
@@ -347,6 +381,10 @@ void colecoSaveState()
   else {
     strcpy(tmpStr,"Error opening SAV file ...");
   }
+
+  // Give back the 128K buffer needed for compression
+  restoreCompressedMem();
+
   fclose(handle);
 }
 
@@ -354,10 +392,13 @@ void colecoSaveState()
 /*********************************************************************************
  * Load the current state - read everything back from the .sav file.
  ********************************************************************************/
-void colecoLoadState()
+void colecoLoadState(void)
 {
     size_t retVal;
     long pSvg;
+
+    // Get the 128K buffer needed for compression
+    allocateCompressedMem();
 
     // Return to the original path
     chdir(initial_path);
@@ -393,8 +434,11 @@ void colecoLoadState()
             // Load CZ80 CPU
             retVal = fread(&CPU, sizeof(CPU), 1, handle);
 
-            // Load Z80 Memory (yes, all of it!)
-            if (retVal) retVal = fread(RAM_Memory, 0x10000,1, handle);
+            // Restore Main RAM memory which was saved in a compressed format
+            int comp_len = 0;
+            if (retVal) retVal = fread(&comp_len,          sizeof(comp_len), 1, handle);
+            if (retVal) retVal = fread(COMPRESS_BUFFER,     comp_len,         1, handle);
+            (void)lzav_decompress( COMPRESS_BUFFER, RAM_Memory, comp_len, 0x10000 );
 
             // Load back the Memory Map - these were saved as offsets so we must reconstruct actual pointers
             if (retVal) retVal = fread(Offsets, sizeof(Offsets),1, handle);
@@ -442,7 +486,11 @@ void colecoLoadState()
             if (retVal) retVal = fread(&ColTabM, sizeof(ColTabM),1, handle);
             if (retVal) retVal = fread(&ChrGenM, sizeof(ChrGenM),1, handle);
 
-            if (retVal) retVal = fread(pVDPVidMem, 0x4000,1, handle);
+            // Restore VDP RAM memory which was saved in a compressed format
+            if (retVal) retVal = fread(&comp_len,          sizeof(comp_len), 1, handle);
+            if (retVal) retVal = fread(COMPRESS_BUFFER,     comp_len,         1, handle);
+            (void)lzav_decompress( COMPRESS_BUFFER, pVDPVidMem, comp_len, 0x4000 );
+
             if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle);
             ChrGen = pSvg + pVDPVidMem;
             if (retVal) retVal = fread(&pSvg, sizeof(pSvg),1, handle);
@@ -512,6 +560,10 @@ void colecoLoadState()
             if (retVal) retVal = fread(&Port20, sizeof(Port20),1, handle);
             if (retVal) retVal = fread(&Port42, sizeof(Port42),1, handle);
 
+            // A few vars for the simplified memory driver
+            if (retVal) retVal = fread(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);
+            if (retVal) retVal = fread(under_ram, sizeof(under_ram),1, handle);
+
             // Some spare memory we can eat into...
             if (retVal) retVal = fread(spare, 510, 1, handle);
 
@@ -550,9 +602,48 @@ void colecoLoadState()
                 msx_caps_lock = ((Port_PPI_C & 0x40) ? 0:1); // Set the caps lock state back to what it should be based on Port C
                 msx_last_block[0] = msx_last_block[1] = msx_last_block[2] = msx_last_block[3] = 199; // Ensure bank swaps always happen after a restore
             }
+            else if (bActivisionPCB)
+            {
+                // Read the EEPROM and memory
+                if (retVal) retVal = fread(&EEPROM, sizeof(EEPROM),1, handle);
+            }
+            else if (creativision_mode)
+            {
+                // Read some Creativision stuff... mostly the non-Z80 CPU
+                u16 cv_save_size=1;
+                u8 *mem = creativision_get_savestate(&cv_save_size);
+                if (retVal) retVal = fread(mem, cv_save_size,1, handle);
+                creativision_put_savestate(mem);
+            }
+            else if (pv1000_mode)
+            {
+                u32 offset = 0;
+
+                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
+                pv1000_vram = RAM_Memory + offset;
+
+                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
+                pv1000_pcg = RAM_Memory + offset;
+
+                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
+                pv1000_pattern = RAM_Memory + offset;
+
+                if (retVal) retVal = fread(&pv1000_force_pattern,  sizeof(pv1000_force_pattern), 1, handle);
+                if (retVal) retVal = fread(&pv1000_column,         sizeof(pv1000_column),        1, handle);
+                if (retVal) retVal = fread(&pv1000_status,         sizeof(pv1000_status),        1, handle);
+                if (retVal) retVal = fread(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
+                if (retVal) retVal = fread(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
+                if (retVal) retVal = fread(&pv1000_bd_color,       sizeof(pv1000_bd_color),      1, handle);
+                if (retVal) retVal = fread(&pv1000_freqA,          sizeof(pv1000_freqA),         1, handle);
+                if (retVal) retVal = fread(&pv1000_freqB,          sizeof(pv1000_freqB),         1, handle);
+                if (retVal) retVal = fread(&pv1000_freqC,          sizeof(pv1000_freqC),         1, handle);
+            }
             else if (adam_mode)  // Big enough that we will not read this if we are not ADAM
             {
-                if (retVal) retVal = fread(PCBTable+0x8000, 0x8000, 1, handle);
+                // Decompress the PCBTable[] and place back into memory
+                if (retVal) retVal = fread(&comp_len,          sizeof(comp_len), 1, handle);
+                if (retVal) retVal = fread(COMPRESS_BUFFER,     comp_len,         1, handle);
+                (void)lzav_decompress( COMPRESS_BUFFER, PCBTable+0x8000, comp_len, 0x8000 );
 
                 if (retVal) retVal = fread(&PCBAddr, sizeof(PCBAddr),1, handle);
                 if (retVal) retVal = fread(adam_ram_present, sizeof(adam_ram_present),1, handle);
@@ -595,48 +686,6 @@ void colecoLoadState()
                     }
                 }
             }
-            else if (bActivisionPCB)
-            {
-                // Read the EEPROM and memory
-                if (retVal) retVal = fread(&EEPROM, sizeof(EEPROM),1, handle);
-            }
-            else if (creativision_mode)
-            {
-                // Read some Creativision stuff... mostly the non-Z80 CPU
-                u16 cv_save_size=1;
-                u8 *mem = creativision_get_savestate(&cv_save_size);
-                if (retVal) retVal = fread(mem, cv_save_size,1, handle);
-                creativision_put_savestate(mem);
-            }
-            else if (pv1000_mode)
-            {
-                u32 offset = 0;
-
-                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
-                pv1000_vram = RAM_Memory + offset;
-                
-                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
-                pv1000_pcg = RAM_Memory + offset;
-
-                if (retVal) retVal = fread(&offset,                sizeof(offset),               1, handle);
-                pv1000_pattern = RAM_Memory + offset;
-                
-                if (retVal) retVal = fread(&pv1000_force_pattern,  sizeof(pv1000_force_pattern), 1, handle);
-                if (retVal) retVal = fread(&pv1000_column,         sizeof(pv1000_column),        1, handle);
-                if (retVal) retVal = fread(&pv1000_status,         sizeof(pv1000_status),        1, handle);
-                if (retVal) retVal = fread(&pv1000_enable,         sizeof(pv1000_enable),        1, handle);
-                if (retVal) retVal = fread(&pv1000_scanline,       sizeof(pv1000_scanline),      1, handle);
-                if (retVal) retVal = fread(&pv1000_bd_color,       sizeof(pv1000_bd_color),      1, handle);
-                if (retVal) retVal = fread(&pv1000_freqA,          sizeof(pv1000_freqA),         1, handle);
-                if (retVal) retVal = fread(&pv1000_freqB,          sizeof(pv1000_freqB),         1, handle);
-                if (retVal) retVal = fread(&pv1000_freqC,          sizeof(pv1000_freqC),         1, handle);
-            }
-            else if (bSuperSimplifiedMemory) // For the new optimized driver...
-            {
-                if (retVal) retVal = fread(&simplifed_low_addr, sizeof(simplifed_low_addr),1, handle);
-                if (retVal) retVal = fread(under_ram, sizeof(under_ram),1, handle);
-            }
-
             // Fix up transparency
             if (BGColor)
             {
@@ -669,6 +718,9 @@ void colecoLoadState()
         DSPrint(6,0,0,"             ");
       }
 
+    // Give back the 128K buffer needed for compression
+    restoreCompressedMem();
+
     fclose(handle);
 }
 
@@ -689,8 +741,8 @@ void colecoSaveEEPROM(void)
     FILE *handle = fopen(szLoadFile, "wb+");
     if (handle != NULL)
     {
-      fwrite(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
-      fclose(handle);
+        fwrite(EEPROM.Data, Size24XX(&EEPROM), 1, handle);
+        fclose(handle);
     }
 }
 
@@ -712,7 +764,7 @@ void colecoLoadEEPROM(void)
 
     if (ReadFileCarefully(szLoadFile, EEPROM.Data, Size24XX(&EEPROM), 0) == 0)
     {
-      memset(EEPROM.Data, 0xFF, 0x8000);
+        memset(EEPROM.Data, 0xFF, 0x8000);
     }
 }
 

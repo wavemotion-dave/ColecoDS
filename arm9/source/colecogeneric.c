@@ -23,7 +23,7 @@
 #include "options.h"
 #include "topscreen.h"
 #include "C24XX.h"
-
+#include "lzav.h"
 #include "CRC32.h"
 #include "printf.h"
 
@@ -32,7 +32,7 @@ typedef enum {FT_NONE,FT_FILE,FT_DIR} FILE_TYPE;
 int countCV=0;
 int ucGameAct=0;
 int ucGameChoice = -1;
-FICcoleco gpFic[MAX_ROMS];  
+FICcoleco gpFic[MAX_ROMS];
 char szName[256];
 char szFile[256];
 u8 bForceMSXLoad = false;
@@ -55,9 +55,9 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P1 BTN 2 (R/RED)",
   "P1 BTN 3 (PURP)",
   "P1 BTN 4 (BLUE)",
-  "P1 KEYPAD #1",        
+  "P1 KEYPAD #1",
   "P1 KEYPAD #2",
-  "P1 KEYPAD #3",        
+  "P1 KEYPAD #3",
   "P1 KEYPAD #4",
   "P1 KEYPAD #5",
   "P1 KEYPAD #6",
@@ -67,7 +67,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P1 KEYPAD ##",
   "P1 KEYPAD #0",
   "P1 KEYPAD #*",
-    
+
   "P2 JOY UP",
   "P2 JOY DOWN",
   "P2 JOY LEFT",
@@ -76,9 +76,9 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P2 BTN 2 (R/RED)",
   "P2 BTN 3 (PURP)",
   "P2 BTN 4 (BLUE)",
-  "P2 KEYPAD #1",        
+  "P2 KEYPAD #1",
   "P2 KEYPAD #2",
-  "P2 KEYPAD #3",        
+  "P2 KEYPAD #3",
   "P2 KEYPAD #4",
   "P2 KEYPAD #5",
   "P2 KEYPAD #6",
@@ -88,12 +88,12 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "P2 KEYPAD ##",
   "P2 KEYPAD #0",
   "P2 KEYPAD #*",
-    
-  "SAC SPIN X+",          
-  "SAC SPIN X-",          
+
+  "SAC SPIN X+",
+  "SAC SPIN X-",
   "SAC SPIN Y+",
   "SAC SPIN Y-",
-  
+
   "KEYBOARD A", //45
   "KEYBOARD B",
   "KEYBOARD C",
@@ -120,7 +120,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD X",
   "KEYBOARD Y",
   "KEYBOARD Z",
-    
+
   "KEYBOARD 0", // 70
   "KEYBOARD 1",
   "KEYBOARD 2",
@@ -131,22 +131,22 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD 7",
   "KEYBOARD 8",
   "KEYBOARD 9",
-    
+
   "KEYBOARD SHIFT",
   "KEYBOARD CTRL",
   "KEYBOARD CODE",
   "KEYBOARD GRAPH",
-    
+
   "KEYBOARD SPACE",
   "KEYBOARD RETURN",
   "KEYBOARD ESC",
-    
+
   "KEYBOARD HOME",
   "KEYBOARD UP",
   "KEYBOARD DOWN",
   "KEYBOARD LEFT",
   "KEYBOARD RIGHT",
-    
+
   "KEYBOARD PERIOD",
   "KEYBOARD COMMA",
   "KEYBOARD COLON",
@@ -179,7 +179,7 @@ const char szKeyName[MAX_KEY_OPTIONS][18] = {
   "KEYBOARD F5 (V)",
   "KEYBOARD F6 (VI)",
   "KEYBOARD F7",
-  "KEYBOARD F8",    
+  "KEYBOARD F8",
 };
 
 
@@ -190,7 +190,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
   u16 iTx, iTy;
   u8 uRet=ID_SHM_CANCEL;
   u8 ucGau=0x00, ucDro=0x00,ucGauS=0x00, ucDroS=0x00, ucCho = ID_SHM_YES;
-    
+
   BottomScreenOptions();
 
   DSPrint(16-strlen(szCh1)/2,10,6,szCh1);
@@ -199,7 +199,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
   DSPrint(20,14,6,("  NO   "));
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
 
-  while (uRet == ID_SHM_CANCEL) 
+  while (uRet == ID_SHM_CANCEL)
   {
     WAITVBL;
     if (keysCurrent() & KEY_TOUCH) {
@@ -242,7 +242,7 @@ u8 showMessage(char *szCh1, char *szCh2) {
       ucDroS = 0;
       ucGauS = 0;
     }
-    
+
     if (keysCurrent() & KEY_LEFT){
       if (!ucGau) {
         ucGau = 1;
@@ -257,11 +257,11 @@ u8 showMessage(char *szCh1, char *szCh2) {
           DSPrint(20,14,6,("  NO   "));
         }
         WAITVBL;
-      } 
+      }
     }
     else {
       ucGau = 0;
-    }  
+    }
     if (keysCurrent() & KEY_RIGHT) {
       if (!ucDro) {
         ucDro = 1;
@@ -276,25 +276,25 @@ u8 showMessage(char *szCh1, char *szCh2) {
           DSPrint(20,14,6,("  NO   "));
         }
         WAITVBL;
-      } 
+      }
     }
     else {
       ucDro = 0;
-    }  
+    }
     if (keysCurrent() & KEY_A) {
       uRet = ucCho;
     }
   }
   while ((keysCurrent() & (KEY_TOUCH | KEY_LEFT | KEY_RIGHT | KEY_A ))!=0);
-  
+
   BottomScreenKeypad();  // Could be generic or overlay...
-  
+
   return uRet;
 }
 
 void colecoDSModeNormal(void) {
   REG_BG3CNT = BG_BMP8_256x256;
-  REG_BG3PA = (1<<8); 
+  REG_BG3PA = (1<<8);
   REG_BG3PB = 0;
   REG_BG3PC = 0;
   REG_BG3PD = (1<<8);
@@ -345,31 +345,31 @@ void showRandomPreviewSnaps(void) {
  * Show The 14 games on the list to allow the user to choose a new game.
  ********************************************************************************/
 static char szName2[40];
-void dsDisplayFiles(u16 NoDebGame, u8 ucSel) 
+void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
 {
   u16 ucBcl,ucGame;
   u8 maxLen;
-  
+
   DSPrint(30,8,0,(NoDebGame>0 ? "<" : " "));
   DSPrint(30,21,0,(NoDebGame+14<countCV ? ">" : " "));
   sprintf(szName,"%03d/%03d FILES AVAILABLE     ",ucSel+1+NoDebGame,countCV);
   DSPrint(2,6,0, szName);
-  for (ucBcl=0;ucBcl<14; ucBcl++) 
+  for (ucBcl=0;ucBcl<14; ucBcl++)
   {
     ucGame= ucBcl+NoDebGame;
-    if (ucGame < countCV) 
+    if (ucGame < countCV)
     {
       maxLen=strlen(gpFic[ucGame].szName);
       strcpy(szName,gpFic[ucGame].szName);
       if (maxLen>28) szName[28]='\0';
-      if (gpFic[ucGame].uType == DIRECT) 
+      if (gpFic[ucGame].uType == DIRECT)
       {
         szName[26] = 0; // Needs to be 2 chars shorter with brackets
         sprintf(szName2, "[%s]",szName);
         sprintf(szName,"%-28s",szName2);
         DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 :  0),szName);
       }
-      else 
+      else
       {
         sprintf(szName,"%-28s",strupr(szName));
         DSPrint(1,8+ucBcl,(ucSel == ucBcl ? 2 : 0 ),szName);
@@ -387,7 +387,7 @@ void dsDisplayFiles(u16 NoDebGame, u8 ucSel)
 // Standard qsort routine for the coleco games - we sort all directory
 // listings first and then a case-insenstive sort of all games.
 // -------------------------------------------------------------------------
-int colecoFilescmp (const void *c1, const void *c2) 
+int colecoFilescmp (const void *c1, const void *c2)
 {
   FICcoleco *p1 = (FICcoleco *) c1;
   FICcoleco *p2 = (FICcoleco *) c2;
@@ -400,13 +400,13 @@ int colecoFilescmp (const void *c1, const void *c2)
       return -1;
   if ((p2->uType == DIRECT) && !(p1->uType == DIRECT))
       return 1;
-  return strcasecmp (p1->szName, p2->szName);        
+  return strcasecmp (p1->szName, p2->szName);
 }
 
 /*********************************************************************************
  * Find files (COL / ROM) available - sort them for display.
  ********************************************************************************/
-void colecoDSFindFiles(void) 
+void colecoDSFindFiles(void)
 {
   u32 uNbFile;
   DIR *dir;
@@ -416,13 +416,13 @@ void colecoDSFindFiles(void)
   countCV=0;
 
   dir = opendir(".");
-  while (((pent=readdir(dir))!=NULL) && (uNbFile<MAX_ROMS)) 
+  while (((pent=readdir(dir))!=NULL) && (uNbFile<MAX_ROMS))
   {
     strcpy(szFile,pent->d_name);
-      
-    if(pent->d_type == DT_DIR) 
+
+    if(pent->d_type == DT_DIR)
     {
-      if (!((szFile[0] == '.') && (strlen(szFile) == 1))) 
+      if (!((szFile[0] == '.') && (strlen(szFile) == 1)))
       {
         // Do not include the [sav] directory
         if (strcasecmp(szFile, "sav") != 0)
@@ -554,21 +554,21 @@ void colecoDSFindFiles(void)
     }
   }
   closedir(dir);
-    
+
   // ----------------------------------------------
   // If we found any files, go sort the list...
   // ----------------------------------------------
   if (countCV)
   {
     qsort (gpFic, countCV, sizeof(FICcoleco), colecoFilescmp);
-  }    
+  }
 }
 
 
 // ----------------------------------------------------------------
 // Let the user select a new game (rom) file and load it up!
 // ----------------------------------------------------------------
-u8 colecoDSLoadFile(void) 
+u8 colecoDSLoadFile(void)
 {
   bool bDone=false;
   u16 ucHaut=0x00, ucBas=0x00,ucSHaut=0x00, ucSBas=0x00, romSelected= 0, firstRomDisplay=0,nbRomPerPage, uNbRSPage;
@@ -581,12 +581,12 @@ u8 colecoDSLoadFile(void)
   DSPrint(7,5,0,"A=SELECT,  B=EXIT");
 
   colecoDSFindFiles();
-    
+
   ucGameChoice = -1;
 
   nbRomPerPage = (countCV>=14 ? 14 : countCV);
   uNbRSPage = (countCV>=5 ? 5 : countCV);
-  
+
   if (ucGameAct>countCV-nbRomPerPage)
   {
     firstRomDisplay=countCV-nbRomPerPage;
@@ -598,7 +598,7 @@ u8 colecoDSLoadFile(void)
     romSelected=0;
   }
   dsDisplayFiles(firstRomDisplay,romSelected);
-    
+
   // -----------------------------------------------------
   // Until the user selects a file or exits the menu...
   // -----------------------------------------------------
@@ -628,7 +628,7 @@ u8 colecoDSLoadFile(void)
         ucHaut++;
         if (ucHaut>10) ucHaut=0;
       }
-      uLenFic=0; ucFlip=-50; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;
     }
     else
     {
@@ -657,12 +657,12 @@ u8 colecoDSLoadFile(void)
         ucBas++;
         if (ucBas>10) ucBas=0;
       }
-      uLenFic=0; ucFlip=-50; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;
     }
     else {
       ucBas = 0;
     }
-      
+
     // -------------------------------------------------------------
     // Left and Right on the D-Pad will scroll 1 page at a time...
     // -------------------------------------------------------------
@@ -682,12 +682,12 @@ u8 colecoDSLoadFile(void)
         ucSBas++;
         if (ucSBas>10) ucSBas=0;
       }
-      uLenFic=0; ucFlip=-50; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;
     }
     else {
       ucSBas = 0;
     }
-      
+
     // -------------------------------------------------------------
     // Left and Right on the D-Pad will scroll 1 page at a time...
     // -------------------------------------------------------------
@@ -699,7 +699,7 @@ u8 colecoDSLoadFile(void)
         if (firstRomDisplay>nbRomPerPage) { firstRomDisplay -= nbRomPerPage; }
         else { firstRomDisplay = 0; }
         if (ucGameAct == 0) romSelected = 0;
-        if (romSelected > ucGameAct) romSelected = ucGameAct;          
+        if (romSelected > ucGameAct) romSelected = ucGameAct;
         ucSHaut=0x01;
         dsDisplayFiles(firstRomDisplay,romSelected);
       }
@@ -708,12 +708,12 @@ u8 colecoDSLoadFile(void)
         ucSHaut++;
         if (ucSHaut>10) ucSHaut=0;
       }
-      uLenFic=0; ucFlip=-50; ucFlop=0;     
+      uLenFic=0; ucFlip=-50; ucFlop=0;
     }
     else {
       ucSHaut = 0;
     }
-    
+
     // -------------------------------------------------------------------------
     // They B key will exit out of the ROM selection without picking a new game
     // -------------------------------------------------------------------------
@@ -722,7 +722,7 @@ u8 colecoDSLoadFile(void)
       bDone=true;
       while (keysCurrent() & KEY_B);
     }
-      
+
     // -------------------------------------------------------------------
     // Any of these keys will pick the current ROM and try to load it...
     // -------------------------------------------------------------------
@@ -755,21 +755,21 @@ u8 colecoDSLoadFile(void)
         while (keysCurrent() & KEY_A);
       }
     }
-    
+
     // --------------------------------------------
     // If the filename is too long... scroll it.
     // --------------------------------------------
-    if (strlen(gpFic[ucGameAct].szName) > 29) 
+    if (strlen(gpFic[ucGameAct].szName) > 29)
     {
       ucFlip++;
-      if (ucFlip >= 25) 
+      if (ucFlip >= 25)
       {
         ucFlip = 0;
         uLenFic++;
-        if ((uLenFic+28)>strlen(gpFic[ucGameAct].szName)) 
+        if ((uLenFic+28)>strlen(gpFic[ucGameAct].szName))
         {
           ucFlop++;
-          if (ucFlop >= 15) 
+          if (ucFlop >= 15)
           {
             uLenFic=0;
             ucFlop = 0;
@@ -785,13 +785,12 @@ u8 colecoDSLoadFile(void)
     showRandomPreviewSnaps();
     swiWaitForVBlank();
   }
-    
+
   // Wait for some key to be pressed before returning
   while ((keysCurrent() & (KEY_TOUCH | KEY_START | KEY_SELECT | KEY_A | KEY_B | KEY_R | KEY_L | KEY_UP | KEY_DOWN))!=0);
-  
+
   return 0x01;
 }
-
 
 // ---------------------------------------------------------------------------
 // Write out the ColecoDS.DAT configuration file to capture the settings for
@@ -801,27 +800,29 @@ void SaveConfig(bool bShow)
 {
     FILE *fp;
     int slot = 0;
-    
+
     if (bShow) DSPrint(6,0,0, (char*)"SAVING CONFIGURATION");
+
+    allocateCompressedMem();
 
     // Set the global configuration version number...
     myGlobalConfig.config_ver = CONFIG_VER;
 
     // If there is a game loaded, save that into a slot... re-use the same slot if it exists
     myConfig.game_crc = file_crc;
-    
+
     if (myConfig.gameSpeed)  myConfig.vertSync = 0;      // If game speed isn't 100%, we can't sync to the DS 60Hz
-    
+
     // Find the slot we should save into...
     for (slot=0; slot<MAX_CONFIGS; slot++)
     {
         if (AllConfigs[slot].game_crc == myConfig.game_crc)  // Got a match?!
         {
-            break;                           
+            break;
         }
         if (AllConfigs[slot].game_crc == 0x00000000)  // Didn't find it... use a blank slot...
         {
-            break;                           
+            break;
         }
     }
 
@@ -848,16 +849,28 @@ void SaveConfig(bool bShow)
     fp = fopen("/data/ColecoDS.DAT", "wb+");
     if (fp != NULL)
     {
+        myGlobalConfig.compressed = 1; // Write the AllConfigs[] below compressed
         fwrite(&myGlobalConfig, sizeof(myGlobalConfig), 1, fp); // Write the global config
-        fwrite(&AllConfigs, sizeof(AllConfigs), 1, fp);         // Write the array of all configurations
+
+        // --------------------------------------------------------------------
+        // Compress the configuration data - this shrinks down quite nicely...
+        // --------------------------------------------------------------------
+        int max_len = lzav_compress_bound_hi( sizeof(AllConfigs) );
+        int comp_len = lzav_compress_hi( &AllConfigs, COMPRESS_BUFFER, sizeof(AllConfigs), max_len );
+
+        fwrite(&comp_len,          sizeof(comp_len), 1, fp);
+        fwrite(COMPRESS_BUFFER,    comp_len,         1, fp);
+
         fclose(fp);
     } else DSPrint(4,0,0, (char*)"ERROR SAVING CONFIG FILE");
 
-    if (bShow) 
+    if (bShow)
     {
         WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
         DSPrint(4,0,0, (char*)"                        ");
     }
+
+    restoreCompressedMem();
 }
 
 void MapPlayer1(void)
@@ -900,7 +913,7 @@ void MapQAOP(void)
     myConfig.keymap[3]   = 59;    // P
     myConfig.keymap[4]   = 84;    // Space
     myConfig.keymap[5]   = 84;    // Space
-    myConfig.keymap[6]   = 92;    // Period 
+    myConfig.keymap[6]   = 92;    // Period
     myConfig.keymap[7]   = 92;    // Period
     myConfig.keymap[8]   = 81;    // NDS R      mapped to CTRL
     myConfig.keymap[9]   = 80;    // NDS L      mapped to SHIFT
@@ -992,9 +1005,9 @@ void SetDefaultGlobalConfig(void)
 void SetDefaultGameConfig(void)
 {
     myConfig.game_crc    = 0;    // No game in this slot yet
-    
+
     MapPlayer1();                // Default to Player 1 mapping
-    
+
     myConfig.frameSkip   = (isDSiMode() ? 0:1);         // For DSi we don't need FrameSkip, but for older DS-LITE we turn on light frameskip
     myConfig.frameBlend  = 0;                           // No frame blending needed for most games
     myConfig.msxMapper   = GUESS;                       // MSX mapper takes its best guess
@@ -1005,7 +1018,7 @@ void SetDefaultGameConfig(void)
     myConfig.vertSync    = (isDSiMode() ? 1:0);         // Default is Vertical Sync ON for DSi and OFF for DS-LITE
     myConfig.spinSpeed   = 0;                           // Default spin speed is normal
     myConfig.touchPad    = 0;                           // Nothing special about the touch-pad by default
-    myConfig.reserved0   = 1;                           // Repurpose (was CPU core)
+    myConfig.adamMemory  = 0;                           // Adam Extended Memory (default is full 1MB)
     myConfig.msxBios     = (bMSXBiosFound ? myGlobalConfig.defaultMSX:0); // Default to real MSX bios unless we can't find it
     myConfig.msxKey5     = 0;                           // Default key map for MSX key 5 (question mark)
     myConfig.dpad        = DPAD_NORMAL;                 // Normal DPAD use - mapped to joystick
@@ -1019,26 +1032,26 @@ void SetDefaultGameConfig(void)
     myConfig.gameSpeed   = 0;                           // Default is 100% game speed
     myConfig.keyMute     = 0;                           // Default is no mute (key click heard)
     myConfig.ein_ctc3    = 0;                           // Default is normal CTC3 handling for Einstein (no fudge factor)
-    myConfig.cvMode      = CV_MODE_NORMAL;              // Default is normal detect of Coleco Cart with possible SGM 
+    myConfig.cvMode      = CV_MODE_NORMAL;              // Default is normal detect of Coleco Cart with possible SGM
     myConfig.soundDriver = SND_DRV_NORMAL;              // Default is normal sound driver (not Wave Direct)
-    myConfig.reserved3   = 0;    
-    myConfig.reserved4   = 0;    
-    myConfig.reserved5   = 0;    
+    myConfig.reserved3   = 0;
+    myConfig.reserved4   = 0;
+    myConfig.reserved5   = 0;
     myConfig.reserved6   = 0;
     myConfig.reserved7   = 0;
     myConfig.reserved8   = 0;
     myConfig.reserved9   = 0xA5;    // So it's easy to spot on an "upgrade" and we can re-default it
     myConfig.reserved10  = 0xA5;    // So it's easy to spot on an "upgrade" and we can re-default it
-  
+
     // ----------------------------------------------------------------------------------
     // A few games don't want more than 4 max sprites (they pull tricks that rely on it)
     // ----------------------------------------------------------------------------------
     if (file_crc == 0xee530ad2) myConfig.maxSprites  = 1;  // QBiqs
     if (file_crc == 0x275c800e) myConfig.maxSprites  = 1;  // Antartic Adventure
-    if (file_crc == 0xa66e5ed1) myConfig.maxSprites  = 1;  // Antartic Adventure Prototype  
-    if (file_crc == 0x6af19e75) myConfig.maxSprites  = 1;  // Adventures in the Park    
-    if (file_crc == 0xbc8320a0) myConfig.maxSprites  = 1;  // Uridium 
-    
+    if (file_crc == 0xa66e5ed1) myConfig.maxSprites  = 1;  // Antartic Adventure Prototype
+    if (file_crc == 0x6af19e75) myConfig.maxSprites  = 1;  // Adventures in the Park
+    if (file_crc == 0xbc8320a0) myConfig.maxSprites  = 1;  // Uridium
+
     // ----------------------------------------------------------------------------------
     // Set some of the common games to use their proper Colecovision Graphical Overlays
     // ----------------------------------------------------------------------------------
@@ -1054,8 +1067,8 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xfd25adb3)  myConfig.overlay = OVL_WARGAMES;
     if (file_crc == 0x36478923)  myConfig.overlay = OVL_SPYHUNTER;
     if (file_crc == 0x261b7d56)  myConfig.overlay = OVL_WARROOM;
-    
-    
+
+
     // -------------------------------------------
     // Turbo needs the Driving Module
     // -------------------------------------------
@@ -1063,12 +1076,12 @@ void SetDefaultGameConfig(void)
     {
         myConfig.touchPad    = 1;    // Map the on-screen touch Keypad to P2 for Turbo
         myConfig.keymap[0]   = 20;   // NDS D-Pad mapped to P2 UP
-        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
+        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN
         myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
         myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
     }
-    
-    
+
+
     // -------------------------------------------
     // Destructor needs the Driving Module...
     // -------------------------------------------
@@ -1076,11 +1089,11 @@ void SetDefaultGameConfig(void)
     {
         myConfig.touchPad    = 1;    // Map the on-screen touch Keypad to P2 for Destructor
         myConfig.keymap[0]   = 20;   // NDS D-Pad mapped to P2 UP
-        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
+        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN
         myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
         myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
     }
-    
+
     // -------------------------------------------
     // Dukes of Hazzard needs the Driving Module
     // -------------------------------------------
@@ -1088,13 +1101,13 @@ void SetDefaultGameConfig(void)
     {
         myConfig.touchPad    = 1;    // Map the on-screen touch Keypad to P2 for Dukes of Hazzard
         myConfig.keymap[0]   = 20;   // NDS D-Pad mapped to P2 UP
-        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN 
+        myConfig.keymap[1]   = 21;   // NDS D-Pad mapped to P2 DOWN
         myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
         myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
         myConfig.keymap[6]   = 23;   // NDS X Button mapped to P2 RIGHT for gear shift
         myConfig.keymap[7]   = 22;   // NDS Y Button mapped to P2 LEFT for gear shift
     }
-    
+
     // -------------------------------------------
     // Slither needs Trackball Support (SpinX/Y)
     // -------------------------------------------
@@ -1105,7 +1118,7 @@ void SetDefaultGameConfig(void)
         myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
         myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
     }
-    
+
     // ---------------------------------------------------------
     // Victory needs Trackball Support (SpinX/Y) plus Buttons
     // ---------------------------------------------------------
@@ -1115,26 +1128,26 @@ void SetDefaultGameConfig(void)
         myConfig.keymap[1]   = 43;   // NDS D-Pad mapped to Spinner Y
         myConfig.keymap[2]   = 41;   // NDS D-Pad mapped to Spinner X
         myConfig.keymap[3]   = 40;   // NDS D-Pad mapped to Spinner X
-        
+
         myConfig.keymap[4]   = 4;    // NDS A Button mapped to P1 Button 1
-        myConfig.keymap[5]   = 5;    // NDS B Button mapped to P1 Button 2 
+        myConfig.keymap[5]   = 5;    // NDS B Button mapped to P1 Button 2
         myConfig.keymap[6]   = 24;   // NDS X Button mapped to P2 Button 1
-        myConfig.keymap[7]   = 25;   // NDS Y Button mapped to P2 Button 2         
+        myConfig.keymap[7]   = 25;   // NDS Y Button mapped to P2 Button 2
     }
-    
+
     if ((file_crc == 0xeec68527) ||     // SVI Crazy Teeth
         (file_crc == 0x1748aed7))       // SVI Burkensoft Game Pak 14 with MEGALONE
     {
         MapPlayer2();               // These games want P2 mapping...
     }
-    
+
 	// --------------------------------------------------------------------------
 	// There are a few games that don't want the SGM or ADAM... Check those now.
 	// --------------------------------------------------------------------------
 	if (file_crc == 0xef25af90) myConfig.cvMode = CV_MODE_NOSGM; // Super DK Prototype - ignore any SGM/Adam Writes (this disables SGM)
 	if (file_crc == 0xc2e7f0e0) myConfig.cvMode = CV_MODE_NOSGM; // Super DK JR Prototype - ignore any SGM/Adam Writes (this disables SGM)
-    if (file_crc == 0x846faf14) myConfig.cvMode = CV_MODE_NOSGM; // Cavern Fighter - ignore any SGM/Adam Writes (this disables SGM)    
-    
+    if (file_crc == 0x846faf14) myConfig.cvMode = CV_MODE_NOSGM; // Cavern Fighter - ignore any SGM/Adam Writes (this disables SGM)
+
     if (file_crc == 0x987491ce) myConfig.memWipe = 1;    // The Heist for Colecovision is touchy about RAM (known issue with game) so force clear
 
 	// --------------------------------------------------------------------------
@@ -1144,13 +1157,13 @@ void SetDefaultGameConfig(void)
     {
         myConfig.cvMode = CV_MODE_SUPERCART;
     }
-    
+
     // -----------------------------------------------------------
     // And two carts that are multicarts for the Colecovision...
     // -----------------------------------------------------------
     if (file_crc == 0x3f4ebe58) myConfig.cvMode = CV_MODE_31IN1;        // 31 in 1 multicart
     if (file_crc == 0xd821cad4) myConfig.cvMode = CV_MODE_31IN1;        // 63 in 1 multicart
-   
+
     // -----------------------------------------------------------------------------
     // A few carts want the 'Wave Direct' sound so they can handle digitized speech
     // -----------------------------------------------------------------------------
@@ -1159,26 +1172,26 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xd9207f30) myConfig.soundDriver = SND_DRV_WAVE;        // Wizard of Wor SGM
     if (file_crc == 0x91326103) myConfig.soundDriver = SND_DRV_WAVE;        // Bosconian SGM
     if (file_crc == 0x6328ffc1) myConfig.soundDriver = SND_DRV_WAVE;        // Berzerk (2022)
-    if (file_crc == 0xa7a8d25e) myConfig.soundDriver = SND_DRV_WAVE;        // Vanguard    
+    if (file_crc == 0xa7a8d25e) myConfig.soundDriver = SND_DRV_WAVE;        // Vanguard
     if (file_crc == 0x2e4c28e2) myConfig.soundDriver = SND_DRV_WAVE;        // Side Trak
-    if (file_crc == 0x69e3c673) myConfig.soundDriver = SND_DRV_WAVE;        // Jeepers Creepers - 30th Anniversary Edition    
-    
+    if (file_crc == 0x69e3c673) myConfig.soundDriver = SND_DRV_WAVE;        // Jeepers Creepers - 30th Anniversary Edition
+
     // -----------------------------------------------------------
-    // If we are DS-PHAT or DS-LITE running on slower CPU, we 
+    // If we are DS-PHAT or DS-LITE running on slower CPU, we
     // need to help the processor out a bit by turning off RAM
     // mirrors for the games that don't need them.
     // -----------------------------------------------------------
     if (!isDSiMode())
     {
         myConfig.mirrorRAM = COLECO_RAM_NO_MIRROR;      // For the older hardware, disable the mirror by default
-        
+
         // Except for these games that need the Mirror to work...
         if (file_crc == 0xf84622d2) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Super Cobra
         if (file_crc == 0xc48db4ce) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Jump Land
         if (file_crc == 0x644124f6) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Donkey Kong Junior - Super Game (needs mirrors for SGM detection to work)
         if (file_crc == 0xb3e62471) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Donkey Kong - Super Game (needs mirrors for SGM detection to work)
         if (file_crc == 0xeac71b43) myConfig.mirrorRAM = COLECO_RAM_NORMAL_MIRROR; // Subroc - Super Game (needs mirrors for SGM detection to work)
-        
+
         // ---------------------------------------------------------------------
         // Set the spinner configuration automatically for games that want it.
         // ---------------------------------------------------------------------
@@ -1187,7 +1200,7 @@ void SetDefaultGameConfig(void)
         if (file_crc == 0xbd6ab02a)                 myConfig.spinSpeed = 0;     // Turbo
         if (file_crc == 0xd0110137)                 myConfig.spinSpeed = 0;     // Front Line
         if (file_crc == 0x56c358a6)                 myConfig.spinSpeed = 0;     // Destructor
-        if (file_crc == 0x70142655)                 myConfig.spinSpeed = 0;     // Victory    
+        if (file_crc == 0x70142655)                 myConfig.spinSpeed = 0;     // Victory
     }
 
     // --------------------------------------------------------------------
@@ -1206,21 +1219,21 @@ void SetDefaultGameConfig(void)
     if (einstein_mode)                          myConfig.overlay = 1;  // Tatung Einstein defaults to full keyboard
     if (svi_mode)                               myConfig.overlay = 1;  // SVI default to full keyboard
     if (sordm5_mode)                            myConfig.overlay = 1;  // Sord M5 default to full keyboard
-    
+
     if (einstein_mode)                          myConfig.isPAL   = 1;  // Tatung Einstein defaults to PAL machine
     if (memotech_mode)                          myConfig.isPAL   = 1;  // Memotech defaults to PAL machine
     if (creativision_mode)                      myConfig.isPAL   = 1;  // Creativision defaults to PAL machine
     if (creativision_mode)                      myConfig.vertSync= 0;  // Creativision defaults to no vert sync
     if (pv1000_mode)                            myConfig.vertSync= 0;  // PV-1000 does not use vertical sync
-    
+
     if (pv1000_mode)                            myConfig.soundDriver= SND_DRV_WAVE;  // PV-1000 always wants direct wave sound
-    
+
     // ----------------------------------------------------
     // Some special BASIC carts that want full keyboards
     // ----------------------------------------------------
     if (file_crc == 0x69a92b72)                 myConfig.overlay = 1;  // PV-2000 BASIC uses keyboard
     if (file_crc == 0x4891613b)                 myConfig.overlay = 2;  // Hanimex Pencil II BASIC uses simplified keyboard
-    if (file_crc == 0x0c497839)                 myConfig.overlay = 2;  // Hanimex Pencil II BASIC [a] uses simplified keyboard    
+    if (file_crc == 0x0c497839)                 myConfig.overlay = 2;  // Hanimex Pencil II BASIC [a] uses simplified keyboard
 
     // ----------------------------------------------------------------------------------
     // Some CreatiVision games that want the new CV overlay keypad/keybaord
@@ -1237,7 +1250,7 @@ void SetDefaultGameConfig(void)
     if (file_crc == 0xadb11067)                 myConfig.overlay = 1; // DIAG DEMO
     if (file_crc == 0xc2ba6a99)                 myConfig.overlay = 1; // WERBENE
     if (file_crc == 0xf8383d33)                 myConfig.overlay = 1; // MUSIC MAKER
-    
+
     // ---------------------------------------------------------------
     // Check for CP/M disks which want memory and full keyboard.
     // Also check for T-DOS disks which want a faster cache flush.
@@ -1268,44 +1281,43 @@ void SetDefaultGameConfig(void)
             }
         }
     }
-    
+
     // ----------------------------------------------------------------------------
     // For these machines, we default to clearing interrupts only on VDP read...
     // ----------------------------------------------------------------------------
     if (msx_mode || einstein_mode || svi_mode || memotech_mode) myConfig.clearInt = CPU_CLEAR_INT_ON_VDP_READ;
-    
+
     // ---------------------------------------------------------------------------------
-    // A few games don't work well with the clearing of interrupts on VDP and run 
+    // A few games don't work well with the clearing of interrupts on VDP and run
     // better with auto-clear.  So we adjust those here...
     // ---------------------------------------------------------------------------------
     if (file_crc == 0xef339b82)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Ninja Kun - Bouken
     if (file_crc == 0xc9bcbe5a)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Ghostbusters
-    if (file_crc == 0x9814c355)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Ghostbusters    
+    if (file_crc == 0x9814c355)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Ghostbusters
     if (file_crc == 0x90530889)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Soul of a Robot
-    if (file_crc == 0x33221ad9)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Time Bandits    
-    if (file_crc == 0x9dbdd4bc)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX GP World (Sega)    
-    if (file_crc == 0x7820e86c)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX GP World (Sega)   
+    if (file_crc == 0x33221ad9)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Time Bandits
+    if (file_crc == 0x9dbdd4bc)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX GP World (Sega)
+    if (file_crc == 0x7820e86c)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX GP World (Sega)
     if (file_crc == 0x6e8bb5fa)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // MSX Seleniak - Mark II
     if (file_crc == 0xb8ca3108)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Quazzia
     if (file_crc == 0xbd285566)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Caves of Orb
     if (file_crc == 0xe30fb8f7)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Pac Manor Rescue
-    if (file_crc == 0xa2db030e)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Revenge of the Chamberoids    
+    if (file_crc == 0xa2db030e)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Revenge of the Chamberoids
     if (file_crc == 0x3c8500af)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Target Zone
     if (file_crc == 0xbde21de8)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Target Zone
-    if (file_crc == 0x8f9f902e)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Target Zone    
+    if (file_crc == 0x8f9f902e)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MTX Target Zone
     if (file_crc == 0xe3f495c4)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MAGROM
     if (file_crc == 0x98240ee9)                 myConfig.clearInt =  CPU_CLEAR_INT_AUTOMATICALLY; // Memotech MAGROM
-    
-    
+
     // ---------------------------------------------------------------------------------
     // A few of the ZX Spectrum ports actually use the MSX beeper for sound. Go figure!
     // ---------------------------------------------------------------------------------
     if (file_crc == 0x1b8873ca)                 myConfig.msxBeeper = 1;     // MSX Avenger uses beeper
-    if (file_crc == 0x111fc33b)                 myConfig.msxBeeper = 1;     // MSX Avenger uses beeper    
+    if (file_crc == 0x111fc33b)                 myConfig.msxBeeper = 1;     // MSX Avenger uses beeper
     if (file_crc == 0x690f9715)                 myConfig.msxBeeper = 1;     // MSX Batman (the movie) uses beeper
     if (file_crc == 0x3571f5d4)                 myConfig.msxBeeper = 1;     // MSX Master of the Universe uses beeper
     if (file_crc == 0x2142bd10)                 myConfig.msxBeeper = 1;     // MSX Future Knight uses beeper
-    
+
     if (file_crc == 0x094db111)                 myConfig.msxBeeper = 1;     // Einstein Druid uses beeper
     if (file_crc == 0x94073b5c)                 myConfig.msxBeeper = 1;     // Einstein Alien 8 uses beeper
 
@@ -1313,21 +1325,21 @@ void SetDefaultGameConfig(void)
     // A few games really want diagonal inputs enabled...
     // ------------------------------------------------------
     if (file_crc == 0x9d8fa05f)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO  needs diagonals
-    if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO2 needs diagonals    
-    if (file_crc == 0x154702b2)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGS2 needs diagonals    
-    if (file_crc == 0x71600e71)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO  needs diagonals    
-    if (file_crc == 0xf9934809)                 myConfig.dpad = DPAD_DIAGONALS;  // Reveal needs diagonals    
-    
+    if (file_crc == 0x9417ec36)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO2 needs diagonals
+    if (file_crc == 0x154702b2)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGS2 needs diagonals
+    if (file_crc == 0x71600e71)                 myConfig.dpad = DPAD_DIAGONALS;  // QOGO  needs diagonals
+    if (file_crc == 0xf9934809)                 myConfig.dpad = DPAD_DIAGONALS;  // Reveal needs diagonals
+
     // ----------------------------------------------------------
     // Sort out a handful of games that are clearly PAL or NTSC
     // ----------------------------------------------------------
     if (file_crc == 0x0084b239)                 myConfig.isPAL = 1;     // Survivors Multi-Cart is PAL
     if (file_crc == 0x76a3d2e2)                 myConfig.isPAL = 1;     // Survivors MEGA-Cart is PAL
-    
+
     if (file_crc == 0x07056b00)                 myConfig.isPAL   = 0;   // Memotech Pacman is an NTSC conversion
-    if (file_crc == 0x8b28101a)                 myConfig.isPAL   = 0;   // Memotech Pacman is an NTSC conversion    
+    if (file_crc == 0x8b28101a)                 myConfig.isPAL   = 0;   // Memotech Pacman is an NTSC conversion
     if (file_crc == 0x87b9b54e)                 myConfig.isPAL   = 0;   // Memotech PowerPac is an NTSC conversion
-    if (file_crc == 0xb8ed9f9e)                 myConfig.isPAL   = 0;   // Memotech PowerPac is an NTSC conversion    
+    if (file_crc == 0xb8ed9f9e)                 myConfig.isPAL   = 0;   // Memotech PowerPac is an NTSC conversion
     if (file_crc == 0xcac1f237)                 myConfig.isPAL   = 0;   // Memotech Telebunny is an NTSC conversion
     if (file_crc == 0xbd0e4513)                 myConfig.isPAL   = 0;   // Memotech Telebunny is an NTSC conversion
     if (file_crc == 0x24ae8ac0)                 myConfig.isPAL   = 0;   // Memotech Hustle Chummy is an NTSC conversion
@@ -1346,46 +1358,58 @@ void SetDefaultGameConfig(void)
         myConfig.cvMode = CV_MODE_ACTCART;  // Black Onyx is Activision PCB
         myConfig.cvEESize = EEPROM_256B;    // Black Onyx EEPROM is 256 bytes
     }
-    
+
     if (file_crc == 0x62dacf07)
     {
         myConfig.cvMode = CV_MODE_ACTCART;  // Boxxle is Activision PCB
         myConfig.cvEESize = EEPROM_32KB;    // Boxxle EEPROM is 32K bytes
     }
-    
+
     if (file_crc == 0x9f74b0e9)
     {
         myConfig.cvMode = CV_MODE_ACTCART;  // Jewel Panic is Activision PCB
         myConfig.cvEESize = EEPROM_256B;    // Jewel Panic EEPROM is 256 bytes
     }
-    
+
     // Acromage is also an Activision PCB and is thought to be 256 bytes of EE
-    
+
     if (file_crc == 0x767a1f38)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max
     if (file_crc == 0x011899cf)                 myConfig.maxSprites = 1;    // CreatiVision Sonic Invaders needs 4 sprites max (32K version)
-    
+
     if (file_crc == 0x532f61ba)                 myConfig.vertSync = 0;      // Colecovision Q-Bert will struggle with vertical sync on stage clear
     if (myConfig.isPAL)                         myConfig.vertSync = 0;      // If we are PAL, we can't sync to the DS 60Hz
     if (myConfig.gameSpeed)                     myConfig.vertSync = 0;      // If game speed isn't 100%, we can't sync to the DS 60Hz
 }
 
 // ----------------------------------------------------------
-// Load configuration into memory where we can use it. 
-// The configuration is stored in ColecoDS.DAT 
+// Load configuration into memory where we can use it.
+// The configuration is stored in ColecoDS.DAT
 // ----------------------------------------------------------
 void LoadConfig(void)
 {
+    allocateCompressedMem();
+
     // -----------------------------------------------------------------
     // Start with defaults.. if we find a match in our config database
     // below, we will fill in the config with data read from the file.
     // -----------------------------------------------------------------
     SetDefaultGameConfig();
-    
+
     if (ReadFileCarefully("/data/ColecoDS.DAT", (u8*)&myGlobalConfig, sizeof(myGlobalConfig), 0))  // Read Global Config
     {
-        ReadFileCarefully("/data/ColecoDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(myGlobalConfig)); // Read the full game array of configs
-        
-        // We auto-update rev 12 to rev 13 configuration
+        if (myGlobalConfig.compressed)
+        {
+            int comp_len = 0;
+            ReadFileCarefully("/data/ColecoDS.DAT", (u8*)&comp_len, sizeof(comp_len), sizeof(myGlobalConfig)); // Read the full game array of configs
+            ReadFileCarefully("/data/ColecoDS.DAT", (u8*)COMPRESS_BUFFER, sizeof(AllConfigs), sizeof(myGlobalConfig) + sizeof(comp_len)); // Read the full game array of configs
+            (void)lzav_decompress( COMPRESS_BUFFER, AllConfigs, comp_len, sizeof(AllConfigs) );
+        }
+        else // Old-format... not compressed
+        {
+            ReadFileCarefully("/data/ColecoDS.DAT", (u8*)&AllConfigs, sizeof(AllConfigs), sizeof(myGlobalConfig)); // Read the full game array of configs
+        }
+
+        // We auto-update rev 12 to rev 14 configuration (new fields)
         if (myGlobalConfig.config_ver == 0x0012)
         {
             for (u16 slot=0; slot<MAX_CONFIGS; slot++)
@@ -1393,6 +1417,14 @@ void LoadConfig(void)
                 AllConfigs[slot].cvMode   = CV_MODE_NORMAL;
                 AllConfigs[slot].cvEESize = EEPROM_NONE;
             }
+            myGlobalConfig.config_ver = CONFIG_VER;
+            SaveConfig(FALSE);
+        }
+
+        // We auto-update rev 13 to rev 14 configuration (more slots)
+        if (myGlobalConfig.config_ver == 0x0013)
+        {
+            // The new slots should already be zeroed out
             myGlobalConfig.config_ver = CONFIG_VER;
             SaveConfig(FALSE);
         }
@@ -1408,10 +1440,14 @@ void LoadConfig(void)
     else    // Not found... init the entire database...
     {
         memset(&AllConfigs, 0x00, sizeof(AllConfigs));
+
         SetDefaultGameConfig();
         SetDefaultGlobalConfig();
         SaveConfig(FALSE);
-    }}
+    }
+
+    restoreCompressedMem();
+}
 
 // -------------------------------------------------------------------------
 // Try to match our loaded game to a configuration my matching CRCs
@@ -1423,13 +1459,13 @@ void FindConfig(void)
     // below, we will fill in the config with data read from the file.
     // -----------------------------------------------------------------
     SetDefaultGameConfig();
-    
+
     for (u16 slot=0; slot<MAX_CONFIGS; slot++)
     {
         if (AllConfigs[slot].game_crc == file_crc)  // Got a match?!
         {
             memcpy(&myConfig, &AllConfigs[slot], sizeof(struct Config_t));
-            break;                           
+            break;
         }
     }
 }
@@ -1437,7 +1473,7 @@ void FindConfig(void)
 
 // ------------------------------------------------------------------------------
 // Options are handled here... we have a number of things the user can tweak
-// and these options are applied immediately. The user can also save off 
+// and these options are applied immediately. The user can also save off
 // their option choices for the currently running game into the NINTV-DS.DAT
 // configuration database. When games are loaded back up, NINTV-DS.DAT is read
 // to see if we have a match and the user settings can be restored for the game.
@@ -1459,13 +1495,13 @@ const struct options_t Option_Table[3][20] =
         {"FRAME BLEND",    {"OFF", "ON"},                                                                                                                                                       &myConfig.frameBlend, 2},
         {"VIDEO TYPE",     {"NTSC", "PAL"},                                                                                                                                                     &myConfig.isPAL,      2},
         {"MAX SPRITES",    {"32",  "4"},                                                                                                                                                        &myConfig.maxSprites, 2},
-        {"VERT SYNC",      {"OFF", "ON"},                                                                                                                                                       &myConfig.vertSync,   2},    
+        {"VERT SYNC",      {"OFF", "ON"},                                                                                                                                                       &myConfig.vertSync,   2},
         {"AUTO FIRE",      {"OFF", "B1 ONLY", "B2 ONLY", "BOTH"},                                                                                                                               &myConfig.autoFire,   4},
-        {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},    
-        {"JOYSTICK",       {"NORMAL", "DIAGONALS"},                                                                                                                                             &myConfig.dpad,       2},
+        {"TOUCH PAD",      {"PLAYER 1", "PLAYER 2"},                                                                                                                                            &myConfig.touchPad,   2},
+        {"JOYSTICK",       {"NORMAL", "DIAGONALS", "SLIDE-N-GLILDE"},                                                                                                                           &myConfig.dpad,       3},
         {"SPIN SPEED",     {"NORMAL", "FAST", "FASTEST", "SLOW", "SLOWEST", "OFF"},                                                                                                             &myConfig.spinSpeed,  6},
-        {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
-        {"MSX BIOS",       {"C-BIOS 64K", "MSX.ROM 64K", "CF2700.ROM 64K", "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7.ROM  8K"},                                 &myConfig.msxBios,    8},
+        {"SOUND DRIVER",   {"NORMAL", "WAVE DIRECT"},                                                                                                                                           &myConfig.soundDriver,2},
+        {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%", "80%"},                                                                                                                      &myConfig.gameSpeed,  6},
         {"RAM WIPE",       {"RANDOM", "CLEAR"},                                                                                                                                                 &myConfig.memWipe,    2},
         {"COLECO RAM",     {"NO MIRROR", "MIRRORED"},                                                                                                                                           &myConfig.mirrorRAM,  2},
         {"COLECO MODE",    {"NORMAL","FORCE ADAM","SGM DISABLE","ACTIVISION PCB","SUPERCART", "31 IN 1"},                                                                                       &myConfig.cvMode,     6},
@@ -1476,13 +1512,14 @@ const struct options_t Option_Table[3][20] =
     {
         {"CPU INT",        {"CLEAR ON VDP", "AUTO CLEAR"},                                                                                                                                      &myConfig.clearInt,   2},
         {"KEY CLICK",      {"ON", "OFF"},                                                                                                                                                       &myConfig.keyMute,    2},
-        {"SOUND DRIVER",   {"NORMAL", "WAVE DIRECT"},                                                                                                                                           &myConfig.soundDriver,2},
-        {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},        
+        {"MSX MAPPER",     {"GUESS","KONAMI 8K","ASCII 8K","KONAMI SCC","ASCII 16K","ZEMINA 8K","ZEMINA 16K","CROSSBLAIM","RESERVED","AT 0000H","AT 4000H","AT 8000H","64K LINEAR"},            &myConfig.msxMapper,  13},
+        {"MSX BIOS",       {"C-BIOS 64K", "MSX.ROM 64K", "CF2700.ROM 64K", "CX5M.ROM 32K", "HX-10.ROM 64K", "HB-10.ROM 16K", "FS1300.ROM 64K", "PV-7.ROM  8K"},                                 &myConfig.msxBios,    8},
+        {"MSX BEEPER",     {"OFF", "ON"},                                                                                                                                                       &myConfig.msxBeeper,  2},
         {"MSX KEY ?",      {"DEFAULT","SHIFT","CTRL","ESC","F4","F5","6","7","8","9","A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"},  &myConfig.msxKey5,    36},
-        {"GAME SPEED",     {"100%", "110%", "120%", "130%", "90%"},                                                                                                                             &myConfig.gameSpeed,  5},
         {"CVISION LOAD",   {"LEGACY (A/B)", "LINEAR", "32K BANKSWAP", "BIOS"},                                                                                                                  &myConfig.cvisionLoad,4},
-        {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)", 
+        {"EINSTEIN CTC",   {"NORMAL", "+1 (SLOWER)", "+2 (SLOWER)", "+3 (SLOWER)", "+5 (SLOWER)", "+10 (SLOWER)",
                             "+20 (SLOWER)", "-1 (FASTER)", "-2 (FASTER)", "-3 (FASTER)", "-5 (FASTER)", "-10 (FASTER)", "-20 (FASTER)"},                                                        &myConfig.ein_ctc3,  13},
+        {"ADAM EXTMEM",    {"MAX (1MB)", "512K", "256K", "128K", "64K"},                                                                                                                        &myConfig.adamMemory, 5},
         {"ADAMNET",        {"FAST", "SLOWER", "SLOWEST"},                                                                                                                                       &myConfig.adamnet,    3},
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                 1},
     },
@@ -1495,10 +1532,10 @@ const struct options_t Option_Table[3][20] =
         {"MSX CART USE",   {"JOYPAD OVERLAY", "KEYBOARD OVL"},                                                                                                                                  &myGlobalConfig.msxCartOverlay, 2},
         {"DEF SPRITES",    {"32", "4"},                                                                                                                                                         &myGlobalConfig.defSprites,     2},
         {"DISK / DDP",     {"SOUND ON", "SOUND OFF"},                                                                                                                                           &myGlobalConfig.diskSfxMute,    2},
-        {"BIOS DELAY",     {"NORMAL", "SHORT"},                                                                                                                                                 &myGlobalConfig.biosDelay,      2},        
-        
+        {"BIOS DELAY",     {"NORMAL", "SHORT"},                                                                                                                                                 &myGlobalConfig.biosDelay,      2},
+
         {"DEBUGGER",       {"OFF", "BAD OPS", "DEBUG", "FULL DEBUG"},                                                                                                                           &myGlobalConfig.debugger,       4},
-        
+
         {NULL,             {"",      ""},                                                                                                                                                       NULL,                           1},
     }
 };
@@ -1510,7 +1547,7 @@ const struct options_t Option_Table[3][20] =
 u8 display_options_list(bool bFullDisplay)
 {
     s16 len=0;
-    
+
     DSPrint(1,21, 0, (char *)"                              ");
     if (bFullDisplay)
     {
@@ -1522,14 +1559,14 @@ u8 display_options_list(bool bFullDisplay)
         }
 
         // Blank out rest of the screen... option menus are of different lengths...
-        for (int i=len; i<16; i++) 
+        for (int i=len; i<16; i++)
         {
             DSPrint(1,5+i, 0, (char *)"                               ");
         }
     }
 
     DSPrint(1,22, 0, (char *)"  B=EXIT, X=MORE, START=SAVE  ");
-    return len;    
+    return len;
 }
 
 
@@ -1545,7 +1582,7 @@ void colecoDSGameOptions(bool bIsGlobal)
     int last_keys_pressed = 999;
 
     option_table = (bIsGlobal ? 2:0);
-    
+
     idx=display_options_list(true);
     optionHighlighted = 0;
     while (keysCurrent() != 0)
@@ -1619,10 +1656,10 @@ void colecoDSGameOptions(bool bIsGlobal)
     {
         swiWaitForVBlank();
     }
-    
-    // We can't support PAL with Vertical Sync 
+
+    // We can't support PAL with Vertical Sync
     if (myConfig.isPAL) myConfig.vertSync = 0;
-    
+
     return;
 }
 
@@ -1630,7 +1667,7 @@ void colecoDSGameOptions(bool bIsGlobal)
 // Change Keymap Options for the current game
 //*****************************************************************************
 char szCha[34];
-void DisplayKeymapName(u32 uY) 
+void DisplayKeymapName(u32 uY)
 {
   sprintf(szCha," PAD UP    : %-17s",szKeyName[myConfig.keymap[0]]);
   DSPrint(1, 6,(uY==  6 ? 2 : 0),szCha);
@@ -1679,7 +1716,7 @@ void SwapKeymap(void)
 // Allow the user to change the key map for the current game and give them
 // the option of writing that keymap out to a configuration file for the game.
 // ------------------------------------------------------------------------------
-void colecoDSChangeKeymap(void) 
+void colecoDSChangeKeymap(void)
 {
   u32 ucHaut=0x00, ucBas=0x00,ucL=0x00,ucR=0x00,ucY= 6, bOK=0, bIndTch=0;
 
@@ -1688,7 +1725,7 @@ void colecoDSChangeKeymap(void)
   // ------------------------------------------------------
   unsigned short dmaVal =  *(bgGetMapPtr(bg0b) + 24*32);
   dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-    
+
   // --------------------------------------------------
   // Give instructions to the user...
   // --------------------------------------------------
@@ -1697,7 +1734,7 @@ void colecoDSChangeKeymap(void)
   DSPrint(1 ,21,0,("       X : SWAP KEYMAP TYPE  "));
   DSPrint(1 ,22,0,("   START : SAVE KEYMAP       "));
   DisplayKeymapName(ucY);
-  
+
   // -----------------------------------------------------------------------
   // Clear out any keys that might be pressed on the way in - make sure
   // NDS keys are not being pressed. This prevents the inadvertant A key
@@ -1706,7 +1743,7 @@ void colecoDSChangeKeymap(void)
   while ((keysCurrent() & (KEY_TOUCH | KEY_B | KEY_A | KEY_X | KEY_UP | KEY_DOWN))!=0)
       ;
   WAITVBL;
- 
+
   while (!bOK) {
     if (keysCurrent() & KEY_UP) {
       if (!ucHaut) {
@@ -1719,11 +1756,11 @@ void colecoDSChangeKeymap(void)
       else {
         ucHaut++;
         if (ucHaut>10) ucHaut=0;
-      } 
+      }
     }
     else {
       ucHaut = 0;
-    }  
+    }
     if (keysCurrent() & KEY_DOWN) {
       if (!ucBas) {
         DisplayKeymapName(32);
@@ -1735,23 +1772,23 @@ void colecoDSChangeKeymap(void)
       else {
         ucBas++;
         if (ucBas>10) ucBas=0;
-      } 
+      }
     }
     else {
       ucBas = 0;
-    }  
-      
-    if (keysCurrent() & KEY_START) 
+    }
+
+    if (keysCurrent() & KEY_START)
     {
         SaveConfig(true); // Save options
     }
-      
-    if (keysCurrent() & KEY_B) 
+
+    if (keysCurrent() & KEY_B)
     {
       bOK = 1;  // Exit menu
     }
-      
-    if (keysCurrent() & KEY_LEFT) 
+
+    if (keysCurrent() & KEY_LEFT)
     {
         if (ucL == 0) {
           bIndTch = (bIndTch == 0 ? (MAX_KEY_OPTIONS-1) : bIndTch-1);
@@ -1764,21 +1801,21 @@ void colecoDSChangeKeymap(void)
           if (ucL > 7) ucL = 0;
         }
     }
-    else 
+    else
     {
         ucL = 0;
     }
-      
-    if (keysCurrent() & KEY_RIGHT) 
+
+    if (keysCurrent() & KEY_RIGHT)
     {
-        if (ucR == 0) 
+        if (ucR == 0)
         {
           bIndTch = (bIndTch == (MAX_KEY_OPTIONS-1) ? 0 : bIndTch+1);
           ucR=1;
           myConfig.keymap[ucY-6] = bIndTch;
           DisplayKeymapName(ucY);
         }
-        else 
+        else
         {
           ucR++;
           if (ucR > 7) ucR = 0;
@@ -1788,14 +1825,14 @@ void colecoDSChangeKeymap(void)
     {
         ucR=0;
     }
-      
+
     // Swap Player 1 and Player 2 keymap
     if (keysCurrent() & KEY_X)
     {
         SwapKeymap();
         bIndTch = myConfig.keymap[ucY-6];
         DisplayKeymapName(ucY);
-        while (keysCurrent() & KEY_X) 
+        while (keysCurrent() & KEY_X)
             ;
         WAITVBL
     }
@@ -1813,7 +1850,7 @@ void DisplayFileName(void)
 {
     sprintf(szName, "[%d K] [CRC: %08X]", file_size/1024, file_crc);
     DSPrint((16 - (strlen(szName)/2)),19,0,szName);
-    
+
     sprintf(szName,"%s",gpFic[ucGameChoice].szName);
     for (u8 i=strlen(szName)-1; i>0; i--) if (szName[i] == '.') {szName[i]=0;break;}
     if (strlen(szName)>30) szName[30]='\0';
@@ -1830,7 +1867,7 @@ void DisplayFileName(void)
 //*****************************************************************************
 // Display colecoDS info screen and change options "main menu"
 //*****************************************************************************
-void dispInfoOptions(u32 uY) 
+void dispInfoOptions(u32 uY)
 {
     DSPrint(2, 7,(uY== 7 ? 2 : 0),("         LOAD  GAME         "));
     DSPrint(2, 9,(uY== 9 ? 2 : 0),("         PLAY  GAME         "));
@@ -1845,11 +1882,11 @@ void dispInfoOptions(u32 uY)
 // --------------------------------------------------------------------
 void NoGameSelected(u32 ucY)
 {
-    unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32); 
+    unsigned short dmaVal = *(bgGetMapPtr(bg1b)+24*32);
     while (keysCurrent()  & (KEY_START | KEY_A));
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
-    DSPrint(5,10,0,("   NO GAME SELECTED   ")); 
-    DSPrint(5,12,0,("  PLEASE, USE OPTION  ")); 
+    DSPrint(5,10,0,("   NO GAME SELECTED   "));
+    DSPrint(5,12,0,("  PLEASE, USE OPTION  "));
     DSPrint(5,14,0,("      LOAD  GAME      "));
     while (!(keysCurrent()  & (KEY_START | KEY_A)));
     while (keysCurrent()  & (KEY_START | KEY_A));
@@ -1870,7 +1907,7 @@ void CheckRomHeaders(char *szGame)
     //  6 DEFW device; pointer to expansion device handler, 0 if no such handler
     //  8 DEFW basic ; pointer to the start of a tokenized basicprogram, 0 if no basicprogram
     // ------------------------------------------------------------------------------------------
-    
+
     // ---------------------------------------------------------------------
     // Do some auto-detection for game ROM. MSX games have 'AB' in their
     // header and we also want to track the INIT address for those ROMs
@@ -1885,14 +1922,14 @@ void CheckRomHeaders(char *szGame)
         if (msx_init == 0x0000) msx_basic = ROM_Memory[8] | (ROM_Memory[8]<<8);
         if (msx_init == 0x0000)   // If 0, check for 2nd header... this might be a dummy
         {
-            if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
+            if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))
             {
                 msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
                 if (msx_init == 0x0000) msx_basic = ROM_Memory[0x4008] | (ROM_Memory[0x4009]<<8);
             }
         }
     }
-    else if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))  
+    else if ((ROM_Memory[0x4000] == 'A') && (ROM_Memory[0x4001] == 'B'))
     {
         msx_mode = 1;      // MSX roms start with AB (might be in bank 1)
         msx_init = ROM_Memory[0x4002] | (ROM_Memory[0x4003]<<8);
@@ -1907,11 +1944,11 @@ void CheckRomHeaders(char *szGame)
 
 
 void ReadFileCRCAndConfig(void)
-{    
+{
     u8 checkCOM = 0;
     u8 checkROM = 0;
     u8 cas_load = 0;
-    
+
     // Reset the mode related vars...
     sg1000_mode = 0;
     pv1000_mode = 0;
@@ -1934,7 +1971,7 @@ void ReadFileCRCAndConfig(void)
 
     // Grab the all-important file CRC - this also loads the file into ROM_Memory[]
     getfile_crc(gpFic[ucGameChoice].szName);
-    
+
     if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 2;    // SC-3000 mode
@@ -1974,9 +2011,9 @@ void ReadFileCRCAndConfig(void)
     if (strstr(gpFic[ucGameChoice].szName, ".ROM") != 0) checkROM = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".col") != 0) checkROM = 1;  // Coleco types - check if MSX or SVI
     if (strstr(gpFic[ucGameChoice].szName, ".COL") != 0) checkROM = 1;  // Coleco types - check if MSX or SVI
-    
+
     if (checkROM) CheckRomHeaders(gpFic[ucGameChoice].szName);   // See if we've got an MSX or SVI cart - this may set msx_mode=1 or svi_mode=2
-    
+
     if (checkCOM)   // COM is usually Einstein... but we also support it for MTX for some games
     {
         if ( (file_crc == 0xb35a8beb)  ||  // SGM2M - alt
@@ -2017,7 +2054,7 @@ void ReadFileCRCAndConfig(void)
             einstein_mode = 1;  // Tatung Einstein .COM file
         }
     }
-    
+
     // --------------------------------------------------------------------------
     // If a .cas file is picked, we need to figure out what machine it's for...
     // --------------------------------------------------------------------------
@@ -2033,9 +2070,9 @@ void ReadFileCRCAndConfig(void)
         }
         if (svi_mode == 0) msx_mode = 2;        // if not SVI, assume MSX
     }
-    
+
     // -----------------------------------------------------------------------
-    // If Adam Mode, we need to see if the .ddp or .dsk is a CP/M game so 
+    // If Adam Mode, we need to see if the .ddp or .dsk is a CP/M game so
     // we check now in the ROM_Memory[] buffer previously read-in.
     // -----------------------------------------------------------------------
     if (adam_mode)
@@ -2043,17 +2080,17 @@ void ReadFileCRCAndConfig(void)
         if (adam_mode == 3) // If we are a .adm file, we need to look at the first byte to tell us if we are perhaps an ADAM expansion ROM
         {
             if (ROM_Memory[0] == 0x66) adam_mode = 2; // 0x6699 at the start indicates we are an ADAM expansion ROM. Otherwise assume normal ADAM cart
-        }        
+        }
     }
-    
+
     FindConfig();    // Try to find keymap and config for this file...
-    
+
     // --------------------------------------------
     // A few special cases for the CreatiVision
     // --------------------------------------------
     if (file_crc == 0x8375203e) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
     if (file_crc == 0x77afd38b) myConfig.cvisionLoad = 3;  // Special load of 16K CSL BIOS at C000-FFFF
-    
+
     // ------------------------------------------------------------------------
     // And if the cart type is specifically set to ADAM, force that driver in.
     // ------------------------------------------------------------------------
@@ -2070,7 +2107,7 @@ u32 ReadFileCarefully(char *filename, u8 *buf, u32 buf_size, u32 buf_offset)
     u32 crc1 = 0;
     u32 crc2 = 1;
     u32 fileSize = 0;
-    
+
     // --------------------------------------------------------------------------------------------
     // I've seen some rare issues with reading files from the SD card on a DSi so we're doing
     // this slow and careful - we will read twice and ensure that we get the same CRC both times.
@@ -2099,17 +2136,17 @@ u32 ReadFileCarefully(char *filename, u8 *buf, u32 buf_size, u32 buf_offset)
             fclose(file2);
         }
    } while (crc1 != crc2); // If the file couldn't be read, file_size will be 0 and the CRCs will both be 0xFFFFFFFF
-   
+
    return fileSize;
 }
 
 // --------------------------------------------------------------------
 // Let the user select new options for the currently loaded game...
 // --------------------------------------------------------------------
-void colecoDSChangeOptions(void) 
+void colecoDSChangeOptions(void)
 {
   u16 ucHaut=0x00, ucBas=0x00,ucA=0x00,ucY= 7, bOK=0;
-  
+
   // Upper Screen Background
   videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG1_ACTIVE | DISPLAY_SPR_1D_LAYOUT | DISPLAY_SPR_ACTIVE);
   vramSetBankA(VRAM_A_MAIN_BG);
@@ -2128,12 +2165,12 @@ void colecoDSChangeOptions(void)
   BottomScreenOptions();
 
   dispInfoOptions(ucY);
-  
-  if (ucGameChoice != -1) 
-  { 
+
+  if (ucGameChoice != -1)
+  {
       DisplayFileName();
   }
-  
+
   while (!bOK) {
     if (keysCurrent()  & KEY_UP) {
       if (!ucHaut) {
@@ -2145,11 +2182,11 @@ void colecoDSChangeOptions(void)
       else {
         ucHaut++;
         if (ucHaut>10) ucHaut=0;
-      } 
+      }
     }
     else {
       ucHaut = 0;
-    }  
+    }
     if (keysCurrent()  & KEY_DOWN) {
       if (!ucBas) {
         dispInfoOptions(32);
@@ -2160,11 +2197,11 @@ void colecoDSChangeOptions(void)
       else {
         ucBas++;
         if (ucBas>10) ucBas=0;
-      } 
+      }
     }
     else {
       ucBas = 0;
-    }  
+    }
     if (keysCurrent()  & KEY_A) {
       if (!ucA) {
         ucA = 0x01;
@@ -2172,8 +2209,8 @@ void colecoDSChangeOptions(void)
           case 7 :      // LOAD GAME
             colecoDSLoadFile();
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*19*2);
-            if (ucGameChoice != -1) 
-            { 
+            if (ucGameChoice != -1)
+            {
                 ReadFileCRCAndConfig(); // Get CRC32 of the file and read the config/keys
                 DisplayFileName();      // And put up the filename on the bottom screen
             }
@@ -2181,49 +2218,49 @@ void colecoDSChangeOptions(void)
             dispInfoOptions(ucY);
             break;
           case 9 :     // PLAY GAME
-            if (ucGameChoice != -1) 
-            { 
+            if (ucGameChoice != -1)
+            {
                 bOK = 1;
             }
-            else 
-            {    
+            else
+            {
                 NoGameSelected(ucY);
             }
             break;
           case 11 :     // REDEFINE KEYS
-            if (ucGameChoice != -1) 
-            { 
+            if (ucGameChoice != -1)
+            {
                 colecoDSChangeKeymap();
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
                 dispInfoOptions(ucY);
                 DisplayFileName();
             }
-            else 
-            { 
+            else
+            {
                 NoGameSelected(ucY);
             }
             break;
           case 13 :     // GAME OPTIONS
-            if (ucGameChoice != -1) 
-            { 
+            if (ucGameChoice != -1)
+            {
                 colecoDSGameOptions(false);
                 dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
                 dispInfoOptions(ucY);
                 DisplayFileName();
             }
-            else 
-            {    
+            else
+            {
                NoGameSelected(ucY);
             }
-            break;                
-                
+            break;
+
           case 15 :     // GLOBAL OPTIONS
             colecoDSGameOptions(true);
             dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
             dispInfoOptions(ucY);
             DisplayFileName();
             break;
-                
+
           case 17 :     // QUIT EMULATOR
             exit(1);
             break;
@@ -2233,11 +2270,11 @@ void colecoDSChangeOptions(void)
     else
       ucA = 0x00;
     if (keysCurrent()  & KEY_START) {
-      if (ucGameChoice != -1) 
+      if (ucGameChoice != -1)
       {
         bOK = 1;
       }
-      else 
+      else
       {
         NoGameSelected(ucY);
       }
@@ -2251,20 +2288,20 @@ void colecoDSChangeOptions(void)
 //*****************************************************************************
 // Displays a message on the screen
 //*****************************************************************************
-void DSPrint(int iX,int iY,int iScr,char *szMessage) 
+void DSPrint(int iX,int iY,int iScr,char *szMessage)
 {
   u16 *pusScreen,*pusMap;
   u16 usCharac;
   char *pTrTxt=szMessage;
-  
+
   pusScreen=(u16*) (iScr != 1 ? bgGetMapPtr(bg1b) : bgGetMapPtr(bg1))+iX+(iY<<5);
   pusMap=(u16*) (iScr != 1 ? (iScr == 6 ? bgGetMapPtr(bg0b)+24*32 : (iScr == 0 ? bgGetMapPtr(bg0b)+24*32 : bgGetMapPtr(bg0b)+26*32 )) : bgGetMapPtr(bg0)+51*32 );
-    
+
   while((*pTrTxt)!='\0' )
   {
     char ch = *pTrTxt++;
     if (ch >= 'a' && ch <= 'z') ch -= 32;   // Faster than strcpy/strtoupper
-    
+
     if (((ch)<' ') || ((ch)>'_'))
       usCharac=*(pusMap);                   // Will render as a vertical bar
     else if((ch)<'@')

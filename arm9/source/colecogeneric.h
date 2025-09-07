@@ -13,19 +13,20 @@
 
 #define MAX_ROMS                    1500
 #define MAX_ROM_NAME                160
-            
-#define MAX_CONFIGS                 1950
-#define CONFIG_VER                  0x0013
-            
+
+#define MAX_CONFIGS                 2300
+#define CONFIG_VER                  0x0014
+
 #define COLROM                      0x01
 #define DIRECT                      0x02
-            
+
 #define ID_SHM_CANCEL               0x00
 #define ID_SHM_YES                  0x01
 #define ID_SHM_NO                   0x02
-            
+
 #define DPAD_NORMAL                 0
 #define DPAD_DIAGONALS              1
+#define DPAD_SLIDE_N_GLIDE          2
 
 #define CPU_CLEAR_INT_ON_VDP_READ   0
 #define CPU_CLEAR_INT_AUTOMATICALLY 1
@@ -88,7 +89,7 @@ struct __attribute__((__packed__)) GlobalConfig_t
     u8  global_11;
     u8  global_12;
     u8  global_13;
-    u8  global_14;
+    u8  compressed;
     u8  debugger;
     u32 config_checksum;
 };
@@ -107,7 +108,7 @@ struct __attribute__((__packed__)) Config_t
     u8  vertSync;
     u8  spinSpeed;
     u8  touchPad;
-    u8  reserved0;
+    u8  adamMemory;
     u8  msxBios;
     u8  msxKey5;
     u8  dpad;
@@ -132,7 +133,8 @@ struct __attribute__((__packed__)) Config_t
     u8  reserved9;
     u8  reserved10;
 };
- 
+
+#define COMPRESS_BUFFER ((u8 *)(ROM_Memory + (896*1024)))   // We use the back-end 128K of the ROM buffer for compression
 
 extern struct Config_t       myConfig;
 extern struct GlobalConfig_t myGlobalConfig;
@@ -142,10 +144,13 @@ extern u8 last_special_key_dampen;
 extern u16 msx_init;
 extern u16 msx_basic;
 
-extern FICcoleco gpFic[MAX_ROMS];  
+extern FICcoleco gpFic[MAX_ROMS];
 extern int uNbRoms;
 extern int ucGameAct;
 extern int ucGameChoice;
+
+extern void allocateCompressedMem(void);
+extern void restoreCompressedMem(void);
 
 extern void LoadConfig(void);
 extern u8 showMessage(char *szCh1, char *szCh2);
@@ -155,7 +160,7 @@ extern void colecoDSFindFiles(void);
 extern void colecoDSChangeOptions(void);
 extern void DSPrint(int iX,int iY,int iScr,char *szMessage);
 extern unsigned int crc32 (unsigned int crc, const unsigned char *buf, unsigned int len);
-
+extern void colecoDSChangeKeymap(void);
 extern void FadeToColor(unsigned char ucSens, unsigned short ucBG, unsigned char ucScr, unsigned char valEnd, unsigned char uWait);
 extern u8 colecoDSLoadFile(void);
 extern void DisplayFileName(void);

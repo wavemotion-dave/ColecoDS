@@ -92,6 +92,9 @@ u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick 
 // Hand Tweaked Speeds:                                  Norm   Fast   Fastest  Slow   Slowest
 u16 SPINNER_SPEED[] __attribute__((section(".dtcm"))) = {120,   75,    50,      200,   300};
 
+// We support 4 different ADAM extended memory configurations... 1MB, 512K, 256K and 64K
+u8 ADAM_EXTMEM_MASK[] = {0x0F, 0x07, 0x03, 0x01, 0x00};
+
 // ------------------------------------------------------------
 // Some global vars to track what kind of cart/rom we have...
 // ------------------------------------------------------------
@@ -1216,7 +1219,7 @@ ITCM_CODE void cpu_writeport16(register unsigned short Port,register unsigned ch
       {
           if (isDSiMode())
           {
-              Port42 = Value & 0x0F;        // 1MB worth of banks (16 banks of 64K)
+              Port42 = Value & ADAM_EXTMEM_MASK[myConfig.adamMemory];   // Up to 1MB worth of banks (16 banks of 64K)
               if (adam_mode) SetupAdam(false);
           }
           else Port42 = 0x00; // No extra banking for DS-Lite/Phat (just the stock 64K plus 64K expansion)
