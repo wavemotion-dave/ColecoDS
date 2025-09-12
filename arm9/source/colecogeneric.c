@@ -1401,7 +1401,7 @@ void LoadConfig(void)
         {
             int comp_len = 0;
             ReadFileCarefully("/data/ColecoDS.DAT", (u8*)&comp_len, sizeof(comp_len), sizeof(myGlobalConfig)); // Read the full game array of configs
-            ReadFileCarefully("/data/ColecoDS.DAT", (u8*)COMPRESS_BUFFER, sizeof(AllConfigs), sizeof(myGlobalConfig) + sizeof(comp_len)); // Read the full game array of configs
+            ReadFileCarefully("/data/ColecoDS.DAT", (u8*)COMPRESS_BUFFER, comp_len, sizeof(myGlobalConfig) + sizeof(comp_len)); // Read the full game array of configs
             (void)lzav_decompress( COMPRESS_BUFFER, AllConfigs, comp_len, sizeof(AllConfigs) );
         }
         else // Old-format... not compressed
@@ -1734,6 +1734,8 @@ void colecoDSChangeKeymap(void)
   DSPrint(1 ,21,0,("       X : SWAP KEYMAP TYPE  "));
   DSPrint(1 ,22,0,("   START : SAVE KEYMAP       "));
   DisplayKeymapName(ucY);
+  
+  bIndTch = myConfig.keymap[0];
 
   // -----------------------------------------------------------------------
   // Clear out any keys that might be pressed on the way in - make sure
@@ -1888,6 +1890,7 @@ void NoGameSelected(u32 ucY)
     DSPrint(5,10,0,("   NO GAME SELECTED   "));
     DSPrint(5,12,0,("  PLEASE, USE OPTION  "));
     DSPrint(5,14,0,("      LOAD  GAME      "));
+    WAITVBL;WAITVBL;WAITVBL;WAITVBL;WAITVBL;
     while (!(keysCurrent()  & (KEY_START | KEY_A)));
     while (keysCurrent()  & (KEY_START | KEY_A));
     dmaFillWords(dmaVal | (dmaVal<<16),(void*) bgGetMapPtr(bg1b)+5*32*2,32*18*2);
@@ -1972,21 +1975,21 @@ void ReadFileCRCAndConfig(void)
     // Grab the all-important file CRC - this also loads the file into ROM_Memory[]
     getfile_crc(gpFic[ucGameChoice].szName);
 
-    if (strstr(gpFic[ucGameChoice].szName, ".sg") != 0) sg1000_mode = 1;    // SG-1000 mode
-    if (strstr(gpFic[ucGameChoice].szName, ".SG") != 0) sg1000_mode = 1;    // SG-1000 mode
-    if (strstr(gpFic[ucGameChoice].szName, ".sc") != 0) sg1000_mode = 2;    // SC-3000 mode
-    if (strstr(gpFic[ucGameChoice].szName, ".SC") != 0) sg1000_mode = 2;    // SC-3000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".sg")  != 0) sg1000_mode = 1;   // SG-1000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".SG")  != 0) sg1000_mode = 1;   // SG-1000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".sc")  != 0) sg1000_mode = 2;   // SC-3000 mode
+    if (strstr(gpFic[ucGameChoice].szName, ".SC")  != 0) sg1000_mode = 2;   // SC-3000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".pv1") != 0) pv1000_mode = 1;   // PV-1000 mode
     if (strstr(gpFic[ucGameChoice].szName, ".PV1") != 0) pv1000_mode = 1;   // PV-1000 mode
     if (!pv1000_mode)
     {
-      if (strstr(gpFic[ucGameChoice].szName, ".pv") != 0) pv2000_mode = 2;    // PV-2000 mode
-      if (strstr(gpFic[ucGameChoice].szName, ".PV") != 0) pv2000_mode = 2;    // PV-2000 mode
+      if (strstr(gpFic[ucGameChoice].szName, ".pv") != 0) pv2000_mode = 2;  // PV-2000 mode
+      if (strstr(gpFic[ucGameChoice].szName, ".PV") != 0) pv2000_mode = 2;  // PV-2000 mode
     }
-    if (strstr(gpFic[ucGameChoice].szName, ".CV") != 0) creativision_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".cv") != 0) creativision_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".m5") != 0) sordm5_mode = 1;
-    if (strstr(gpFic[ucGameChoice].szName, ".M5") != 0) sordm5_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".CV")  != 0) creativision_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".cv")  != 0) creativision_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".m5")  != 0) sordm5_mode = 1;
+    if (strstr(gpFic[ucGameChoice].szName, ".M5")  != 0) sordm5_mode = 1;
     if (strstr(gpFic[ucGameChoice].szName, ".mtx") != 0) memotech_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".MTX") != 0) memotech_mode = 2;
     if (strstr(gpFic[ucGameChoice].szName, ".run") != 0) memotech_mode = 1;

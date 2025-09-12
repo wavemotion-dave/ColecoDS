@@ -92,7 +92,7 @@ u32 JoyState       __attribute__((section(".dtcm"))) = 0;           // Joystick 
 // Hand Tweaked Speeds:                                  Norm   Fast   Fastest  Slow   Slowest
 u16 SPINNER_SPEED[] __attribute__((section(".dtcm"))) = {120,   75,    50,      200,   300};
 
-// We support 4 different ADAM extended memory configurations... 1MB, 512K, 256K and 64K
+// We support 5 different ADAM extended memory configurations... 1MB, 512K, 256K, 128K and 64K
 u8 ADAM_EXTMEM_MASK[] = {0x0F, 0x07, 0x03, 0x01, 0x00};
 
 // ------------------------------------------------------------
@@ -107,11 +107,10 @@ u8 b31_in_1       __attribute__((section(".dtcm"))) = 0;      // 31 in 1 carts a
 u32 file_crc __attribute__((section(".dtcm")))  = 0x00000000;  // Our global file CRC32 to uniquiely identify this game
 
 // -----------------------------------------------------------
-// The two master sound chips... both are mapped to SN sound.
+// The two master sound chips... SN for Coleco and AY for MSX
 // -----------------------------------------------------------
 SN76496 mySN   __attribute__((section(".dtcm")));
 AY38910 myAY   __attribute__((section(".dtcm")));
-
 
 // ------------------------------------------------------------------------
 // The Coleco (with or without SGM) and the ADAM have some key ports that
@@ -867,7 +866,6 @@ u8 loadrom(const char *filename, u8 * ptr)
       
       // Turn on the optimized Colecovision CPU driver for carts less than 32K by default
       bSuperSimplifiedMemory = ((!bActivisionPCB && !bSuperGameCart && !adam_mode && (romSize <= (32*1024))) ? 1:0);
-      
     
       // And then selectively turn on the optimized driver for some of the larger games...       
       if (file_crc == 0x851efe57) bSuperSimplifiedMemory = 1;  // 1942
