@@ -70,11 +70,12 @@ ITCM_CODE void MegaCartBankSwap(u8 bank)
                 {
                     *dest++ = *src++; *dest++ = *src++; *dest++ = *src++; *dest++ = *src++;
                     *dest++ = *src++; *dest++ = *src++; *dest++ = *src++; *dest++ = *src++;
-                }
-                
+                }                
             }
             else
+            {
                 memcpy(RAM_Memory + 0xC000, ROM_Memory + ((u32)bank * (u32)0x4000), 0x4000);
+            }
             last_mega_bank = bank;
         }
     }

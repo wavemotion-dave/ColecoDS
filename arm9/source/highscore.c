@@ -582,7 +582,6 @@ void highscore_options(u32 crc)
             // Clear the entire game of scores...
             if ((keysCurrent() & KEY_L) && (keysCurrent() & KEY_R))
             {
-                highscore.crc = 0x00000000;
                 highscore.options = 0x0000;
                 strcpy(highscore.notes, "          ");
                 strcpy(notes, "          ");

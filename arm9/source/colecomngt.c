@@ -661,6 +661,10 @@ u8 loadrom(const char *filename, u8 * ptr)
 
         romBankMask = 0x00;         // No bank mask until proven otherwise
         mapperMask = 0x00;          // No MSX mapper mask
+  
+        // Cache the first 256K of the ROM into fast VRAM for possible use...
+        u8 *fastROM = (u8*) (0x06860000);
+        memcpy(fastROM, ROM_Memory, (256 * 1024));
 
         // The SordM5 has one game that needs patching to run...
         if (sordm5_mode)
@@ -807,7 +811,7 @@ u8 loadrom(const char *filename, u8 * ptr)
             else if (myConfig.cvMode == CV_MODE_SUPERCART) // These are the Super Game Cart types... of varying EE sizes
             {
 // SGC Removed - and without the full supercart.c even enabling this and rebuilding won't work                
-#if 0                
+#if 0
                 bSuperGameCart = 1;
                 SuperGameCartSetup(romSize);
                 memcpy(ptr, ROM_Memory, 0x2000);
@@ -816,15 +820,17 @@ u8 loadrom(const char *filename, u8 * ptr)
             else    // We will assume Megacart for everything else...
             {
                 bMagicMegaCart = 1;
-                memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
-                MegaCartBankSwap(0);                              // Copy Bank 0 into RAM memory in case we're using the optimized driver
-                MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
 
                 if      (romSize <= (64  * 1024))  romBankMask = 0x03;    // 64K   Megacart (unlikely this exists in Hardware but it's supported)
                 else if (romSize <= (128 * 1024))  romBankMask = 0x07;    // 128K  Megacart
                 else if (romSize <= (256 * 1024))  romBankMask = 0x0F;    // 256K  Megacart
                 else if (romSize <= (512 * 1024))  romBankMask = 0x1F;    // 512K  Megacart
                 else                               romBankMask = 0x3F;    // 1024K Megacart - this is as big as any MC board supports given that the hotspots are FFC0 to FFFF
+                
+                memcpy(ptr, ROM_Memory+(romSize-0x4000), 0x4000); // For MegaCart, we map highest 16K bank into fixed ROM
+                MegaCartBankSwap(0);                              // Copy Bank 0 into base memory in case we're using the optimized driver
+                last_mega_bank = 199;                             // Force the swap below...
+                MegaCartBankSwitch(0);                            // The initial 16K "switchable" bank is bank 0 (based on a post from Nanochess in AA forums)
             }
         }
         bOK = 1;
@@ -861,9 +867,6 @@ u8 loadrom(const char *filename, u8 * ptr)
   // -------------------------------------------------------------
   if (!isDSiMode() && (machine_mode == MODE_COLECO))
   {
-      u8 *fastROM = (u8*) (0x06860000);
-      memcpy(fastROM, ROM_Memory, (256 * 1024));
-      
       // Turn on the optimized Colecovision CPU driver for carts less than 32K by default
       bSuperSimplifiedMemory = ((!bActivisionPCB && !bSuperGameCart && !adam_mode && (romSize <= (32*1024))) ? 1:0);
     
