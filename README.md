@@ -3,6 +3,9 @@ ColecoDS - A Colecovision and ADAM Emulator for the DS/DSi
 
 _**Your Vision Is Our Vision...  COLECOVISION**_
 
+ColecoDS is free to download and use... but if you have found anything I've done to
+be useful, buy me a virtual coffee here:  https://ko-fi.com/wavemotiondave
+
 To run requires a coleco.rom BIOS to 
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
