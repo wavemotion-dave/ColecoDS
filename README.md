@@ -3,9 +3,6 @@ ColecoDS - A Colecovision and ADAM Emulator for the DS/DSi
 
 _**Your Vision Is Our Vision...  COLECOVISION**_
 
-ColecoDS is free to download and use... but if you have found anything I've done to
-be useful, buy me a virtual coffee here:  https://ko-fi.com/wavemotiondave
-
 To run requires a coleco.rom BIOS to 
 be in the same directory as the emulator
 or else in /roms/bios or /data/bios
@@ -15,6 +12,12 @@ to be very close to the CV in terms of hardware. Often only the IO/Memory was di
 ColecoDS also allows cartridge and sometimes tape/disk games from "cousin" systems to be played - namely 
 the Sord M5, the Memotech MTX, the SG-1000/3000, the Spectravision 3x8 SVI, Casio PV-1000, Casio PV-2000,
 Hanimex Pencil II, CreatiVision, the Tatung Einstein and the venerable MSX1.
+
+# Donations Welcome (but never required!)
+
+These hobby emulators have been a labor of love. An embarassing amount of development time has gone into it as I've strived to provide an enjoyable retro experience on the DS handheld. It's free to use and always will be, however if you feel inclined to buy me a virtual coffee for the effort, that would be beyond amazing!
+
+[<img src="https://github.com/user-attachments/assets/ab67686c-2168-46a3-b39f-77b5f5fef5d0">](https://ko-fi.com/wavemotiondave)
 
 Features :
 -----------------------
