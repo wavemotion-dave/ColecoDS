@@ -69,6 +69,8 @@ core.
 
 The ColecoDS emulator is offered as-is, without any warranty.
 
+ColecoDS has no affiliation with the current Coleco trademark owners.
+
 Credits :
 -----------------------
 Thanks to Alekmaul who provided the baseline code to work with and to lobo for the menu graphical design.
@@ -442,6 +444,7 @@ Versions :
 V11.0: 20-Aug-2026 by wavemotion-dave
 * Added preliminary handling of undocumented flags X and Y for improved CPU accuracy.
 * Fix for 64K 'Activision PCB' banking so that we correctly start the ROM running.
+* Fix for Telebunny Homebrew so it doesn't crash after the main screen.
 * Other minor cleanups and commenting as time permitted.
 
 V10.9: 12-Sep-2025 by wavemotion-dave
