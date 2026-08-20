@@ -50,7 +50,9 @@ extern "C" {
                                /* Bits in Z80 F register:    */
 #define S_FLAG      0x80       /* 1: Result negative         */
 #define Z_FLAG      0x40       /* 1: Result is zero          */
+#define Y_FLAG      0x20       /* 1: Undocumented Y flag     */
 #define H_FLAG      0x10       /* 1: Halfcarry/Halfborrow    */
+#define X_FLAG      0x08       /* 1: Undocumented X flag     */
 #define P_FLAG      0x04       /* 1: Result is even          */
 #define V_FLAG      0x04       /* 1: Overflow occured        */
 #define N_FLAG      0x02       /* 1: Subtraction occured     */
