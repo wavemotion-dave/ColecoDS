@@ -1,5 +1,5 @@
 // =====================================================================================
-// Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
+// Copyright (c) 2021-2026 Dave Bernazzani (wavemotion-dave)
 //
 // Copying and distribution of this emulator, its source code and associated
 // readme files, with or without modification, are permitted in any medium without
@@ -1126,7 +1126,7 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
   switch(Port&0xE0)
   {
     case 0x20:  // AdamNet Port from 0x20 to 0x3F
-      return Port20 & 0x0F;
+      if (adam_mode) return Port20 & 0x0F;
       break;
 
     case 0x40: // Printer Status - not used
@@ -1134,13 +1134,13 @@ ITCM_CODE unsigned char cpu_readport16(register unsigned short Port)
       break;
 
     case 0x60:  // Adam/Memory Port from 0x60 to 0x7F
-      return Port60;
+      if (adam_mode) return Port60;
       break;
 
     case 0xE0: // Joystick/Keypad Data
-      Port = (Port&0x02) ? (JoyState>>16):JoyState;
-      Port = JoyMode     ? (Port>>8):Port;
-      return(~Port&0x7F);
+      Port = (Port&0x02) ? (JoyState>>16):JoyState;  // Left or Right joystick?
+      Port = JoyMode     ? (Port>>8):Port;           // Reading Joystick or Keypad?
+      return(~Port&0x7F);   // Bit 7 clear... Bit 4 set. These unconnected inputs tend to read this way on real HW.
 
     case 0xA0: // VDP Status/Data Port from 0xA0 to 0xBF
       return(Port&0x01 ? RdCtrl9918():RdData9918());

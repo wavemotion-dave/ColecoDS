@@ -206,7 +206,7 @@ inline byte RdZ80(word A)   {return RAM_Memory[A];}
   J.W=(CPU.Rg1.W+CPU.Rg2.W)&0xFFFF;                        \
   CPU.AF.B.l=                                             \
     (CPU.AF.B.l&~(H_FLAG|N_FLAG|C_FLAG))|                 \
-    ((CPU.Rg1.W^CPU.Rg2.W^J.W)&0x1000? H_FLAG:0)|          \
+    ((CPU.Rg1.W^CPU.Rg2.W^J.W)&0x1000? H_FLAG:0)| (J.B.h & 0x28)| \
     (((long)CPU.Rg1.W+(long)CPU.Rg2.W)&0x10000? C_FLAG:0); \
   CPU.Rg1.W=J.W
 
@@ -215,7 +215,7 @@ inline byte RdZ80(word A)   {return RAM_Memory[A];}
   CPU.AF.B.l=                                                   \
     (((long)CPU.HL.W+(long)CPU.Rg.W+(long)I)&0x10000? C_FLAG:0)| \
     (~(CPU.HL.W^CPU.Rg.W)&(CPU.Rg.W^J.W)&0x8000? V_FLAG:0)|       \
-    ((CPU.HL.W^CPU.Rg.W^J.W)&0x1000? H_FLAG:0)|                  \
+    ((CPU.HL.W^CPU.Rg.W^J.W)&0x1000? H_FLAG:0)| (J.B.h & 0x28)| \
     (J.W? 0:Z_FLAG)|(J.B.h&S_FLAG);                            \
   CPU.HL.W=J.W
 
@@ -225,7 +225,7 @@ inline byte RdZ80(word A)   {return RAM_Memory[A];}
     N_FLAG|                                                    \
     (((long)CPU.HL.W-(long)CPU.Rg.W-(long)I)&0x10000? C_FLAG:0)| \
     ((CPU.HL.W^CPU.Rg.W)&(CPU.HL.W^J.W)&0x8000? V_FLAG:0)|        \
-    ((CPU.HL.W^CPU.Rg.W^J.W)&0x1000? H_FLAG:0)|                  \
+    ((CPU.HL.W^CPU.Rg.W^J.W)&0x1000? H_FLAG:0)| (J.B.h & 0x28)| \
     (J.W? 0:Z_FLAG)|(J.B.h&S_FLAG);                            \
   CPU.HL.W=J.W
 

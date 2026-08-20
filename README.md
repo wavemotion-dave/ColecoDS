@@ -49,7 +49,7 @@ Features :
 
 Copyright :
 -----------------------
-ColecoDS Phoenix-Edition is Copyright (c) 2021-2025 Dave Bernazzani (wavemotion-dave)
+ColecoDS Phoenix-Edition is Copyright (c) 2021-2026 Dave Bernazzani (wavemotion-dave)
 
 As long as there is no commercial use (i.e. no profit is made),
 copying and distribution of this emulator, it's source code
@@ -439,9 +439,14 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V11.0: 20-Aug-2026 by wavemotion-dave
+* Added preliminary handling of undocumented flags X and Y for improved CPU accuracy.
+* Fix for 64K 'Activision PCB' banking so that we correctly start the ROM running.
+* Other minor cleanups and commenting as time permitted.
+
 V10.9: 12-Sep-2025 by wavemotion-dave
 * Added SLIDE-N-GLIDE joystick handling for improved cornering in maze/ladder games.
-* Added 'DEFINE KEYS' to the DS Mini-Menu so you can change keys in-game.
+* Added 'DEFINE KEYS' to the DS Mini-Menu so you can change keys while in-game.
 * New Adam memory configurations to cover 64K up to 1MB
 * Added compression of save/load states for improved SD utilization.
 * Added compression of config file for improved SD utilization and increased number of available config slots (2300)
