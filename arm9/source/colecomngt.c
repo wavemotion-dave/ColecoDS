@@ -790,6 +790,16 @@ u8 loadrom(const char *filename, u8 * ptr)
         if (romSize <= (32*1024)) // Allow up to 32K limit on Coleco Roms
         {
             memcpy(ptr, ROM_Memory, romSize);
+
+            if (file_crc == 0xcbc58796) // Star Force homebrew needs a patch to fix known crash
+            {
+                if ((ROM_Memory[0x707A] == 0x28) && (ROM_Memory[0x707B] == 0xE6))
+                {
+                    ROM_Memory[0x707A] = 0x00;
+                    ROM_Memory[0x707B] = 0x00;
+                    debug[3] = 356;
+                }
+            }            
         }
         else    // No - must be Mega Cart (MC) Bankswitched!!
         {
