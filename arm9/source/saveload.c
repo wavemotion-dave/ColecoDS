@@ -122,8 +122,8 @@ void colecoSaveState(void)
     // Compress the 64K RAM data using 'high' compression ratio... it's
     // still quite fast for such small memory buffers and gets us under 32K
     // -----------------------------------------------------------------------
-    int max_len = lzav_compress_bound_hi( 0x10000 );
-    int comp_len = lzav_compress_hi( RAM_Memory, COMPRESS_BUFFER, 0x10000, max_len );
+    int max_len = lzav_compress_bound( 0x10000 );
+    int comp_len = lzav_compress_default( RAM_Memory, COMPRESS_BUFFER, 0x10000, max_len );
 
     if (retVal) retVal = fwrite(&comp_len,          sizeof(comp_len), 1, handle);
     if (retVal) retVal = fwrite(COMPRESS_BUFFER,     comp_len,         1, handle);
@@ -180,8 +180,8 @@ void colecoSaveState(void)
     if (retVal) retVal = fwrite(&ChrGenM, sizeof(ChrGenM),1, handle);
 
     // Write the VDP video buffer... large enough that we compress it
-    max_len = lzav_compress_bound_hi( 0x4000 );
-    comp_len = lzav_compress_hi( pVDPVidMem, COMPRESS_BUFFER, 0x4000, max_len );
+    max_len = lzav_compress_bound( 0x4000 );
+    comp_len = lzav_compress_default( pVDPVidMem, COMPRESS_BUFFER, 0x4000, max_len );
 
     if (retVal) retVal = fwrite(&comp_len,          sizeof(comp_len), 1, handle);
     if (retVal) retVal = fwrite(COMPRESS_BUFFER,     comp_len,         1, handle);
@@ -335,8 +335,8 @@ void colecoSaveState(void)
     else if (adam_mode)  // Big enough that we will not write this if we are not ADAM
     {
         // The PCBTable[] is large enough that we compress it...
-        max_len = lzav_compress_bound_hi( 0x8000 );
-        comp_len = lzav_compress_hi( PCBTable+0x8000, COMPRESS_BUFFER, 0x8000, max_len );
+        max_len = lzav_compress_bound( 0x8000 );
+        comp_len = lzav_compress_default( PCBTable+0x8000, COMPRESS_BUFFER, 0x8000, max_len );
         if (retVal) retVal = fwrite(&comp_len,          sizeof(comp_len), 1, handle);
         if (retVal) retVal = fwrite(COMPRESS_BUFFER,     comp_len,         1, handle);
 

@@ -441,6 +441,10 @@ And then move the soundbank.h file to the arm9/sources directory
 
 Versions :
 -----------------------
+V11.1: 22-Oct-2026 by wavemotion-dave
+* Hotfix for DS-Lite/Phat save of configuration and save states. Compression algorithm could run out of memory!
+* Built-in patch for the buggy Star Force included and should be automatically applied.
+
 V11.0: 20-Aug-2026 by wavemotion-dave
 * Added preliminary handling of undocumented flags X and Y for improved CPU accuracy.
 * Fix for 64K 'Activision PCB' banking so that we correctly start the ROM running.

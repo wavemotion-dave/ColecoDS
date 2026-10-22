@@ -855,8 +855,8 @@ void SaveConfig(bool bShow)
         // --------------------------------------------------------------------
         // Compress the configuration data - this shrinks down quite nicely...
         // --------------------------------------------------------------------
-        int max_len = lzav_compress_bound_hi( sizeof(AllConfigs) );
-        int comp_len = lzav_compress_hi( &AllConfigs, COMPRESS_BUFFER, sizeof(AllConfigs), max_len );
+        int max_len = lzav_compress_bound( sizeof(AllConfigs) );
+        int comp_len = lzav_compress_default( &AllConfigs, COMPRESS_BUFFER, sizeof(AllConfigs), max_len );
 
         fwrite(&comp_len,          sizeof(comp_len), 1, fp);
         fwrite(COMPRESS_BUFFER,    comp_len,         1, fp);

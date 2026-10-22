@@ -1,3 +1,5 @@
+// Oct-2026 updated to reduce stack to 4K for ARM embedded use and provide a default 16K static hash table for restricted embedded use.
+
 /**
  * @file lzav.h
  *
@@ -915,7 +917,7 @@ static inline int lzav_compress( const void* const src, void* const dst,
 		return( 2 + LZAV_LIT_FIN );
 	}
 
-	uint32_t stack_buf[ 2048 ]; // On-stack hash-table.
+	uint32_t stack_buf[ 1024 ]; // On-stack hash-table.
 	void* alloc_buf = LZAV_NULL; // Hash-table allocated on heap.
 	uint8_t* ht = (uint8_t*) stack_buf; // The actual hash-table pointer.
 
@@ -1202,7 +1204,9 @@ static inline int lzav_compress( const void* const src, void* const dst,
 static inline int lzav_compress_default( const void* const src,
 	void* const dst, const int srcl, const int dstl ) LZAV_NOEX
 {
-	return( lzav_compress( src, dst, srcl, dstl, LZAV_NULL, 0 ));
+	static uint32_t ht[ 4096 ]; // 16 KiB hash-table, 32-bit aligned.
+
+	return( lzav_compress( src, dst, srcl, dstl, ht, (int) sizeof( ht )));
 }
 
 /**
